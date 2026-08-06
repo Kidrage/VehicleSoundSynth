@@ -1,0 +1,41 @@
+{
+  "patcher": {
+    "appversion": {
+      "architecture": "x64",
+      "major": 8,
+      "minor": 6,
+      "modernui": 1,
+      "revision": 5
+    },
+    "boxes": [
+      {
+        "box": {
+          "code": "// Smooth, bounded EV inverter/motor identity.\nParam rpm(650, min=0, max=10000);\nParam throttle(0, min=0, max=1);\nParam load(0, min=-1, max=1);\nParam aggression(0.25, min=0, max=1);\nParam brightness(0.7, min=0, max=1);\nParam body(0.35, min=0, max=1);\nParam texture(0.2, min=0, max=1);\nr = slide(clamp(rpm, 0, 10000), 1200, 1800);\nt = slide(clamp(throttle, 0, 1), 700, 1400);\nf = clamp(55 + r * 0.052, 55, 760);\na = clamp(0.03 + t * 0.25 + abs(clamp(load, -1, 1)) * 0.08, 0, 0.42);\ncore = cycle(f) * (0.60 + body * 0.20);\ninverter = cycle(clamp(f * (2.8 + brightness), 100, 4200)) * (0.12 + texture * 0.18);\nair = cycle(clamp(f * 1.013, 55, 1000)) * aggression * 0.10;\nsig = clamp((core + inverter + air) * a, -0.78, 0.78);\nout1 = sig;\nout2 = clamp((cycle(f * 1.007) * 0.55 + inverter + air) * a, -0.78, 0.78);",
+          "id": "obj-1",
+          "maxclass": "codebox",
+          "numinlets": 1,
+          "numoutlets": 2,
+          "outlettype": [
+            "",
+            ""
+          ],
+          "patching_rect": [
+            40.0,
+            40.0,
+            760.0,
+            580.0
+          ]
+        }
+      }
+    ],
+    "classnamespace": "dsp.gen",
+    "fileversion": 1,
+    "lines": [],
+    "rect": [
+      50.0,
+      50.0,
+      850.0,
+      680.0
+    ]
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "patcher": {
+    "appversion": {
+      "architecture": "x64",
+      "major": 8,
+      "minor": 6,
+      "modernui": 1,
+      "revision": 5
+    },
+    "boxes": [
+      {
+        "box": {
+          "code": "// Smooth, bounded high-rev twelve-cylinder firing model.\nParam rpm(650, min=0, max=10000);\nParam throttle(0, min=0, max=1);\nParam load(0, min=-1, max=1);\nParam aggression(0.6, min=0, max=1);\nParam brightness(0.75, min=0, max=1);\nParam body(0.7, min=0, max=1);\nParam texture(0.5, min=0, max=1);\nr = slide(clamp(rpm, 0, 10000), 1000, 1600);\nt = slide(clamp(throttle, 0, 1), 650, 1200);\nf = clamp(r / 60 * 6, 35, 1000);\na = clamp(0.025 + t * 0.30 + max(clamp(load, -1, 1), 0) * 0.10, 0, 0.46);\nfund = cycle(f) * (0.38 + body * 0.18);\nh2 = cycle(clamp(f * 2, 40, 4000)) * (0.20 + brightness * 0.12);\nh3 = cycle(clamp(f * 3, 50, 6500)) * (0.09 + texture * 0.12);\nsig = clamp((fund + h2 + h3) * a * (0.85 + aggression * 0.18), -0.80, 0.80);\nout1 = sig;\nout2 = clamp((cycle(f * 0.997) * 0.40 + h2 * 0.95 + h3 * 1.04) * a, -0.80, 0.80);",
+          "id": "obj-1",
+          "maxclass": "codebox",
+          "numinlets": 1,
+          "numoutlets": 2,
+          "outlettype": [
+            "",
+            ""
+          ],
+          "patching_rect": [
+            40.0,
+            40.0,
+            760.0,
+            580.0
+          ]
+        }
+      }
+    ],
+    "classnamespace": "dsp.gen",
+    "fileversion": 1,
+    "lines": [],
+    "rect": [
+      50.0,
+      50.0,
+      850.0,
+      680.0
+    ]
+  }
+}

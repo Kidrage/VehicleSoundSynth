@@ -1,0 +1,41 @@
+{
+  "patcher": {
+    "appversion": {
+      "architecture": "x64",
+      "major": 8,
+      "minor": 6,
+      "modernui": 1,
+      "revision": 5
+    },
+    "boxes": [
+      {
+        "box": {
+          "code": "// Smooth, bounded cross-plane-inspired ten-cylinder identity.\nParam rpm(650, min=0, max=10000);\nParam throttle(0, min=0, max=1);\nParam load(0, min=-1, max=1);\nParam aggression(0.9, min=0, max=1);\nParam brightness(0.65, min=0, max=1);\nParam body(0.85, min=0, max=1);\nParam texture(0.85, min=0, max=1);\nr = slide(clamp(rpm, 0, 10000), 850, 1300);\nt = slide(clamp(throttle, 0, 1), 500, 900);\nf = clamp(r / 60 * 5, 32, 850);\na = clamp(0.03 + t * 0.33 + max(clamp(load, -1, 1), 0) * 0.12, 0, 0.48);\nlow = cycle(f * 0.5) * (0.22 + body * 0.22);\nfire = cycle(f) * (0.34 + aggression * 0.16);\nrasp = cycle(clamp(f * 2.5, 55, 5000)) * (0.10 + texture * 0.18 + brightness * 0.06);\nsig = clamp((low + fire + rasp) * a, -0.82, 0.82);\nout1 = sig;\nout2 = clamp((cycle(f * 0.503) * 0.32 + fire * 0.96 + rasp * 1.08) * a, -0.82, 0.82);",
+          "id": "obj-1",
+          "maxclass": "codebox",
+          "numinlets": 1,
+          "numoutlets": 2,
+          "outlettype": [
+            "",
+            ""
+          ],
+          "patching_rect": [
+            40.0,
+            40.0,
+            760.0,
+            580.0
+          ]
+        }
+      }
+    ],
+    "classnamespace": "dsp.gen",
+    "fileversion": 1,
+    "lines": [],
+    "rect": [
+      50.0,
+      50.0,
+      850.0,
+      680.0
+    ]
+  }
+}

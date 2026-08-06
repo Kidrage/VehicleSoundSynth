@@ -1,0 +1,32 @@
+{
+  "Aggressive V10": {
+    "aggression": 0.9,
+    "body": 0.84,
+    "brightness": 0.66,
+    "cabin_width": 0.56,
+    "ev_weight": 0.0,
+    "texture": 0.86,
+    "v10_weight": 1.0,
+    "v12_weight": 0.0
+  },
+  "Future EV": {
+    "aggression": 0.25,
+    "body": 0.34,
+    "brightness": 0.72,
+    "cabin_width": 0.82,
+    "ev_weight": 1.0,
+    "texture": 0.2,
+    "v10_weight": 0.0,
+    "v12_weight": 0.0
+  },
+  "High-Rev V12": {
+    "aggression": 0.62,
+    "body": 0.72,
+    "brightness": 0.78,
+    "cabin_width": 0.64,
+    "ev_weight": 0.0,
+    "texture": 0.52,
+    "v10_weight": 0.0,
+    "v12_weight": 1.0
+  }
+}
