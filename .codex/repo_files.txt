@@ -6,10 +6,14 @@ AGENTS.md
 PROJECT_HANDOFF.md
 README.md
 VehicleSoundSynth.maxproj
+"VehicleSoundSynth_\345\256\214\346\225\264\344\275\277\347\224\250\346\211\213\345\206\214.docx"
 gen/ev_powertrain.gendsp
 gen/v10_powertrain.gendsp
 gen/v12_powertrain.gendsp
 main.maxpat
+media/exhaust_pop.wav
+media/mechanical_click.wav
+media/shift_thump.wav
 patchers/cabin_master~.maxpat
 patchers/drive_simulator.maxpat
 patchers/powertrain~.maxpat
@@ -19,3 +23,4 @@ patchers/vehicle_engine~.maxpat
 presets/sound_dna.json
 tests/test_project.py
 tools/build_project.py
+tools/build_user_manual.py

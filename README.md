@@ -7,6 +7,9 @@ The project targets Max 8.6.5 and uses only built-in Max/MSP/Gen objects. Open
 `VehicleSoundSynth.maxproj`, then open `main.maxpat`. Audio is deliberately off
 at startup; click the speaker icon when your output level is safe.
 
+完整的中文操作、参数与拟真调音说明见
+[`VehicleSoundSynth_完整使用手册.docx`](VehicleSoundSynth_完整使用手册.docx)。
+
 ## Controls
 
 - **State source**: Internal uses the built-in drive model; External listens on
