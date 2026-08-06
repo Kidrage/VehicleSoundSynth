@@ -9,12 +9,12 @@
 - Working root: `.`
 - Repository name: `VehicleSoundSynth`
 - Git repository: `true`
-- Generated at: `2026-08-06T04:53:33.567850+00:00`
+- Generated at: `2026-08-06T11:05:06.754166+00:00`
 
 ## Current State
 
 - Branch: `codex/vehicle-sound-mvp`
-- HEAD: `ed5201e`
+- HEAD: `7dada34`
 - Indexed paths: 27
 - Inventory truncated: `false`
 - Inaccessible paths: 0
@@ -57,9 +57,9 @@
 ### Categories
 
 - audio: 3 files, 38532 bytes
-- code: 3 files, 96758 bytes
-- literature: 8 files, 72707 bytes
-- other: 12 files, 164569 bytes
+- code: 3 files, 100086 bytes
+- literature: 8 files, 111018 bytes
+- other: 12 files, 167505 bytes
 - structured_data: 1 files, 612 bytes
 
 ### Common Extensions
@@ -86,6 +86,8 @@
 
 ## Change History
 
+- `7dada34 2026-08-06 fix: use Max-compatible project search path schema`
+- `e1cc86c 2026-08-06 docs: refresh project handoff`
 - `ed5201e 2026-08-06 docs: add complete VehicleSoundSynth user manual`
 - `cfc59a0 2026-08-06 docs: refresh project handoff`
 - `3f4ffcf 2026-08-06 feat: add Max vehicle sound synthesizer MVP`
@@ -93,6 +95,22 @@
 ## Current Changes
 
 - `## codex/vehicle-sound-mvp`
+- ` M .codex/REPO_GUIDE.md`
+- ` M .codex/repo_files.txt`
+- ` M .codex/source_index.txt`
+- ` M AGENTS.md`
+- ` M PROJECT_HANDOFF.md`
+- ` M README.md`
+- ` M VehicleSoundSynth.maxproj`
+- ` M "VehicleSoundSynth_\345\256\214\346\225\264\344\275\277\347\224\250\346\211\213\345\206\214.docx"`
+- ` M gen/ev_powertrain.gendsp`
+- ` M gen/v10_powertrain.gendsp`
+- ` M gen/v12_powertrain.gendsp`
+- ` M main.maxpat`
+- ` M patchers/drive_simulator.maxpat`
+- ` M patchers/road_air~.maxpat`
+- ` M tests/test_project.py`
+- ` M tools/build_project.py`
 - `?? "MaxMSP_\347\224\265\345\212\250\350\275\246\350\266\205\350\267\221\345\243\260\346\265\252\345\220\210\346\210\220\345\231\250\346\226\271\346\241\210.md"`
 
 ## Related Repositories
@@ -149,6 +167,8 @@
 - Rebuild the manual with `tools/build_user_manual.py` in an environment that provides `python-docx`.
 - Manual validation completed: DOCX structural audit, 10-page render review, and all 12 project tests passed.
 - `MaxMSP_电动车超跑声浪合成器方案.md` is user-owned, untracked source material; preserve it unless explicitly asked to add it.
+- Runtime fix after HEAD `7dada34`: nested Max project categories plus explicit `./` search paths, Max-compatible `switch`/`svf~` and expressions, direct toggle-to-`ezdac~` control, valid `slide` arguments, and explicit Gen `out 1` / `out 2` ports.
+- Verification: 13 Python tests pass; fresh Max 8.6.5 project load has zero errors/warnings; automated 48 kHz stereo recording measured non-zero engine output (`RMS=3713`, `Peak=18159`). Open the project first, then main in the same Max instance to avoid a search-path registration race.
 <!-- AGENT_NOTES_END -->
 
 ## Mandatory Update Rule

@@ -11,9 +11,6 @@ gen/ev_powertrain.gendsp
 gen/v10_powertrain.gendsp
 gen/v12_powertrain.gendsp
 main.maxpat
-media/exhaust_pop.wav
-media/mechanical_click.wav
-media/shift_thump.wav
 patchers/cabin_master~.maxpat
 patchers/drive_simulator.maxpat
 patchers/powertrain~.maxpat

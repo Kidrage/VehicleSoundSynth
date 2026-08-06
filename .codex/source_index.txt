@@ -2,7 +2,7 @@
 
 Repository: /Users/saintpeter/Downloads/VehicleSoundSynth
 Tracked filtered files: 23
-High-value indexed files: 9
+High-value indexed files: 8
 
 Read this file before broad repository exploration. Prefer focused `rg`
 or `git grep` against the listed areas before opening source files.
@@ -29,4 +29,3 @@ or `git grep` against the listed areas before opening source files.
 
 - .codex/REPO_GUIDE.md
 - PROJECT_HANDOFF.md
-- VehicleSoundSynth_完整使用手册.docx

@@ -391,12 +391,12 @@ def make_road_air() -> dict[str, Any]:
     channels: list[str] = []
     for index, x in enumerate((220, 610)):
         noise = p.new("noise~", x, 350, 55, numinlets=0, numoutlets=1)
-        highpass = p.new("hip~ 65", x, 390, 65, numinlets=2, numoutlets=1)
+        highpass = p.new("svf~ 65 0.5", x, 390, 85, numinlets=3, numoutlets=4)
         lowpass = p.new("lores~ 1800 0.65", x, 430, 120, numinlets=3, numoutlets=1)
         gain = p.new("*~", x, 475, 40, numinlets=2, numoutlets=1)
         stereo = p.new(f"*~ {0.96 - index * 0.05:.2f}", x, 520, 65, numinlets=2, numoutlets=1)
         p.connect(noise, highpass)
-        p.connect(highpass, lowpass)
+        p.connect(highpass, lowpass, 1, 0)
         p.connect(cutoff_line, lowpass, 0, 1)
         p.connect(lowpass, gain, 0, 0)
         p.connect(speed_line, gain, 0, 1)
@@ -502,13 +502,13 @@ def make_drive_simulator() -> dict[str, Any]:
     load = p.new("loadmess 1", 420, 65, 75, numinlets=1, numoutlets=1)
     counter = p.new("counter 0 399", 420, 155, 95, numinlets=5, numoutlets=4)
     state = p.new("pak 0. 0. 0 0", 250, 220, 105, numinlets=4, numoutlets=1)
-    effective = p.new("expr if($f3 > 0.5, 0.55 + 0.4*sin($f4*0.0314159), $f1)", 250, 265, 360, numinlets=4, numoutlets=1)
+    effective = p.new("expr ($f3 > 0.5)*(0.55 + 0.4*sin($f4*0.0314159)) + ($f3 <= 0.5)*$f1", 250, 265, 475, numinlets=4, numoutlets=1)
     target_speed = p.new("expr max(0., min(300., $f1*260. - $f2*180.))", 250, 310, 315, numinlets=2, numoutlets=1)
-    speed_smooth = p.new("slide 0. 3 12", 250, 350, 90, numinlets=3, numoutlets=1)
+    speed_smooth = p.new("slide 3 12", 250, 350, 90, numinlets=3, numoutlets=1)
     speed_split = p.new("t f f f", 250, 395, 70, numinlets=1, numoutlets=3)
     rpm = p.new("expr min(10000., 650. + $f1*31. + $f2*1400.)", 410, 440, 300, numinlets=2, numoutlets=1)
     rpm_pack = p.new("pak 0. 0.", 410, 395, 75, numinlets=2, numoutlets=1)
-    gear = p.new("expr if($f1 < 1., 0, min(6, int($f1/45.)+1))", 735, 395, 285, numinlets=1, numoutlets=1)
+    gear = p.new("expr ($f1 >= 1.)*min(6, int($f1/45.)+1)", 735, 395, 300, numinlets=1, numoutlets=1)
     gear_change = p.new("change", 735, 440, 55, numinlets=1, numoutlets=1)
     gear_trigger = p.new("t b i", 735, 480, 50, numinlets=1, numoutlets=2)
     shift_on = p.message("shift 1", 690, 525, 55)
@@ -585,11 +585,9 @@ def make_main() -> dict[str, Any]:
     p.comment("Audio starts OFF — lower your monitoring level, then enable DSP", 25, 45, 520)
     load_off = p.new("loadmess 0", 25, 80, 80, numinlets=1, numoutlets=1)
     audio_toggle = p.add("toggle", None, 120, 80, 24, 24, numinlets=1, numoutlets=1)
-    dsp_message = p.message("; dsp $1", 160, 80, 60)
     ramp_message = p.message("$1 60", 235, 80, 55)
     audio_line = p.new("line~", 305, 80, 50, numinlets=2, numoutlets=2)
     p.connect(load_off, audio_toggle)
-    p.connect(audio_toggle, dsp_message)
     p.connect(audio_toggle, ramp_message)
     p.connect(ramp_message, audio_line)
 
@@ -604,12 +602,12 @@ def make_main() -> dict[str, Any]:
         numoutlets=3,
         items=["Internal Manual", ",", "Internal Auto", ",", "External vss.input"],
     )
-    mode_select = p.new("expr if($i1 == 2, 2, 1)", 260, 165, 160, numinlets=1, numoutlets=1)
+    mode_select = p.new("expr 1 + ($i1 == 2)", 260, 165, 145, numinlets=1, numoutlets=1)
     auto_mode = p.new("== 1", 260, 205, 45, numinlets=2, numoutlets=1)
     auto_named = p.new("prepend auto", 320, 205, 95, numinlets=1, numoutlets=1)
     drive = p.new("drive_simulator", 25, 375, 110, numinlets=1, numoutlets=1)
     external = p.new("r vss.input", 150, 375, 85, numinlets=0, numoutlets=1)
-    selector = p.new("selector 2", 25, 420, 75, numinlets=3, numoutlets=1)
+    selector = p.new("switch 2", 25, 420, 75, numinlets=3, numoutlets=1)
     engine = p.new("vehicle_engine~", 550, 620, 115, numinlets=1, numoutlets=2)
     p.connect(mode, mode_select)
     p.connect(mode, auto_mode)
@@ -676,6 +674,7 @@ def make_main() -> dict[str, Any]:
     spectrum_l = p.add("spectroscope~", None, 825, 675, 105, numinlets=2, numoutlets=1)
     spectrum_r = p.add("spectroscope~", None, 945, 675, 105, numinlets=2, numoutlets=1)
     dac = p.add("ezdac~", None, 620, 790, 65, 48, numinlets=2, numoutlets=0)
+    p.connect(audio_toggle, dac)
     p.connect(engine, mute_l, 0, 0)
     p.connect(engine, mute_r, 1, 0)
     p.connect(audio_line, mute_l, 0, 1)
@@ -711,11 +710,34 @@ def make_gen(code: str) -> dict[str, Any]:
                         "outlettype": ["", ""],
                         "patching_rect": [40.0, 40.0, 760.0, 580.0],
                     }
-                }
+                },
+                {
+                    "box": {
+                        "id": "obj-2",
+                        "maxclass": "newobj",
+                        "numinlets": 1,
+                        "numoutlets": 0,
+                        "patching_rect": [40.0, 640.0, 45.0, 22.0],
+                        "text": "out 1",
+                    }
+                },
+                {
+                    "box": {
+                        "id": "obj-3",
+                        "maxclass": "newobj",
+                        "numinlets": 1,
+                        "numoutlets": 0,
+                        "patching_rect": [120.0, 640.0, 45.0, 22.0],
+                        "text": "out 2",
+                    }
+                },
             ],
             "classnamespace": "dsp.gen",
             "fileversion": 1,
-            "lines": [],
+            "lines": [
+                {"patchline": {"source": ["obj-1", 0], "destination": ["obj-2", 0]}},
+                {"patchline": {"source": ["obj-1", 1], "destination": ["obj-3", 0]}},
+            ],
             "rect": [50.0, 50.0, 850.0, 680.0],
         }
     }
@@ -785,7 +807,12 @@ def write_wav(path: Path, name: str, frames: int) -> None:
 
 
 def project_file() -> dict[str, Any]:
-    contents: dict[str, dict[str, Any]] = {}
+    contents: dict[str, dict[str, dict[str, Any]]] = {
+        "patchers": {},
+        "code": {},
+        "media": {},
+        "data": {},
+    }
     patchers = [
         "main.maxpat",
         "patchers/vehicle_engine~.maxpat",
@@ -796,22 +823,25 @@ def project_file() -> dict[str, Any]:
         "patchers/drive_simulator.maxpat",
     ]
     for name in patchers:
-        contents[name] = {"kind": "patcher", "local": 1}
+        contents["patchers"][name] = {"kind": "patcher", "local": 1}
     for name in GEN_CODE:
-        contents[f"gen/{name}.gendsp"] = {"kind": "gendsp", "local": 1}
+        contents["code"][f"gen/{name}.gendsp"] = {"kind": "gendsp", "local": 1}
     for name in ("shift_thump.wav", "exhaust_pop.wav", "mechanical_click.wav"):
-        contents[f"media/{name}"] = {"kind": "mediafile", "local": 1}
-    contents["presets/sound_dna.json"] = {"kind": "data", "local": 1}
+        contents["media"][f"media/{name}"] = {"kind": "mediafile", "local": 1}
+    contents["data"]["presets/sound_dna.json"] = {"kind": "data", "local": 1}
     return {
         "autolocalize": 0,
         "autoorganize": 0,
         "contents": contents,
         "hideprojectwindow": 0,
         "name": "VehicleSoundSynth",
-        # Max 8.6.x deserializes this field as a dictionary. Supplying a JSON
-        # array crashes project_deserialize_searchpath before the project opens.
-        # Project-local folders and their subfolders are searched automatically.
-        "searchpath": {},
+        # Max 8.6.x requires a dictionary here. Explicit ./-relative values
+        # prevent common folder names such as patchers and media from resolving
+        # to Max's built-in directories instead of this project.
+        "searchpath": {
+            name: {"path": f"./{name}", "recursive": 1}
+            for name in ("patchers", "gen", "media", "presets")
+        },
         "showdependencies": 1,
         "version": 1,
         "viewrect": [80.0, 80.0, 620.0, 780.0],

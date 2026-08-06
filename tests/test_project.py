@@ -92,9 +92,21 @@ class VehicleSoundProjectTests(unittest.TestCase):
         }
         toggles = {box["id"] for box in main_boxes.values() if box["maxclass"] == "toggle"}
         loads = {box["id"] for box in main_boxes.values() if box.get("text") == "loadmess 0"}
-        dsp = next(box["id"] for box in main_boxes.values() if box.get("text") == "; dsp $1")
+        dacs = {box["id"] for box in main_boxes.values() if box["maxclass"] == "ezdac~"}
         self.assertTrue(any((load, toggle) in main_cords for load in loads for toggle in toggles))
-        self.assertTrue(any((toggle, dsp) in main_cords for toggle in toggles))
+        self.assertTrue(any((toggle, dac) in main_cords for toggle in toggles for dac in dacs))
+
+    def test_generated_patchers_use_max_compatible_objects_and_syntax(self):
+        patchers = list(ROOT.glob("*.maxpat")) + list((ROOT / "patchers").glob("*.maxpat"))
+        for path in patchers:
+            boxes = [item["box"] for item in self.load_json(path.relative_to(ROOT))["patcher"]["boxes"]]
+            texts = [box.get("text", "") for box in boxes]
+            object_names = {text.split(" ", 1)[0] for text in texts if text}
+            self.assertNotIn("selector", object_names, path.name)
+            self.assertNotIn("hip~", object_names, path.name)
+            self.assertFalse(any(text.startswith("expr if(") for text in texts), path.name)
+            self.assertNotIn("; dsp $1", texts, path.name)
+            self.assertNotIn("slide 0. 3 12", texts, path.name)
 
     def test_patch_cords_reference_real_boxes_and_valid_ports(self):
         patchers = list(ROOT.glob("*.maxpat")) + list((ROOT / "patchers").glob("*.maxpat"))
@@ -126,12 +138,36 @@ class VehicleSoundProjectTests(unittest.TestCase):
             self.assertIn("clamp(", code, path.name)
             self.assertIn("cycle(", code, path.name)
 
+            boxes = {item["box"]["id"]: item["box"] for item in patcher["boxes"]}
+            output_ids = {
+                box_id for box_id, box in boxes.items()
+                if box.get("text") in {"out 1", "out 2"}
+            }
+            self.assertEqual(2, len(output_ids), path.name)
+            destinations = {
+                line["patchline"]["destination"][0]
+                for line in patcher["lines"]
+            }
+            self.assertTrue(output_ids.issubset(destinations), path.name)
+
     def test_project_search_path_schema_and_runtime_resources_are_declared(self):
         project = self.load_json("VehicleSoundSynth.maxproj")
         # Max 8.6.x expects a dictionary here and can crash while opening a
-        # project whose searchpath is encoded as an array.
-        self.assertEqual({}, project["searchpath"])
-        declared = set(project["contents"])
+        # project whose searchpath is encoded as an array. Explicit relative
+        # paths avoid collisions with Max's own patchers/gen/media folders.
+        self.assertEqual(
+            {
+                name: {"path": f"./{name}", "recursive": 1}
+                for name in ("patchers", "gen", "media", "presets")
+            },
+            project["searchpath"],
+        )
+        self.assertEqual({"patchers", "code", "media", "data"}, set(project["contents"]))
+        declared = {
+            relative_path
+            for category in project["contents"].values()
+            for relative_path in category
+        }
         required = {
             "main.maxpat",
             "patchers/vehicle_engine~.maxpat",
@@ -140,6 +176,12 @@ class VehicleSoundProjectTests(unittest.TestCase):
             "patchers/road_air~.maxpat",
             "patchers/cabin_master~.maxpat",
             "patchers/drive_simulator.maxpat",
+            "gen/ev_powertrain.gendsp",
+            "gen/v12_powertrain.gendsp",
+            "gen/v10_powertrain.gendsp",
+            "media/shift_thump.wav",
+            "media/exhaust_pop.wav",
+            "media/mechanical_click.wav",
             "presets/sound_dna.json",
         }
         self.assertTrue(required.issubset(declared))

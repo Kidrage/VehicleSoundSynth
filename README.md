@@ -4,8 +4,11 @@ A compact Max/MSP vehicle-acoustics prototype with three morphable sound identit
 Future EV, High-Rev V12, and Aggressive V10.
 
 The project targets Max 8.6.5 and uses only built-in Max/MSP/Gen objects. Open
-`VehicleSoundSynth.maxproj`, then open `main.maxpat`. Audio is deliberately off
-at startup; click the speaker icon when your output level is safe.
+`VehicleSoundSynth.maxproj`, wait for the Project window to finish loading, then
+open `main.maxpat` from that same Max instance. Do not launch the project and
+main simultaneously: main can otherwise load before the project search paths.
+Audio is deliberately off at startup; click the top audio toggle when your
+output level is safe. It enables both the output ramp and `ezdac~`.
 
 完整的中文操作、参数与拟真调音说明见
 [`VehicleSoundSynth_完整使用手册.docx`](VehicleSoundSynth_完整使用手册.docx)。
