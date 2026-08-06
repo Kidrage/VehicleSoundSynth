@@ -808,7 +808,10 @@ def project_file() -> dict[str, Any]:
         "contents": contents,
         "hideprojectwindow": 0,
         "name": "VehicleSoundSynth",
-        "searchpath": [{"path": name, "recursive": 1} for name in ("patchers", "gen", "media", "presets")],
+        # Max 8.6.x deserializes this field as a dictionary. Supplying a JSON
+        # array crashes project_deserialize_searchpath before the project opens.
+        # Project-local folders and their subfolders are searched automatically.
+        "searchpath": {},
         "showdependencies": 1,
         "version": 1,
         "viewrect": [80.0, 80.0, 620.0, 780.0],

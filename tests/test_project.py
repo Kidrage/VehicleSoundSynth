@@ -126,10 +126,11 @@ class VehicleSoundProjectTests(unittest.TestCase):
             self.assertIn("clamp(", code, path.name)
             self.assertIn("cycle(", code, path.name)
 
-    def test_project_search_paths_and_runtime_resources_are_declared(self):
+    def test_project_search_path_schema_and_runtime_resources_are_declared(self):
         project = self.load_json("VehicleSoundSynth.maxproj")
-        paths = {entry["path"] for entry in project["searchpath"]}
-        self.assertTrue({"patchers", "gen", "media", "presets"}.issubset(paths))
+        # Max 8.6.x expects a dictionary here and can crash while opening a
+        # project whose searchpath is encoded as an array.
+        self.assertEqual({}, project["searchpath"])
         declared = set(project["contents"])
         required = {
             "main.maxpat",

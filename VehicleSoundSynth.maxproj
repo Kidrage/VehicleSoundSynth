@@ -61,24 +61,7 @@
   },
   "hideprojectwindow": 0,
   "name": "VehicleSoundSynth",
-  "searchpath": [
-    {
-      "path": "patchers",
-      "recursive": 1
-    },
-    {
-      "path": "gen",
-      "recursive": 1
-    },
-    {
-      "path": "media",
-      "recursive": 1
-    },
-    {
-      "path": "presets",
-      "recursive": 1
-    }
-  ],
+  "searchpath": {},
   "showdependencies": 1,
   "version": 1,
   "viewrect": [
