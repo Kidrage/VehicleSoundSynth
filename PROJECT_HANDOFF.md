@@ -9,12 +9,12 @@
 - Working root: `.`
 - Repository name: `VehicleSoundSynth-V3`
 - Git repository: `true`
-- Generated at: `2026-08-07T08:01:19.741582+00:00`
+- Generated at: `2026-08-07T08:08:05.896623+00:00`
 
 ## Current State
 
 - Branch: `codex/vehicle-sound-v3`
-- HEAD: `e9cd491`
+- HEAD: `c015005`
 - Indexed paths: 52
 - Inventory truncated: `false`
 - Inaccessible paths: 0
@@ -57,9 +57,9 @@
 ### Categories
 
 - audio: 21 files, 411324 bytes
-- code: 5 files, 179063 bytes
-- literature: 9 files, 162635 bytes
-- other: 16 files, 404364 bytes
+- code: 5 files, 179559 bytes
+- literature: 9 files, 162764 bytes
+- other: 16 files, 404371 bytes
 - structured_data: 1 files, 1024 bytes
 
 ### Common Extensions
@@ -86,6 +86,7 @@
 
 ## Change History
 
+- `c015005 2026-08-07 fix: harden stereo level validation`
 - `e9cd491 2026-08-07 feat: add combustion cabin rumble V3`
 - `b8cefa5 2026-08-07 docs: refresh final V2 handoff state`
 - `20332d0 2026-08-07 fix: reject start events before ignition`
@@ -104,9 +105,6 @@
 ## Current Changes
 
 - `## codex/vehicle-sound-v3`
-- ` M .codex/repo_files.txt`
-- ` M .codex/source_index.txt`
-- ` M PROJECT_HANDOFF.md`
 
 ## Related Repositories
 
