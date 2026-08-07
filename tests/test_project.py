@@ -65,6 +65,9 @@ class VehicleSoundProjectTests(unittest.TestCase):
         for token in (
             "7-speed DCT",
             "engine_type",
+            "ignition",
+            "start",
+            "Drive lifecycle gate",
             "clip 1 7",
             "shift_dir -1",
             "shift_dir 1",
@@ -104,10 +107,20 @@ class VehicleSoundProjectTests(unittest.TestCase):
         self.assertIn("exhaust_pop 1", controller_text)
         self.assertIn("crackle 1", controller_text)
         self.assertIn("stop", controller_text)
+        controller_boxes = {item["box"]["id"]: item["box"] for item in controller["patcher"]["boxes"]}
+        exhaust_on_id = next(
+            box_id for box_id, box in controller_boxes.items()
+            if box.get("text") == "exhaust_pop 1"
+        )
+        exhaust_on_inputs = [
+            line for line in controller["patcher"]["lines"]
+            if line["patchline"]["destination"][0] == exhaust_on_id
+        ]
+        self.assertEqual(1, len(exhaust_on_inputs), "public pop/exhaust requests must not be duplicated")
 
         transient = self.load_json("patchers/transient~.maxpat")
         transient_text = "\n".join(item["box"].get("text", "") for item in transient["patcher"]["boxes"])
-        self.assertIn("gate 1", transient_text)
+        self.assertGreaterEqual(transient_text.count("gate 1"), 5)
         self.assertIn("engine_running", transient_text)
         self.assertIn("expr $i1*$i2", transient_text)
 

@@ -363,12 +363,13 @@ def make_engine_controller() -> dict[str, Any]:
     crackle_off = p.message("crackle 0", 840, 455, 70)
     p.connect(router, exhaust_request, 5)
     p.connect(router, pop_request, 6)
-    for trigger in (shift_direction, exhaust_request, pop_request):
-        outlet_index = 0
-        p.connect(trigger, exhaust_on, outlet_index)
-        p.connect(trigger, exhaust_delay, outlet_index)
-        p.connect(trigger, crackle_delay, outlet_index)
-        p.connect(trigger, crackle_off_delay, outlet_index)
+    p.connect(shift_direction, exhaust_on, 0)
+    p.connect(shift_direction, exhaust_delay, 0)
+    p.connect(shift_direction, crackle_delay, 0)
+    p.connect(shift_direction, crackle_off_delay, 0)
+    for trigger in (exhaust_request, pop_request):
+        p.connect(trigger, crackle_delay, 0)
+        p.connect(trigger, crackle_off_delay, 0)
     p.connect(exhaust_delay, exhaust_off)
     p.connect(crackle_delay, crackle_on)
     p.connect(crackle_off_delay, crackle_off)
@@ -648,6 +649,8 @@ def make_transient() -> dict[str, Any]:
     p.connect(router, crackle_sel, 6)
     p.connect(router, click_sel, 7)
 
+    shift_up_gate = p.new("gate 1", 650, 205, 55, numinlets=2, numoutlets=1)
+    shift_down_gate = p.new("gate 1", 720, 205, 55, numinlets=2, numoutlets=1)
     intake_gate = p.new("gate 1", 875, 205, 55, numinlets=2, numoutlets=1)
     exhaust_gate = p.new("gate 1", 945, 205, 55, numinlets=2, numoutlets=1)
     crackle_gate = p.new("gate 1", 1015, 205, 55, numinlets=2, numoutlets=1)
@@ -665,8 +668,11 @@ def make_transient() -> dict[str, Any]:
     p.connect(router, running_clip, 11)
     p.connect(running_clip, event_state, 0, 1)
     p.connect(event_state, event_enabled)
-    for event_gate in (intake_gate, exhaust_gate, crackle_gate):
+    for event_gate in (shift_up_gate, shift_down_gate, intake_gate, exhaust_gate, crackle_gate):
         p.connect(event_enabled, event_gate, 0, 0)
+    p.connect(shift_sel, shift_up_gate, 0, 1)
+    p.connect(shift_direction, shift_up_gate, 1, 1)
+    p.connect(shift_direction, shift_down_gate, 0, 1)
     p.connect(intake_sel, intake_gate, 0, 1)
     p.connect(pop_sel, exhaust_gate, 0, 1)
     p.connect(exhaust_sel, exhaust_gate, 0, 1)
@@ -695,8 +701,8 @@ def make_transient() -> dict[str, Any]:
             p.connect(player, gain)
             players.append(gain)
 
-    add_family(tuple(f"shift_up_{index:02d}" for index in range(1, 4)), 0.32, 35, 440, ((shift_sel, 0), (shift_direction, 1)))
-    add_family(tuple(f"shift_down_{index:02d}" for index in range(1, 4)), 0.38, 650, 440, ((shift_direction, 0),))
+    add_family(tuple(f"shift_up_{index:02d}" for index in range(1, 4)), 0.32, 35, 440, ((shift_up_gate, 0),))
+    add_family(tuple(f"shift_down_{index:02d}" for index in range(1, 4)), 0.38, 650, 440, ((shift_down_gate, 0),))
     add_family(tuple(f"intake_backfire_{index:02d}" for index in range(1, 4)), 0.34, 1265, 440, ((intake_gate, 0),))
     add_family(tuple(f"exhaust_pop_{index:02d}" for index in range(1, 5)), 0.30, 35, 740, ((exhaust_gate, 0),))
     add_family(tuple(f"exhaust_crackle_{index:02d}" for index in range(1, 4)), 0.18, 830, 740, ((crackle_gate, 0),))
@@ -868,7 +874,7 @@ def make_drive_simulator() -> dict[str, Any]:
     p.comment("V12 ratios 3.10 2.13 1.62 1.29 1.03 0.84 0.70", 735, 15, 470)
     p.comment("V10 ratios 3.13 2.10 1.52 1.20 0.94 0.76 0.62", 735, 42, 470)
     control = inlet(p, 35, 65)
-    router = route(p, ("throttle", "brake", "auto", "engine_type"), 35, 105, 350)
+    router = route(p, ("throttle", "brake", "auto", "engine_type", "ignition", "start"), 35, 105, 500)
     throttle_clip = p.new("clip 0. 1.", 35, 155, 75, numinlets=3, numoutlets=1)
     brake_clip = p.new("clip 0. 1.", 145, 155, 75, numinlets=3, numoutlets=1)
     auto_clip = p.new("clip 0 1", 255, 155, 65, numinlets=3, numoutlets=1)
@@ -877,6 +883,20 @@ def make_drive_simulator() -> dict[str, Any]:
     profile_v12 = p.message("12", 400, 195, 35)
     profile_v10 = p.message("10", 450, 195, 35)
     profile_default = p.new("loadmess 0", 500, 195, 80, numinlets=1, numoutlets=1)
+    p.comment("Drive lifecycle gate: EV is always enabled; fuel requires ignition + start", 35, 225, 500)
+    ignition_clip = p.new("clip 0 1", 35, 250, 65, numinlets=3, numoutlets=1)
+    ignition_off = p.new("sel 0", 110, 250, 45, numinlets=1, numoutlets=2)
+    start_clip = p.new("clip 0 1", 165, 250, 65, numinlets=3, numoutlets=1)
+    reset_start = p.message("0", 240, 250, 30)
+    lifecycle_state = p.new("pak 0 0 0", 35, 280, 90, numinlets=3, numoutlets=1)
+    drive_enabled = p.new(
+        "expr ($i3==0)+(($i3!=0)*$i1*$i2)",
+        135,
+        280,
+        220,
+        numinlets=3,
+        numoutlets=1,
+    )
 
     tick = p.new("qmetro 50", 610, 105, 75, numinlets=2, numoutlets=1)
     load = p.new("loadmess 1", 610, 65, 75, numinlets=1, numoutlets=1)
@@ -899,6 +919,7 @@ def make_drive_simulator() -> dict[str, Any]:
         numinlets=4,
         numoutlets=1,
     )
+    enabled_throttle = p.new("* 1.", 500, 325, 50, numinlets=2, numoutlets=1)
 
     speed_store = p.new("f 0.", 610, 250, 50, numinlets=2, numoutlets=1)
     speed_state = p.new("pack 0. 0. 0.", 610, 340, 105, numinlets=3, numoutlets=1)
@@ -967,9 +988,19 @@ def make_drive_simulator() -> dict[str, Any]:
     p.connect(router, brake_clip, 1)
     p.connect(router, auto_clip, 2)
     p.connect(router, engine_type, 3)
+    p.connect(router, ignition_clip, 4)
+    p.connect(router, start_clip, 5)
     p.connect(engine_type, profile_ev, 0)
     p.connect(engine_type, profile_v12, 1)
     p.connect(engine_type, profile_v10, 2)
+    p.connect(ignition_clip, ignition_off)
+    p.connect(ignition_clip, lifecycle_state, 0, 0)
+    p.connect(start_clip, lifecycle_state, 0, 1)
+    p.connect(ignition_off, reset_start, 0)
+    p.connect(reset_start, lifecycle_state, 0, 1)
+    for profile in (profile_ev, profile_v12, profile_v10, profile_default):
+        p.connect(profile, lifecycle_state, 0, 2)
+    p.connect(lifecycle_state, drive_enabled)
     p.connect(engine_type, rpm_profile_ev, 0)
     p.connect(engine_type, rpm_profile_v12, 1)
     p.connect(engine_type, rpm_profile_v10, 2)
@@ -988,7 +1019,9 @@ def make_drive_simulator() -> dict[str, Any]:
     p.connect(counter, state, 0, 3)
     p.connect(state, effective_throttle)
     p.connect(state, effective_brake)
-    p.connect(effective_throttle, speed_state, 0, 1)
+    p.connect(effective_throttle, enabled_throttle, 0, 0)
+    p.connect(drive_enabled, enabled_throttle, 0, 1)
+    p.connect(enabled_throttle, speed_state, 0, 1)
     p.connect(effective_brake, speed_state, 0, 2)
     p.connect(speed_store, speed_state, 0, 0)
     p.connect(speed_state, speed_integrator)
@@ -1005,8 +1038,8 @@ def make_drive_simulator() -> dict[str, Any]:
     p.connect(profile_v12, shift_state, 0, 2)
     p.connect(profile_v10, shift_state, 0, 2)
     p.connect(profile_default, shift_state, 0, 2)
-    p.connect(effective_throttle, ev_rpm_state, 0, 1)
-    p.connect(effective_throttle, shift_state, 0, 3)
+    p.connect(enabled_throttle, ev_rpm_state, 0, 1)
+    p.connect(enabled_throttle, shift_state, 0, 3)
     p.connect(ev_rpm_state, ev_rpm)
     p.connect(v12_rpm_state, v12_rpm)
     p.connect(v10_rpm_state, v10_rpm)
@@ -1046,7 +1079,7 @@ def make_drive_simulator() -> dict[str, Any]:
     intake_on = p.message("intake_backfire 1", 1180, 505, 110)
     intake_delay = p.new("delay 90", 1305, 505, 65, numinlets=2, numoutlets=1)
     intake_off = p.message("intake_backfire 0", 1305, 545, 110)
-    p.connect(effective_throttle, intake_state, 0, 0)
+    p.connect(enabled_throttle, intake_state, 0, 0)
     p.connect(rpm_split, intake_state, 1, 1)
     for profile in (profile_ev, profile_v12, profile_v10, profile_default):
         p.connect(profile, intake_state, 0, 2)
@@ -1061,10 +1094,10 @@ def make_drive_simulator() -> dict[str, Any]:
     named_sources = [
         (speed_split, 0, "prepend speed_kph", 35, 590),
         (rpm_split, 0, "prepend rpm", 170, 590),
-        (effective_throttle, 0, "prepend throttle", 35, 395),
+        (enabled_throttle, 0, "prepend throttle", 35, 395),
         (effective_brake, 0, "prepend brake", 35, 440),
-        (effective_throttle, 0, "expr max(-1., min(1., $f1*1.6))", 35, 485),
-        (effective_throttle, 0, "expr max(-1., min(1., $f1*2.-$f2*2.))", 35, 530),
+        (enabled_throttle, 0, "expr max(-1., min(1., $f1*1.6))", 35, 485),
+        (enabled_throttle, 0, "expr max(-1., min(1., $f1*2.-$f2*2.))", 35, 530),
         (gear_trigger, 0, "prepend gear", 305, 590),
     ]
     for index, (source, source_outlet, text, x, y) in enumerate(named_sources):
@@ -1225,9 +1258,11 @@ def make_main() -> dict[str, Any]:
     p.connect(load_off, ignition_toggle)
     p.connect(ignition_toggle, ignition_named)
     p.connect(ignition_named, engine)
+    p.connect(ignition_named, drive)
     p.connect(start_button, start_value)
     p.connect(start_value, start_named)
     p.connect(start_named, engine)
+    p.connect(start_named, drive)
 
     p.comment("Global four-band EQ", 25, 650, 190)
     add_eq_band(p, "Low Shelf", "eq_low", 25, 680, 90.0, engine)
