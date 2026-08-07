@@ -18,10 +18,10 @@
           "patching_rect": [
             25.0,
             15.0,
-            470.0,
+            560.0,
             22.0
           ],
-          "text": "Cabin tone/width and conservative master protection"
+          "text": "Cabin tone and stereo width; final EQ/protection lives in mix_master~"
         }
       },
       {
@@ -789,65 +789,8 @@
       },
       {
         "box": {
-          "id": "obj-44",
-          "maxclass": "newobj",
-          "numinlets": 2,
-          "numoutlets": 4,
-          "outlettype": [
-            "",
-            "",
-            "",
-            ""
-          ],
-          "patching_rect": [
-            475.0,
-            675.0,
-            105.0,
-            22.0
-          ],
-          "text": "omx.peaklim~"
-        }
-      },
-      {
-        "box": {
-          "id": "obj-45",
-          "maxclass": "newobj",
-          "numinlets": 3,
-          "numoutlets": 1,
-          "outlettype": [
-            ""
-          ],
-          "patching_rect": [
-            300.0,
-            710.0,
-            130.0,
-            22.0
-          ],
-          "text": "clip~ -0.891 0.891"
-        }
-      },
-      {
-        "box": {
-          "id": "obj-46",
-          "maxclass": "newobj",
-          "numinlets": 3,
-          "numoutlets": 1,
-          "outlettype": [
-            ""
-          ],
-          "patching_rect": [
-            650.0,
-            710.0,
-            130.0,
-            22.0
-          ],
-          "text": "clip~ -0.891 0.891"
-        }
-      },
-      {
-        "box": {
           "comment": "signal",
-          "id": "obj-47",
+          "id": "obj-44",
           "maxclass": "outlet",
           "numinlets": 1,
           "numoutlets": 0,
@@ -862,7 +805,7 @@
       {
         "box": {
           "comment": "signal",
-          "id": "obj-48",
+          "id": "obj-45",
           "maxclass": "outlet",
           "numinlets": 1,
           "numoutlets": 0,
@@ -1492,59 +1435,11 @@
       {
         "patchline": {
           "destination": [
-            "obj-44",
-            1
+            "obj-45",
+            0
           ],
           "source": [
             "obj-43",
-            0
-          ]
-        }
-      },
-      {
-        "patchline": {
-          "destination": [
-            "obj-45",
-            0
-          ],
-          "source": [
-            "obj-44",
-            0
-          ]
-        }
-      },
-      {
-        "patchline": {
-          "destination": [
-            "obj-46",
-            0
-          ],
-          "source": [
-            "obj-44",
-            1
-          ]
-        }
-      },
-      {
-        "patchline": {
-          "destination": [
-            "obj-47",
-            0
-          ],
-          "source": [
-            "obj-45",
-            0
-          ]
-        }
-      },
-      {
-        "patchline": {
-          "destination": [
-            "obj-48",
-            0
-          ],
-          "source": [
-            "obj-46",
             0
           ]
         }

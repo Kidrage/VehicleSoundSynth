@@ -22,7 +22,7 @@ from docx.shared import Inches, Pt, RGBColor
 
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_OUTPUT = ROOT / "VehicleSoundSynth_完整使用手册.docx"
+DEFAULT_OUTPUT = ROOT / "VehicleSoundSynthV2_完整使用手册.docx"
 
 # compact_reference_guide preset; CJK font is a named glyph-support override.
 BASE_FONT = "Calibri"
@@ -334,7 +334,7 @@ def add_running_furniture(section, *, first_page: bool = False) -> None:
     p = header.paragraphs[0]
     p.alignment = WD_ALIGN_PARAGRAPH.LEFT
     p.paragraph_format.space_after = Pt(0)
-    run = p.add_run("VehicleSoundSynth  |  使用与调音手册")
+    run = p.add_run("VehicleSoundSynth V2  |  使用与调音手册")
     set_run_font(run, size=8.5, color=MUTED)
     set_paragraph_border_bottom(p, color="D7DBE2", size=6)
     footer = section.footer
@@ -458,7 +458,7 @@ def add_cover(doc: Document) -> None:
     title = doc.add_paragraph()
     title.alignment = WD_ALIGN_PARAGRAPH.CENTER
     title.paragraph_format.space_after = Pt(9)
-    run = title.add_run("VehicleSoundSynth")
+    run = title.add_run("VehicleSoundSynth V2")
     set_run_font(run, size=30, bold=True, color=INK_BLUE)
     subtitle = doc.add_paragraph()
     subtitle.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -468,22 +468,22 @@ def add_cover(doc: Document) -> None:
     desc = doc.add_paragraph()
     desc.alignment = WD_ALIGN_PARAGRAPH.CENTER
     desc.paragraph_format.space_after = Pt(74)
-    run = desc.add_run("三层动力声源 · 驾驶状态驱动 · 实时 DNA 混合 · 安全立体声输出")
+    run = desc.add_run("燃油生命周期 · 七速 DCT · 因果瞬态 · 四段总线 EQ")
     set_run_font(run, size=11.5, color=MUTED)
     meta = doc.add_paragraph()
     meta.alignment = WD_ALIGN_PARAGRAPH.CENTER
     meta.paragraph_format.space_after = Pt(4)
-    run = meta.add_run("手册版本 1.0  |  适用 Max 8.6.5  |  2026-08-06")
+    run = meta.add_run("手册版本 2.0  |  适用 Max 8.6.5  |  2026-08-07")
     set_run_font(run, size=10.5, bold=True, color=INK_BLUE)
     meta2 = doc.add_paragraph()
     meta2.alignment = WD_ALIGN_PARAGRAPH.CENTER
     meta2.paragraph_format.space_after = Pt(0)
-    run = meta2.add_run("音频系统基线：cfc59a0  |  项目分支：codex/vehicle-sound-mvp")
+    run = meta2.add_run("项目分支：codex/vehicle-sound-v2  |  V1 保持独立不变")
     set_run_font(run, size=9, italic=True, color=MUTED)
     doc.add_page_break()
 
 
-def build_document(output: Path) -> None:
+def build_v1_document(output: Path) -> None:
     doc = Document()
     configure_styles(doc)
     for section in doc.sections:
@@ -987,6 +987,208 @@ def build_document(output: Path) -> None:
         settings.append(update_fields)
     update_fields.set(qn("w:val"), "true")
 
+    output.parent.mkdir(parents=True, exist_ok=True)
+    doc.save(output)
+    audit_document(output)
+
+
+def build_document(output: Path) -> None:
+    """Build the V2 compact operator reference without overwriting the V1 manual."""
+    doc = Document()
+    configure_styles(doc)
+    configure_section(doc.sections[0])
+    add_running_furniture(doc.sections[0], first_page=True)
+    add_cover(doc)
+
+    add_heading(doc, "1. V2 是什么", 1)
+    add_text(
+        doc,
+        "VehicleSoundSynth V2 是面向 Max 8.6.5 的实时车辆声学工程。V2 保留 Future EV，新增可点火、可启动、可怠速的 V12/V10 燃油生命周期；内置驾驶模型使用七速 DCT，并把换挡削扭、升降挡冲击、进气回火、排气爆音与 crackle 放在同一条因果事件链上。",
+    )
+    add_callout(
+        doc,
+        "版本边界",
+        "V2 位于 VehicleSoundSynth-V2 文件夹，入口是 VehicleSoundSynth-V2.maxproj。不要用 V1 的 VehicleSoundSynth.maxproj 打开 V2；V1 文件夹应保持原样。",
+        kind="caution",
+    )
+    add_table(
+        doc,
+        ["层级", "模块", "职责"],
+        [
+            ["状态与生命周期", "drive_simulator / engine_controller", "速度、RPM、七速挡位、点火启动、换挡削扭与事件时序"],
+            ["连续声源", "powertrain~ / Gen", "EV、四冲程 V12、四冲程 V10；燃油声受 engine_running 门控"],
+            ["瞬态与环境", "transient~ / road_air~", "启动机、升降挡、回火、爆音、crackle 与受控路噪"],
+            ["座舱与播出", "cabin_master~ / mix_master~", "座舱宽度、四段 EQ、平滑旁路、总增益、最终 limiter/clip"],
+        ],
+        [1800, 2700, 4860],
+    )
+
+    add_heading(doc, "2. 第一次打开：按这个顺序", 1)
+    add_steps(
+        doc,
+        [
+            "先把监听音量调低。在 Finder 或 Max 中打开 VehicleSoundSynth-V2.maxproj，并等待 Project 窗口完成加载。",
+            "从同一个 Max 实例的 Project 窗口打开 main.maxpat。不要同时双击工程与 main，否则搜索路径可能尚未注册。",
+            "在 Preset 选择 High-Rev V12 或 Aggressive V10。",
+            "把 Ignition 打开，再单击 Engine Start。先确认启动机和怠速已经进入电平表。",
+            "最后打开顶部 Audio。它同时打开 60 ms 输出淡入和 ezdac~；关闭时会平滑淡出。",
+            "把 Drive Source 切到 Internal Auto，听完整的升挡、降挡、收油与回火过程。",
+        ],
+    )
+    add_callout(
+        doc,
+        "为什么燃油预设不会一选就响",
+        "V12/V10 默认 engine_running=0，这是有意设计。必须 Ignition=1 后触发 Start，约 500 ms 启动机阶段结束，连续燃烧声才淡入。Future EV 不受燃油生命周期门控。",
+        kind="info",
+    )
+
+    add_heading(doc, "3. 主界面控制", 1)
+    add_table(
+        doc,
+        ["控制", "范围/动作", "实际作用"],
+        [
+            ["Drive Source", "Manual / Auto / External", "选择内置手动、20 秒自动驾驶循环或 r vss.input 外部状态"],
+            ["Throttle / Brake", "0-1", "内置模型的加速与制动；Auto 模式会自动驱动"],
+            ["Preset", "EV / V12 / V10", "同时设置 engine_type、声源权重、宏参数与安全总线 trim"],
+            ["Ignition / Engine Start", "开关 / 按钮", "只启动燃油 profile；点火关闭会停止启动机与燃烧声"],
+            ["EV/V12/V10 Weight", "0-1", "连续混合三个声源；手动混合不自动归一化"],
+            ["五个宏", "0-1", "Aggression、Brightness、Body、Texture、Cabin Width"],
+            ["Global EQ", "四段", "Low Shelf、Low-Mid、High-Mid、High Shelf；峰值段带 Q"],
+            ["EQ Bypass / Master Trim", "0/1；-24..0 dB", "30 ms 平滑干湿旁路；50 ms 输出增益平滑"],
+        ],
+        [2100, 1900, 5360],
+    )
+
+    add_heading(doc, "4. V12/V10 声学与怠速", 1)
+    add_text(doc, "燃油 Gen 使用四冲程点火阶次：V12 主阶为 rpm/60×6，V10 主阶为 rpm/60×5。两者都加入 0.5 倍低阶、负载相关谐波、低速粗糙度与独立左右微差，使怠速不再像稳定的电机正弦波。")
+    add_table(
+        doc,
+        ["Profile", "默认怠速方向", "主要特征", "安全建议"],
+        [
+            ["High-Rev V12", "约 780 rpm", "较平顺的 6 阶点火、半阶车体感、随转速抬升的 2/3/5/8 次谐波", "先保持 Master Trim -7 dB；Body 0.60-0.78"],
+            ["Aggressive V10", "约 850 rpm", "更强半阶低频、5 阶点火、1.5/2.5 倍粗粝侧带", "先保持 Master Trim -7 dB；Texture 不要长期满值"],
+        ],
+        [1900, 1500, 3860, 2100],
+    )
+    add_bullets(
+        doc,
+        [
+            "待机必须能听到连续中低频，但不能依赖 limiter 把过响信号压平。",
+            "换挡时 shift_cut 会在约 90 ms 内把燃烧增益压到 0.22 后恢复。",
+            "Brightness 主要影响上部谐波；觉得像电车啸叫时，先减 0.05-0.15，而不是增加 Body。",
+        ],
+    )
+
+    add_heading(doc, "5. 七速 DCT 与因果瞬态", 1)
+    add_table(
+        doc,
+        ["事件", "触发原因", "声音结果"],
+        [
+            ["升挡", "profile 对应 RPM 超过上限且挡位 < 7", "shift_dir 1、升挡冲击变体、90 ms 削扭恢复"],
+            ["降挡", "RPM 低于下限且挡位 > 1", "shift_dir -1、降挡冲击、排气 pop 与后续 crackle"],
+            ["进气回火", "燃油 profile 下负载跨过 0.72", "intake_backfire 变体，约 90 ms 后复位"],
+            ["手动爆音", "exhaust_pop 1 或 pop 1", "排气 pop，随后稀疏 crackle；EV profile 会被 gate 阻止"],
+        ],
+        [1450, 3550, 4360],
+    )
+    add_text(doc, "V12 速比：3.10 / 2.13 / 1.62 / 1.29 / 1.03 / 0.84 / 0.70。V10 速比：3.13 / 2.10 / 1.52 / 1.20 / 0.94 / 0.76 / 0.62。事件样本采用 round-robin 变体，避免连续换挡或回火时出现完全相同的“机关枪”重复。")
+
+    add_heading(doc, "6. 四段总线 EQ 与高频控制", 1)
+    add_table(
+        doc,
+        ["频段", "默认", "用途", "常见调整"],
+        [
+            ["Low Shelf", "90 Hz / 0 dB", "车体重量、怠速底座", "缺重量可 +1~+3 dB；浑浊则减"],
+            ["Low-Mid", "250 Hz / 0 dB / Q 0.8", "座舱轰鸣与箱体感", "闷、堵时在 180~350 Hz 减 1~4 dB"],
+            ["High-Mid", "3.8 kHz / 0 dB / Q 1.0", "机械咬合、刺耳感", "优先在 2.5~5 kHz 减 1~5 dB"],
+            ["High Shelf", "9 kHz / 0 dB", "空气感与高频噪声", "高频偏多时从 -2~-6 dB 开始"],
+        ],
+        [1600, 2050, 2700, 3010],
+    )
+    add_callout(
+        doc,
+        "最终保护只有一处",
+        "信号顺序是 cabin_master~ → mix_master~ 四段 EQ/trim → omx.peaklim~ → ±0.891 clip~。cabin_master~ 不再二次限幅，避免动态被重复压扁。",
+        kind="info",
+    )
+    add_text(doc, "road_air~ 的最高速度增益从 0.32 降至 0.12，低通控制范围收窄为约 500-3500 Hz，lores~ 共振也降至 0.35。这样高速路噪仍存在，但不会覆盖 V12/V10 的中低频点火结构。")
+
+    add_heading(doc, "7. 外部状态接入", 1)
+    add_text(doc, "把命名消息发送到 s vss.input，并把 Drive Source 设为 External。vehicle_engine~ 仍保持一个控制 inlet 与两个立体声 outlet。")
+    add_code(
+        doc,
+        "engine_type v12     ignition 1          start 1\n"
+        "speed_kph 80.       rpm 4200.           throttle 0.55\n"
+        "brake 0.            load 0.62           accel 0.18\n"
+        "gear 4              shift_dir 1         shift 1\n"
+        "intake_backfire 1   exhaust_pop 1       click 1",
+    )
+    add_text(doc, "EQ 消息格式：")
+    add_code(
+        doc,
+        "eq_low 90. -2.\n"
+        "eq_lowmid 250. -2.5 0.8\n"
+        "eq_highmid 3800. -3. 1.0\n"
+        "eq_high 9000. -4.\n"
+        "eq_bypass 0\n"
+        "master_trim_db -7.",
+    )
+
+    add_heading(doc, "8. 验证与故障排查", 1)
+    add_table(
+        doc,
+        ["现象", "优先检查", "处理"],
+        [
+            ["燃油预设完全无声", "Ignition / Start / Audio", "先点火、启动，看到怠速电平后再开 Audio"],
+            ["No such object / gen patcher not found", "工程是否先打开", "从 VehicleSoundSynth-V2.maxproj 进入，同一实例再开 main"],
+            ["buffer~ can't open", "media 搜索路径", "确认 Project 的 media 搜索路径及所有生成 WAV 存在"],
+            ["高频噪声过多", "road_air、Brightness、High-Mid/High Shelf", "先削 3.8 kHz 与 9 kHz，再判断是否需要减 Texture"],
+            ["换挡没有声音", "是否由 drive 产生 shift_dir", "Auto 模式试听；外部接入应在挡位变化时发送短脉冲"],
+            ["声音很响或发硬", "Master Trim 与总线 EQ", "将 trim 退到 -9~-12 dB；不要把 limiter 当作响度控制"],
+        ],
+        [2200, 3000, 4160],
+    )
+    add_text(doc, "开发验证命令：")
+    add_code(
+        doc,
+        "cd /Users/saintpeter/Downloads/VehicleSoundSynth-V2\n"
+        "python3 tools/build_project.py --output-root .\n"
+        "python3 -m unittest discover -s tests -v\n"
+        "python3 tools/audio_metrics.py <render.wav> --max-peak-dbfs -1 --min-rms-dbfs -60 --max-high-ratio 0.20",
+    )
+    add_bullets(
+        doc,
+        [
+            "Max Console 不应出现 invalid category、No such object、could not find gen patcher 或 patchcord outlet out of range。",
+            "冷启动应无爆音；燃油 idle、加速、升挡、降挡、回火与滑行应分别试听。",
+            "用 audio_metrics.py 对录音检查 peak、RMS、crest、40-500 Hz 与 6-20 kHz 能量占比。",
+        ],
+    )
+
+    for paragraph in doc.paragraphs:
+        for run in paragraph.runs:
+            if run.font.name is None:
+                set_run_font(run)
+    for table in doc.tables:
+        for row in table.rows:
+            for cell in row.cells:
+                for paragraph in cell.paragraphs:
+                    for run in paragraph.runs:
+                        if run.font.name is None:
+                            set_run_font(run)
+
+    core = doc.core_properties
+    core.title = "VehicleSoundSynth V2 完整使用与调音手册"
+    core.subject = "Max/MSP 燃油车辆声学、七速 DCT、因果瞬态与四段总线 EQ"
+    core.author = "VehicleSoundSynth Project"
+    core.keywords = "Max/MSP, Vehicle Sound, V12, V10, DCT, EQ, 使用手册"
+    core.comments = "Generated for VehicleSoundSynth V2; V1 manual remains unchanged."
+    settings = doc.settings.element
+    update_fields = settings.find(qn("w:updateFields"))
+    if update_fields is None:
+        update_fields = OxmlElement("w:updateFields")
+        settings.append(update_fields)
+    update_fields.set(qn("w:val"), "true")
     output.parent.mkdir(parents=True, exist_ok=True)
     doc.save(output)
     audit_document(output)

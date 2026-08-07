@@ -4,6 +4,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import wave
 from pathlib import Path
 
 
@@ -15,9 +16,97 @@ class VehicleSoundProjectTests(unittest.TestCase):
         with (ROOT / relative_path).open(encoding="utf-8") as handle:
             return json.load(handle)
 
+    def test_v2_project_identity_and_public_entrypoint(self):
+        project_path = ROOT / "VehicleSoundSynth-V2.maxproj"
+        self.assertTrue(project_path.is_file())
+        project = self.load_json("VehicleSoundSynth-V2.maxproj")
+        self.assertEqual("VehicleSoundSynth-V2", project["name"])
+        self.assertTrue((ROOT / "main.maxpat").is_file())
+
+    def test_v2_public_engine_contract_covers_lifecycle_events_and_master_eq(self):
+        engine = self.load_json("patchers/vehicle_engine~.maxpat")
+        text = "\n".join(item["box"].get("text", "") for item in engine["patcher"]["boxes"])
+        for name in (
+            "engine_type",
+            "ignition",
+            "start",
+            "shift_dir",
+            "intake_backfire",
+            "exhaust_pop",
+            "eq_low",
+            "eq_lowmid",
+            "eq_highmid",
+            "eq_high",
+            "eq_bypass",
+            "master_trim_db",
+        ):
+            self.assertIn(name, text)
+
+    def test_v2_engine_routes_through_lifecycle_and_final_mix_modules(self):
+        engine = self.load_json("patchers/vehicle_engine~.maxpat")
+        text = "\n".join(item["box"].get("text", "") for item in engine["patcher"]["boxes"])
+        self.assertIn("engine_controller", text)
+        self.assertIn("mix_master~", text)
+        self.assertTrue((ROOT / "patchers" / "engine_controller.maxpat").is_file())
+        self.assertTrue((ROOT / "patchers" / "mix_master~.maxpat").is_file())
+
+    def test_v2_fuel_generators_expose_running_and_shift_envelopes(self):
+        for name in ("v12_powertrain", "v10_powertrain"):
+            patcher = self.load_json(f"gen/{name}.gendsp")["patcher"]
+            code = "\n".join(item["box"].get("code", "") for item in patcher["boxes"])
+            for parameter in ("engine_running", "combustion_gain", "shift_cut"):
+                self.assertIn(f"Param {parameter}", code)
+            self.assertIn("sub = cycle", code)
+            self.assertIn("idle", code)
+
+    def test_v2_internal_drive_model_exposes_seven_speed_dct_events(self):
+        drive = self.load_json("patchers/drive_simulator.maxpat")
+        text = "\n".join(item["box"].get("text", "") for item in drive["patcher"]["boxes"])
+        for token in (
+            "7-speed DCT",
+            "engine_type",
+            "clip 1 7",
+            "shift_dir -1",
+            "shift_dir 1",
+            "3.10 2.13 1.62 1.29 1.03 0.84 0.70",
+            "3.13 2.10 1.52 1.20 0.94 0.76 0.62",
+        ):
+            self.assertIn(token, text)
+
+    def test_v2_generated_transient_families_have_deterministic_variants(self):
+        expected_minimums = {
+            "starter_*.wav": 2,
+            "shift_up_*.wav": 3,
+            "shift_down_*.wav": 3,
+            "intake_backfire_*.wav": 3,
+            "exhaust_pop_*.wav": 4,
+            "exhaust_crackle_*.wav": 3,
+        }
+        for pattern, minimum in expected_minimums.items():
+            self.assertGreaterEqual(len(list((ROOT / "media").glob(pattern))), minimum, pattern)
+        transient = self.load_json("patchers/transient~.maxpat")
+        text = "\n".join(item["box"].get("text", "") for item in transient["patcher"]["boxes"])
+        for event in ("starter", "shift_dir", "intake_backfire", "exhaust_pop", "crackle"):
+            self.assertIn(event, text)
+
+    def test_v2_combustion_events_are_causal_and_profile_gated(self):
+        drive = self.load_json("patchers/drive_simulator.maxpat")
+        drive_text = "\n".join(item["box"].get("text", "") for item in drive["patcher"]["boxes"])
+        self.assertIn("> 0.72", drive_text)
+        self.assertIn("intake_backfire 1", drive_text)
+
+        controller = self.load_json("patchers/engine_controller.maxpat")
+        controller_text = "\n".join(item["box"].get("text", "") for item in controller["patcher"]["boxes"])
+        self.assertIn("exhaust_pop 1", controller_text)
+        self.assertIn("crackle 1", controller_text)
+
+        transient = self.load_json("patchers/transient~.maxpat")
+        transient_text = "\n".join(item["box"].get("text", "") for item in transient["patcher"]["boxes"])
+        self.assertIn("gate 1", transient_text)
+
     def test_runnable_project_has_public_engine_interface(self):
         required = [
-            "VehicleSoundSynth.maxproj",
+            "VehicleSoundSynth-V2.maxproj",
             "main.maxpat",
             "patchers/vehicle_engine~.maxpat",
         ]
@@ -41,10 +130,16 @@ class VehicleSoundProjectTests(unittest.TestCase):
     def test_three_distinct_presets_and_macro_contract(self):
         presets = self.load_json("presets/sound_dna.json")
         self.assertEqual({"Future EV", "High-Rev V12", "Aggressive V10"}, set(presets))
-        expected = {"ev_weight", "v12_weight", "v10_weight", "aggression", "brightness", "body", "texture", "cabin_width"}
+        expected = {
+            "engine_type", "ev_weight", "v12_weight", "v10_weight", "aggression",
+            "brightness", "body", "texture", "cabin_width", "master_trim_db",
+        }
         for values in presets.values():
             self.assertEqual(expected, set(values))
-            self.assertTrue(all(0.0 <= value <= 1.0 for value in values.values()))
+            self.assertIn(values["engine_type"], {"ev", "v12", "v10"})
+            bounded = {key: value for key, value in values.items() if key not in {"engine_type", "master_trim_db"}}
+            self.assertTrue(all(0.0 <= value <= 1.0 for value in bounded.values()))
+            self.assertTrue(-24.0 <= values["master_trim_db"] <= 0.0)
 
     def test_engine_accepts_the_documented_state_and_macro_messages(self):
         engine = self.load_json("patchers/vehicle_engine~.maxpat")
@@ -65,22 +160,31 @@ class VehicleSoundProjectTests(unittest.TestCase):
                 self.assertEqual(48000, wav.getframerate())
                 self.assertLess(wav.getnframes(), 24000)
 
-    def test_output_chain_contains_peak_protection_and_starts_muted(self):
+    def test_output_chain_has_single_final_eq_and_peak_protection_stage(self):
         cabin = self.load_json("patchers/cabin_master~.maxpat")
-        cabin_boxes = {item["box"]["id"]: item["box"] for item in cabin["patcher"]["boxes"]}
-        cabin_text = "\n".join(box.get("text", "") for box in cabin_boxes.values())
-        self.assertIn("omx.peaklim~", cabin_text)
-        self.assertIn("clip~ -0.891 0.891", cabin_text)
-        cabin_cords = {
+        cabin_text = "\n".join(item["box"].get("text", "") for item in cabin["patcher"]["boxes"])
+        self.assertNotIn("omx.peaklim~", cabin_text)
+        self.assertNotIn("clip~ -0.891 0.891", cabin_text)
+
+        mix = self.load_json("patchers/mix_master~.maxpat")
+        mix_boxes = {item["box"]["id"]: item["box"] for item in mix["patcher"]["boxes"]}
+        mix_text = "\n".join(box.get("text", "") for box in mix_boxes.values())
+        self.assertEqual(4, sum(box["maxclass"] == "filtergraph~" for box in mix_boxes.values()))
+        self.assertEqual(8, sum(box.get("text") == "biquad~" for box in mix_boxes.values()))
+        for token in ("eq_low", "eq_lowmid", "eq_highmid", "eq_high", "eq_bypass", "master_trim_db"):
+            self.assertIn(token, mix_text)
+        limiter = next(box["id"] for box in mix_boxes.values() if box.get("text") == "omx.peaklim~")
+        clippers = {box["id"] for box in mix_boxes.values() if box.get("text") == "clip~ -0.891 0.891"}
+        outlets = {box["id"] for box in mix_boxes.values() if box["maxclass"] == "outlet"}
+        mix_cords = {
             (line["patchline"]["source"][0], line["patchline"]["destination"][0])
-            for line in cabin["patcher"]["lines"]
+            for line in mix["patcher"]["lines"]
         }
-        limiter = next(box["id"] for box in cabin_boxes.values() if box.get("text") == "omx.peaklim~")
-        clippers = {box["id"] for box in cabin_boxes.values() if box.get("text") == "clip~ -0.891 0.891"}
-        outlets = {box["id"] for box in cabin_boxes.values() if box["maxclass"] == "outlet"}
         self.assertEqual(2, len(clippers))
-        self.assertTrue(all((limiter, clipper) in cabin_cords for clipper in clippers))
-        self.assertTrue(all(any((clipper, outlet) in cabin_cords for outlet in outlets) for clipper in clippers))
+        self.assertTrue(all((limiter, clipper) in mix_cords for clipper in clippers))
+        self.assertTrue(all(any((clipper, outlet) in mix_cords for outlet in outlets) for clipper in clippers))
+
+    def test_demo_starts_muted(self):
 
         main = self.load_json("main.maxpat")
         main_boxes = {item["box"]["id"]: item["box"] for item in main["patcher"]["boxes"]}
@@ -114,6 +218,14 @@ class VehicleSoundProjectTests(unittest.TestCase):
             patcher = self.load_json(path.relative_to(ROOT))["patcher"]
             boxes = {item["box"]["id"]: item["box"] for item in patcher["boxes"]}
             self.assertEqual(len(patcher["boxes"]), len(boxes), path.name)
+            cords = [
+                (
+                    tuple(item["patchline"]["source"]),
+                    tuple(item["patchline"]["destination"]),
+                )
+                for item in patcher["lines"]
+            ]
+            self.assertEqual(len(cords), len(set(cords)), f"{path.name}: duplicate patchcord")
             for item in patcher["lines"]:
                 line = item["patchline"]
                 source_id, source_outlet = line["source"]
@@ -122,6 +234,14 @@ class VehicleSoundProjectTests(unittest.TestCase):
                 self.assertIn(destination_id, boxes, f"{path.name}: {destination_id}")
                 self.assertLess(source_outlet, boxes[source_id]["numoutlets"], path.name)
                 self.assertLess(destination_inlet, boxes[destination_id]["numinlets"], path.name)
+
+    def test_expr_objects_stay_below_max_argument_truncation_limit(self):
+        patchers = list(ROOT.glob("*.maxpat")) + list((ROOT / "patchers").glob("*.maxpat"))
+        for path in patchers:
+            for item in self.load_json(path.relative_to(ROOT))["patcher"]["boxes"]:
+                text = item["box"].get("text", "")
+                if text.startswith("expr "):
+                    self.assertLess(len(text), 240, f"{path.name}: {text}")
 
     def test_gen_patchers_expose_bounded_required_parameters(self):
         required = {"rpm", "throttle", "load", "aggression", "brightness", "body", "texture"}
@@ -151,7 +271,7 @@ class VehicleSoundProjectTests(unittest.TestCase):
             self.assertTrue(output_ids.issubset(destinations), path.name)
 
     def test_project_search_path_schema_and_runtime_resources_are_declared(self):
-        project = self.load_json("VehicleSoundSynth.maxproj")
+        project = self.load_json("VehicleSoundSynth-V2.maxproj")
         # Max 8.6.x expects a dictionary here and can crash while opening a
         # project whose searchpath is encoded as an array. Explicit relative
         # paths avoid collisions with Max's own patchers/gen/media folders.
@@ -171,10 +291,12 @@ class VehicleSoundProjectTests(unittest.TestCase):
         required = {
             "main.maxpat",
             "patchers/vehicle_engine~.maxpat",
+            "patchers/engine_controller.maxpat",
             "patchers/powertrain~.maxpat",
             "patchers/transient~.maxpat",
             "patchers/road_air~.maxpat",
             "patchers/cabin_master~.maxpat",
+            "patchers/mix_master~.maxpat",
             "patchers/drive_simulator.maxpat",
             "gen/ev_powertrain.gendsp",
             "gen/v12_powertrain.gendsp",
@@ -210,8 +332,15 @@ class VehicleSoundProjectTests(unittest.TestCase):
 
         engine = self.load_json("patchers/vehicle_engine~.maxpat")
         engine_text = "\n".join(item["box"].get("text", "") for item in engine["patcher"]["boxes"])
-        for abstraction in ("powertrain~", "transient~", "road_air~", "cabin_master~"):
+        for abstraction in ("engine_controller", "powertrain~", "transient~", "road_air~", "cabin_master~", "mix_master~"):
             self.assertIn(abstraction, engine_text)
+
+    def test_road_noise_is_subordinate_and_high_frequency_controlled(self):
+        road = self.load_json("patchers/road_air~.maxpat")
+        text = "\n".join(item["box"].get("text", "") for item in road["patcher"]["boxes"])
+        self.assertIn("* 0.12", text)
+        self.assertIn("500. + 3000.*", text)
+        self.assertIn("lores~ 1800 0.35", text)
 
     def test_demo_opens_with_visible_controls_and_internal_source_selected(self):
         patcher = self.load_json("main.maxpat")["patcher"]
@@ -227,6 +356,30 @@ class VehicleSoundProjectTests(unittest.TestCase):
             if line["patchline"]["destination"][0] == mode["id"]
         ]
         self.assertTrue(any(boxes[source].get("text") == "loadmess 0" for source in incoming))
+
+    def test_v2_demo_exposes_lifecycle_dct_and_global_eq_controls(self):
+        main = self.load_json("main.maxpat")
+        text = "\n".join(item["box"].get("text", "") for item in main["patcher"]["boxes"])
+        for token in (
+            "VehicleSoundSynth V2",
+            "Ignition",
+            "Engine Start",
+            "prepend ignition",
+            "prepend start",
+            "7-speed DCT",
+            "Low Shelf",
+            "Low-Mid",
+            "High-Mid",
+            "High Shelf",
+            "EQ Bypass",
+            "Master Trim",
+            "prepend eq_low",
+            "prepend eq_lowmid",
+            "prepend eq_highmid",
+            "prepend eq_high",
+            "prepend master_trim_db",
+        ):
+            self.assertIn(token, text)
 
     def test_generator_is_deterministic(self):
         def build_and_hash(destination):
@@ -247,6 +400,47 @@ class VehicleSoundProjectTests(unittest.TestCase):
             second_hashes = build_and_hash(Path(second))
         self.assertEqual(first_hashes, second_hashes)
         self.assertIn("main.maxpat", first_hashes)
+
+    def test_audio_metrics_distinguish_low_engine_energy_from_high_noise(self):
+        sys.path.insert(0, str(ROOT / "tools"))
+        from audio_metrics import analyze
+
+        def write_tone(path, frequency):
+            import math
+            import struct
+
+            sample_rate = 48000
+            frames = sample_rate
+            values = [
+                round(0.25 * math.sin(2.0 * math.pi * frequency * index / sample_rate) * 32767.0)
+                for index in range(frames)
+            ]
+            with wave.open(str(path), "wb") as handle:
+                handle.setnchannels(1)
+                handle.setsampwidth(2)
+                handle.setframerate(sample_rate)
+                handle.writeframes(b"".join(struct.pack("<h", value) for value in values))
+
+        with tempfile.TemporaryDirectory() as directory:
+            low_path = Path(directory) / "low.wav"
+            high_path = Path(directory) / "high.wav"
+            write_tone(low_path, 120.0)
+            write_tone(high_path, 8000.0)
+            low = analyze(low_path)
+            high = analyze(high_path)
+        self.assertGreater(low["low_mid_ratio"], 0.99)
+        self.assertLess(low["high_ratio"], 0.01)
+        self.assertGreater(high["high_ratio"], 0.99)
+
+    def test_generated_combustion_transients_are_not_high_frequency_dominated(self):
+        sys.path.insert(0, str(ROOT / "tools"))
+        from audio_metrics import analyze
+
+        patterns = ("starter_*.wav", "intake_backfire_*.wav", "exhaust_pop_*.wav", "exhaust_crackle_*.wav")
+        for pattern in patterns:
+            for path in (ROOT / "media").glob(pattern):
+                metrics = analyze(path)
+                self.assertLess(metrics["high_ratio"], 0.20, path.name)
 
 
 if __name__ == "__main__":

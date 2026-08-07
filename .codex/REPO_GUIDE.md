@@ -1,8 +1,9 @@
-# VehicleSoundSynth Repository Guide
+# VehicleSoundSynth V2 Repository Guide
 
 ## Purpose
 
-Max 8.6.5 vehicle-sound MVP with three continuously morphable archetypes. The
+Max 8.6.5 vehicle-sound V2 with isolated EV and combustion lifecycles, credible
+V12/V10 archetypes, a seven-speed DCT event model, and a global master EQ. The
 project is generator-owned and uses built-in Max/MSP/Gen objects only.
 
 ## First Reads
@@ -23,8 +24,9 @@ project is generator-owned and uses built-in Max/MSP/Gen objects only.
 ## Commands
 
 ```sh
-python3 tools/build_project.py
+python3 tools/build_project.py --output-root .
 python3 -m unittest discover -s tests -v
+python3 tools/audio_metrics.py render.wav --max-peak-dbfs -1 --min-rms-dbfs -60 --max-high-ratio 0.20
 ```
 
 Regenerate twice and compare hashes when generator determinism matters. Never
@@ -38,17 +40,20 @@ On macOS, Max writes load diagnostics to
 
 ## Runtime State
 
-- The working tree fixes the Max 8.6.5 load failures from HEAD `7dada34`:
-  project categories/search paths, unsupported expressions/objects, DSP control,
-  `slide` arguments, and explicit Gen `out 1` / `out 2` ports.
-- A fresh Max 8.6.5 project load completes with zero errors and zero warnings.
-- An automated two-channel engine recording measured non-zero output
-  (`RMS=3713`, `Peak=18159` at 48 kHz).
+- V2 starts from the verified V1 runtime-fix commit `594acd1`.
+- Implemented flow: lifecycle/state controller → continuous/event/road layers
+  → cabin → four-band master EQ → one final limiter/clip stage.
+- `tools/build_runtime_probe.py` builds a monitor-muted Max recording patch;
+  flatten patchers and Gen files into its temporary bundle before runtime use.
+- Latest Max 8.6.5 project/main load completed with zero Console errors. The
+  monitor-muted V12 idle probe measured peak `-25.78 dBFS`, RMS `-35.33 dBFS`,
+  and `67.99%` energy from 40–500 Hz.
 - Open the project first and main second in the same Max instance; opening both
   files simultaneously can race project search-path registration.
 
 ## Repository State
 
-- Branch: `codex/vehicle-sound-mvp`; initial MVP commit is the local baseline.
+- Branch: `codex/vehicle-sound-v2`; V1 commit `594acd1` is the local baseline.
 - Remote: none.
 - Avoid cache files such as `tests/__pycache__/`.
+- Never edit the sibling V1 repository while implementing V2.

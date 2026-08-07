@@ -5,7 +5,8 @@
 AGENTS.md
 PROJECT_HANDOFF.md
 README.md
-VehicleSoundSynth.maxproj
+VehicleSoundSynth-V2.maxproj
+"VehicleSoundSynthV2_\345\256\214\346\225\264\344\275\277\347\224\250\346\211\213\345\206\214.docx"
 "VehicleSoundSynth_\345\256\214\346\225\264\344\275\277\347\224\250\346\211\213\345\206\214.docx"
 gen/ev_powertrain.gendsp
 gen/v10_powertrain.gendsp
@@ -13,11 +14,15 @@ gen/v12_powertrain.gendsp
 main.maxpat
 patchers/cabin_master~.maxpat
 patchers/drive_simulator.maxpat
+patchers/engine_controller.maxpat
+patchers/mix_master~.maxpat
 patchers/powertrain~.maxpat
 patchers/road_air~.maxpat
 patchers/transient~.maxpat
 patchers/vehicle_engine~.maxpat
 presets/sound_dna.json
 tests/test_project.py
+tools/audio_metrics.py
 tools/build_project.py
+tools/build_runtime_probe.py
 tools/build_user_manual.py

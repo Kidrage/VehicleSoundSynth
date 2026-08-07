@@ -5,17 +5,17 @@
 
 ## Repository Identity
 
-- Repository ID: `VehicleSoundSynth-529320b305be`
+- Repository ID: `VehicleSoundSynth-V2-e4c8994a8fe9`
 - Working root: `.`
-- Repository name: `VehicleSoundSynth`
+- Repository name: `VehicleSoundSynth-V2`
 - Git repository: `true`
-- Generated at: `2026-08-06T11:05:06.754166+00:00`
+- Generated at: `2026-08-07T01:43:36.090956+00:00`
 
 ## Current State
 
-- Branch: `codex/vehicle-sound-mvp`
-- HEAD: `7dada34`
-- Indexed paths: 27
+- Branch: `codex/vehicle-sound-v2`
+- HEAD: `594acd1`
+- Indexed paths: 26
 - Inventory truncated: `false`
 - Inaccessible paths: 0
 - Scan mode: complete path/metadata inventory; no bulk content read; no symlink traversal.
@@ -43,7 +43,7 @@
 
 | Route | Files |
 |---|---:|
-| `.` | 8 |
+| `.` | 7 |
 | `patchers` | 6 |
 | `.codex` | 3 |
 | `gen` | 3 |
@@ -58,14 +58,14 @@
 
 - audio: 3 files, 38532 bytes
 - code: 3 files, 100086 bytes
-- literature: 8 files, 111018 bytes
+- literature: 7 files, 68087 bytes
 - other: 12 files, 167505 bytes
 - structured_data: 1 files, 612 bytes
 
 ### Common Extensions
 
 - `.maxpat`: 7
-- `.md`: 5
+- `.md`: 4
 - `.gendsp`: 3
 - `.wav`: 3
 - `.py`: 3
@@ -86,6 +86,7 @@
 
 ## Change History
 
+- `594acd1 2026-08-06 fix: make generated Max project produce audio`
 - `7dada34 2026-08-06 fix: use Max-compatible project search path schema`
 - `e1cc86c 2026-08-06 docs: refresh project handoff`
 - `ed5201e 2026-08-06 docs: add complete VehicleSoundSynth user manual`
@@ -94,24 +95,10 @@
 
 ## Current Changes
 
-- `## codex/vehicle-sound-mvp`
+- `## codex/vehicle-sound-v2`
 - ` M .codex/REPO_GUIDE.md`
-- ` M .codex/repo_files.txt`
 - ` M .codex/source_index.txt`
 - ` M AGENTS.md`
-- ` M PROJECT_HANDOFF.md`
-- ` M README.md`
-- ` M VehicleSoundSynth.maxproj`
-- ` M "VehicleSoundSynth_\345\256\214\346\225\264\344\275\277\347\224\250\346\211\213\345\206\214.docx"`
-- ` M gen/ev_powertrain.gendsp`
-- ` M gen/v10_powertrain.gendsp`
-- ` M gen/v12_powertrain.gendsp`
-- ` M main.maxpat`
-- ` M patchers/drive_simulator.maxpat`
-- ` M patchers/road_air~.maxpat`
-- ` M tests/test_project.py`
-- ` M tools/build_project.py`
-- `?? "MaxMSP_\347\224\265\345\212\250\350\275\246\350\266\205\350\267\221\345\243\260\346\265\252\345\220\210\346\210\220\345\231\250\346\226\271\346\241\210.md"`
 
 ## Related Repositories
 
@@ -131,7 +118,6 @@
 - `.codex/repo_files.txt`
 - `.codex/source_index.txt`
 - `AGENTS.md`
-- `MaxMSP_电动车超跑声浪合成器方案.md`
 - `PROJECT_HANDOFF.md`
 - `README.md`
 - `VehicleSoundSynth_完整使用手册.docx`
@@ -163,12 +149,13 @@
 ## Agent Notes
 
 <!-- AGENT_NOTES_START -->
-- Complete Chinese operator and realism-tuning manual: `VehicleSoundSynth_完整使用手册.docx`.
-- Rebuild the manual with `tools/build_user_manual.py` in an environment that provides `python-docx`.
-- Manual validation completed: DOCX structural audit, 10-page render review, and all 12 project tests passed.
-- `MaxMSP_电动车超跑声浪合成器方案.md` is user-owned, untracked source material; preserve it unless explicitly asked to add it.
-- Runtime fix after HEAD `7dada34`: nested Max project categories plus explicit `./` search paths, Max-compatible `switch`/`svf~` and expressions, direct toggle-to-`ezdac~` control, valid `slide` arguments, and explicit Gen `out 1` / `out 2` ports.
-- Verification: 13 Python tests pass; fresh Max 8.6.5 project load has zero errors/warnings; automated 48 kHz stereo recording measured non-zero engine output (`RMS=3713`, `Peak=18159`). Open the project first, then main in the same Max instance to avoid a search-path registration race.
+- V2 is independent from the sibling V1 repository and uses `VehicleSoundSynth-V2.maxproj`; the folder and project filename must match for Max 8.6.5.
+- Implemented combustion lifecycle for V12/V10: ignition, starter, engine-running gate, idle body, load-dependent harmonics, and 90 ms DCT shift cut/recovery.
+- Implemented profile-aware seven-speed DCT plus round-robin starter, up/down shift, intake backfire, exhaust pop, and crackle families. Combustion-only events are gated out of Future EV.
+- Implemented quieter road/air noise and `mix_master~`: four-band stereo EQ, click-safe bypass, -24..0 dB trim, and the sole final limiter/clip stage.
+- Primary operator documentation is `VehicleSoundSynthV2_完整使用手册.docx`; the V1 manual remains as a reference copy and is not overwritten.
+- Validation: 26 Python tests pass; fresh Max 8.6.5 project and main loads produce zero Console errors/warnings. A monitor-muted V12 idle render measured peak -25.78 dBFS, RMS -35.33 dBFS, high-frequency ratio 0.000005%, and 40-500 Hz ratio 67.99%.
+- The standard DOCX renderer could not run because LibreOffice/soffice is absent; the V2 manual passed its deterministic OOXML structural audit but still needs optional page-image QA on a host with LibreOffice.
 <!-- AGENT_NOTES_END -->
 
 ## Mandatory Update Rule

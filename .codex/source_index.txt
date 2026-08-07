@@ -1,8 +1,8 @@
 # Source Index
 
-Repository: /Users/saintpeter/Downloads/VehicleSoundSynth
-Tracked filtered files: 23
-High-value indexed files: 8
+Repository: /Users/saintpeter/Downloads/VehicleSoundSynth-V2
+Tracked filtered files: 28
+High-value indexed files: 10
 
 Read this file before broad repository exploration. Prefer focused `rg`
 or `git grep` against the listed areas before opening source files.
@@ -14,7 +14,9 @@ or `git grep` against the listed areas before opening source files.
 
 ## source
 
+- tools/audio_metrics.py
 - tools/build_project.py
+- tools/build_runtime_probe.py
 - tools/build_user_manual.py
 
 ## tests

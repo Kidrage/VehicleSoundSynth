@@ -4,7 +4,9 @@
     "body": 0.84,
     "brightness": 0.66,
     "cabin_width": 0.56,
+    "engine_type": "v10",
     "ev_weight": 0.0,
+    "master_trim_db": -7.0,
     "texture": 0.86,
     "v10_weight": 1.0,
     "v12_weight": 0.0
@@ -14,7 +16,9 @@
     "body": 0.34,
     "brightness": 0.72,
     "cabin_width": 0.82,
+    "engine_type": "ev",
     "ev_weight": 1.0,
+    "master_trim_db": -8.0,
     "texture": 0.2,
     "v10_weight": 0.0,
     "v12_weight": 0.0
@@ -24,7 +28,9 @@
     "body": 0.72,
     "brightness": 0.78,
     "cabin_width": 0.64,
+    "engine_type": "v12",
     "ev_weight": 0.0,
+    "master_trim_db": -7.0,
     "texture": 0.52,
     "v10_weight": 0.0,
     "v12_weight": 1.0

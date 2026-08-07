@@ -1,45 +1,69 @@
-# VehicleSoundSynth
+# VehicleSoundSynth V2
 
-A compact Max/MSP vehicle-acoustics prototype with three morphable sound identities:
-Future EV, High-Rev V12, and Aggressive V10.
+Max/MSP 8.6.5 vehicle-acoustics project with an EV profile plus lifecycle-gated
+V12 and V10 combustion profiles. V2 adds ignition/start/idle behavior, a
+profile-aware seven-speed DCT, causal shift and backfire events, quieter road
+noise, and a final four-band stereo EQ.
 
-The project targets Max 8.6.5 and uses only built-in Max/MSP/Gen objects. Open
-`VehicleSoundSynth.maxproj`, wait for the Project window to finish loading, then
-open `main.maxpat` from that same Max instance. Do not launch the project and
-main simultaneously: main can otherwise load before the project search paths.
-Audio is deliberately off at startup; click the top audio toggle when your
-output level is safe. It enables both the output ramp and `ezdac~`.
+Open `VehicleSoundSynth-V2.maxproj` first, wait for its Project window to load,
+then open `main.maxpat` from that same Max instance. Audio starts muted.
 
-完整的中文操作、参数与拟真调音说明见
-[`VehicleSoundSynth_完整使用手册.docx`](VehicleSoundSynth_完整使用手册.docx)。
+完整中文操作说明见
+[`VehicleSoundSynthV2_完整使用手册.docx`](VehicleSoundSynthV2_完整使用手册.docx)。
+V2 目录内保留的 `VehicleSoundSynth_完整使用手册.docx` 是 V1 参考文档。
 
-## Controls
+## Quick start
 
-- **State source**: Internal uses the built-in drive model; External listens on
-  `vss.input` for named Max messages.
-- **Throttle / Brake / Auto Drive**: drive the internal state generator.
-- **Preset**: selects one of the three archetypes.
-- **EV / V12 / V10 weights**: continuously blend identities.
-- **Aggression / Brightness / Body / Texture / Cabin Width**: sound-design macros.
+1. Lower monitoring level and open `VehicleSoundSynth-V2.maxproj`.
+2. Open `main.maxpat` from the loaded project.
+3. Select `High-Rev V12` or `Aggressive V10`.
+4. Enable `Ignition`, click `Engine Start`, and confirm idle reaches the meters.
+5. Enable `Audio`; use `Internal Auto` to audition the seven-speed DCT.
 
-External state messages accepted by the engine:
+Future EV does not require the combustion ignition/start lifecycle.
+
+## Public control messages
 
 ```text
+engine_type ev|v12|v10
+ignition 0|1
+start 1
 speed_kph 0..300
 rpm 0..10000
 throttle 0..1
 brake 0..1
 load -1..1
 accel -1..1
-gear 0..6
+gear 1..7
 shift 0|1
+shift_dir -1|1
+intake_backfire 0|1
+exhaust_pop 0|1
 pop 0|1
 click 0|1
 ```
 
-Regenerate generated assets and run validation:
+Global EQ and output controls:
+
+```text
+eq_low <frequency_hz> <gain_db>
+eq_lowmid <frequency_hz> <gain_db> <q>
+eq_highmid <frequency_hz> <gain_db> <q>
+eq_high <frequency_hz> <gain_db>
+eq_bypass 0|1
+master_trim_db -24..0
+```
+
+## Regeneration and validation
+
+Generated `.maxpat`, `.gendsp`, preset, and media files are owned by
+`tools/build_project.py` and should not be hand-edited.
 
 ```sh
-python3 tools/build_project.py
+python3 tools/build_project.py --output-root .
 python3 -m unittest discover -s tests -v
+python3 tools/audio_metrics.py render.wav --max-peak-dbfs -1 --min-rms-dbfs -60 --max-high-ratio 0.20
 ```
+
+The signal ends in `mix_master~`: four serial stereo EQ bands, click-safe
+dry/wet bypass, master trim, `omx.peaklim~`, and `clip~ -0.891 0.891`.
