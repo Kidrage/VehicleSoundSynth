@@ -20,7 +20,7 @@ APP_VERSION = {
     "architecture": "x64",
     "modernui": 1,
 }
-PROJECT_NAME = "VehicleSoundSynth-V2"
+PROJECT_NAME = "VehicleSoundSynth-V3"
 PROJECT_FILENAME = f"{PROJECT_NAME}.maxproj"
 
 STATE_NAMES = (
@@ -50,6 +50,9 @@ MACRO_NAMES = (
     "body",
     "texture",
     "cabin_width",
+    "cabin_rumble",
+    "exhaust_boom",
+    "structure_vibration",
     "eq_low",
     "eq_lowmid",
     "eq_highmid",
@@ -219,43 +222,51 @@ def route(patch: Patcher, names: tuple[str, ...], x: float, y: float, width: flo
 
 
 def make_engine() -> dict[str, Any]:
-    p = Patcher(1180, 720)
+    p = Patcher(1320, 760)
     p.comment("vehicle_engine~ — lifecycle-aware public seam and layered stereo renderer", 25, 15, 620)
     control = inlet(p, 45, 65)
     controller = p.new("engine_controller", 45, 105, 125, numinlets=1, numoutlets=1)
-    fan = p.new("t l l l l l l", 45, 150, 120, numinlets=1, numoutlets=6)
+    fan = p.new("t l l l l l l l", 45, 150, 135, numinlets=1, numoutlets=7)
     contract = route(p, ALL_MESSAGES, 190, 150, 900)
     p.comment("Contract monitor: every documented state, event, macro, and mix message is accepted", 190, 185, 620)
     power = p.new("powertrain~", 95, 260, 95, numinlets=1, numoutlets=2)
     transient = p.new("transient~", 285, 260, 90, numinlets=1, numoutlets=2)
     road = p.new("road_air~", 465, 260, 85, numinlets=1, numoutlets=2)
-    cabin = p.new("cabin_master~", 690, 420, 110, numinlets=3, numoutlets=2)
-    mix = p.new("mix_master~", 870, 530, 100, numinlets=3, numoutlets=2)
+    rumble = p.new("cabin_rumble~", 625, 260, 110, numinlets=1, numoutlets=2)
+    cabin = p.new("cabin_master~", 800, 460, 110, numinlets=3, numoutlets=2)
+    mix = p.new("mix_master~", 1010, 570, 100, numinlets=3, numoutlets=2)
     add_l1 = p.new("+~", 130, 350, 35, numinlets=2, numoutlets=1)
     add_l2 = p.new("+~", 235, 390, 35, numinlets=2, numoutlets=1)
+    add_l3 = p.new("+~", 340, 430, 35, numinlets=2, numoutlets=1)
     add_r1 = p.new("+~", 390, 350, 35, numinlets=2, numoutlets=1)
     add_r2 = p.new("+~", 495, 390, 35, numinlets=2, numoutlets=1)
-    left = outlet(p, 875, 650, signal=True)
-    right = outlet(p, 965, 650, signal=True)
+    add_r3 = p.new("+~", 600, 430, 35, numinlets=2, numoutlets=1)
+    left = outlet(p, 1015, 690, signal=True)
+    right = outlet(p, 1105, 690, signal=True)
 
     p.connect(control, controller)
     p.connect(controller, fan)
-    p.connect(fan, contract, 5)
-    p.connect(fan, power, 4)
-    p.connect(fan, transient, 3)
-    p.connect(fan, road, 2)
+    p.connect(fan, contract, 6)
+    p.connect(fan, power, 5)
+    p.connect(fan, transient, 4)
+    p.connect(fan, road, 3)
+    p.connect(fan, rumble, 2)
     p.connect(fan, cabin, 1, 0)
     p.connect(fan, mix, 0, 0)
     p.connect(power, add_l1, 0, 0)
     p.connect(transient, add_l1, 0, 1)
     p.connect(add_l1, add_l2, 0, 0)
     p.connect(road, add_l2, 0, 1)
+    p.connect(add_l2, add_l3, 0, 0)
+    p.connect(rumble, add_l3, 0, 1)
     p.connect(power, add_r1, 1, 0)
     p.connect(transient, add_r1, 1, 1)
     p.connect(add_r1, add_r2, 0, 0)
     p.connect(road, add_r2, 1, 1)
-    p.connect(add_l2, cabin, 0, 1)
-    p.connect(add_r2, cabin, 0, 2)
+    p.connect(add_r2, add_r3, 0, 0)
+    p.connect(rumble, add_r3, 1, 1)
+    p.connect(add_l3, cabin, 0, 1)
+    p.connect(add_r3, cabin, 0, 2)
     p.connect(cabin, mix, 0, 1)
     p.connect(cabin, mix, 1, 2)
     p.connect(mix, left, 0)
@@ -591,6 +602,60 @@ def make_powertrain() -> dict[str, Any]:
     return p.document()
 
 
+def make_cabin_rumble() -> dict[str, Any]:
+    p = Patcher(1420, 820)
+    p.comment("Lifecycle-gated engine, mount, body, cabin, and exhaust low-frequency system", 25, 15, 760)
+    control = inlet(p, 35, 65)
+    names = (
+        "engine_type",
+        "rpm",
+        "throttle",
+        "load",
+        "gear",
+        "engine_running",
+        "combustion_gain",
+        "shift_cut",
+        "cabin_rumble",
+        "exhaust_boom",
+        "structure_vibration",
+        "body",
+        "aggression",
+    )
+    router = route(p, names, 35, 105, 1120)
+    engine_type = p.new("sel ev v12 v10", 35, 165, 105, numinlets=1, numoutlets=4)
+    firing_messages = (
+        p.message("firing_order 0", 35, 205, 105),
+        p.message("firing_order 6", 155, 205, 105),
+        p.message("firing_order 5", 275, 205, 105),
+    )
+    gen = p.new("gen~ @gen cabin_rumble", 565, 430, 180, numinlets=1, numoutlets=2)
+    p.connect(router, engine_type, 0)
+    for index, message in enumerate(firing_messages):
+        p.connect(engine_type, message, index)
+        p.connect(message, gen)
+
+    forwarded = names[1:]
+    for index, name in enumerate(forwarded):
+        column = index % 6
+        row = index // 6
+        named = p.new(f"prepend {name}", 400 + column * 165, 165 + row * 75, 145, numinlets=1, numoutlets=1)
+        p.connect(router, named, index + 1)
+        p.connect(named, gen)
+
+    initial = p.new("loadmess firing_order 0", 35, 260, 155, numinlets=1, numoutlets=1)
+    p.connect(initial, gen)
+    highpass_l = p.new("svf~ 28 0.7", 470, 535, 90, numinlets=3, numoutlets=4)
+    highpass_r = p.new("svf~ 28 0.7", 750, 535, 90, numinlets=3, numoutlets=4)
+    left = outlet(p, 500, 650, signal=True)
+    right = outlet(p, 780, 650, signal=True)
+    p.connect(gen, highpass_l, 0, 0)
+    p.connect(gen, highpass_r, 1, 0)
+    p.connect(highpass_l, left, 1, 0)
+    p.connect(highpass_r, right, 1, 0)
+    p.connect(control, router)
+    return p.document()
+
+
 def make_transient() -> dict[str, Any]:
     p = Patcher(1900, 1500)
     p.comment("Profile-aware, round-robin transient families; missing buffers never stop continuous layers", 25, 15, 760)
@@ -832,16 +897,18 @@ def make_cabin_master() -> dict[str, Any]:
     mid = p.new("*~ 0.5", 220, 430, 60, numinlets=2, numoutlets=1)
     side_diff = p.new("-~", 400, 390, 40, numinlets=2, numoutlets=1)
     side = p.new("*~ 0.5", 400, 430, 60, numinlets=2, numoutlets=1)
-    side_width = p.new("*~", 400, 470, 40, numinlets=2, numoutlets=1)
-    reconstruct_l = p.new("+~", 280, 520, 40, numinlets=2, numoutlets=1)
-    reconstruct_r = p.new("-~", 520, 520, 40, numinlets=2, numoutlets=1)
+    side_highpass = p.new("svf~ 120 0.7", 400, 470, 100, numinlets=3, numoutlets=4)
+    side_width = p.new("*~", 400, 510, 40, numinlets=2, numoutlets=1)
+    reconstruct_l = p.new("+~", 280, 550, 40, numinlets=2, numoutlets=1)
+    reconstruct_r = p.new("-~", 520, 550, 40, numinlets=2, numoutlets=1)
     p.connect(left_in, mid_sum, 0, 0)
     p.connect(right_in, mid_sum, 0, 1)
     p.connect(mid_sum, mid)
     p.connect(left_in, side_diff, 0, 0)
     p.connect(right_in, side_diff, 0, 1)
     p.connect(side_diff, side)
-    p.connect(side, side_width, 0, 0)
+    p.connect(side, side_highpass, 0, 0)
+    p.connect(side_highpass, side_width, 1, 0)
     p.connect(controls["cabin_width"], side_width, 0, 1)
     p.connect(mid, reconstruct_l, 0, 0)
     p.connect(side_width, reconstruct_l, 0, 1)
@@ -1163,7 +1230,7 @@ def add_eq_band(
 
 def make_main() -> dict[str, Any]:
     p = Patcher(1680, 1160)
-    p.comment("VehicleSoundSynth V2 — combustion lifecycle, 7-speed DCT, and final mix", 25, 15, 760)
+    p.comment("VehicleSoundSynth V3 — combustion lifecycle, cabin rumble, 7-speed DCT, and final mix", 25, 15, 860)
     p.comment("Audio starts OFF — lower your monitoring level, then enable DSP", 25, 45, 520)
     load_off = p.new("loadmess 0", 25, 80, 80, numinlets=1, numoutlets=1)
     audio_toggle = p.add("toggle", None, 120, 80, 24, 24, numinlets=1, numoutlets=1)
@@ -1229,9 +1296,9 @@ def make_main() -> dict[str, Any]:
     )
     preset_select = p.new("sel 0 1 2", 680, 165, 80, numinlets=1, numoutlets=4)
     presets = [
-        "engine_type ev, ev_weight 1., v12_weight 0., v10_weight 0., aggression 0.25, brightness 0.72, body 0.34, texture 0.20, cabin_width 0.82, master_trim_db -8.",
-        "engine_type v12, ev_weight 0., v12_weight 1., v10_weight 0., aggression 0.62, brightness 0.78, body 0.72, texture 0.52, cabin_width 0.64, master_trim_db -7.",
-        "engine_type v10, ev_weight 0., v12_weight 0., v10_weight 1., aggression 0.90, brightness 0.66, body 0.84, texture 0.86, cabin_width 0.56, master_trim_db -7.",
+        "engine_type ev, ev_weight 1., v12_weight 0., v10_weight 0., aggression 0.25, brightness 0.72, body 0.34, texture 0.20, cabin_width 0.82, cabin_rumble 0., exhaust_boom 0., structure_vibration 0., master_trim_db -8.",
+        "engine_type v12, ev_weight 0., v12_weight 1., v10_weight 0., aggression 0.62, brightness 0.78, body 0.72, texture 0.52, cabin_width 0.64, cabin_rumble 0.90, exhaust_boom 0.62, structure_vibration 0.58, master_trim_db -8.",
+        "engine_type v10, ev_weight 0., v12_weight 0., v10_weight 1., aggression 0.90, brightness 0.66, body 0.84, texture 0.86, cabin_width 0.56, cabin_rumble 0.92, exhaust_boom 0.74, structure_vibration 0.72, master_trim_db -8.",
     ]
     for index, value in enumerate(presets):
         message = p.message(value, 465, 215 + index * 52, 760)
@@ -1248,6 +1315,13 @@ def make_main() -> dict[str, Any]:
     macros = (("Aggression", "aggression"), ("Brightness", "brightness"), ("Body", "body"), ("Texture", "texture"), ("Cabin Width", "cabin_width"))
     for index, (label, name) in enumerate(macros):
         add_labeled_number(p, label, name, 730 + index * 135, 400, engine)
+    rumble_controls = (
+        ("Cabin Rumble", "cabin_rumble"),
+        ("Exhaust Boom", "exhaust_boom"),
+        ("Structure Vibration", "structure_vibration"),
+    )
+    for index, (label, name) in enumerate(rumble_controls):
+        add_labeled_number(p, label, name, 730 + index * 180, 470, engine)
 
     p.comment("Fuel lifecycle", 25, 530, 140)
     p.comment("Ignition", 25, 560, 75)
@@ -1314,6 +1388,7 @@ GEN_CODE = {
     "ev_powertrain": """// Smooth, bounded EV inverter/motor identity.\nParam rpm(650, min=0, max=10000);\nParam throttle(0, min=0, max=1);\nParam load(0, min=-1, max=1);\nParam aggression(0.25, min=0, max=1);\nParam brightness(0.7, min=0, max=1);\nParam body(0.35, min=0, max=1);\nParam texture(0.2, min=0, max=1);\nr = slide(clamp(rpm, 0, 10000), 1200, 1800);\nt = slide(clamp(throttle, 0, 1), 700, 1400);\nf = clamp(55 + r * 0.052, 55, 760);\na = clamp(0.03 + t * 0.25 + abs(clamp(load, -1, 1)) * 0.08, 0, 0.42);\ncore = cycle(f) * (0.60 + body * 0.20);\ninverter = cycle(clamp(f * (2.8 + brightness), 100, 4200)) * (0.12 + texture * 0.18);\nair = cycle(clamp(f * 1.013, 55, 1000)) * aggression * 0.10;\nsig = clamp((core + inverter + air) * a, -0.78, 0.78);\nout1 = sig;\nout2 = clamp((cycle(f * 1.007) * 0.55 + inverter + air) * a, -0.78, 0.78);""",
     "v12_powertrain": """// Lifecycle-gated four-stroke V12 with idle body and load-dependent harmonic lift.\nParam rpm(780, min=0, max=10000);\nParam throttle(0, min=0, max=1);\nParam load(0, min=-1, max=1);\nParam aggression(0.6, min=0, max=1);\nParam brightness(0.75, min=0, max=1);\nParam body(0.7, min=0, max=1);\nParam texture(0.5, min=0, max=1);\nParam engine_running(0, min=0, max=1);\nParam combustion_gain(0, min=0, max=1);\nParam shift_cut(1, min=0, max=1);\nr = slide(clamp(rpm, 0, 10000), 700, 1100);\nt = slide(clamp(throttle, 0, 1), 420, 850);\nl = max(clamp(load, -1, 1), 0);\nrun = slide(clamp(engine_running * combustion_gain * shift_cut, 0, 1), 480, 1900);\nspeedmix = clamp((r - 780) / 8220, 0, 1);\nrough = 1 + cycle(1.31) * (0.004 * (1-speedmix)) + cycle(2.17) * 0.0015;\nf = clamp(r / 60 * 6 * rough, 35, 1000);\nidle = 0.145 + body * 0.035;\na = clamp(idle + t * 0.26 + l * 0.13, 0, 0.56) * run;\nsub = cycle(clamp(f * 0.5, 24, 520)) * (0.34 + body * 0.24) * (1-speedmix*0.45);\nfund = cycle(f) * (0.58 + body * 0.12);\nh2 = cycle(clamp(f * 2, 45, 3000)) * (0.16 + brightness * 0.18 + speedmix * 0.12);\nh3 = cycle(clamp(f * 3, 55, 5000)) * (0.07 + texture * 0.11 + speedmix * 0.12);\nh5 = cycle(clamp(f * 5, 70, 8000)) * (0.025 + brightness * speedmix * 0.10);\nh8 = cycle(clamp(f * 8, 90, 11000)) * (0.008 + texture * speedmix * 0.055);\nintake = cycle(clamp(f * 1.5, 45, 1800)) * t * (0.035 + texture * 0.055);\nleft = (sub + fund + h2 + h3 + h5 + h8 + intake) * a * (0.82 + aggression * 0.15);\nright = (cycle(clamp(f * 0.5015, 24, 520)) * (0.32 + body*0.22) * (1-speedmix*0.45) + cycle(f * 0.9985) * 0.58 + h2*0.96 + h3*1.03 + h5*0.98 + h8*1.04 + intake) * a * (0.82 + aggression*0.15);\nout1 = clamp(left, -0.86, 0.86);\nout2 = clamp(right, -0.86, 0.86);""",
     "v10_powertrain": """// Lifecycle-gated four-stroke V10 with stronger half-order rumble and uneven sidebands.\nParam rpm(850, min=0, max=10000);\nParam throttle(0, min=0, max=1);\nParam load(0, min=-1, max=1);\nParam aggression(0.9, min=0, max=1);\nParam brightness(0.65, min=0, max=1);\nParam body(0.85, min=0, max=1);\nParam texture(0.85, min=0, max=1);\nParam engine_running(0, min=0, max=1);\nParam combustion_gain(0, min=0, max=1);\nParam shift_cut(1, min=0, max=1);\nr = slide(clamp(rpm, 0, 10000), 620, 980);\nt = slide(clamp(throttle, 0, 1), 360, 760);\nl = max(clamp(load, -1, 1), 0);\nrun = slide(clamp(engine_running * combustion_gain * shift_cut, 0, 1), 420, 1650);\nspeedmix = clamp((r - 850) / 7650, 0, 1);\nrough = 1 + cycle(0.93) * (0.008 * (1-speedmix)) + cycle(1.71) * 0.003;\nf = clamp(r / 60 * 5 * rough, 32, 850);\nidle = 0.165 + body * 0.04;\na = clamp(idle + t * 0.29 + l * 0.15, 0, 0.60) * run;\nsub = cycle(clamp(f * 0.5, 24, 450)) * (0.42 + body * 0.24) * (1-speedmix*0.38);\nfire = cycle(f) * (0.50 + aggression * 0.16);\nside = cycle(clamp(f * 1.5, 48, 1900)) * (0.06 + texture * 0.10);\nh2 = cycle(clamp(f * 2, 55, 3400)) * (0.11 + brightness * 0.14);\nrasp = cycle(clamp(f * 2.5, 65, 5000)) * (0.08 + texture * 0.17 + speedmix * 0.10);\nmetal = cycle(clamp(f * 5, 90, 8500)) * brightness * speedmix * 0.075;\nleft = (sub + fire + side + h2 + rasp + metal) * a;\nright = (cycle(clamp(f * 0.503, 24, 450)) * (0.40 + body*0.22) * (1-speedmix*0.38) + cycle(f*0.997)*0.50 + side*1.08 + h2*0.94 + rasp*1.06 + metal) * a;\nout1 = clamp(left, -0.88, 0.88);\nout2 = clamp(right, -0.88, 0.88);""",
+    "cabin_rumble": """// Strong but bounded in-cabin combustion rumble with centered low-frequency output.\nParam firing_order(0, min=0, max=6);\nParam rpm(780, min=0, max=10000);\nParam throttle(0, min=0, max=1);\nParam load(0, min=-1, max=1);\nParam gear(1, min=1, max=7);\nParam engine_running(0, min=0, max=1);\nParam combustion_gain(0, min=0, max=1);\nParam shift_cut(1, min=0, max=1);\nParam cabin_rumble(0, min=0, max=1);\nParam exhaust_boom(0, min=0, max=1);\nParam structure_vibration(0, min=0, max=1);\nParam body(0.7, min=0, max=1);\nParam aggression(0.6, min=0, max=1);\nr = slide(clamp(rpm, 0, 10000), 700, 1200);\nt = slide(clamp(throttle, 0, 1), 420, 900);\nl = max(clamp(load, -1, 1), 0);\ng = clamp(gear, 1, 7);\norder = clamp(firing_order, 0, 6);\nfuel = clamp(order / 5, 0, 1);\nrun = slide(clamp(engine_running * combustion_gain, 0, 1), 360, 2200);\nshift = slide(clamp(0.35 + 0.65 * shift_cut, 0, 1), 150, 1100);\nfire_hz = clamp(r / 60 * order, 28, 1000);\nhalf_hz = clamp(fire_hz * 0.5, 28, 420);\nspeedmix = clamp((r - 780) / 8220, 0, 1);\nidle_weight = 1 - speedmix * 0.55;\ndrive_weight = 0.45 + 0.55 * max(t, l);\ngear_weight = 0.86 + 0.02 * g;\nrough = 1 + cycle(1.17) * (0.006 * idle_weight) + cycle(2.03) * 0.002;\nmount = (cycle(half_hz * rough) * 0.72 + cycle(clamp(half_hz * 1.5, 35, 630)) * 0.18) * structure_vibration * (0.055 + body * 0.045) * idle_weight;\nmode_pulse = 0.62 + 0.38 * abs(cycle(clamp(fire_hz * 0.5, 28, 500)));\nmode1 = cycle(clamp(48 + (half_hz - 39) * 0.10, 44, 54)) * 0.45;\nmode2 = cycle(clamp(68 + (half_hz - 39) * 0.08, 63, 74)) * 0.33;\nmode3 = cycle(clamp(92 + (half_hz - 39) * 0.06, 86, 100)) * 0.20;\nmode4 = cycle(clamp(118 + (half_hz - 39) * 0.04, 110, 126)) * 0.12;\ncabin = (mode1 + mode2 + mode3 + mode4) * mode_pulse * cabin_rumble * (0.025 + body * 0.020) * (0.70 + idle_weight * 0.30);\nexhaust = (cycle(half_hz) * 0.65 + cycle(fire_hz) * 0.25 + cycle(clamp(fire_hz * 2, 56, 2000)) * 0.10) * exhaust_boom * (0.025 + t * 0.055 + l * 0.045) * (0.80 + aggression * 0.20);\nsig = clamp((mount + cabin + exhaust * drive_weight) * run * shift * gear_weight * fuel, -0.48, 0.48);\nout1 = sig;\nout2 = sig;""",
 }
 
 
@@ -1372,11 +1447,14 @@ PRESETS = {
         "body": 0.84,
         "brightness": 0.66,
         "cabin_width": 0.56,
+        "cabin_rumble": 0.92,
+        "exhaust_boom": 0.74,
+        "structure_vibration": 0.72,
         "ev_weight": 0.0,
         "texture": 0.86,
         "v10_weight": 1.0,
         "v12_weight": 0.0,
-        "master_trim_db": -7.0,
+        "master_trim_db": -8.0,
     },
     "Future EV": {
         "engine_type": "ev",
@@ -1384,6 +1462,9 @@ PRESETS = {
         "body": 0.34,
         "brightness": 0.72,
         "cabin_width": 0.82,
+        "cabin_rumble": 0.0,
+        "exhaust_boom": 0.0,
+        "structure_vibration": 0.0,
         "ev_weight": 1.0,
         "texture": 0.20,
         "v10_weight": 0.0,
@@ -1396,11 +1477,14 @@ PRESETS = {
         "body": 0.72,
         "brightness": 0.78,
         "cabin_width": 0.64,
+        "cabin_rumble": 0.90,
+        "exhaust_boom": 0.62,
+        "structure_vibration": 0.58,
         "ev_weight": 0.0,
         "texture": 0.52,
         "v10_weight": 0.0,
         "v12_weight": 1.0,
-        "master_trim_db": -7.0,
+        "master_trim_db": -8.0,
     },
 }
 
@@ -1486,6 +1570,7 @@ def project_file() -> dict[str, Any]:
         "patchers/vehicle_engine~.maxpat",
         "patchers/engine_controller.maxpat",
         "patchers/powertrain~.maxpat",
+        "patchers/cabin_rumble~.maxpat",
         "patchers/transient~.maxpat",
         "patchers/road_air~.maxpat",
         "patchers/cabin_master~.maxpat",
@@ -1524,6 +1609,7 @@ def build_project(root: Path) -> None:
         "patchers/vehicle_engine~.maxpat": make_engine(),
         "patchers/engine_controller.maxpat": make_engine_controller(),
         "patchers/powertrain~.maxpat": make_powertrain(),
+        "patchers/cabin_rumble~.maxpat": make_cabin_rumble(),
         "patchers/transient~.maxpat": make_transient(),
         "patchers/road_air~.maxpat": make_road_air(),
         "patchers/cabin_master~.maxpat": make_cabin_master(),

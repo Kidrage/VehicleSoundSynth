@@ -1,6 +1,6 @@
 # Source Index
 
-Repository: /Users/saintpeter/Downloads/VehicleSoundSynth-V2
+Repository: /Users/saintpeter/Downloads/VehicleSoundSynth-V3
 Tracked filtered files: 28
 High-value indexed files: 10
 

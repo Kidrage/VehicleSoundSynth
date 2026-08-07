@@ -12,7 +12,7 @@ import wave
 from pathlib import Path
 
 
-def read_mono(path: Path) -> tuple[int, list[float]]:
+def read_mid_side(path: Path) -> tuple[int, list[float], list[float]]:
     with wave.open(str(path), "rb") as handle:
         channels = handle.getnchannels()
         width = handle.getsampwidth()
@@ -21,8 +21,14 @@ def read_mono(path: Path) -> tuple[int, list[float]]:
     if width != 2:
         raise ValueError(f"Only 16-bit PCM WAV is supported, got {width * 8}-bit")
     values = struct.unpack(f"<{len(frames) // 2}h", frames)
-    mono = [sum(values[index:index + channels]) / (32768.0 * channels) for index in range(0, len(values), channels)]
-    return sample_rate, mono
+    mid: list[float] = []
+    side: list[float] = []
+    for index in range(0, len(values), channels):
+        left = values[index] / 32768.0
+        right = values[index + 1] / 32768.0 if channels > 1 else left
+        mid.append((left + right) * 0.5)
+        side.append((left - right) * 0.5)
+    return sample_rate, mid, side
 
 
 def fft(values: list[complex]) -> list[complex]:
@@ -40,7 +46,7 @@ def fft(values: list[complex]) -> list[complex]:
 
 
 def analyze(path: Path, fft_size: int = 32768) -> dict[str, float | int | str]:
-    sample_rate, samples = read_mono(path)
+    sample_rate, samples, side_samples = read_mid_side(path)
     if not samples:
         raise ValueError("WAV contains no samples")
     peak = max(abs(value) for value in samples)
@@ -52,6 +58,11 @@ def analyze(path: Path, fft_size: int = 32768) -> dict[str, float | int | str]:
     ]
     spectrum = fft(windowed)[: size // 2]
     power = [abs(value) ** 2 for value in spectrum]
+    side_windowed = [
+        complex(side_samples[index] * (0.5 - 0.5 * math.cos(2.0 * math.pi * index / (size - 1))))
+        for index in range(size)
+    ]
+    side_power = [abs(value) ** 2 for value in fft(side_windowed)[: size // 2]]
 
     def band_energy(low: float, high: float) -> float:
         return sum(
@@ -61,8 +72,17 @@ def analyze(path: Path, fft_size: int = 32768) -> dict[str, float | int | str]:
         )
 
     audible = max(band_energy(20.0, min(20000.0, sample_rate / 2.0)), 1e-30)
+    subsonic = band_energy(20.0, 30.0) / audible
+    rumble = band_energy(30.0, 140.0) / audible
     low_mid = band_energy(40.0, 500.0) / audible
     high = band_energy(6000.0, min(20000.0, sample_rate / 2.0)) / audible
+    low_mid_energy = band_energy(30.0, 120.0)
+    low_side_energy = sum(
+        value
+        for index, value in enumerate(side_power)
+        if 30.0 <= index * sample_rate / size < 120.0
+    )
+    low_side_ratio = low_side_energy / max(low_mid_energy + low_side_energy, 1e-30)
     return {
         "file": str(path),
         "sample_rate": sample_rate,
@@ -70,7 +90,10 @@ def analyze(path: Path, fft_size: int = 32768) -> dict[str, float | int | str]:
         "peak_dbfs": 20.0 * math.log10(max(peak, 1e-12)),
         "rms_dbfs": 20.0 * math.log10(max(rms, 1e-12)),
         "crest_db": 20.0 * math.log10(max(peak / max(rms, 1e-12), 1e-12)),
+        "subsonic_ratio": subsonic,
+        "rumble_ratio": rumble,
         "low_mid_ratio": low_mid,
+        "low_side_ratio": low_side_ratio,
         "high_ratio": high,
     }
 
@@ -82,6 +105,9 @@ def main() -> int:
     parser.add_argument("--min-rms-dbfs", type=float)
     parser.add_argument("--max-high-ratio", type=float)
     parser.add_argument("--min-low-mid-ratio", type=float)
+    parser.add_argument("--min-rumble-ratio", type=float)
+    parser.add_argument("--max-subsonic-ratio", type=float)
+    parser.add_argument("--max-low-side-ratio", type=float)
     args = parser.parse_args()
     metrics = analyze(args.wav)
     print(json.dumps(metrics, indent=2, sort_keys=True))
@@ -94,6 +120,12 @@ def main() -> int:
         failures.append("high_ratio")
     if args.min_low_mid_ratio is not None and metrics["low_mid_ratio"] < args.min_low_mid_ratio:
         failures.append("low_mid_ratio")
+    if args.min_rumble_ratio is not None and metrics["rumble_ratio"] < args.min_rumble_ratio:
+        failures.append("rumble_ratio")
+    if args.max_subsonic_ratio is not None and metrics["subsonic_ratio"] > args.max_subsonic_ratio:
+        failures.append("subsonic_ratio")
+    if args.max_low_side_ratio is not None and metrics["low_side_ratio"] > args.max_low_side_ratio:
+        failures.append("low_side_ratio")
     if failures:
         print("Acceptance failed: " + ", ".join(failures))
         return 1

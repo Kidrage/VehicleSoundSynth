@@ -3,6 +3,10 @@
   "autoorganize": 0,
   "contents": {
     "code": {
+      "gen/cabin_rumble.gendsp": {
+        "kind": "gendsp",
+        "local": 1
+      },
       "gen/ev_powertrain.gendsp": {
         "kind": "gendsp",
         "local": 1
@@ -117,6 +121,10 @@
         "kind": "patcher",
         "local": 1
       },
+      "patchers/cabin_rumble~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
       "patchers/drive_simulator.maxpat": {
         "kind": "patcher",
         "local": 1
@@ -148,7 +156,7 @@
     }
   },
   "hideprojectwindow": 0,
-  "name": "VehicleSoundSynth-V2",
+  "name": "VehicleSoundSynth-V3",
   "searchpath": {
     "gen": {
       "path": "./gen",

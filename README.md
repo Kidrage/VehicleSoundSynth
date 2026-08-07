@@ -1,24 +1,26 @@
-# VehicleSoundSynth V2
+# VehicleSoundSynth V3
 
 Max/MSP 8.6.5 vehicle-acoustics project with an EV profile plus lifecycle-gated
-V12 and V10 combustion profiles. V2 adds ignition/start/idle behavior, a
-profile-aware seven-speed DCT, causal shift and backfire events, quieter road
-noise, and a final four-band stereo EQ.
+V12 and V10 combustion profiles. V3 adds a dedicated in-cabin low-frequency
+system: engine half-order structure vibration, cabin/body resonances, and
+load-dependent exhaust boom. The seven-speed DCT, causal transient system,
+and final four-band stereo EQ remain intact.
 
-Open `VehicleSoundSynth-V2.maxproj` first, wait for its Project window to load,
+Open `VehicleSoundSynth-V3.maxproj` first, wait for its Project window to load,
 then open `main.maxpat` from that same Max instance. Audio starts muted.
 
 完整中文操作说明见
-[`VehicleSoundSynthV2_完整使用手册.docx`](VehicleSoundSynthV2_完整使用手册.docx)。
-V2 目录内保留的 `VehicleSoundSynth_完整使用手册.docx` 是 V1 参考文档。
+[`VehicleSoundSynthV3_完整使用手册.docx`](VehicleSoundSynthV3_完整使用手册.docx)。
+V3 目录同时保留 V1 与 V2 手册作为参考，不会覆盖旧版本。
 
 ## Quick start
 
-1. Lower monitoring level and open `VehicleSoundSynth-V2.maxproj`.
+1. Lower monitoring level and open `VehicleSoundSynth-V3.maxproj`.
 2. Open `main.maxpat` from the loaded project.
 3. Select `High-Rev V12` or `Aggressive V10`.
 4. Enable `Ignition`, click `Engine Start`, and confirm idle reaches the meters.
 5. Enable `Audio`; use `Internal Auto` to audition the seven-speed DCT.
+6. Shape the cabin with `Cabin Rumble`, `Exhaust Boom`, and `Structure Vibration`.
 
 Future EV does not require the combustion ignition/start lifecycle.
 
@@ -45,6 +47,9 @@ intake_backfire 0|1
 exhaust_pop 0|1
 pop 0|1
 click 0|1
+cabin_rumble 0..1
+exhaust_boom 0..1
+structure_vibration 0..1
 ```
 
 Global EQ and output controls:
@@ -66,8 +71,10 @@ Generated `.maxpat`, `.gendsp`, preset, and media files are owned by
 ```sh
 python3 tools/build_project.py --output-root .
 python3 -m unittest discover -s tests -v
-python3 tools/audio_metrics.py render.wav --max-peak-dbfs -1 --min-rms-dbfs -60 --max-high-ratio 0.20
+python3 tools/audio_metrics.py render.wav --max-peak-dbfs -1 --min-rms-dbfs -45 --min-rumble-ratio 0.55 --max-subsonic-ratio 0.05 --max-low-side-ratio 0.10 --max-high-ratio 0.10
 ```
 
-The signal ends in `mix_master~`: four serial stereo EQ bands, click-safe
-dry/wet bypass, master trim, `omx.peaklim~`, and `clip~ -0.891 0.891`.
+The rumble layer is high-passed near 28 Hz and the cabin side channel is
+high-passed near 120 Hz so deep bass stays centered. The full signal then ends
+in `mix_master~`: four serial stereo EQ bands, click-safe dry/wet bypass,
+master trim, `omx.peaklim~`, and `clip~ -0.891 0.891`.

@@ -16,11 +16,11 @@ class VehicleSoundProjectTests(unittest.TestCase):
         with (ROOT / relative_path).open(encoding="utf-8") as handle:
             return json.load(handle)
 
-    def test_v2_project_identity_and_public_entrypoint(self):
-        project_path = ROOT / "VehicleSoundSynth-V2.maxproj"
+    def test_v3_project_identity_and_public_entrypoint(self):
+        project_path = ROOT / "VehicleSoundSynth-V3.maxproj"
         self.assertTrue(project_path.is_file())
-        project = self.load_json("VehicleSoundSynth-V2.maxproj")
-        self.assertEqual("VehicleSoundSynth-V2", project["name"])
+        project = self.load_json("VehicleSoundSynth-V3.maxproj")
+        self.assertEqual("VehicleSoundSynth-V3", project["name"])
         self.assertTrue((ROOT / "main.maxpat").is_file())
 
     def test_v2_public_engine_contract_covers_lifecycle_events_and_master_eq(self):
@@ -41,6 +41,87 @@ class VehicleSoundProjectTests(unittest.TestCase):
             "master_trim_db",
         ):
             self.assertIn(name, text)
+
+    def test_v3_public_engine_contract_exposes_cabin_rumble_controls(self):
+        engine = self.load_json("patchers/vehicle_engine~.maxpat")
+        text = "\n".join(item["box"].get("text", "") for item in engine["patcher"]["boxes"])
+        for name in ("cabin_rumble", "exhaust_boom", "structure_vibration"):
+            self.assertIn(name, text)
+
+    def test_v3_cabin_rumble_module_is_declared_and_runnable(self):
+        project = self.load_json("VehicleSoundSynth-V3.maxproj")
+        declared = {
+            relative_path
+            for category in project["contents"].values()
+            for relative_path in category
+        }
+        required = {"patchers/cabin_rumble~.maxpat", "gen/cabin_rumble.gendsp"}
+        self.assertTrue(required.issubset(declared))
+        self.assertTrue(all((ROOT / path).is_file() for path in required))
+
+        rumble = self.load_json("patchers/cabin_rumble~.maxpat")["patcher"]
+        boxes = [item["box"] for item in rumble["boxes"]]
+        self.assertEqual(1, sum(box["maxclass"] == "inlet" for box in boxes))
+        self.assertEqual(2, sum(box["maxclass"] == "outlet" for box in boxes))
+        text = "\n".join(box.get("text", "") for box in boxes)
+        self.assertIn("gen~ @gen cabin_rumble", text)
+        self.assertIn("svf~ 28 0.7", text)
+
+    def test_v3_engine_routes_rumble_before_cabin_and_centers_low_frequencies(self):
+        engine = self.load_json("patchers/vehicle_engine~.maxpat")["patcher"]
+        boxes = {item["box"]["id"]: item["box"] for item in engine["boxes"]}
+        rumble = next(box_id for box_id, box in boxes.items() if box.get("text") == "cabin_rumble~")
+        cabin = next(box_id for box_id, box in boxes.items() if box.get("text") == "cabin_master~")
+        edges = {}
+        for item in engine["lines"]:
+            source = item["patchline"]["source"][0]
+            destination = item["patchline"]["destination"][0]
+            edges.setdefault(source, set()).add(destination)
+
+        reachable = {rumble}
+        frontier = [rumble]
+        while frontier:
+            current = frontier.pop()
+            for destination in edges.get(current, set()):
+                if destination not in reachable:
+                    reachable.add(destination)
+                    frontier.append(destination)
+        self.assertIn(cabin, reachable)
+
+        cabin_patch = self.load_json("patchers/cabin_master~.maxpat")
+        cabin_text = "\n".join(
+            item["box"].get("text", "") for item in cabin_patch["patcher"]["boxes"]
+        )
+        self.assertIn("svf~ 120 0.7", cabin_text)
+
+    def test_v3_presets_and_demo_expose_strong_profile_specific_rumble(self):
+        presets = self.load_json("presets/sound_dna.json")
+        expected = {
+            "Future EV": (0.0, 0.0, 0.0),
+            "High-Rev V12": (0.90, 0.62, 0.58),
+            "Aggressive V10": (0.92, 0.74, 0.72),
+        }
+        for name, values in expected.items():
+            preset = presets[name]
+            actual = (
+                preset["cabin_rumble"],
+                preset["exhaust_boom"],
+                preset["structure_vibration"],
+            )
+            self.assertEqual(values, actual)
+
+        main = self.load_json("main.maxpat")
+        text = "\n".join(item["box"].get("text", "") for item in main["patcher"]["boxes"])
+        for token in (
+            "VehicleSoundSynth V3",
+            "Cabin Rumble",
+            "Exhaust Boom",
+            "Structure Vibration",
+            "prepend cabin_rumble",
+            "prepend exhaust_boom",
+            "prepend structure_vibration",
+        ):
+            self.assertIn(token, text)
 
     def test_v2_engine_routes_through_lifecycle_and_final_mix_modules(self):
         engine = self.load_json("patchers/vehicle_engine~.maxpat")
@@ -127,7 +208,7 @@ class VehicleSoundProjectTests(unittest.TestCase):
 
     def test_runnable_project_has_public_engine_interface(self):
         required = [
-            "VehicleSoundSynth-V2.maxproj",
+            "VehicleSoundSynth-V3.maxproj",
             "main.maxpat",
             "patchers/vehicle_engine~.maxpat",
         ]
@@ -153,7 +234,8 @@ class VehicleSoundProjectTests(unittest.TestCase):
         self.assertEqual({"Future EV", "High-Rev V12", "Aggressive V10"}, set(presets))
         expected = {
             "engine_type", "ev_weight", "v12_weight", "v10_weight", "aggression",
-            "brightness", "body", "texture", "cabin_width", "master_trim_db",
+            "brightness", "body", "texture", "cabin_width", "cabin_rumble",
+            "exhaust_boom", "structure_vibration", "master_trim_db",
         }
         for values in presets.values():
             self.assertEqual(expected, set(values))
@@ -265,15 +347,22 @@ class VehicleSoundProjectTests(unittest.TestCase):
                     self.assertLess(len(text), 240, f"{path.name}: {text}")
 
     def test_gen_patchers_expose_bounded_required_parameters(self):
-        required = {"rpm", "throttle", "load", "aggression", "brightness", "body", "texture"}
         gen_paths = sorted((ROOT / "gen").glob("*.gendsp"))
-        self.assertEqual(3, len(gen_paths))
+        self.assertEqual(4, len(gen_paths))
         for path in gen_paths:
             patcher = self.load_json(path.relative_to(ROOT))["patcher"]
             code = "\n".join(
                 item["box"].get("code", item["box"].get("text", ""))
                 for item in patcher["boxes"]
             )
+            required = {"rpm", "throttle", "load", "aggression", "body"}
+            if path.name == "cabin_rumble.gendsp":
+                required |= {
+                    "firing_order", "gear", "engine_running", "combustion_gain",
+                    "shift_cut", "cabin_rumble", "exhaust_boom", "structure_vibration",
+                }
+            else:
+                required |= {"brightness", "texture"}
             for name in required:
                 self.assertIn(f"Param {name}", code, path.name)
             self.assertIn("clamp(", code, path.name)
@@ -292,7 +381,7 @@ class VehicleSoundProjectTests(unittest.TestCase):
             self.assertTrue(output_ids.issubset(destinations), path.name)
 
     def test_project_search_path_schema_and_runtime_resources_are_declared(self):
-        project = self.load_json("VehicleSoundSynth-V2.maxproj")
+        project = self.load_json("VehicleSoundSynth-V3.maxproj")
         # Max 8.6.x expects a dictionary here and can crash while opening a
         # project whose searchpath is encoded as an array. Explicit relative
         # paths avoid collisions with Max's own patchers/gen/media folders.
@@ -378,11 +467,11 @@ class VehicleSoundProjectTests(unittest.TestCase):
         ]
         self.assertTrue(any(boxes[source].get("text") == "loadmess 0" for source in incoming))
 
-    def test_v2_demo_exposes_lifecycle_dct_and_global_eq_controls(self):
+    def test_v3_demo_exposes_lifecycle_dct_rumble_and_global_eq_controls(self):
         main = self.load_json("main.maxpat")
         text = "\n".join(item["box"].get("text", "") for item in main["patcher"]["boxes"])
         for token in (
-            "VehicleSoundSynth V2",
+            "VehicleSoundSynth V3",
             "Ignition",
             "Engine Start",
             "prepend ignition",
@@ -441,10 +530,17 @@ class VehicleSoundProjectTests(unittest.TestCase):
                 "runtime_probe.maxpat",
                 "vehicle_engine~.maxpat",
                 "engine_controller.maxpat",
+                "cabin_rumble~.maxpat",
                 "v12_powertrain.gendsp",
+                "cabin_rumble.gendsp",
                 "media/starter_v12.wav",
             ):
                 self.assertTrue((bundle / relative_path).is_file(), relative_path)
+            with (bundle / "runtime_probe.maxpat").open(encoding="utf-8") as handle:
+                probe = json.load(handle)
+            text = "\n".join(item["box"].get("text", "") for item in probe["patcher"]["boxes"])
+            self.assertIn("cabin_rumble~", text)
+            self.assertIn("cabin_rumble 0.9", text)
 
     def test_audio_metrics_distinguish_low_engine_energy_from_high_noise(self):
         sys.path.insert(0, str(ROOT / "tools"))
@@ -474,8 +570,39 @@ class VehicleSoundProjectTests(unittest.TestCase):
             low = analyze(low_path)
             high = analyze(high_path)
         self.assertGreater(low["low_mid_ratio"], 0.99)
+        self.assertGreater(low["rumble_ratio"], 0.99)
+        self.assertLess(low["subsonic_ratio"], 0.01)
         self.assertLess(low["high_ratio"], 0.01)
         self.assertGreater(high["high_ratio"], 0.99)
+
+    def test_audio_metrics_measure_low_frequency_stereo_side_energy(self):
+        import math
+        import struct
+
+        sys.path.insert(0, str(ROOT / "tools"))
+        from audio_metrics import analyze
+
+        def write_stereo(path, right_polarity):
+            sample_rate = 48000
+            payload = []
+            for index in range(sample_rate):
+                value = round(0.25 * math.sin(2.0 * math.pi * 80.0 * index / sample_rate) * 32767.0)
+                payload.append(struct.pack("<hh", value, round(value * right_polarity)))
+            with wave.open(str(path), "wb") as handle:
+                handle.setnchannels(2)
+                handle.setsampwidth(2)
+                handle.setframerate(sample_rate)
+                handle.writeframes(b"".join(payload))
+
+        with tempfile.TemporaryDirectory() as directory:
+            centered_path = Path(directory) / "centered.wav"
+            side_path = Path(directory) / "side.wav"
+            write_stereo(centered_path, 1.0)
+            write_stereo(side_path, -1.0)
+            centered = analyze(centered_path)
+            side = analyze(side_path)
+        self.assertLess(centered["low_side_ratio"], 0.001)
+        self.assertGreater(side["low_side_ratio"], 0.99)
 
     def test_generated_combustion_transients_are_not_high_frequency_dominated(self):
         sys.path.insert(0, str(ROOT / "tools"))
