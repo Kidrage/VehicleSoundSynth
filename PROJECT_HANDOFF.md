@@ -9,12 +9,12 @@
 - Working root: `.`
 - Repository name: `VehicleSoundSynth-V2`
 - Git repository: `true`
-- Generated at: `2026-08-07T02:55:29.765035+00:00`
+- Generated at: `2026-08-07T02:58:26.655747+00:00`
 
 ## Current State
 
 - Branch: `codex/vehicle-sound-v2`
-- HEAD: `f5f2a4a`
+- HEAD: `20332d0`
 - Indexed paths: 49
 - Inventory truncated: `false`
 - Inaccessible paths: 0
@@ -57,9 +57,9 @@
 ### Categories
 
 - audio: 21 files, 411324 bytes
-- code: 5 files, 162677 bytes
-- literature: 8 files, 115249 bytes
-- other: 14 files, 373506 bytes
+- code: 5 files, 162864 bytes
+- literature: 8 files, 115457 bytes
+- other: 14 files, 374249 bytes
 - structured_data: 1 files, 773 bytes
 
 ### Common Extensions
@@ -86,6 +86,8 @@
 
 ## Change History
 
+- `20332d0 2026-08-07 fix: reject start events before ignition`
+- `9449ee8 2026-08-07 docs: record final V2 validation`
 - `f5f2a4a 2026-08-07 fix: gate automatic drive and transient events`
 - `e3562cf 2026-08-07 docs: refresh V2 project handoff`
 - `ec29ab4 2026-08-07 fix: tighten lifecycle and DCT event causality`
