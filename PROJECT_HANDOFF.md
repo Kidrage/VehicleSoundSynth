@@ -5,17 +5,17 @@
 
 ## Repository Identity
 
-- Repository ID: `VehicleSoundSynth-V2-e4c8994a8fe9`
+- Repository ID: `VehicleSoundSynth-V3-e69f9ccd340b`
 - Working root: `.`
-- Repository name: `VehicleSoundSynth-V2`
+- Repository name: `VehicleSoundSynth-V3`
 - Git repository: `true`
-- Generated at: `2026-08-07T02:58:26.655747+00:00`
+- Generated at: `2026-08-07T08:01:19.741582+00:00`
 
 ## Current State
 
-- Branch: `codex/vehicle-sound-v2`
-- HEAD: `20332d0`
-- Indexed paths: 49
+- Branch: `codex/vehicle-sound-v3`
+- HEAD: `e9cd491`
+- Indexed paths: 52
 - Inventory truncated: `false`
 - Inaccessible paths: 0
 - Scan mode: complete path/metadata inventory; no bulk content read; no symlink traversal.
@@ -44,11 +44,11 @@
 | Route | Files |
 |---|---:|
 | `media` | 21 |
-| `.` | 8 |
-| `patchers` | 8 |
+| `.` | 9 |
+| `patchers` | 9 |
+| `gen` | 4 |
 | `tools` | 4 |
 | `.codex` | 3 |
-| `gen` | 3 |
 | `presets` | 1 |
 | `tests` | 1 |
 
@@ -57,20 +57,20 @@
 ### Categories
 
 - audio: 21 files, 411324 bytes
-- code: 5 files, 162864 bytes
-- literature: 8 files, 115457 bytes
-- other: 14 files, 374249 bytes
-- structured_data: 1 files, 773 bytes
+- code: 5 files, 179063 bytes
+- literature: 9 files, 162635 bytes
+- other: 16 files, 404364 bytes
+- structured_data: 1 files, 1024 bytes
 
 ### Common Extensions
 
 - `.wav`: 21
-- `.maxpat`: 9
+- `.maxpat`: 10
 - `.py`: 5
 - `.md`: 4
-- `.gendsp`: 3
+- `.gendsp`: 4
+- `.docx`: 3
 - `.txt`: 2
-- `.docx`: 2
 - `[no extension]`: 1
 - `.maxproj`: 1
 - `.json`: 1
@@ -86,6 +86,8 @@
 
 ## Change History
 
+- `e9cd491 2026-08-07 feat: add combustion cabin rumble V3`
+- `b8cefa5 2026-08-07 docs: refresh final V2 handoff state`
 - `20332d0 2026-08-07 fix: reject start events before ignition`
 - `9449ee8 2026-08-07 docs: record final V2 validation`
 - `f5f2a4a 2026-08-07 fix: gate automatic drive and transient events`
@@ -101,7 +103,10 @@
 
 ## Current Changes
 
-- `## codex/vehicle-sound-v2`
+- `## codex/vehicle-sound-v3`
+- ` M .codex/repo_files.txt`
+- ` M .codex/source_index.txt`
+- ` M PROJECT_HANDOFF.md`
 
 ## Related Repositories
 
@@ -124,6 +129,7 @@
 - `PROJECT_HANDOFF.md`
 - `README.md`
 - `VehicleSoundSynthV2_完整使用手册.docx`
+- `VehicleSoundSynthV3_完整使用手册.docx`
 - `VehicleSoundSynth_完整使用手册.docx`
 
 ### image
@@ -170,13 +176,11 @@
 ## Agent Notes
 
 <!-- AGENT_NOTES_START -->
-- V2 is independent from the sibling V1 repository and uses `VehicleSoundSynth-V2.maxproj`; the folder and project filename must match for Max 8.6.5.
-- Implemented combustion lifecycle for V12/V10: ignition, starter, engine-running gate, idle body, load-dependent harmonics, and 90 ms DCT shift cut/recovery.
-- Implemented profile-aware seven-speed DCT plus round-robin starter, up/down shift, intake backfire, exhaust pop, and crackle families. Fuel Auto Drive and combustion/shift events require the ignition/start lifecycle; combustion-only events are gated out of Future EV.
-- Implemented quieter road/air noise and `mix_master~`: four-band stereo EQ, click-safe bypass, -24..0 dB trim, and the sole final limiter/clip stage.
-- Primary operator documentation is `VehicleSoundSynthV2_完整使用手册.docx`; the V1 manual remains as a reference copy and is not overwritten.
-- Validation: 27 Python tests pass; fresh Max 8.6.5 project and main loads produce zero Console errors/warnings. A monitor-muted V12 idle render measured peak -25.78 dBFS, RMS -35.44 dBFS, high-frequency ratio 0.000005%, and 40-500 Hz ratio 67.99%.
-- The standard DOCX renderer could not run because LibreOffice/soffice is absent; the V2 manual passed its deterministic OOXML structural audit but still needs optional page-image QA on a host with LibreOffice.
+- V3 is an independent clone of committed V2 and uses `VehicleSoundSynth-V3.maxproj`; the sibling V1/V2 folders and their manuals remain unchanged.
+- Added `cabin_rumble~` before `cabin_master~` and `mix_master~`: four-stroke half/main orders, 48/68/92/118 Hz cabin modes, load-responsive exhaust boom, and structure vibration, all gated by the combustion lifecycle and DCT shift envelope.
+- The three public macros are `cabin_rumble`, `exhaust_boom`, and `structure_vibration`. Future EV keeps them at zero; V12/V10 ship with profile-specific strong defaults. Frequencies below 120 Hz remain centered before the existing global EQ, trim, limiter, and clip protection.
+- Validation: 32 Python tests pass; fresh Max 8.6.5 project/main loads produce no new Console errors. Monitor-muted V12/V10 idle renders passed peak, RMS, high-frequency, subsonic, rumble-band, and low-side-energy gates. V12 rumble-on is approximately 4.0 dB stronger in 30-140 Hz than the rumble-off control.
+- Primary operator documentation is `VehicleSoundSynthV3_完整使用手册.docx`; the V1/V2 manuals are retained byte-for-byte. The V3 DOCX passed deterministic OOXML/ZIP structural audits, but optional page-image QA remains unavailable because LibreOffice/pdf2image are absent on this host.
 <!-- AGENT_NOTES_END -->
 
 ## Mandatory Update Rule

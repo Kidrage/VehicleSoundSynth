@@ -12,7 +12,7 @@ import wave
 from pathlib import Path
 
 
-def read_mid_side(path: Path) -> tuple[int, list[float], list[float]]:
+def read_mid_side(path: Path) -> tuple[int, list[float], list[float], list[float]]:
     with wave.open(str(path), "rb") as handle:
         channels = handle.getnchannels()
         width = handle.getsampwidth()
@@ -23,12 +23,16 @@ def read_mid_side(path: Path) -> tuple[int, list[float], list[float]]:
     values = struct.unpack(f"<{len(frames) // 2}h", frames)
     mid: list[float] = []
     side: list[float] = []
+    level_samples: list[float] = []
     for index in range(0, len(values), channels):
         left = values[index] / 32768.0
         right = values[index + 1] / 32768.0 if channels > 1 else left
         mid.append((left + right) * 0.5)
         side.append((left - right) * 0.5)
-    return sample_rate, mid, side
+        level_samples.append(left)
+        if channels > 1:
+            level_samples.append(right)
+    return sample_rate, mid, side, level_samples
 
 
 def fft(values: list[complex]) -> list[complex]:
@@ -46,11 +50,11 @@ def fft(values: list[complex]) -> list[complex]:
 
 
 def analyze(path: Path, fft_size: int = 32768) -> dict[str, float | int | str]:
-    sample_rate, samples, side_samples = read_mid_side(path)
+    sample_rate, samples, side_samples, level_samples = read_mid_side(path)
     if not samples:
         raise ValueError("WAV contains no samples")
-    peak = max(abs(value) for value in samples)
-    rms = math.sqrt(sum(value * value for value in samples) / len(samples))
+    peak = max(abs(value) for value in level_samples)
+    rms = math.sqrt(sum(value * value for value in level_samples) / len(level_samples))
     size = min(fft_size, 1 << (len(samples).bit_length() - 1))
     windowed = [
         complex(samples[index] * (0.5 - 0.5 * math.cos(2.0 * math.pi * index / (size - 1))))

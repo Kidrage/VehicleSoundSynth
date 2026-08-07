@@ -66,6 +66,8 @@ class VehicleSoundProjectTests(unittest.TestCase):
         text = "\n".join(box.get("text", "") for box in boxes)
         self.assertIn("gen~ @gen cabin_rumble", text)
         self.assertIn("svf~ 28 0.7", text)
+        gen_text = (ROOT / "gen" / "cabin_rumble.gendsp").read_text(encoding="utf-8")
+        self.assertIn("* 1.18", gen_text)
 
     def test_v3_engine_routes_rumble_before_cabin_and_centers_low_frequencies(self):
         engine = self.load_json("patchers/vehicle_engine~.maxpat")["patcher"]
@@ -603,6 +605,8 @@ class VehicleSoundProjectTests(unittest.TestCase):
             side = analyze(side_path)
         self.assertLess(centered["low_side_ratio"], 0.001)
         self.assertGreater(side["low_side_ratio"], 0.99)
+        self.assertAlmostEqual(centered["peak_dbfs"], side["peak_dbfs"], places=3)
+        self.assertAlmostEqual(centered["rms_dbfs"], side["rms_dbfs"], places=3)
 
     def test_generated_combustion_transients_are_not_high_frequency_dominated(self):
         sys.path.insert(0, str(ROOT / "tools"))
