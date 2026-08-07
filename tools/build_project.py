@@ -311,6 +311,7 @@ def make_engine_controller() -> dict[str, Any]:
     running_off = p.message("engine_running 0", 435, 410, 105)
     combustion_off = p.message("combustion_gain 0", 560, 410, 115)
     catch_delay = p.new("delay 500", 700, 410, 70, numinlets=2, numoutlets=1)
+    cancel_catch = p.message("stop", 780, 410, 45)
     catch_trigger = p.new("t b b b", 700, 450, 70, numinlets=1, numoutlets=3)
     starter_off = p.message("starter 0", 640, 495, 70)
     running_on = p.message("engine_running 1", 730, 495, 105)
@@ -329,6 +330,8 @@ def make_engine_controller() -> dict[str, Any]:
 
     stop_trigger = p.new("t b b b", 315, 245, 70, numinlets=1, numoutlets=3)
     p.connect(ignition_off, stop_trigger, 0)
+    p.connect(ignition_off, cancel_catch, 0)
+    p.connect(cancel_catch, catch_delay)
     p.connect(stop_trigger, starter_off, 2)
     p.connect(stop_trigger, running_off, 1)
     p.connect(stop_trigger, combustion_off, 0)
@@ -603,6 +606,7 @@ def make_transient() -> dict[str, Any]:
         "aggression",
         "texture",
         "engine_type",
+        "engine_running",
     )
     router = route(p, event_names, 35, 100, 850)
     players: list[str] = []
@@ -650,12 +654,19 @@ def make_transient() -> dict[str, Any]:
     fuel_event_off = p.message("0", 1090, 205, 30)
     fuel_event_v12 = p.message("1", 1130, 205, 30)
     fuel_event_v10 = p.message("1", 1170, 205, 30)
+    running_clip = p.new("clip 0 1", 1210, 205, 65, numinlets=3, numoutlets=1)
+    event_state = p.new("pak 0 0", 1090, 245, 70, numinlets=2, numoutlets=1)
+    event_enabled = p.new("expr $i1*$i2", 1175, 245, 105, numinlets=2, numoutlets=1)
     p.connect(profile_sel, fuel_event_off, 0)
     p.connect(profile_sel, fuel_event_v12, 1)
     p.connect(profile_sel, fuel_event_v10, 2)
     for message in (fuel_event_off, fuel_event_v12, fuel_event_v10):
-        for event_gate in (intake_gate, exhaust_gate, crackle_gate):
-            p.connect(message, event_gate, 0, 0)
+        p.connect(message, event_state, 0, 0)
+    p.connect(router, running_clip, 11)
+    p.connect(running_clip, event_state, 0, 1)
+    p.connect(event_state, event_enabled)
+    for event_gate in (intake_gate, exhaust_gate, crackle_gate):
+        p.connect(event_enabled, event_gate, 0, 0)
     p.connect(intake_sel, intake_gate, 0, 1)
     p.connect(pop_sel, exhaust_gate, 0, 1)
     p.connect(exhaust_sel, exhaust_gate, 0, 1)
@@ -945,13 +956,10 @@ def make_drive_simulator() -> dict[str, Any]:
     up_value = p.message("1", 865, 710, 30)
     down_named = p.message("shift_dir -1", 910, 710, 80)
     up_named = p.message("shift_dir 1", 1005, 710, 75)
-    gear_state = p.new("pak 0 1", 820, 750, 70, numinlets=2, numoutlets=1)
+    gear_state = p.new("pack 0 1", 820, 750, 70, numinlets=2, numoutlets=1)
     gear_next = p.new("expr $i1+$i2", 820, 785, 95, numinlets=2, numoutlets=1)
     gear_clip = p.new("clip 1 7", 930, 785, 65, numinlets=3, numoutlets=1)
-    gear_trigger = p.new("t i i b b", 1010, 785, 75, numinlets=1, numoutlets=4)
-    shift_on = p.message("shift 1", 1110, 710, 55)
-    shift_delay = p.new("delay 80", 1180, 710, 65, numinlets=2, numoutlets=1)
-    shift_off = p.message("shift 0", 1260, 710, 55)
+    gear_trigger = p.new("t i i", 1010, 785, 55, numinlets=1, numoutlets=2)
     output = outlet(p, 690, 850)
 
     p.connect(control, router)
@@ -1021,20 +1029,29 @@ def make_drive_simulator() -> dict[str, Any]:
     p.connect(gear_next, gear_clip)
     p.connect(gear_clip, gear_trigger)
     p.connect(gear_trigger, gear_store, 1, 1)
-    p.connect(gear_trigger, shift_on, 2)
-    p.connect(gear_trigger, shift_delay, 3)
-    p.connect(shift_delay, shift_off)
-    for message in (down_named, up_named, shift_on, shift_off):
+    for message in (down_named, up_named):
         p.connect(message, output)
 
-    intake_threshold = p.new("> 0.72", 1180, 345, 60, numinlets=2, numoutlets=1)
-    intake_change = p.new("change", 1180, 385, 55, numinlets=1, numoutlets=1)
-    intake_edge = p.new("sel 1", 1180, 425, 45, numinlets=1, numoutlets=2)
-    intake_on = p.message("intake_backfire 1", 1180, 465, 110)
-    intake_delay = p.new("delay 90", 1305, 465, 65, numinlets=2, numoutlets=1)
-    intake_off = p.message("intake_backfire 0", 1305, 505, 110)
-    p.connect(effective_throttle, intake_threshold)
-    p.connect(intake_threshold, intake_change)
+    intake_state = p.new("pak 0. 0. 0", 1120, 345, 100, numinlets=3, numoutlets=1)
+    intake_condition = p.new(
+        "expr ($i3!=0)*($f1>0.72)*($f2>2800.)",
+        1120,
+        385,
+        250,
+        numinlets=3,
+        numoutlets=1,
+    )
+    intake_change = p.new("change", 1180, 425, 55, numinlets=1, numoutlets=1)
+    intake_edge = p.new("sel 1", 1180, 465, 45, numinlets=1, numoutlets=2)
+    intake_on = p.message("intake_backfire 1", 1180, 505, 110)
+    intake_delay = p.new("delay 90", 1305, 505, 65, numinlets=2, numoutlets=1)
+    intake_off = p.message("intake_backfire 0", 1305, 545, 110)
+    p.connect(effective_throttle, intake_state, 0, 0)
+    p.connect(rpm_split, intake_state, 1, 1)
+    for profile in (profile_ev, profile_v12, profile_v10, profile_default):
+        p.connect(profile, intake_state, 0, 2)
+    p.connect(intake_state, intake_condition)
+    p.connect(intake_condition, intake_change)
     p.connect(intake_change, intake_edge)
     p.connect(intake_edge, intake_on, 0)
     p.connect(intake_edge, intake_delay, 0)

@@ -43,8 +43,8 @@ On macOS, Max writes load diagnostics to
 - V2 starts from the verified V1 runtime-fix commit `594acd1`.
 - Implemented flow: lifecycle/state controller → continuous/event/road layers
   → cabin → four-band master EQ → one final limiter/clip stage.
-- `tools/build_runtime_probe.py` builds a monitor-muted Max recording patch;
-  flatten patchers and Gen files into its temporary bundle before runtime use.
+- `tools/build_runtime_probe.py` builds a self-contained, monitor-muted Max
+  recording bundle under `/private/tmp` for objective V12 idle checks.
 - Latest Max 8.6.5 project/main load completed with zero Console errors. The
   monitor-muted V12 idle probe measured peak `-25.78 dBFS`, RMS `-35.33 dBFS`,
   and `67.99%` energy from 40–500 Hz.

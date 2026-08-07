@@ -1011,6 +1011,12 @@ def build_document(output: Path) -> None:
         "V2 位于 VehicleSoundSynth-V2 文件夹，入口是 VehicleSoundSynth-V2.maxproj。不要用 V1 的 VehicleSoundSynth.maxproj 打开 V2；V1 文件夹应保持原样。",
         kind="caution",
     )
+    add_callout(
+        doc,
+        "拟真边界",
+        "V12/V10 根据四冲程点火阶次、负载包络和共振谐波构建，是可调的程序化声学 archetype，并非对某一量产车型录音的测量匹配复刻。用于正式车型前仍应与参考录音做盲听和频谱校准。",
+        kind="info",
+    )
     add_table(
         doc,
         ["层级", "模块", "职责"],

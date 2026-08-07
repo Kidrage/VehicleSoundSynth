@@ -22,6 +22,10 @@ V2 目录内保留的 `VehicleSoundSynth_完整使用手册.docx` 是 V1 参考�
 
 Future EV does not require the combustion ignition/start lifecycle.
 
+The V12/V10 profiles are procedural sound-design archetypes built from
+four-stroke firing orders, load envelopes, and resonant harmonic layers; they
+are not measurement-matched replicas of a specific production vehicle.
+
 ## Public control messages
 
 ```text

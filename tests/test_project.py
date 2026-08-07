@@ -72,6 +72,9 @@ class VehicleSoundProjectTests(unittest.TestCase):
             "3.13 2.10 1.52 1.20 0.94 0.76 0.62",
         ):
             self.assertIn(token, text)
+        self.assertIn("pack 0 1", text)
+        self.assertNotIn("pak 0 1", text)
+        self.assertNotIn("shift 1", text)
 
     def test_v2_generated_transient_families_have_deterministic_variants(self):
         expected_minimums = {
@@ -92,17 +95,21 @@ class VehicleSoundProjectTests(unittest.TestCase):
     def test_v2_combustion_events_are_causal_and_profile_gated(self):
         drive = self.load_json("patchers/drive_simulator.maxpat")
         drive_text = "\n".join(item["box"].get("text", "") for item in drive["patcher"]["boxes"])
-        self.assertIn("> 0.72", drive_text)
+        self.assertIn("($f1>0.72)", drive_text)
+        self.assertIn("($f2>2800.)", drive_text)
         self.assertIn("intake_backfire 1", drive_text)
 
         controller = self.load_json("patchers/engine_controller.maxpat")
         controller_text = "\n".join(item["box"].get("text", "") for item in controller["patcher"]["boxes"])
         self.assertIn("exhaust_pop 1", controller_text)
         self.assertIn("crackle 1", controller_text)
+        self.assertIn("stop", controller_text)
 
         transient = self.load_json("patchers/transient~.maxpat")
         transient_text = "\n".join(item["box"].get("text", "") for item in transient["patcher"]["boxes"])
         self.assertIn("gate 1", transient_text)
+        self.assertIn("engine_running", transient_text)
+        self.assertIn("expr $i1*$i2", transient_text)
 
     def test_runnable_project_has_public_engine_interface(self):
         required = [
@@ -400,6 +407,30 @@ class VehicleSoundProjectTests(unittest.TestCase):
             second_hashes = build_and_hash(Path(second))
         self.assertEqual(first_hashes, second_hashes)
         self.assertIn("main.maxpat", first_hashes)
+
+    def test_runtime_probe_builder_creates_self_contained_temp_bundle(self):
+        with tempfile.TemporaryDirectory() as directory:
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / "tools" / "build_runtime_probe.py"),
+                    "--bundle-root",
+                    directory,
+                ],
+                check=True,
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+            )
+            bundle = Path(directory)
+            for relative_path in (
+                "runtime_probe.maxpat",
+                "vehicle_engine~.maxpat",
+                "engine_controller.maxpat",
+                "v12_powertrain.gendsp",
+                "media/starter_v12.wav",
+            ):
+                self.assertTrue((bundle / relative_path).is_file(), relative_path)
 
     def test_audio_metrics_distinguish_low_engine_energy_from_high_noise(self):
         sys.path.insert(0, str(ROOT / "tools"))
