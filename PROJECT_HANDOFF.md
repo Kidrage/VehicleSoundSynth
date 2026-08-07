@@ -9,12 +9,12 @@
 - Working root: `.`
 - Repository name: `VehicleSoundSynth-V2`
 - Git repository: `true`
-- Generated at: `2026-08-07T02:48:05.115758+00:00`
+- Generated at: `2026-08-07T02:55:29.765035+00:00`
 
 ## Current State
 
 - Branch: `codex/vehicle-sound-v2`
-- HEAD: `ec29ab4`
+- HEAD: `f5f2a4a`
 - Indexed paths: 49
 - Inventory truncated: `false`
 - Inaccessible paths: 0
@@ -57,9 +57,9 @@
 ### Categories
 
 - audio: 21 files, 411324 bytes
-- code: 5 files, 160324 bytes
-- literature: 8 files, 114629 bytes
-- other: 14 files, 366753 bytes
+- code: 5 files, 162677 bytes
+- literature: 8 files, 115249 bytes
+- other: 14 files, 373506 bytes
 - structured_data: 1 files, 773 bytes
 
 ### Common Extensions
@@ -86,6 +86,8 @@
 
 ## Change History
 
+- `f5f2a4a 2026-08-07 fix: gate automatic drive and transient events`
+- `e3562cf 2026-08-07 docs: refresh V2 project handoff`
 - `ec29ab4 2026-08-07 fix: tighten lifecycle and DCT event causality`
 - `99e87ba 2026-08-07 feat: build combustion-focused vehicle sound V2`
 - `594acd1 2026-08-06 fix: make generated Max project produce audio`
@@ -168,10 +170,10 @@
 <!-- AGENT_NOTES_START -->
 - V2 is independent from the sibling V1 repository and uses `VehicleSoundSynth-V2.maxproj`; the folder and project filename must match for Max 8.6.5.
 - Implemented combustion lifecycle for V12/V10: ignition, starter, engine-running gate, idle body, load-dependent harmonics, and 90 ms DCT shift cut/recovery.
-- Implemented profile-aware seven-speed DCT plus round-robin starter, up/down shift, intake backfire, exhaust pop, and crackle families. Combustion-only events are gated out of Future EV.
+- Implemented profile-aware seven-speed DCT plus round-robin starter, up/down shift, intake backfire, exhaust pop, and crackle families. Fuel Auto Drive and combustion/shift events require the ignition/start lifecycle; combustion-only events are gated out of Future EV.
 - Implemented quieter road/air noise and `mix_master~`: four-band stereo EQ, click-safe bypass, -24..0 dB trim, and the sole final limiter/clip stage.
 - Primary operator documentation is `VehicleSoundSynthV2_完整使用手册.docx`; the V1 manual remains as a reference copy and is not overwritten.
-- Validation: 27 Python tests pass; fresh Max 8.6.5 project and main loads produce zero Console errors/warnings. A monitor-muted V12 idle render measured peak -25.78 dBFS, RMS -35.34 dBFS, high-frequency ratio 0.000005%, and 40-500 Hz ratio 67.99%.
+- Validation: 27 Python tests pass; fresh Max 8.6.5 project and main loads produce zero Console errors/warnings. A monitor-muted V12 idle render measured peak -25.78 dBFS, RMS -35.44 dBFS, high-frequency ratio 0.000005%, and 40-500 Hz ratio 67.99%.
 - The standard DOCX renderer could not run because LibreOffice/soffice is absent; the V2 manual passed its deterministic OOXML structural audit but still needs optional page-image QA on a host with LibreOffice.
 <!-- AGENT_NOTES_END -->
 
