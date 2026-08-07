@@ -68,6 +68,7 @@ class VehicleSoundProjectTests(unittest.TestCase):
             "ignition",
             "start",
             "Drive lifecycle gate",
+            "gate 1",
             "clip 1 7",
             "shift_dir -1",
             "shift_dir 1",

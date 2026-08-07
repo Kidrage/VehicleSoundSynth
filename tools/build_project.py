@@ -887,7 +887,8 @@ def make_drive_simulator() -> dict[str, Any]:
     ignition_clip = p.new("clip 0 1", 35, 250, 65, numinlets=3, numoutlets=1)
     ignition_off = p.new("sel 0", 110, 250, 45, numinlets=1, numoutlets=2)
     start_clip = p.new("clip 0 1", 165, 250, 65, numinlets=3, numoutlets=1)
-    reset_start = p.message("0", 240, 250, 30)
+    start_gate = p.new("gate 1", 240, 250, 55, numinlets=2, numoutlets=1)
+    reset_start = p.message("0", 305, 250, 30)
     lifecycle_state = p.new("pak 0 0 0", 35, 280, 90, numinlets=3, numoutlets=1)
     drive_enabled = p.new(
         "expr ($i3==0)+(($i3!=0)*$i1*$i2)",
@@ -995,7 +996,9 @@ def make_drive_simulator() -> dict[str, Any]:
     p.connect(engine_type, profile_v10, 2)
     p.connect(ignition_clip, ignition_off)
     p.connect(ignition_clip, lifecycle_state, 0, 0)
-    p.connect(start_clip, lifecycle_state, 0, 1)
+    p.connect(ignition_clip, start_gate, 0, 0)
+    p.connect(start_clip, start_gate, 0, 1)
+    p.connect(start_gate, lifecycle_state, 0, 1)
     p.connect(ignition_off, reset_start, 0)
     p.connect(reset_start, lifecycle_state, 0, 1)
     for profile in (profile_ev, profile_v12, profile_v10, profile_default):
