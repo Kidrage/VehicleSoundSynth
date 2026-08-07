@@ -9,13 +9,13 @@
 - Working root: `.`
 - Repository name: `VehicleSoundSynth-V2`
 - Git repository: `true`
-- Generated at: `2026-08-07T01:43:36.090956+00:00`
+- Generated at: `2026-08-07T02:48:05.115758+00:00`
 
 ## Current State
 
 - Branch: `codex/vehicle-sound-v2`
-- HEAD: `594acd1`
-- Indexed paths: 26
+- HEAD: `ec29ab4`
+- Indexed paths: 49
 - Inventory truncated: `false`
 - Inaccessible paths: 0
 - Scan mode: complete path/metadata inventory; no bulk content read; no symlink traversal.
@@ -43,12 +43,12 @@
 
 | Route | Files |
 |---|---:|
-| `.` | 7 |
-| `patchers` | 6 |
+| `media` | 21 |
+| `.` | 8 |
+| `patchers` | 8 |
+| `tools` | 4 |
 | `.codex` | 3 |
 | `gen` | 3 |
-| `media` | 3 |
-| `tools` | 2 |
 | `presets` | 1 |
 | `tests` | 1 |
 
@@ -56,23 +56,23 @@
 
 ### Categories
 
-- audio: 3 files, 38532 bytes
-- code: 3 files, 100086 bytes
-- literature: 7 files, 68087 bytes
-- other: 12 files, 167505 bytes
-- structured_data: 1 files, 612 bytes
+- audio: 21 files, 411324 bytes
+- code: 5 files, 160324 bytes
+- literature: 8 files, 114629 bytes
+- other: 14 files, 366753 bytes
+- structured_data: 1 files, 773 bytes
 
 ### Common Extensions
 
-- `.maxpat`: 7
+- `.wav`: 21
+- `.maxpat`: 9
+- `.py`: 5
 - `.md`: 4
 - `.gendsp`: 3
-- `.wav`: 3
-- `.py`: 3
 - `.txt`: 2
+- `.docx`: 2
 - `[no extension]`: 1
 - `.maxproj`: 1
-- `.docx`: 1
 - `.json`: 1
 
 ### Schema / Model / Interface Candidates
@@ -86,6 +86,8 @@
 
 ## Change History
 
+- `ec29ab4 2026-08-07 fix: tighten lifecycle and DCT event causality`
+- `99e87ba 2026-08-07 feat: build combustion-focused vehicle sound V2`
 - `594acd1 2026-08-06 fix: make generated Max project produce audio`
 - `7dada34 2026-08-06 fix: use Max-compatible project search path schema`
 - `e1cc86c 2026-08-06 docs: refresh project handoff`
@@ -96,9 +98,6 @@
 ## Current Changes
 
 - `## codex/vehicle-sound-v2`
-- ` M .codex/REPO_GUIDE.md`
-- ` M .codex/source_index.txt`
-- ` M AGENTS.md`
 
 ## Related Repositories
 
@@ -120,6 +119,7 @@
 - `AGENTS.md`
 - `PROJECT_HANDOFF.md`
 - `README.md`
+- `VehicleSoundSynthV2_完整使用手册.docx`
 - `VehicleSoundSynth_完整使用手册.docx`
 
 ### image
@@ -128,9 +128,26 @@
 
 ### audio
 
+- `media/exhaust_crackle_01.wav`
+- `media/exhaust_crackle_02.wav`
+- `media/exhaust_crackle_03.wav`
 - `media/exhaust_pop.wav`
+- `media/exhaust_pop_01.wav`
+- `media/exhaust_pop_02.wav`
+- `media/exhaust_pop_03.wav`
+- `media/exhaust_pop_04.wav`
+- `media/intake_backfire_01.wav`
+- `media/intake_backfire_02.wav`
+- `media/intake_backfire_03.wav`
 - `media/mechanical_click.wav`
+- `media/shift_down_01.wav`
+- `media/shift_down_02.wav`
+- `media/shift_down_03.wav`
 - `media/shift_thump.wav`
+- `media/shift_up_01.wav`
+- `media/shift_up_02.wav`
+- `media/shift_up_03.wav`
+- `media/starter_v10.wav`
 
 ### video
 
@@ -154,7 +171,7 @@
 - Implemented profile-aware seven-speed DCT plus round-robin starter, up/down shift, intake backfire, exhaust pop, and crackle families. Combustion-only events are gated out of Future EV.
 - Implemented quieter road/air noise and `mix_master~`: four-band stereo EQ, click-safe bypass, -24..0 dB trim, and the sole final limiter/clip stage.
 - Primary operator documentation is `VehicleSoundSynthV2_完整使用手册.docx`; the V1 manual remains as a reference copy and is not overwritten.
-- Validation: 26 Python tests pass; fresh Max 8.6.5 project and main loads produce zero Console errors/warnings. A monitor-muted V12 idle render measured peak -25.78 dBFS, RMS -35.33 dBFS, high-frequency ratio 0.000005%, and 40-500 Hz ratio 67.99%.
+- Validation: 27 Python tests pass; fresh Max 8.6.5 project and main loads produce zero Console errors/warnings. A monitor-muted V12 idle render measured peak -25.78 dBFS, RMS -35.34 dBFS, high-frequency ratio 0.000005%, and 40-500 Hz ratio 67.99%.
 - The standard DOCX renderer could not run because LibreOffice/soffice is absent; the V2 manual passed its deterministic OOXML structural audit but still needs optional page-image QA on a host with LibreOffice.
 <!-- AGENT_NOTES_END -->
 
