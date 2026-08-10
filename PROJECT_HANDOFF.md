@@ -9,12 +9,12 @@
 - Working root: `.`
 - Repository name: `VehicleSoundSynth-V3`
 - Git repository: `true`
-- Generated at: `2026-08-10T08:58:34.550996+00:00`
+- Generated at: `2026-08-10T09:53:11.974032+00:00`
 
 ## Current State
 
 - Branch: `codex/vehicle-sound-v3`
-- HEAD: `01a234e`
+- HEAD: `1e811ab`
 - Indexed paths: 64
 - Inventory truncated: `false`
 - Inaccessible paths: 0
@@ -59,9 +59,9 @@
 ### Categories
 
 - audio: 29 files, 93695022 bytes
-- code: 7 files, 243549 bytes
-- literature: 11 files, 172003 bytes
-- other: 15 files, 495019 bytes
+- code: 7 files, 250568 bytes
+- literature: 11 files, 172602 bytes
+- other: 15 files, 477380 bytes
 - structured_data: 2 files, 14799 bytes
 
 ### Common Extensions
@@ -89,6 +89,9 @@
 
 ## Change History
 
+- `1e811ab 2026-08-10 fix: synchronize Manual keyboard and pedal state`
+- `5ff0aa0 2026-08-10 feat: add Manual mode W/S controls`
+- `127d6fc 2026-08-10 docs: refresh V3 final handoff`
 - `01a234e 2026-08-10 fix: stop starter on lifecycle transitions`
 - `c3307f6 2026-08-10 feat: complete V3 vehicle sound realism overhaul`
 - `4931e74 2026-08-07 docs: refresh final V3 handoff`
@@ -106,12 +109,10 @@
 - `e1cc86c 2026-08-06 docs: refresh project handoff`
 - `ed5201e 2026-08-06 docs: add complete VehicleSoundSynth user manual`
 - `cfc59a0 2026-08-06 docs: refresh project handoff`
-- `3f4ffcf 2026-08-06 feat: add Max vehicle sound synthesizer MVP`
 
 ## Current Changes
 
 - `## codex/vehicle-sound-v3`
-- ` M PROJECT_HANDOFF.md`
 
 ## Related Repositories
 
@@ -187,10 +188,11 @@
 - V3 is an independent clone of committed V2 and uses `VehicleSoundSynth-V3.maxproj`; the sibling V1/V2 folders and their manuals remain unchanged.
 - Rebuilt the V12/V10 sources as differentiated multi-harmonic combustion models with AM/FM sidebands, load texture, lifecycle gating, automatic seven-speed DCT events, intake backfire, exhaust pops/crackle, and a powertrain-excited cabin-rumble stage using damped 48/68/92/118 Hz modes.
 - Starter playback now stops on the controller's 500 ms catch transition and ignition-off path; a start lock prevents retriggering while the engine is already running, with explicit patchcord regression coverage.
+- Internal Manual now supports uppercase/lowercase W/S keyboard pedals: W ramps throttle up over 2.5 s and releases over 1.4 s; S applies brake over 120 ms and releases immediately. Key repeat is collapsed, controls reset when leaving Manual, and the keyboard envelopes stay synchronized with the existing flonums.
 - Repaired the four-band global EQ coefficient path and all master/stem dB controls. Public stem messages are `powertrain_level_db`, `transient_level_db`, `road_level_db`, and `rumble_level_db` (-60..+6 dB); `cabin_ir_mix`, master trim, bypass, limiter, and clip protection remain downstream.
 - Installed six documented CC0 source recordings under `assets/raw/`; deterministic processing creates normalized 48 kHz PCM16 runtime media without overwriting curated output. The Ferrari acceleration file is preserved intentionally as the sixth downloaded listening reference and is not loaded at runtime.
 - Reduced the white-noise impression by separating centered band-limited tire noise from restrained stereo wind, lowering mechanical-noise contributions, and centering low-frequency cabin/IR content before the final master chain.
-- Validation: all 44 Python tests pass and `git diff --check` is clean. Runtime component probes confirmed Max-compatible loading, EQ turnover/peak response, master/stem gain response, and differentiated V12/V10 spectra; the last post-IR side-filter revision is structurally covered but was not repeatedly rendered after Core Audio instance contention.
+- Validation: all 45 Python tests pass and `git diff --check` is clean. A post-change Max 8.6.5 project/main smoke check loaded with DSP muted and produced none of the blocking category, missing-object, Gen-outlet, or patchcord errors. Runtime component probes previously confirmed EQ turnover/peak response, master/stem gain response, and differentiated V12/V10 spectra; the last post-IR side-filter revision remains structurally covered rather than repeatedly rendered after Core Audio instance contention.
 - Primary operator documentation is `VehicleSoundSynthV3_完整使用手册.docx`; V1/V2 manuals remain byte-for-byte unchanged. The V3 DOCX passed deterministic OOXML/ZIP audits and QuickLook cover inspection; full multi-page PDF/image QA is unavailable because LibreOffice is not installed.
 - Remaining realism boundary: event and cabin-IR layers use recordings, while continuous V12/V10 operation is still procedural rather than a measured multi-load, multi-microphone engine corpus. No Git remote or CI is configured for this repository.
 <!-- AGENT_NOTES_END -->
