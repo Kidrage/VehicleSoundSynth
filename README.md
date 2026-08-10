@@ -21,8 +21,12 @@ V3 目录同时保留 V1 与 V2 手册作为参考，不会覆盖旧版本。
 2. Open `main.maxpat` from the loaded project.
 3. Select `High-Rev V12` or `Aggressive V10`.
 4. Enable `Ignition`, click `Engine Start`, and confirm idle reaches the meters.
-5. Enable `Audio`; use `Internal Auto` to audition the seven-speed DCT.
-6. Shape the cabin with `Cabin Rumble`, `Exhaust Boom`, and `Structure Vibration`.
+5. In `Internal Manual`, hold `W` to ramp throttle to 1 over 2.5 s; release it
+   to ramp throttle back to 0 over 1.4 s. Hold `S` for a fast 120 ms brake
+   application and release it to remove the brake immediately. Key repeat is
+   suppressed, and leaving Manual mode releases both controls.
+6. Enable `Audio`; use `Internal Auto` to audition the seven-speed DCT.
+7. Shape the cabin with `Cabin Rumble`, `Exhaust Boom`, and `Structure Vibration`.
 
 The preset also sets four independent stem trims. If a dB field seems inactive,
 confirm the matching stem is actually sounding: `Rumble Level` cannot change

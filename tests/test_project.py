@@ -665,6 +665,60 @@ class VehicleSoundProjectTests(unittest.TestCase):
         ]
         self.assertTrue(any(boxes[source].get("text") == "loadmess 0" for source in incoming))
 
+    def test_manual_mode_keyboard_has_linear_throttle_and_fast_brake_envelopes(self):
+        patcher = self.load_json("main.maxpat")["patcher"]
+        boxes = {item["box"]["id"]: item["box"] for item in patcher["boxes"]}
+        text_to_ids = {}
+        for box_id, box in boxes.items():
+            text_to_ids.setdefault(box.get("text", ""), set()).add(box_id)
+
+        for text in (
+            "key",
+            "keyup",
+            "sel 119 87 115 83",
+            "== 0",
+            "sel 1 0",
+            "1. 2500",
+            "0. 1400",
+            "1. 120",
+            "Manual keyboard: hold W = throttle up; release W = throttle down; hold S = fast brake; release S = brake off",
+        ):
+            self.assertIn(text, text_to_ids)
+
+        lines = [line["patchline"] for line in patcher["lines"]]
+        mode_id = next(
+            box_id for box_id, box in boxes.items()
+            if box["maxclass"] == "umenu" and "Internal Manual" in box.get("items", [])
+        )
+        manual_gate_id = next(iter(text_to_ids["== 0"]))
+        self.assertTrue(any(
+            line["source"][0] == mode_id and line["destination"][0] == manual_gate_id
+            for line in lines
+        ))
+
+        throttle_id = next(
+            box_id for box_id, box in boxes.items()
+            if box["maxclass"] == "flonum" and box.get("patching_rect", [None])[0] == 25.0
+            and box.get("patching_rect", [None, None])[1] == 270.0
+        )
+        brake_id = next(
+            box_id for box_id, box in boxes.items()
+            if box["maxclass"] == "flonum" and box.get("patching_rect", [None])[0] == 150.0
+            and box.get("patching_rect", [None, None])[1] == 270.0
+        )
+        line_ids = {
+            box_id for box_id, box in boxes.items() if box.get("text") == "line 0."
+        }
+        self.assertEqual(2, len(line_ids))
+        self.assertTrue(any(
+            line["source"][0] in line_ids and line["destination"][0] == throttle_id
+            for line in lines
+        ))
+        self.assertTrue(any(
+            line["source"][0] in line_ids and line["destination"][0] == brake_id
+            for line in lines
+        ))
+
     def test_preset_messages_refresh_visible_macro_and_gain_controls(self):
         main = self.load_json("main.maxpat")["patcher"]
         boxes = {item["box"]["id"]: item["box"] for item in main["boxes"]}

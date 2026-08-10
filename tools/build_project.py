@@ -1701,6 +1701,73 @@ def make_main() -> dict[str, Any]:
     p.connect(mute_r, spectrum_r)
     p.connect(mute_l, dac, 0, 0)
     p.connect(mute_r, dac, 0, 1)
+
+    # Manual-only keyboard pedals. Key-repeat events are collapsed by `change`
+    # so a held key follows one uninterrupted linear envelope. Leaving Manual
+    # mode releases both pedals to prevent a hidden stuck throttle or brake.
+    p.comment(
+        "Manual keyboard: hold W = throttle up; release W = throttle down; hold S = fast brake; release S = brake off",
+        25,
+        215,
+        430,
+    )
+    key_down = p.new("key", 25, 1270, 45, numinlets=0, numoutlets=1)
+    key_up = p.new("keyup", 85, 1270, 55, numinlets=0, numoutlets=1)
+    down_select = p.new("sel 119 87 115 83", 25, 1310, 125, numinlets=1, numoutlets=5)
+    up_select = p.new("sel 119 87 115 83", 165, 1310, 125, numinlets=1, numoutlets=5)
+    manual_enabled = p.new("== 0", 305, 1270, 45, numinlets=2, numoutlets=1)
+    manual_disabled = p.new("sel 0", 365, 1270, 45, numinlets=1, numoutlets=2)
+    w_gate = p.new("gate 1", 25, 1350, 55, numinlets=2, numoutlets=1)
+    s_gate = p.new("gate 1", 165, 1350, 55, numinlets=2, numoutlets=1)
+    w_pressed = p.message("1", 90, 1350, 30)
+    w_released = p.message("0", 125, 1350, 30)
+    s_pressed = p.message("1", 230, 1350, 30)
+    s_released = p.message("0", 265, 1350, 30)
+    release_both = p.message("0", 425, 1270, 30)
+    w_change = p.new("change", 25, 1390, 55, numinlets=1, numoutlets=3)
+    s_change = p.new("change", 165, 1390, 55, numinlets=1, numoutlets=3)
+    w_state = p.new("sel 1 0", 25, 1430, 55, numinlets=1, numoutlets=3)
+    s_state = p.new("sel 1 0", 165, 1430, 55, numinlets=1, numoutlets=3)
+    throttle_up = p.message("1. 2500", 25, 1470, 65)
+    throttle_release = p.message("0. 1400", 95, 1470, 65)
+    brake_on = p.message("1. 120", 165, 1470, 55)
+    brake_off = p.message("0.", 225, 1470, 30)
+    throttle_line = p.new("line 0.", 25, 1510, 60, numinlets=2, numoutlets=2)
+    brake_line = p.new("line 0.", 165, 1510, 60, numinlets=2, numoutlets=2)
+
+    p.connect(key_down, down_select)
+    p.connect(key_up, up_select)
+    for outlet_index in (0, 1):
+        p.connect(down_select, w_pressed, outlet_index)
+        p.connect(up_select, w_released, outlet_index)
+    for outlet_index in (2, 3):
+        p.connect(down_select, s_pressed, outlet_index)
+        p.connect(up_select, s_released, outlet_index)
+    p.connect(mode, manual_enabled)
+    p.connect(manual_enabled, manual_disabled)
+    p.connect(manual_enabled, w_gate, 0, 0)
+    p.connect(manual_enabled, s_gate, 0, 0)
+    p.connect(w_pressed, w_gate, 0, 1)
+    p.connect(w_released, w_gate, 0, 1)
+    p.connect(s_pressed, s_gate, 0, 1)
+    p.connect(s_released, s_gate, 0, 1)
+    p.connect(manual_disabled, release_both, 0)
+    p.connect(release_both, w_change)
+    p.connect(release_both, s_change)
+    p.connect(w_gate, w_change)
+    p.connect(s_gate, s_change)
+    p.connect(w_change, w_state)
+    p.connect(s_change, s_state)
+    p.connect(w_state, throttle_up, 0)
+    p.connect(w_state, throttle_release, 1)
+    p.connect(s_state, brake_on, 0)
+    p.connect(s_state, brake_off, 1)
+    p.connect(throttle_up, throttle_line)
+    p.connect(throttle_release, throttle_line)
+    p.connect(brake_on, brake_line)
+    p.connect(brake_off, brake_line)
+    p.connect(throttle_line, throttle)
+    p.connect(brake_line, brake)
     return p.document(presentation=False)
 
 
