@@ -3,10 +3,6 @@
   "autoorganize": 0,
   "contents": {
     "code": {
-      "gen/cabin_rumble.gendsp": {
-        "kind": "gendsp",
-        "local": 1
-      },
       "gen/ev_powertrain.gendsp": {
         "kind": "gendsp",
         "local": 1
@@ -27,6 +23,14 @@
       }
     },
     "media": {
+      "media/cabin_ir_l.wav": {
+        "kind": "mediafile",
+        "local": 1
+      },
+      "media/cabin_ir_r.wav": {
+        "kind": "mediafile",
+        "local": 1
+      },
       "media/exhaust_crackle_01.wav": {
         "kind": "mediafile",
         "local": 1

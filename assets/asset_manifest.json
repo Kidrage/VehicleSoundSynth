@@ -1,0 +1,389 @@
+{
+  "schema_version": 1,
+  "sample_rate": 48000,
+  "runtime_format": "PCM16 WAV",
+  "license_policy": [
+    "CC0-1.0",
+    "CC-BY-3.0",
+    "CC-BY-4.0"
+  ],
+  "assets": [
+    {
+      "id": "real_starter",
+      "purpose": "starter_v12 and starter_v10",
+      "status": "processed",
+      "raw_path": "assets/raw/grasopt_479351_car_starter.wav",
+      "raw_sha256": "acd3141ec95e6dd3e8d15b6720db2f0eae5e20efa7b1ca517dd30c4248b105ad",
+      "source": {
+        "title": "Car Starter",
+        "author": "Grasopt",
+        "url": "https://freesound.org/people/Grasopt/sounds/479351/",
+        "license": "CC0-1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      },
+      "outputs": [
+        {
+          "path": "media/starter_v12.wav",
+          "start_seconds": 0.35,
+          "duration_seconds": 3.2,
+          "channel": "mix",
+          "peak_dbfs": -3.0,
+          "fade_ms": 8.0,
+          "processed_sha256": "a3bfd054b1bf476a926dbb1379f3a827ef4618ef47adfd0cd6a9272f071514a3",
+          "frames": 153600,
+          "sample_rate": 48000
+        },
+        {
+          "path": "media/starter_v10.wav",
+          "start_seconds": 0.42,
+          "duration_seconds": 3.1,
+          "channel": "mix",
+          "peak_dbfs": -3.0,
+          "fade_ms": 8.0,
+          "processed_sha256": "cae2470754b73057b98588cf85e35e32522592919a225dd674a61443010f49ed",
+          "frames": 148800,
+          "sample_rate": 48000
+        }
+      ]
+    },
+    {
+      "id": "engine_contact_shifts",
+      "purpose": "shift_up and shift_down transient families",
+      "status": "processed",
+      "raw_path": "assets/raw/thelittlecrow_669623_engine_block_contact.wav",
+      "raw_sha256": "75eeebcef4ae6cc9ecfb92903e216e268fb8ec1cb48315642da0a9e71aa84068",
+      "source": {
+        "title": "Engine block/chassis contact recording with shifts",
+        "author": "TheLittleCrow",
+        "url": "https://freesound.org/people/TheLittleCrow/sounds/669623/",
+        "license": "CC0-1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      },
+      "outputs": [
+        {
+          "path": "media/shift_up_01.wav",
+          "start_seconds": 12.9,
+          "duration_seconds": 0.55,
+          "channel": "mix",
+          "peak_dbfs": -6.0,
+          "fade_ms": 4.0,
+          "processed_sha256": "e3e0b4b7dc68205b3b58f086fdc7f53d1964042647d0dce268a588dd5bc73c34",
+          "frames": 26400,
+          "sample_rate": 48000
+        },
+        {
+          "path": "media/shift_up_02.wav",
+          "start_seconds": 35.55,
+          "duration_seconds": 0.55,
+          "channel": "mix",
+          "peak_dbfs": -6.0,
+          "fade_ms": 4.0,
+          "processed_sha256": "501314026a533cecc3cc159284be79bdc225839955b7c5757362334f7cb3658c",
+          "frames": 26400,
+          "sample_rate": 48000
+        },
+        {
+          "path": "media/shift_up_03.wav",
+          "start_seconds": 41.55,
+          "duration_seconds": 0.55,
+          "channel": "mix",
+          "peak_dbfs": -6.0,
+          "fade_ms": 4.0,
+          "processed_sha256": "00f3930a254ad0955c855db5892b84f789dc49e88a4cb04888f995dcfe228e68",
+          "frames": 26400,
+          "sample_rate": 48000
+        },
+        {
+          "path": "media/shift_down_01.wav",
+          "start_seconds": 7.7,
+          "duration_seconds": 0.62,
+          "channel": "mix",
+          "peak_dbfs": -6.0,
+          "fade_ms": 4.0,
+          "processed_sha256": "d2047f4dc3139412df27ddd77a19eb2f66b738a1efd12f437d2e10328f1f13bb",
+          "frames": 29760,
+          "sample_rate": 48000
+        },
+        {
+          "path": "media/shift_down_02.wav",
+          "start_seconds": 8.42,
+          "duration_seconds": 0.62,
+          "channel": "mix",
+          "peak_dbfs": -6.0,
+          "fade_ms": 4.0,
+          "processed_sha256": "c631d1d158095338cca1e7f51056ddb44ea0bd0d210d8410d7475afd4a04c188",
+          "frames": 29760,
+          "sample_rate": 48000
+        },
+        {
+          "path": "media/shift_down_03.wav",
+          "start_seconds": 10.42,
+          "duration_seconds": 0.62,
+          "channel": "mix",
+          "peak_dbfs": -6.0,
+          "fade_ms": 4.0,
+          "processed_sha256": "d8a0defd9e3b909cb9d013b94abda6933515a976b79345889b1990bccad0c69c",
+          "frames": 29760,
+          "sample_rate": 48000
+        }
+      ]
+    },
+    {
+      "id": "sports_car_revs_pops",
+      "purpose": "intake backfire, exhaust pop, and crackle families",
+      "status": "processed",
+      "raw_path": "assets/raw/richwise_478756_sports_car_revs_pops.wav",
+      "raw_sha256": "2b67aed7ec0dc3fe74b3d110865574ca591455a5300417281a29dfd7f4483cd1",
+      "source": {
+        "title": "Sports/Supercar Rev & Pops",
+        "author": "richwise",
+        "url": "https://freesound.org/people/richwise/sounds/478756/",
+        "license": "CC0-1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      },
+      "outputs": [
+        {
+          "path": "media/intake_backfire_01.wav",
+          "start_seconds": 6.05,
+          "duration_seconds": 0.58,
+          "channel": "mix",
+          "peak_dbfs": -6.0,
+          "fade_ms": 3.0,
+          "processed_sha256": "ffa593e5557af004ecedd76acb4339ce777fa73e5fd7cf53ce16998b008efc1d",
+          "frames": 27840,
+          "sample_rate": 48000
+        },
+        {
+          "path": "media/intake_backfire_02.wav",
+          "start_seconds": 7.58,
+          "duration_seconds": 0.58,
+          "channel": "mix",
+          "peak_dbfs": -6.0,
+          "fade_ms": 3.0,
+          "processed_sha256": "4b15a33e6bdbabae91405646e1c3cf4720b63527a87929ac55b7027e5d05126f",
+          "frames": 27840,
+          "sample_rate": 48000
+        },
+        {
+          "path": "media/intake_backfire_03.wav",
+          "start_seconds": 9.55,
+          "duration_seconds": 0.58,
+          "channel": "mix",
+          "peak_dbfs": -6.0,
+          "fade_ms": 3.0,
+          "processed_sha256": "1710b64fef00ca4a292dd8128cc270b91dd558111b2a6cccb5ecf3030c26528a",
+          "frames": 27840,
+          "sample_rate": 48000
+        },
+        {
+          "path": "media/exhaust_pop.wav",
+          "start_seconds": 6.42,
+          "duration_seconds": 0.34,
+          "channel": "mix",
+          "peak_dbfs": -5.0,
+          "fade_ms": 2.0,
+          "processed_sha256": "94612f2da8c9cad9c4e156ac1382b97afc13413fbf872947636bc7566d4b6919",
+          "frames": 16320,
+          "sample_rate": 48000
+        },
+        {
+          "path": "media/exhaust_pop_01.wav",
+          "start_seconds": 6.42,
+          "duration_seconds": 0.34,
+          "channel": "mix",
+          "peak_dbfs": -5.0,
+          "fade_ms": 2.0,
+          "processed_sha256": "94612f2da8c9cad9c4e156ac1382b97afc13413fbf872947636bc7566d4b6919",
+          "frames": 16320,
+          "sample_rate": 48000
+        },
+        {
+          "path": "media/exhaust_pop_02.wav",
+          "start_seconds": 7.04,
+          "duration_seconds": 0.34,
+          "channel": "mix",
+          "peak_dbfs": -5.0,
+          "fade_ms": 2.0,
+          "processed_sha256": "02439109579d31202a1bb1ad0aae1eee38a381ece4cf350508f638c2aea05f4b",
+          "frames": 16320,
+          "sample_rate": 48000
+        },
+        {
+          "path": "media/exhaust_pop_03.wav",
+          "start_seconds": 8.02,
+          "duration_seconds": 0.34,
+          "channel": "mix",
+          "peak_dbfs": -5.0,
+          "fade_ms": 2.0,
+          "processed_sha256": "7810848783a3d8cb6452fafdc9049fa15804a96e8f7a43ad1eed40c6f4cff8aa",
+          "frames": 16320,
+          "sample_rate": 48000
+        },
+        {
+          "path": "media/exhaust_pop_04.wav",
+          "start_seconds": 10.46,
+          "duration_seconds": 0.34,
+          "channel": "mix",
+          "peak_dbfs": -5.0,
+          "fade_ms": 2.0,
+          "processed_sha256": "ca4c6b6dba9143e4c4cd518687fe286bec2bd3a7d56303302e62d6b9b5b2b970",
+          "frames": 16320,
+          "sample_rate": 48000
+        },
+        {
+          "path": "media/exhaust_crackle_01.wav",
+          "start_seconds": 6.48,
+          "duration_seconds": 0.82,
+          "channel": "mix",
+          "peak_dbfs": -8.0,
+          "fade_ms": 5.0,
+          "processed_sha256": "81682d0dc667734b9fda32f2caf402892d4c000484c6d9b9216d7171d143659c",
+          "frames": 39360,
+          "sample_rate": 48000
+        },
+        {
+          "path": "media/exhaust_crackle_02.wav",
+          "start_seconds": 7.82,
+          "duration_seconds": 0.82,
+          "channel": "mix",
+          "peak_dbfs": -8.0,
+          "fade_ms": 5.0,
+          "processed_sha256": "e0d500a9bce00364d841ec9065251a1a7a17d94d3b1100b6ab8d8a714f3254a3",
+          "frames": 39360,
+          "sample_rate": 48000
+        },
+        {
+          "path": "media/exhaust_crackle_03.wav",
+          "start_seconds": 10.18,
+          "duration_seconds": 0.82,
+          "channel": "mix",
+          "peak_dbfs": -8.0,
+          "fade_ms": 5.0,
+          "processed_sha256": "5b1fe3163c80663b96f953eb7a2720a7af4b9028be26bc037ea8d81cc54c4763",
+          "frames": 39360,
+          "sample_rate": 48000
+        }
+      ]
+    },
+    {
+      "id": "mechanical_shift",
+      "purpose": "mechanical click and DCT selector detail",
+      "status": "processed",
+      "raw_path": "assets/raw/microman502_818294_mechanical_gear_shift.wav",
+      "raw_sha256": "55631e1605172acaf748c46996d1a2421f72a4c58e08e2353108a2da1ae1758d",
+      "source": {
+        "title": "Mechanical gear shift",
+        "author": "microman502",
+        "url": "https://freesound.org/people/microman502/sounds/818294/",
+        "license": "CC0-1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      },
+      "outputs": [
+        {
+          "path": "media/mechanical_click.wav",
+          "start_seconds": 3.78,
+          "duration_seconds": 0.42,
+          "channel": "mix",
+          "peak_dbfs": -6.0,
+          "fade_ms": 3.0,
+          "processed_sha256": "0b2011818eb697b6598e0e8171c87a7172bc165dfcfc97a3edf607f2a20e8e8b",
+          "frames": 20160,
+          "sample_rate": 48000
+        },
+        {
+          "path": "media/shift_thump.wav",
+          "start_seconds": 5.42,
+          "duration_seconds": 0.62,
+          "channel": "mix",
+          "peak_dbfs": -6.0,
+          "fade_ms": 4.0,
+          "processed_sha256": "6e86d1d32c12dd8a9275e28be096f95fc1734e3479029943a271fe9576e3323f",
+          "frames": 29760,
+          "sample_rate": 48000
+        }
+      ]
+    },
+    {
+      "id": "mini_cabin_ir",
+      "purpose": "stereo short cabin convolution IR",
+      "status": "processed",
+      "raw_path": "assets/raw/jamespeacock4616_555787_mini_car_ir.wav",
+      "raw_sha256": "5c0197184134cadaf92e4f576375ffcc6c1babe2a5897fa2cfe52c73f01fa406",
+      "source": {
+        "title": "Mini car impulse response",
+        "author": "jamespeacock4616",
+        "url": "https://freesound.org/people/jamespeacock4616/sounds/555787/",
+        "license": "CC0-1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      },
+      "outputs": [
+        {
+          "path": "media/cabin_ir_l.wav",
+          "start_seconds": 0.0,
+          "duration_seconds": 0.0853333333,
+          "channel": "left",
+          "peak_dbfs": -3.0,
+          "fade_ms": 0.0,
+          "max_frames": 4096,
+          "processed_sha256": "a2df647cf26633d0890c94cfd1fc9074d31327f933efbec617ec1504b48d3198",
+          "frames": 4096,
+          "sample_rate": 48000
+        },
+        {
+          "path": "media/cabin_ir_r.wav",
+          "start_seconds": 0.0,
+          "duration_seconds": 0.0853333333,
+          "channel": "right",
+          "peak_dbfs": -3.0,
+          "fade_ms": 0.0,
+          "max_frames": 4096,
+          "processed_sha256": "80d324211ef556ec0831999c4134d0a325c7224abfff04b623de1172836124d2",
+          "frames": 4096,
+          "sample_rate": 48000
+        }
+      ]
+    },
+    {
+      "id": "ferrari_acceleration_reference",
+      "purpose": "offline loudness-matched spectral and acceleration reference",
+      "status": "downloaded",
+      "raw_path": "assets/raw/biholao_370278_ferrari_acceleration.wav",
+      "raw_sha256": "6c5f1169d01403d2323435e7c27fd747e89c35db637cf989e4040240819baa4d",
+      "source": {
+        "title": "Ferrari acceleration",
+        "author": "biholao",
+        "url": "https://freesound.org/people/biholao/sounds/370278/",
+        "license": "CC0-1.0",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      },
+      "outputs": []
+    }
+  ],
+  "fallback_media": {
+    "origin": "deterministic procedural Foley generated by tools/build_project.py",
+    "policy": "fallback-only; replace all event families before release",
+    "files": [
+      "starter_v12.wav",
+      "starter_v10.wav",
+      "shift_up_01.wav",
+      "shift_up_02.wav",
+      "shift_up_03.wav",
+      "shift_down_01.wav",
+      "shift_down_02.wav",
+      "shift_down_03.wav",
+      "intake_backfire_01.wav",
+      "intake_backfire_02.wav",
+      "intake_backfire_03.wav",
+      "exhaust_pop_01.wav",
+      "exhaust_pop_02.wav",
+      "exhaust_pop_03.wav",
+      "exhaust_pop_04.wav",
+      "exhaust_crackle_01.wav",
+      "exhaust_crackle_02.wav",
+      "exhaust_crackle_03.wav",
+      "mechanical_click.wav",
+      "shift_thump.wav",
+      "exhaust_pop.wav"
+    ]
+  }
+}

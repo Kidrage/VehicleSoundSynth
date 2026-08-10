@@ -88,8 +88,13 @@
           "id": "obj-5",
           "maxclass": "newobj",
           "numinlets": 1,
-          "numoutlets": 34,
+          "numoutlets": 39,
           "outlettype": [
+            "",
+            "",
+            "",
+            "",
+            "",
             "",
             "",
             "",
@@ -131,7 +136,7 @@
             900.0,
             22.0
           ],
-          "text": "route engine_type ignition start speed_kph rpm throttle brake load accel gear shift shift_dir pop intake_backfire exhaust_pop click ev_weight v12_weight v10_weight aggression brightness body texture cabin_width cabin_rumble exhaust_boom structure_vibration eq_low eq_lowmid eq_highmid eq_high eq_bypass master_trim_db"
+          "text": "route engine_type ignition start speed_kph rpm throttle brake load accel gear shift shift_dir pop intake_backfire exhaust_pop click ev_weight v12_weight v10_weight aggression brightness body texture cabin_width cabin_rumble exhaust_boom structure_vibration cabin_ir_mix powertrain_level_db transient_level_db road_level_db rumble_level_db eq_low eq_lowmid eq_highmid eq_high eq_bypass master_trim_db"
         }
       },
       {
@@ -210,7 +215,7 @@
         "box": {
           "id": "obj-10",
           "maxclass": "newobj",
-          "numinlets": 1,
+          "numinlets": 3,
           "numoutlets": 2,
           "outlettype": [
             "",
@@ -539,6 +544,18 @@
       {
         "patchline": {
           "destination": [
+            "obj-10",
+            1
+          ],
+          "source": [
+            "obj-7",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
             "obj-13",
             1
           ],
@@ -601,6 +618,18 @@
           "destination": [
             "obj-16",
             0
+          ],
+          "source": [
+            "obj-7",
+            1
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-10",
+            2
           ],
           "source": [
             "obj-7",

@@ -1,33 +1,27 @@
-# Source Index
-
-Repository: /Users/saintpeter/Downloads/VehicleSoundSynth-V3
-Tracked filtered files: 31
-High-value indexed files: 10
-
-Read this file before broad repository exploration. Prefer focused `rg`
-or `git grep` against the listed areas before opening source files.
-
-## first-read
-
-- AGENTS.md
-- README.md
-
-## source
-
-- tools/audio_metrics.py
-- tools/build_project.py
-- tools/build_runtime_probe.py
-- tools/build_user_manual.py
-
-## tests
-
-- tests/test_project.py
-
-## config
-
-- presets/sound_dna.json
-
-## docs
-
-- .codex/REPO_GUIDE.md
-- PROJECT_HANDOFF.md
+AGENTS.md
+ASSET_LICENSES.md
+PROJECT_HANDOFF.md
+README.md
+VehicleSoundSynth-V3.maxproj
+assets/asset_manifest.json
+assets/raw/README.md
+gen/ev_powertrain.gendsp
+gen/v10_powertrain.gendsp
+gen/v12_powertrain.gendsp
+patchers/cabin_master~.maxpat
+patchers/cabin_rumble~.maxpat
+patchers/drive_simulator.maxpat
+patchers/engine_controller.maxpat
+patchers/mix_master~.maxpat
+patchers/powertrain~.maxpat
+patchers/road_air~.maxpat
+patchers/transient~.maxpat
+patchers/vehicle_engine~.maxpat
+presets/sound_dna.json
+tests/test_project.py
+tools/audio_metrics.py
+tools/build_mix_probe.py
+tools/build_project.py
+tools/build_runtime_probe.py
+tools/build_user_manual.py
+tools/process_assets.py

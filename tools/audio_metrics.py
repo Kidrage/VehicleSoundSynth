@@ -87,6 +87,23 @@ def analyze(path: Path, fft_size: int = 32768) -> dict[str, float | int | str]:
         if 30.0 <= index * sample_rate / size < 120.0
     )
     low_side_ratio = low_side_energy / max(low_mid_energy + low_side_energy, 1e-30)
+    analysis_bins = [
+        index for index in range(1, len(power) - 1)
+        if 80.0 <= index * sample_rate / size < 6000.0
+    ]
+    band_peak = max((power[index] for index in analysis_bins), default=0.0)
+    peak_bins = [
+        index for index in analysis_bins
+        if power[index] >= band_peak * 0.001
+        and power[index] > power[index - 1]
+        and power[index] >= power[index + 1]
+    ]
+    band_total = max(sum(power[index] for index in analysis_bins), 1e-30)
+    dominant_index = max(analysis_bins, key=power.__getitem__) if analysis_bins else 0
+    dominant_neighborhood = sum(
+        power[index]
+        for index in range(max(0, dominant_index - 2), min(len(power), dominant_index + 3))
+    )
     return {
         "file": str(path),
         "sample_rate": sample_rate,
@@ -99,6 +116,8 @@ def analyze(path: Path, fft_size: int = 32768) -> dict[str, float | int | str]:
         "low_mid_ratio": low_mid,
         "low_side_ratio": low_side_ratio,
         "high_ratio": high,
+        "spectral_peak_count_80_6000": len(peak_bins),
+        "dominant_peak_ratio_80_6000": dominant_neighborhood / band_total,
     }
 
 
@@ -112,6 +131,8 @@ def main() -> int:
     parser.add_argument("--min-rumble-ratio", type=float)
     parser.add_argument("--max-subsonic-ratio", type=float)
     parser.add_argument("--max-low-side-ratio", type=float)
+    parser.add_argument("--min-spectral-peaks", type=int)
+    parser.add_argument("--max-dominant-peak-ratio", type=float)
     args = parser.parse_args()
     metrics = analyze(args.wav)
     print(json.dumps(metrics, indent=2, sort_keys=True))
@@ -130,6 +151,10 @@ def main() -> int:
         failures.append("subsonic_ratio")
     if args.max_low_side_ratio is not None and metrics["low_side_ratio"] > args.max_low_side_ratio:
         failures.append("low_side_ratio")
+    if args.min_spectral_peaks is not None and metrics["spectral_peak_count_80_6000"] < args.min_spectral_peaks:
+        failures.append("spectral_peak_count_80_6000")
+    if args.max_dominant_peak_ratio is not None and metrics["dominant_peak_ratio_80_6000"] > args.max_dominant_peak_ratio:
+        failures.append("dominant_peak_ratio_80_6000")
     if failures:
         print("Acceptance failed: " + ", ".join(failures))
         return 1

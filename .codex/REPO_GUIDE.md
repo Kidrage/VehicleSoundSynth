@@ -4,8 +4,8 @@
 
 Max 8.6.5 vehicle-sound V3 with isolated EV and combustion lifecycles, credible
 V12/V10 archetypes, a seven-speed DCT event model, a dedicated in-cabin rumble
-module, and a global master EQ. The project is generator-owned and uses only
-built-in Max/MSP/Gen objects.
+module, licensed field-recorded event assets, a short cabin IR, and a global
+master EQ. The project uses only built-in Max/MSP/Gen objects.
 
 ## First Reads
 
@@ -16,7 +16,9 @@ built-in Max/MSP/Gen objects.
 
 ## Layout
 
-- `tools/build_project.py` — sole writer for generated patchers, Gen DSP, and WAVs.
+- `tools/build_project.py` — sole writer for patchers, Gen DSP, presets, and fallback WAVs.
+- `tools/process_assets.py` — deterministic curated-audio crop, resample, DC removal, fade, normalization, and hashing.
+- `assets/asset_manifest.json` / `ASSET_LICENSES.md` — runtime-audio provenance authority.
 - `main.maxpat` — runnable demo UI; DSP must start muted.
 - `patchers/vehicle_engine~.maxpat` — public engine seam: one message inlet, two signal outlets.
 - `patchers/`, `gen/`, `media/`, `presets/` — generated runtime resources.
@@ -26,12 +28,14 @@ built-in Max/MSP/Gen objects.
 
 ```sh
 python3 tools/build_project.py --output-root .
+python3 tools/process_assets.py --root .
 python3 -m unittest discover -s tests -v
-python3 tools/audio_metrics.py render.wav --max-peak-dbfs -1 --min-rms-dbfs -45 --min-rumble-ratio 0.55 --max-subsonic-ratio 0.05 --max-high-ratio 0.10
+python3 tools/audio_metrics.py render.wav --max-peak-dbfs -1 --min-rms-dbfs -45 --min-rumble-ratio 0.55 --max-subsonic-ratio 0.05 --max-high-ratio 0.10 --min-spectral-peaks 6 --max-dominant-peak-ratio 0.50
 ```
 
 Regenerate twice and compare hashes when generator determinism matters. Never
-hand-edit generated `.maxpat`, `.gendsp`, or `.wav` files.
+hand-edit generated `.maxpat`, `.gendsp`, or `.wav` files. The project generator
+never overwrites curated runtime WAVs already present in `media/`.
 
 Runtime smoke-check the generated project in Max 8.6.5 after structural tests.
 On macOS, Max writes load diagnostics to
@@ -45,8 +49,10 @@ On macOS, Max writes load diagnostics to
 - Intended flow: lifecycle/state controller → powertrain/transient/road/rumble
   layers → cabin low-frequency centering → four-band master EQ → one final
   limiter/clip stage.
+- `tools/build_mix_probe.py` provides measured EQ/trim/bypass checks.
 - `tools/build_runtime_probe.py` builds a self-contained, monitor-muted Max
-  recording bundle under `/private/tmp` for objective V12/V10 checks.
+  recording bundle under `/private/tmp` for objective V12/V10 checks. Use unique
+  probe names and one Core Audio instance at a time on macOS.
 - Open the project first and main second in the same Max instance; opening both
   files simultaneously can race project search-path registration.
 

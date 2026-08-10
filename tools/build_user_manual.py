@@ -473,7 +473,7 @@ def add_cover(doc: Document) -> None:
     meta = doc.add_paragraph()
     meta.alignment = WD_ALIGN_PARAGRAPH.CENTER
     meta.paragraph_format.space_after = Pt(4)
-    run = meta.add_run("手册版本 3.0  |  适用 Max 8.6.5  |  2026-08-07")
+    run = meta.add_run("手册版本 3.1  |  适用 Max 8.6.5  |  2026-08-10")
     set_run_font(run, size=10.5, bold=True, color=INK_BLUE)
     meta2 = doc.add_paragraph()
     meta2.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -1023,9 +1023,9 @@ def build_document(output: Path) -> None:
         [
             ["状态与生命周期", "drive_simulator / engine_controller", "速度、RPM、七速挡位、点火启动、换挡削扭与事件时序"],
             ["连续声源", "powertrain~ / Gen", "EV、四冲程 V12、四冲程 V10；燃油声受 engine_running 门控"],
-            ["座舱低频", "cabin_rumble~ / Gen", "半阶结构振动、48/68/92/118 Hz 车身模态、负载相关排气轰鸣"],
-            ["瞬态与环境", "transient~ / road_air~", "启动机、升降挡、回火、爆音、crackle 与受控路噪"],
-            ["座舱与播出", "cabin_master~ / mix_master~", "120 Hz 以下中置、四段 EQ、平滑旁路、总增益、最终 limiter/clip"],
+            ["座舱低频", "cabin_rumble~ / MSP", "真实 powertrain 信号激励 48/68/92/118 Hz 阻尼模态、结构振动与排气轰鸣"],
+            ["瞬态与环境", "transient~ / road_air~", "CC0 启动机、升降挡、回火、爆音/crackle；粉红轮胎与受控白噪风声"],
+            ["座舱与播出", "cabin_master~ / mix_master~", "短车舱 IR、IR 后低频收中、四段 EQ、总增益与唯一 limiter/clip"],
         ],
         [1800, 2700, 4860],
     )
@@ -1061,6 +1061,8 @@ def build_document(output: Path) -> None:
             ["EV/V12/V10 Weight", "0-1", "连续混合三个声源；手动混合不自动归一化"],
             ["五个宏", "0-1", "Aggression、Brightness、Body、Texture、Cabin Width"],
             ["三个低频宏", "0-1", "Cabin Rumble、Exhaust Boom、Structure Vibration；Future EV 默认全部为 0"],
+            ["四个 Stem Level", "-60..+6 dB", "Powertrain、Transient、Road、Rumble 独立 50 ms 平滑增益"],
+            ["Cabin IR Mix", "0-1", "原声与 4096 tap 车舱 IR 的等功率湿/干混合"],
             ["Global EQ", "四段", "Low Shelf、Low-Mid、High-Mid、High Shelf；峰值段带 Q"],
             ["EQ Bypass / Master Trim", "0/1；-24..0 dB", "30 ms 平滑干湿旁路；50 ms 输出增益平滑"],
         ],
@@ -1068,7 +1070,7 @@ def build_document(output: Path) -> None:
     )
 
     add_heading(doc, "4. V12/V10 声学、怠速与座舱轰鸣", 1)
-    add_text(doc, "燃油 Gen 使用四冲程点火阶次：V12 主阶为 rpm/60×6，V10 主阶为 rpm/60×5。V12 在 780 rpm 时主阶约 78 Hz、半阶约 39 Hz；V10 在 850 rpm 时主阶约 70.8 Hz、半阶约 35.4 Hz。新低频模块让这些阶次进一步激励车身与座舱模态，而不只是给原声做低架提升。")
+    add_text(doc, "燃油 Gen 使用四冲程点火阶次：V12 主阶为 rpm/60×6，V10 主阶为 rpm/60×5。V12 在 780 rpm 时主阶约 78 Hz、半阶约 39 Hz；V10 在 850 rpm 时主阶约 70.8 Hz、半阶约 35.4 Hz。主声不是单一 cycle~：由曲轴相关点火脉冲、二至八阶加法谐波、AM/FM 侧带、V12 的 0.83/1.17 与 2.33/2.67 非整数阶次、V10 的 0.81/1.19 与 2.20/2.80 阶次共同构成。新低频模块再用同一 powertrain 音频激励车身与座舱模态，而不是另开一个不相关的正弦振荡器。")
     add_table(
         doc,
         ["Profile", "默认怠速方向", "主要特征", "安全建议"],
@@ -1101,7 +1103,7 @@ def build_document(output: Path) -> None:
     add_callout(
         doc,
         "低频安全",
-        "低频层在约 28 Hz 高通，座舱在 120 Hz 以下收回中置，最后仍经过全局 EQ、Master Trim 和唯一的 limiter/clip。普通音箱听不清 35 Hz 时，不要盲目把三个旋钮全部推满；先用 Cabin Rumble，再少量增加 Structure Vibration。",
+        "低频层在约 28 Hz 高通；Side 在车舱处理前高通，并在 IR 湿/干混合后再经四级 180 Hz 高通，所以真正的深低频保持居中。最后仍经过全局 EQ、Master Trim 和唯一的 limiter/clip。普通音箱听不清 35 Hz 时，不要盲目把三个旋钮全部推满。",
         kind="caution",
     )
 
@@ -1117,7 +1119,7 @@ def build_document(output: Path) -> None:
         ],
         [1450, 3550, 4360],
     )
-    add_text(doc, "V12 速比：3.10 / 2.13 / 1.62 / 1.29 / 1.03 / 0.84 / 0.70。V10 速比：3.13 / 2.10 / 1.52 / 1.20 / 0.94 / 0.76 / 0.62。事件样本采用 round-robin 变体，避免连续换挡或回火时出现完全相同的“机关枪”重复。")
+    add_text(doc, "V12 速比：3.10 / 2.13 / 1.62 / 1.29 / 1.03 / 0.84 / 0.70。V10 速比：3.13 / 2.10 / 1.52 / 1.20 / 0.94 / 0.76 / 0.62。启动、换挡、回火、爆音、crackle 与机械细节均来自已处理的 CC0 现场录音；事件采用 round-robin 变体，避免连续触发出现完全相同的“机关枪”重复。")
 
     add_heading(doc, "7. 四段总线 EQ 与高频控制", 1)
     add_table(
@@ -1137,9 +1139,33 @@ def build_document(output: Path) -> None:
         "信号顺序是 powertrain/transient/road/cabin_rumble → cabin_master~ → mix_master~ 四段 EQ/trim → omx.peaklim~ → ±0.891 clip~。因此全局 EQ 会同时作用于发动机与新增低频层；cabin_master~ 不再二次限幅。",
         kind="info",
     )
-    add_text(doc, "road_air~ 的最高速度增益从 0.32 降至 0.12，低通控制范围收窄为约 500-3500 Hz，lores~ 共振也降至 0.35。这样高速路噪仍存在，但不会覆盖 V12/V10 的中低频点火结构。")
+    add_text(doc, "EQ 已用 Max 运行时 probe 验证：各峰值段在中心频率发送 -12 dB 时约衰减 12 dB；90 Hz 与 9 kHz 的 -12 dB shelf 在测量点约衰减 6 dB（符合 shelf 转折频率定义）；Master Trim 从 -8 到 -24 dB 实测约 -15.9 dB；Bypass 与 flat 的差异约 0.05 dB。")
+    add_text(doc, "road_air~ 只有两类持续噪声：居中的 pink~ 轮胎床（约 70-900 Hz）和受控立体声 noise~ 风声（约 400-4000 Hz）。Road Level 默认 -16 dB，风声随速度约 1.7 次幂上升；这两层不会再用宽带白噪覆盖整个频谱。")
 
-    add_heading(doc, "8. 外部状态接入", 1)
+    add_heading(doc, "8. 素材、归一化与拟真边界", 1)
+    add_table(
+        doc,
+        ["来源", "运行用途", "处理/峰值"],
+        [
+            ["Grasopt — Car Starter", "V12/V10 启动机", "48 kHz PCM16、去 DC、淡入淡出、-3 dBFS"],
+            ["TheLittleCrow — Engine contact", "三组升挡与三组降挡", "裁切、归一化至 -6 dBFS"],
+            ["richwise — Sports/Supercar", "进气回火、排气 pop/crackle", "回火 -6、pop -5、crackle -8 dBFS"],
+            ["microman502 — Gear shift", "机械 click 与 shift thump", "裁切、去 DC、-6 dBFS"],
+            ["jamespeacock4616 — Mini car IR", "左右 4096 tap 车舱 IR", "每声道单独裁切、-3 dBFS"],
+            ["biholao — Ferrari acceleration", "仅作听觉参考", "不进入运行 patch"],
+        ],
+        [2600, 3200, 3560],
+        font_size=8.6,
+    )
+    add_callout(
+        doc,
+        "为什么仍不是录音级复刻",
+        "短事件和 IR 已是真实录音，但连续 V12/V10 仍是程序化模型，没有同一辆车在多 RPM/多负载、进气/排气/机舱/座舱多麦克风条件下的同步测量，也没有卷积的机脚与车身传递函数。因此它比纯正弦原型更有机械结构，却仍属于可调 sound-design archetype。",
+        kind="info",
+    )
+    add_text(doc, "全部来源、许可、原始/处理后 SHA-256、裁切点、帧数和归一化目标见 ASSET_LICENSES.md 与 assets/asset_manifest.json。build_project.py 不覆盖已经存在的 curated media。")
+
+    add_heading(doc, "9. 外部状态接入", 1)
     add_text(doc, "把命名消息发送到 s vss.input，并把 Drive Source 设为 External。vehicle_engine~ 仍保持一个控制 inlet 与两个立体声 outlet。")
     add_code(
         doc,
@@ -1149,6 +1175,12 @@ def build_document(output: Path) -> None:
         "gear 4              shift_dir 1         shift 1\n"
         "intake_backfire 1   exhaust_pop 1       click 1\n"
         "cabin_rumble 0.90   exhaust_boom 0.62   structure_vibration 0.58",
+    )
+    add_code(
+        doc,
+        "powertrain_level_db -3.   transient_level_db -7.\n"
+        "road_level_db -16.        rumble_level_db -5.\n"
+        "cabin_ir_mix 0.20",
     )
     add_text(doc, "EQ 消息格式：")
     add_code(
@@ -1161,7 +1193,7 @@ def build_document(output: Path) -> None:
         "master_trim_db -8.",
     )
 
-    add_heading(doc, "9. 验证与故障排查", 1)
+    add_heading(doc, "10. 验证与故障排查", 1)
     add_table(
         doc,
         ["现象", "优先检查", "处理"],
@@ -1171,6 +1203,8 @@ def build_document(output: Path) -> None:
             ["低频听不到", "监听设备与三个低频宏", "先确认设备能播放 35-120 Hz；提高 Cabin Rumble，再按需增加 Structure Vibration"],
             ["buffer~ can't open", "media 搜索路径", "确认 Project 的 media 搜索路径及所有生成 WAV 存在"],
             ["高频噪声过多", "road_air、Brightness、High-Mid/High Shelf", "先削 3.8 kHz 与 9 kHz，再判断是否需要减 Texture"],
+            ["EQ 看似无效", "频段、Bypass、测量信号", "确认 EQ Bypass=0；峰值段在中心频率测；shelf 的标称频率是约 -6 dB 转折点"],
+            ["某个 dB 不生效", "对应 stem 是否有信号", "EV 的 Rumble 默认 -60 dB；事件未触发时 Transient Level 不会改变持续电平"],
             ["换挡没有声音", "是否由 drive 产生 shift_dir", "Auto 模式试听；外部接入应在挡位变化时发送短脉冲"],
             ["声音很响或发硬", "Master Trim 与总线 EQ", "将 trim 退到 -9~-12 dB；不要把 limiter 当作响度控制"],
         ],
@@ -1182,7 +1216,7 @@ def build_document(output: Path) -> None:
         "cd /Users/saintpeter/Downloads/VehicleSoundSynth-V3\n"
         "python3 tools/build_project.py --output-root .\n"
         "python3 -m unittest discover -s tests -v\n"
-        "python3 tools/audio_metrics.py <render.wav> --max-peak-dbfs -1 --min-rms-dbfs -45 --min-rumble-ratio 0.55 --max-subsonic-ratio 0.05 --max-low-side-ratio 0.10 --max-high-ratio 0.10",
+        "python3 tools/audio_metrics.py <render.wav> --max-peak-dbfs -1 --min-rms-dbfs -45 --min-rumble-ratio 0.55 --max-subsonic-ratio 0.05 --max-low-side-ratio 0.10 --max-high-ratio 0.10 --min-spectral-peaks 6 --max-dominant-peak-ratio 0.50",
     )
     add_bullets(
         doc,
@@ -1207,7 +1241,7 @@ def build_document(output: Path) -> None:
 
     core = doc.core_properties
     core.title = "VehicleSoundSynth V3 完整使用与调音手册"
-    core.subject = "Max/MSP 座舱低频轰鸣、燃油车辆声学、七速 DCT 与四段总线 EQ"
+    core.subject = "Max/MSP 座舱低频轰鸣、多阶燃油车辆声学、CC0 瞬态、七速 DCT 与四段总线 EQ"
     core.author = "VehicleSoundSynth Project"
     core.keywords = "Max/MSP, Vehicle Sound, V12, V10, Cabin Rumble, DCT, EQ, 使用手册"
     core.comments = "Generated for VehicleSoundSynth V3; V1 and V2 manuals remain unchanged."
