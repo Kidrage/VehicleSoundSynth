@@ -9,13 +9,13 @@
 - Working root: `.`
 - Repository name: `VehicleSoundSynth-V3`
 - Git repository: `true`
-- Generated at: `2026-08-07T08:08:05.896623+00:00`
+- Generated at: `2026-08-10T08:58:34.550996+00:00`
 
 ## Current State
 
 - Branch: `codex/vehicle-sound-v3`
-- HEAD: `c015005`
-- Indexed paths: 52
+- HEAD: `01a234e`
+- Indexed paths: 64
 - Inventory truncated: `false`
 - Inaccessible paths: 0
 - Scan mode: complete path/metadata inventory; no bulk content read; no symlink traversal.
@@ -43,12 +43,14 @@
 
 | Route | Files |
 |---|---:|
-| `media` | 21 |
-| `.` | 9 |
+| `media` | 23 |
+| `.` | 10 |
 | `patchers` | 9 |
-| `gen` | 4 |
-| `tools` | 4 |
+| `assets` | 8 |
+| `assets/raw` | 7 |
+| `tools` | 6 |
 | `.codex` | 3 |
+| `gen` | 3 |
 | `presets` | 1 |
 | `tests` | 1 |
 
@@ -56,24 +58,24 @@
 
 ### Categories
 
-- audio: 21 files, 411324 bytes
-- code: 5 files, 179559 bytes
-- literature: 9 files, 162764 bytes
-- other: 16 files, 404371 bytes
-- structured_data: 1 files, 1024 bytes
+- audio: 29 files, 93695022 bytes
+- code: 7 files, 243549 bytes
+- literature: 11 files, 172003 bytes
+- other: 15 files, 495019 bytes
+- structured_data: 2 files, 14799 bytes
 
 ### Common Extensions
 
-- `.wav`: 21
+- `.wav`: 29
 - `.maxpat`: 10
-- `.py`: 5
-- `.md`: 4
-- `.gendsp`: 4
+- `.py`: 7
+- `.md`: 6
 - `.docx`: 3
+- `.gendsp`: 3
 - `.txt`: 2
+- `.json`: 2
 - `[no extension]`: 1
 - `.maxproj`: 1
-- `.json`: 1
 
 ### Schema / Model / Interface Candidates
 
@@ -83,9 +85,13 @@
 
 - `AGENTS.md`
 - `README.md`
+- `assets/raw/README.md`
 
 ## Change History
 
+- `01a234e 2026-08-10 fix: stop starter on lifecycle transitions`
+- `c3307f6 2026-08-10 feat: complete V3 vehicle sound realism overhaul`
+- `4931e74 2026-08-07 docs: refresh final V3 handoff`
 - `c015005 2026-08-07 fix: harden stereo level validation`
 - `e9cd491 2026-08-07 feat: add combustion cabin rumble V3`
 - `b8cefa5 2026-08-07 docs: refresh final V2 handoff state`
@@ -105,6 +111,7 @@
 ## Current Changes
 
 - `## codex/vehicle-sound-v3`
+- ` M PROJECT_HANDOFF.md`
 
 ## Related Repositories
 
@@ -124,11 +131,13 @@
 - `.codex/repo_files.txt`
 - `.codex/source_index.txt`
 - `AGENTS.md`
+- `ASSET_LICENSES.md`
 - `PROJECT_HANDOFF.md`
 - `README.md`
 - `VehicleSoundSynthV2_完整使用手册.docx`
 - `VehicleSoundSynthV3_完整使用手册.docx`
 - `VehicleSoundSynth_完整使用手册.docx`
+- `assets/raw/README.md`
 
 ### image
 
@@ -136,6 +145,14 @@
 
 ### audio
 
+- `assets/raw/biholao_370278_ferrari_acceleration.wav`
+- `assets/raw/grasopt_479351_car_starter.wav`
+- `assets/raw/jamespeacock4616_555787_mini_car_ir.wav`
+- `assets/raw/microman502_818294_mechanical_gear_shift.wav`
+- `assets/raw/richwise_478756_sports_car_revs_pops.wav`
+- `assets/raw/thelittlecrow_669623_engine_block_contact.wav`
+- `media/cabin_ir_l.wav`
+- `media/cabin_ir_r.wav`
 - `media/exhaust_crackle_01.wav`
 - `media/exhaust_crackle_02.wav`
 - `media/exhaust_crackle_03.wav`
@@ -148,14 +165,6 @@
 - `media/intake_backfire_02.wav`
 - `media/intake_backfire_03.wav`
 - `media/mechanical_click.wav`
-- `media/shift_down_01.wav`
-- `media/shift_down_02.wav`
-- `media/shift_down_03.wav`
-- `media/shift_thump.wav`
-- `media/shift_up_01.wav`
-- `media/shift_up_02.wav`
-- `media/shift_up_03.wav`
-- `media/starter_v10.wav`
 
 ### video
 
@@ -163,6 +172,7 @@
 
 ### structured_data
 
+- `assets/asset_manifest.json`
 - `presets/sound_dna.json`
 
 ## Validation and Risks
@@ -175,10 +185,14 @@
 
 <!-- AGENT_NOTES_START -->
 - V3 is an independent clone of committed V2 and uses `VehicleSoundSynth-V3.maxproj`; the sibling V1/V2 folders and their manuals remain unchanged.
-- Added `cabin_rumble~` before `cabin_master~` and `mix_master~`: four-stroke half/main orders, 48/68/92/118 Hz cabin modes, load-responsive exhaust boom, and structure vibration, all gated by the combustion lifecycle and DCT shift envelope.
-- The three public macros are `cabin_rumble`, `exhaust_boom`, and `structure_vibration`. Future EV keeps them at zero; V12/V10 ship with profile-specific strong defaults. Frequencies below 120 Hz remain centered before the existing global EQ, trim, limiter, and clip protection.
-- Validation: 32 Python tests pass; fresh Max 8.6.5 project/main loads produce no new Console errors. Monitor-muted V12/V10 idle renders passed peak, RMS, high-frequency, subsonic, rumble-band, and low-side-energy gates. V12 rumble-on is approximately 4.0 dB stronger in 30-140 Hz than the rumble-off control.
-- Primary operator documentation is `VehicleSoundSynthV3_完整使用手册.docx`; the V1/V2 manuals are retained byte-for-byte. The V3 DOCX passed deterministic OOXML/ZIP structural audits, but optional page-image QA remains unavailable because LibreOffice/pdf2image are absent on this host.
+- Rebuilt the V12/V10 sources as differentiated multi-harmonic combustion models with AM/FM sidebands, load texture, lifecycle gating, automatic seven-speed DCT events, intake backfire, exhaust pops/crackle, and a powertrain-excited cabin-rumble stage using damped 48/68/92/118 Hz modes.
+- Starter playback now stops on the controller's 500 ms catch transition and ignition-off path; a start lock prevents retriggering while the engine is already running, with explicit patchcord regression coverage.
+- Repaired the four-band global EQ coefficient path and all master/stem dB controls. Public stem messages are `powertrain_level_db`, `transient_level_db`, `road_level_db`, and `rumble_level_db` (-60..+6 dB); `cabin_ir_mix`, master trim, bypass, limiter, and clip protection remain downstream.
+- Installed six documented CC0 source recordings under `assets/raw/`; deterministic processing creates normalized 48 kHz PCM16 runtime media without overwriting curated output. The Ferrari acceleration file is preserved intentionally as the sixth downloaded listening reference and is not loaded at runtime.
+- Reduced the white-noise impression by separating centered band-limited tire noise from restrained stereo wind, lowering mechanical-noise contributions, and centering low-frequency cabin/IR content before the final master chain.
+- Validation: all 44 Python tests pass and `git diff --check` is clean. Runtime component probes confirmed Max-compatible loading, EQ turnover/peak response, master/stem gain response, and differentiated V12/V10 spectra; the last post-IR side-filter revision is structurally covered but was not repeatedly rendered after Core Audio instance contention.
+- Primary operator documentation is `VehicleSoundSynthV3_完整使用手册.docx`; V1/V2 manuals remain byte-for-byte unchanged. The V3 DOCX passed deterministic OOXML/ZIP audits and QuickLook cover inspection; full multi-page PDF/image QA is unavailable because LibreOffice is not installed.
+- Remaining realism boundary: event and cabin-IR layers use recordings, while continuous V12/V10 operation is still procedural rather than a measured multi-load, multi-microphone engine corpus. No Git remote or CI is configured for this repository.
 <!-- AGENT_NOTES_END -->
 
 ## Mandatory Update Rule
