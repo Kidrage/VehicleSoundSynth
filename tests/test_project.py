@@ -710,12 +710,34 @@ class VehicleSoundProjectTests(unittest.TestCase):
             box_id for box_id, box in boxes.items() if box.get("text") == "line 0."
         }
         self.assertEqual(2, len(line_ids))
+        set_ids = {
+            box_id for box_id, box in boxes.items() if box.get("text") == "prepend set"
+        }
+        self.assertEqual(4, len(set_ids))
+        throttle_clip_id = next(
+            line["destination"][0] for line in lines
+            if line["source"][0] == throttle_id
+            and boxes[line["destination"][0]].get("text") == "clip 0. 1."
+        )
+        brake_clip_id = next(
+            line["destination"][0] for line in lines
+            if line["source"][0] == brake_id
+            and boxes[line["destination"][0]].get("text") == "clip 0. 1."
+        )
         self.assertTrue(any(
-            line["source"][0] in line_ids and line["destination"][0] == throttle_id
+            line["source"][0] in line_ids and line["destination"][0] == throttle_clip_id
             for line in lines
         ))
         self.assertTrue(any(
-            line["source"][0] in line_ids and line["destination"][0] == brake_id
+            line["source"][0] in line_ids and line["destination"][0] == brake_clip_id
+            for line in lines
+        ))
+        self.assertTrue(any(
+            line["source"][0] == throttle_id and line["destination"][0] in set_ids
+            for line in lines
+        ))
+        self.assertTrue(any(
+            line["source"][0] == brake_id and line["destination"][0] in set_ids
             for line in lines
         ))
 

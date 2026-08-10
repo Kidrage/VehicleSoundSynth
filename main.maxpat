@@ -1904,6 +1904,10 @@
 , {"box":{"id":"obj-176","maxclass":"message","numinlets":2,"numoutlets":1,"outlettype":[""],"patching_rect":[225.0,1470.0,30.0,22.0],"text":"0."}}
 , {"box":{"id":"obj-177","maxclass":"newobj","numinlets":2,"numoutlets":2,"outlettype":["",""],"patching_rect":[25.0,1510.0,60.0,22.0],"text":"line 0."}}
 , {"box":{"id":"obj-178","maxclass":"newobj","numinlets":2,"numoutlets":2,"outlettype":["",""],"patching_rect":[165.0,1510.0,60.0,22.0],"text":"line 0."}}
+, {"box":{"id":"obj-179","maxclass":"newobj","numinlets":1,"numoutlets":1,"outlettype":[""],"patching_rect":[95.0,1510.0,85.0,22.0],"text":"prepend set"}}
+, {"box":{"id":"obj-180","maxclass":"newobj","numinlets":1,"numoutlets":1,"outlettype":[""],"patching_rect":[235.0,1510.0,85.0,22.0],"text":"prepend set"}}
+, {"box":{"id":"obj-181","maxclass":"newobj","numinlets":1,"numoutlets":1,"outlettype":[""],"patching_rect":[25.0,1550.0,85.0,22.0],"text":"prepend set"}}
+, {"box":{"id":"obj-182","maxclass":"newobj","numinlets":1,"numoutlets":1,"outlettype":[""],"patching_rect":[165.0,1550.0,85.0,22.0],"text":"prepend set"}}
  ],
 		"lines" : [ 			{
 				"patchline" : 				{
@@ -3024,8 +3028,16 @@
 , {"patchline":{"destination":["obj-177",0],"source":["obj-174",0]}}
 , {"patchline":{"destination":["obj-178",0],"source":["obj-175",0]}}
 , {"patchline":{"destination":["obj-178",0],"source":["obj-176",0]}}
-, {"patchline":{"destination":["obj-17",0],"source":["obj-177",0]}}
-, {"patchline":{"destination":["obj-21",0],"source":["obj-178",0]}}
+, {"patchline":{"destination":["obj-179",0],"source":["obj-17",0]}}
+, {"patchline":{"destination":["obj-177",0],"source":["obj-179",0]}}
+, {"patchline":{"destination":["obj-180",0],"source":["obj-21",0]}}
+, {"patchline":{"destination":["obj-178",0],"source":["obj-180",0]}}
+, {"patchline":{"destination":["obj-18",0],"source":["obj-177",0]}}
+, {"patchline":{"destination":["obj-22",0],"source":["obj-178",0]}}
+, {"patchline":{"destination":["obj-181",0],"source":["obj-177",0]}}
+, {"patchline":{"destination":["obj-17",0],"source":["obj-181",0]}}
+, {"patchline":{"destination":["obj-182",0],"source":["obj-178",0]}}
+, {"patchline":{"destination":["obj-21",0],"source":["obj-182",0]}}
  ],
 		"dependency_cache" : [ 			{
 				"name" : "cabin_master~.maxpat",
