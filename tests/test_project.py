@@ -274,6 +274,8 @@ class VehicleSoundProjectTests(unittest.TestCase):
         self.assertIn("exhaust_pop 1", controller_text)
         self.assertIn("crackle 1", controller_text)
         self.assertIn("stop", controller_text)
+        self.assertIn("pack 0 0 0 1", controller_text)
+        self.assertIn("expr $i1*$i2*$i3*$i4", controller_text)
         controller_boxes = {item["box"]["id"]: item["box"] for item in controller["patcher"]["boxes"]}
         exhaust_on_id = next(
             box_id for box_id, box in controller_boxes.items()
@@ -290,6 +292,21 @@ class VehicleSoundProjectTests(unittest.TestCase):
         self.assertGreaterEqual(transient_text.count("gate 1"), 5)
         self.assertIn("engine_running", transient_text)
         self.assertIn("expr $i1*$i2", transient_text)
+        transient_boxes = {item["box"]["id"]: item["box"] for item in transient["patcher"]["boxes"]}
+        starter_stop_id = next(
+            box_id for box_id, box in transient_boxes.items()
+            if box.get("maxclass") == "message" and box.get("text") == "stop"
+        )
+        starter_player_ids = {
+            box_id for box_id, box in transient_boxes.items()
+            if box.get("text") in {"play~ starter_v12 1", "play~ starter_v10 1"}
+        }
+        stopped_players = {
+            line["patchline"]["destination"][0]
+            for line in transient["patcher"]["lines"]
+            if line["patchline"]["source"][0] == starter_stop_id
+        }
+        self.assertEqual(starter_player_ids, stopped_players)
 
     def test_runnable_project_has_public_engine_interface(self):
         required = [
