@@ -1071,6 +1071,7 @@ def build_document(output: Path) -> None:
     )
 
     add_heading(doc, "4. V12/V10 声学、怠速与座舱轰鸣", 1)
+    add_text(doc, "EV Pad 的 120 Hz 以下会先合成为严格居中的 Mid；只有 120 Hz 以上使用 82/18 左右互混，因此保留左右音色差异的同时，不会在 mono 折叠时丢失底部能量。")
     add_text(doc, "燃油 Gen 使用四冲程点火阶次：V12 主阶为 rpm/60×6，V10 主阶为 rpm/60×5。左右声道现在分别模拟两个真实缸列：每个缸列以总点火率的一半工作，右缸列固定错开半个缸列周期，并以少量交叉馈送保持相位稳定，不再使用微失谐制造拍频。主声由点火脉冲、二至八阶加法谐波、±3% 以内的循环差异与脉冲门控窄带燃烧残差共同构成；燃油 Gen 不再注入白噪声。")
     add_table(
         doc,
@@ -1104,7 +1105,7 @@ def build_document(output: Path) -> None:
     add_callout(
         doc,
         "低频安全",
-        "低频层在约 28 Hz 高通；IR 湿/干混合后用 cross~ 120 将 120 Hz 以下合成严格居中的 Mid，上频段才进入左右不同的短 allpass 和 0.65/1.35 ms 早反射，所以低频兼容 mono、机械细节仍有宽度。最后仍经过全局 EQ、Master Trim 和唯一的 limiter/clip。",
+        "低频层在约 28 Hz 高通；IR 湿/干混合后用 cross~ 120 将 120 Hz 以下合成严格居中的 Mid，上频段才进入左右不同的短 allpass 和 0.65/1.35 ms 早反射，并有固定 0.85 Side 安全衰减，所以低频兼容 mono、机械细节仍有宽度。最后仍经过全局 EQ、Master Trim 和唯一的 limiter/clip。",
         kind="caution",
     )
 
@@ -1219,14 +1220,14 @@ def build_document(output: Path) -> None:
         "cd /Users/saintpeter/Downloads/VehicleSoundSynth-V3\n"
         "python3 tools/build_project.py --output-root .\n"
         "python3 -m unittest discover -s tests -v\n"
-        "python3 tools/audio_metrics.py <render.wav> --max-peak-dbfs -1 --min-rms-dbfs -45 --min-rumble-ratio 0.55 --max-subsonic-ratio 0.05 --max-low-side-ratio 0.10 --max-high-ratio 0.10 --min-spectral-peaks 6 --max-dominant-peak-ratio 0.50",
+        "python3 tools/audio_metrics.py <render.wav> --max-peak-dbfs -1 --min-rms-dbfs -45 --min-rumble-ratio 0.55 --max-subsonic-ratio 0.05 --max-low-side-ratio 0.05 --min-low-band-correlation 0.95 --max-mono-fold-rms-loss-db 1.5 --max-high-ratio 0.10 --min-spectral-peaks 6 --max-dominant-peak-ratio 0.50",
     )
     add_bullets(
         doc,
         [
             "Max Console 不应出现 invalid category、No such object、could not find gen patcher 或 patchcord outlet out of range。",
             "冷启动应无爆音；燃油 idle、加速、升挡、降挡、回火与滑行应分别试听。",
-            "用 audio_metrics.py 检查 peak、RMS、30-140 Hz 轰鸣、20-30 Hz 次声、低频侧声道与 6-20 kHz 能量占比。",
+            "用 audio_metrics.py 检查 peak、RMS、30-140 Hz 轰鸣、20-30 Hz 次声、低频 Side/相关性、mono 折叠损失、1/3 倍频程相似度与 6-20 kHz 能量占比。",
         ],
     )
 

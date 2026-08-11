@@ -49,6 +49,50 @@ def fft(values: list[complex]) -> list[complex]:
     return result
 
 
+def _third_octave_profile(
+    power: list[float], sample_rate: int, fft_size: int
+) -> list[float]:
+    """Return normalized 1/3-octave energy from 31.5 Hz through 8 kHz."""
+    centers = [31.5 * 2.0 ** (index / 3.0) for index in range(25)]
+    edge = 2.0 ** (1.0 / 6.0)
+    energies = [
+        sum(
+            value
+            for bin_index, value in enumerate(power)
+            if center / edge <= bin_index * sample_rate / fft_size < center * edge
+        )
+        for center in centers
+    ]
+    norm = math.sqrt(sum(value * value for value in energies))
+    return [value / max(norm, 1e-30) for value in energies]
+
+
+def third_octave_similarity(first: Path, second: Path, fft_size: int = 32768) -> float:
+    """Cosine similarity of normalized mono 1/3-octave energy profiles."""
+    first_rate, first_mid, _, _ = read_mid_side(first)
+    second_rate, second_mid, _, _ = read_mid_side(second)
+    if first_rate != second_rate:
+        raise ValueError("comparison WAV files must use the same sample rate")
+    if not first_mid or not second_mid:
+        raise ValueError("comparison WAV files contain no samples")
+    size = min(
+        fft_size,
+        1 << (min(len(first_mid), len(second_mid)).bit_length() - 1),
+    )
+    if size < 2:
+        raise ValueError("comparison WAV files are too short")
+
+    def profile(samples: list[float]) -> list[float]:
+        windowed = [
+            complex(samples[index] * (0.5 - 0.5 * math.cos(2.0 * math.pi * index / (size - 1))))
+            for index in range(size)
+        ]
+        power = [abs(value) ** 2 for value in fft(windowed)[: size // 2]]
+        return _third_octave_profile(power, first_rate, size)
+
+    return sum(left * right for left, right in zip(profile(first_mid), profile(second_mid)))
+
+
 def analyze(path: Path, fft_size: int = 32768) -> dict[str, float | int | str]:
     sample_rate, samples, side_samples, level_samples = read_mid_side(path)
     if not samples:
@@ -94,6 +138,16 @@ def analyze(path: Path, fft_size: int = 32768) -> dict[str, float | int | str]:
         for index in range(size)
     ]
     side_power = [abs(value) ** 2 for value in fft(side_windowed)[: size // 2]]
+    left_samples = [mid + side for mid, side in zip(samples, side_samples)]
+    right_samples = [mid - side for mid, side in zip(samples, side_samples)]
+    left_spectrum = fft([
+        complex(left_samples[index] * (0.5 - 0.5 * math.cos(2.0 * math.pi * index / (size - 1))))
+        for index in range(size)
+    ])[: size // 2]
+    right_spectrum = fft([
+        complex(right_samples[index] * (0.5 - 0.5 * math.cos(2.0 * math.pi * index / (size - 1))))
+        for index in range(size)
+    ])[: size // 2]
 
     def band_energy(low: float, high: float) -> float:
         return sum(
@@ -114,6 +168,40 @@ def analyze(path: Path, fft_size: int = 32768) -> dict[str, float | int | str]:
         if 30.0 <= index * sample_rate / size < 120.0
     )
     low_side_ratio = low_side_energy / max(low_mid_energy + low_side_energy, 1e-30)
+    def stereo_band(low: float, high: float) -> tuple[float, float, float]:
+        bins = [
+            index for index in range(len(left_spectrum))
+            if low <= index * sample_rate / size < high
+        ]
+        left_energy = sum(abs(left_spectrum[index]) ** 2 for index in bins)
+        right_energy = sum(abs(right_spectrum[index]) ** 2 for index in bins)
+        cross = sum(
+            (left_spectrum[index] * right_spectrum[index].conjugate()).real
+            for index in bins
+        )
+        mid_energy = sum(power[index] for index in bins)
+        side_energy = sum(side_power[index] for index in bins)
+        correlation = cross / max(math.sqrt(left_energy * right_energy), 1e-30)
+        side_ratio = side_energy / max(mid_energy + side_energy, 1e-30)
+        stereo_energy = (left_energy + right_energy) * 0.5
+        fold_loss = max(
+            0.0,
+            -10.0 * math.log10(max(mid_energy, 1e-30) / max(stereo_energy, 1e-30)),
+        )
+        return side_ratio, correlation, fold_loss
+
+    low_band = stereo_band(30.0, 120.0)
+    mid_band = stereo_band(120.0, 2000.0)
+    high_band = stereo_band(2000.0, min(12000.0, sample_rate / 2.0))
+    stereo_rms = math.sqrt(
+        sum(left * left + right * right for left, right in zip(left_samples, right_samples))
+        / max(1, 2 * len(left_samples))
+    )
+    mono_rms = math.sqrt(sum(value * value for value in samples) / len(samples))
+    mono_fold_loss = max(
+        0.0,
+        -20.0 * math.log10(max(mono_rms, 1e-12) / max(stereo_rms, 1e-12)),
+    )
     analysis_bins = [
         index for index in range(1, len(power) - 1)
         if 80.0 <= index * sample_rate / size < 6000.0
@@ -144,6 +232,16 @@ def analyze(path: Path, fft_size: int = 32768) -> dict[str, float | int | str]:
         "rumble_ratio": rumble,
         "low_mid_ratio": low_mid,
         "low_side_ratio": low_side_ratio,
+        "low_band_side_ratio": low_band[0],
+        "low_band_correlation": low_band[1],
+        "low_band_mono_fold_rms_loss_db": low_band[2],
+        "mid_band_side_ratio": mid_band[0],
+        "mid_band_correlation": mid_band[1],
+        "mid_band_mono_fold_rms_loss_db": mid_band[2],
+        "high_band_side_ratio": high_band[0],
+        "high_band_correlation": high_band[1],
+        "high_band_mono_fold_rms_loss_db": high_band[2],
+        "mono_fold_rms_loss_db": mono_fold_loss,
         "high_ratio": high,
         "spectral_peak_count_80_6000": len(peak_bins),
         "dominant_peak_ratio_80_6000": dominant_neighborhood / band_total,
@@ -160,12 +258,22 @@ def main() -> int:
     parser.add_argument("--min-rumble-ratio", type=float)
     parser.add_argument("--max-subsonic-ratio", type=float)
     parser.add_argument("--max-low-side-ratio", type=float)
+    parser.add_argument("--min-low-band-correlation", type=float)
+    parser.add_argument("--max-mono-fold-rms-loss-db", type=float)
+    parser.add_argument("--compare-wav", type=Path)
+    parser.add_argument("--min-third-octave-similarity", type=float)
+    parser.add_argument("--expected-gain-db", type=float)
+    parser.add_argument("--gain-tolerance-db", type=float, default=1.0)
     parser.add_argument("--min-spectral-peaks", type=int)
     parser.add_argument("--max-dominant-peak-ratio", type=float)
     parser.add_argument("--max-envelope-spread-db", type=float)
     parser.add_argument("--max-clipped-sample-ratio", type=float)
     args = parser.parse_args()
     metrics = analyze(args.wav)
+    if args.compare_wav is not None:
+        comparison = analyze(args.compare_wav)
+        metrics["comparison_rms_delta_db"] = metrics["rms_dbfs"] - comparison["rms_dbfs"]
+        metrics["third_octave_similarity"] = third_octave_similarity(args.wav, args.compare_wav)
     print(json.dumps(metrics, indent=2, sort_keys=True))
     failures = []
     if args.max_peak_dbfs is not None and metrics["peak_dbfs"] > args.max_peak_dbfs:
@@ -182,6 +290,26 @@ def main() -> int:
         failures.append("subsonic_ratio")
     if args.max_low_side_ratio is not None and metrics["low_side_ratio"] > args.max_low_side_ratio:
         failures.append("low_side_ratio")
+    if (
+        args.min_low_band_correlation is not None
+        and metrics["low_band_correlation"] < args.min_low_band_correlation
+    ):
+        failures.append("low_band_correlation")
+    if (
+        args.max_mono_fold_rms_loss_db is not None
+        and metrics["mono_fold_rms_loss_db"] > args.max_mono_fold_rms_loss_db
+    ):
+        failures.append("mono_fold_rms_loss_db")
+    if args.min_third_octave_similarity is not None:
+        if args.compare_wav is None:
+            parser.error("--min-third-octave-similarity requires --compare-wav")
+        if metrics["third_octave_similarity"] < args.min_third_octave_similarity:
+            failures.append("third_octave_similarity")
+    if args.expected_gain_db is not None:
+        if args.compare_wav is None:
+            parser.error("--expected-gain-db requires --compare-wav")
+        if abs(metrics["comparison_rms_delta_db"] - args.expected_gain_db) > args.gain_tolerance_db:
+            failures.append("comparison_rms_delta_db")
     if args.min_spectral_peaks is not None and metrics["spectral_peak_count_80_6000"] < args.min_spectral_peaks:
         failures.append("spectral_peak_count_80_6000")
     if args.max_dominant_peak_ratio is not None and metrics["dominant_peak_ratio_80_6000"] > args.max_dominant_peak_ratio:

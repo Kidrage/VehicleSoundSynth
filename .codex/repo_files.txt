@@ -11,6 +11,7 @@ PROJECT_HANDOFF.md
 README.md
 VehicleSoundSynth-V3.maxproj
 assets/asset_manifest.json
+assets/ferrari_sf90_acoustic_target.json
 assets/raw/README.md
 assets/raw/biholao_370278_ferrari_acceleration.wav
 assets/raw/grasopt_479351_car_starter.wav
@@ -18,6 +19,7 @@ assets/raw/jamespeacock4616_555787_mini_car_ir.wav
 assets/raw/microman502_818294_mechanical_gear_shift.wav
 assets/raw/richwise_478756_sports_car_revs_pops.wav
 assets/raw/thelittlecrow_669623_engine_block_contact.wav
+code/local_reference_loader.js
 gen/ev_powertrain.gendsp
 gen/v10_powertrain.gendsp
 gen/v12_powertrain.gendsp
@@ -36,6 +38,7 @@ media/intake_backfire_01.wav
 media/intake_backfire_02.wav
 media/intake_backfire_03.wav
 media/mechanical_click.wav
+media/reference_texture_fallback.wav
 media/shift_down_01.wav
 media/shift_down_02.wav
 media/shift_down_03.wav
@@ -53,6 +56,7 @@ patchers/ev_pad_beap~.maxpat
 patchers/ev_pad_driver~.maxpat
 patchers/mix_master~.maxpat
 patchers/powertrain~.maxpat
+patchers/reference_texture~.maxpat
 patchers/road_air~.maxpat
 patchers/transient~.maxpat
 patchers/vehicle_engine~.maxpat
@@ -64,3 +68,4 @@ tools/build_project.py
 tools/build_runtime_probe.py
 tools/build_user_manual.py
 tools/process_assets.py
+tools/prepare_local_reference.py

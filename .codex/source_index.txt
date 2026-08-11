@@ -4,7 +4,9 @@ PROJECT_HANDOFF.md
 README.md
 VehicleSoundSynth-V3.maxproj
 assets/asset_manifest.json
+assets/ferrari_sf90_acoustic_target.json
 assets/raw/README.md
+code/local_reference_loader.js
 gen/ev_powertrain.gendsp
 gen/v10_powertrain.gendsp
 gen/v12_powertrain.gendsp
@@ -16,6 +18,7 @@ patchers/ev_pad_beap~.maxpat
 patchers/ev_pad_driver~.maxpat
 patchers/mix_master~.maxpat
 patchers/powertrain~.maxpat
+patchers/reference_texture~.maxpat
 patchers/road_air~.maxpat
 patchers/transient~.maxpat
 patchers/vehicle_engine~.maxpat
@@ -27,3 +30,4 @@ tools/build_project.py
 tools/build_runtime_probe.py
 tools/build_user_manual.py
 tools/process_assets.py
+tools/prepare_local_reference.py

@@ -519,12 +519,16 @@ def make_ev_pad_driver() -> dict[str, Any]:
     pad = p.new("ev_pad_beap~", 285, 345, 115, numinlets=3, numoutlets=2)
     hp_l = p.new("svf~ 120 0.7", 215, 395, 100, numinlets=3, numoutlets=4)
     hp_r = p.new("svf~ 120 0.7", 455, 395, 100, numinlets=3, numoutlets=4)
+    low_sum = p.new("+~", 35, 455, 40, numinlets=2, numoutlets=1)
+    low_mid = p.new("*~ 0.5", 85, 455, 60, numinlets=2, numoutlets=1)
     direct_l = p.new("*~ 0.82", 165, 455, 65, numinlets=2, numoutlets=1)
     cross_l = p.new("*~ 0.18", 245, 455, 65, numinlets=2, numoutlets=1)
     direct_r = p.new("*~ 0.82", 405, 455, 65, numinlets=2, numoutlets=1)
     cross_r = p.new("*~ 0.18", 485, 455, 65, numinlets=2, numoutlets=1)
-    sum_l = p.new("+~", 215, 495, 40, numinlets=2, numoutlets=1)
-    sum_r = p.new("+~", 455, 495, 40, numinlets=2, numoutlets=1)
+    high_l = p.new("+~", 215, 495, 40, numinlets=2, numoutlets=1)
+    high_r = p.new("+~", 455, 495, 40, numinlets=2, numoutlets=1)
+    sum_l = p.new("+~", 215, 525, 40, numinlets=2, numoutlets=1)
+    sum_r = p.new("+~", 455, 525, 40, numinlets=2, numoutlets=1)
     pad_level = add_db_gain_control(p, router, 3, 665, 345, -3.0)
     mute_clip = p.new("clip 0 1", 665, 495, 65, numinlets=3, numoutlets=1)
     mute_gain = p.new("expr 1-$i1", 740, 495, 80, numinlets=1, numoutlets=1)
@@ -542,14 +546,21 @@ def make_ev_pad_driver() -> dict[str, Any]:
     p.connect(throttle_line, pad, 0, 2)
     p.connect(pad, hp_l, 0, 0)
     p.connect(pad, hp_r, 1, 0)
+    p.connect(hp_l, low_sum, 0, 0)
+    p.connect(hp_r, low_sum, 0, 1)
+    p.connect(low_sum, low_mid)
     p.connect(hp_l, direct_l, 1, 0)
     p.connect(hp_r, cross_l, 1, 0)
     p.connect(hp_r, direct_r, 1, 0)
     p.connect(hp_l, cross_r, 1, 0)
-    p.connect(direct_l, sum_l, 0, 0)
-    p.connect(cross_l, sum_l, 0, 1)
-    p.connect(direct_r, sum_r, 0, 0)
-    p.connect(cross_r, sum_r, 0, 1)
+    p.connect(direct_l, high_l, 0, 0)
+    p.connect(cross_l, high_l, 0, 1)
+    p.connect(direct_r, high_r, 0, 0)
+    p.connect(cross_r, high_r, 0, 1)
+    p.connect(low_mid, sum_l, 0, 0)
+    p.connect(high_l, sum_l, 0, 1)
+    p.connect(low_mid, sum_r, 0, 0)
+    p.connect(high_r, sum_r, 0, 1)
     p.connect(router, mute_clip, 4)
     p.connect(mute_default, mute_clip)
     p.connect(mute_clip, mute_gain)
@@ -858,27 +869,38 @@ def make_mix_master() -> dict[str, Any]:
     p.connect(edit_order, graph, 1, 5)
     p.connect(edit_order, graph, 0, 0)
 
-    for index, (_, _, default_freq, min_freq, max_freq, default_q) in enumerate(band_specs):
+    for index, (mode_name, _, default_freq, min_freq, max_freq, default_q) in enumerate(band_specs):
         x = 35 + index * 260
-        unpack = p.new("unpack 0. 0. 0.", x, 445, 105, numinlets=1, numoutlets=3)
+        is_peak = mode_name == "peaknotch"
+        unpack = p.new(
+            "unpack 0. 0. 0." if is_peak else "unpack 0. 0.",
+            x, 445, 105, numinlets=1, numoutlets=3 if is_peak else 2,
+        )
         freq_clip = p.new(f"clip {min_freq:g} {max_freq:g}", x, 205, 105, numinlets=3, numoutlets=1)
         gain_clip = p.new("clip -12. 12.", x + 110, 485, 85, numinlets=3, numoutlets=1)
         gain_linear = p.new("expr pow(10., $f1/20.)", x + 110, 525, 150, numinlets=1, numoutlets=1)
-        q_clip = p.new("clip 0.3 4.", x + 200, 485, 75, numinlets=3, numoutlets=1)
+        q_clip = p.new("clip 0.3 4.", x + 200, 485, 75, numinlets=3, numoutlets=1) if is_peak else None
         packed = p.new(f"pak {default_freq:g} 1. {default_q:g}", x, 565, 125, numinlets=3, numoutlets=1)
         ordered = p.new("t b l b", x, 600, 65, numinlets=1, numoutlets=3)
         select = p.message(f"setfilter {index}", x + 60, 600, 75)
+        select_value = p.message(f"{index}", x + 140, 600, 30)
         p.connect(router, unpack, index)
         p.connect(unpack, freq_clip, 0)
         p.connect(unpack, gain_clip, 1)
         p.connect(freq_clip, packed, 0, 0)
+        p.connect(freq_clip, frequency_set)
         p.connect(gain_clip, gain_linear)
+        p.connect(gain_clip, gain_set)
         p.connect(gain_linear, packed, 0, 1)
-        p.connect(unpack, q_clip, 2)
-        p.connect(q_clip, packed, 0, 2)
+        if q_clip is not None:
+            p.connect(unpack, q_clip, 2)
+            p.connect(q_clip, packed, 0, 2)
+            p.connect(q_clip, q_set)
         p.connect(packed, ordered)
         p.connect(ordered, select, 2)
+        p.connect(ordered, select_value, 2)
         p.connect(select, graph)
+        p.connect(select_value, selected_set)
         p.connect(ordered, graph, 1, 5)
         p.connect(ordered, graph, 0, 0)
 
@@ -1705,6 +1727,7 @@ def make_cabin_master() -> dict[str, Any]:
     high_diff = p.new("-~", 675, 900, 40, numinlets=2, numoutlets=1)
     high_side = p.new("*~ 0.5", 675, 935, 60, numinlets=2, numoutlets=1)
     width_side = p.new("*~", 745, 935, 40, numinlets=2, numoutlets=1)
+    width_safe = p.new("*~ 0.85", 795, 935, 65, numinlets=2, numoutlets=1)
 
     tap_l = p.new("tapin~ 8.", 960, 865, 75, numinlets=1, numoutlets=1)
     reflect_l = p.new("tapout~ 0.65", 960, 900, 85, numinlets=1, numoutlets=1)
@@ -1737,6 +1760,7 @@ def make_cabin_master() -> dict[str, Any]:
     p.connect(high_diff, high_side)
     p.connect(high_side, width_side)
     p.connect(controls["cabin_width"], width_side, 0, 1)
+    p.connect(width_side, width_safe)
     p.connect(phase_r, tap_l)
     p.connect(tap_l, reflect_l)
     p.connect(reflect_l, reflect_l_gain)
@@ -1744,9 +1768,9 @@ def make_cabin_master() -> dict[str, Any]:
     p.connect(tap_r, reflect_r)
     p.connect(reflect_r, reflect_r_gain)
     p.connect(high_mid, left_high, 0, 0)
-    p.connect(width_side, left_high, 0, 1)
+    p.connect(width_safe, left_high, 0, 1)
     p.connect(high_mid, right_high, 0, 0)
-    p.connect(width_side, right_high, 0, 1)
+    p.connect(width_safe, right_high, 0, 1)
     p.connect(left_high, left_high_ref, 0, 0)
     p.connect(reflect_l_gain, left_high_ref, 0, 1)
     p.connect(right_high, right_high_ref, 0, 0)
@@ -2432,8 +2456,8 @@ idle = 0.205 + body * 0.050;
 a = clamp(idle + t * 0.30 + l * 0.16, 0, 0.67) * run;
 sub = cycle(clamp(fire * 0.5, 24, 520)) * (0.055 + body * 0.045) * (1-speedmix*0.55);
 h1 = cycle(fire) * (0.16 + body * 0.08);
-h2 = cycle(clamp(fire * 2, 45, 3200)) * (0.105 + brightness * 0.095 + speedmix * 0.070);
-h3 = cycle(clamp(fire * 3, 55, 5200)) * (0.060 + texture * 0.070 + speedmix * 0.060);
+h2 = cycle(clamp(fire * 2, 45, 3200)) * (0.0945 + brightness * 0.108 + speedmix * 0.081);
+h3 = cycle(clamp(fire * 3, 55, 5200)) * (0.05625 + texture * 0.06875 + speedmix * 0.0625);
 h4 = cycle(clamp(fire * 4, 70, 7000)) * speedmix * (0.025 + brightness * 0.050);
 h6 = cycle(clamp(fire * 6, 90, 9800)) * brightness * speedmix * 0.025;
 h8 = cycle(clamp(fire * 8, 110, 12000)) * texture * speedmix * 0.014;
@@ -2488,9 +2512,9 @@ a = clamp(idle + t * 0.32 + l * 0.18, 0, 0.70) * run;
 sub = cycle(clamp(fire * 0.5, 24, 460)) * (0.060 + body * 0.052) * (1-speedmix*0.50);
 h1 = cycle(fire) * (0.17 + aggression * 0.08);
 h15 = cycle(clamp(fire * 1.5, 45, 1800)) * (0.040 + texture * 0.050);
-h2 = cycle(clamp(fire * 2, 55, 3500)) * (0.105 + brightness * 0.085 + speedmix * 0.065);
+h2 = cycle(clamp(fire * 2, 55, 3500)) * (0.08775 + brightness * 0.0945 + speedmix * 0.07425);
 h25 = cycle(clamp(fire * 2.5, 65, 5200)) * (0.055 + texture * 0.075 + speedmix * 0.060);
-h3 = cycle(clamp(fire * 3, 75, 6500)) * (0.060 + aggression * 0.045 + speedmix * 0.050);
+h3 = cycle(clamp(fire * 3, 75, 6500)) * (0.0425 + aggression * 0.050 + speedmix * 0.050);
 h5 = cycle(clamp(fire * 5, 95, 9000)) * brightness * speedmix * 0.040;
 h7 = cycle(clamp(fire * 7, 120, 12000)) * texture * speedmix * 0.020;
 sideband_low = cycle(clamp(fire * 0.81, 32, 1450)) * (0.022 + speedmix * 0.080);

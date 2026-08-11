@@ -67,7 +67,7 @@ def _residual_filter(samples: list[float]) -> list[float]:
     mean = sum(samples) / max(1, len(samples))
     output = [sample - mean for sample in samples]
     output = _biquad(output, _rbj("highpass", 90.0))
-    for multiple in range(2, 17):
+    for multiple in range(1, 17):
         frequency = 61.5 * multiple
         if frequency >= 4000.0:
             break
@@ -83,13 +83,22 @@ def prepare_reference(source: Path, destination: Path, *, start_seconds: float =
         raise ValueError("reference window is outside the source WAV")
     processed: list[list[float]] = []
     for channel in channels:
-        filtered = _residual_filter(channel[start : start + required])
+        # Give the steep 61.5 Hz cadence notch enough real source history to
+        # settle before taking the loop window; otherwise its startup transient
+        # leaks the very cadence the residual is meant to remove.
+        preroll = min(start, SAMPLE_RATE * 2)
+        filtered_with_history = _residual_filter(
+            channel[start - preroll : start + required]
+        )
+        filtered = filtered_with_history[preroll : preroll + required]
         loop = filtered[:LOOP_FRAMES]
-        head = filtered[LOOP_FRAMES : LOOP_FRAMES + FADE_FRAMES]
+        continuation = filtered[LOOP_FRAMES : LOOP_FRAMES + FADE_FRAMES]
         for index in range(FADE_FRAMES):
-            phase = (index + 1) / FADE_FRAMES * math.pi / 2.0
-            tail_index = LOOP_FRAMES - FADE_FRAMES + index
-            loop[tail_index] = loop[tail_index] * math.cos(phase) + head[index] * math.sin(phase)
+            phase = index / max(1, FADE_FRAMES - 1) * math.pi / 2.0
+            # Overlap the post-loop continuation into the beginning. The file
+            # seam remains source[N-1] -> source[N], while the overlap exits
+            # into source[fade] without a second discontinuity.
+            loop[index] = continuation[index] * math.cos(phase) + loop[index] * math.sin(phase)
         processed.append(loop)
 
     flat = [sample for channel in processed for sample in channel]

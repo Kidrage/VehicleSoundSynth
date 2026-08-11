@@ -1,7 +1,8 @@
 # Asset licenses and provenance
 
-VehicleSoundSynth V3 accepts only CC0 and attribution-compatible CC BY source
-audio. NC, SA, and unknown-license material is excluded. The machine-readable
+VehicleSoundSynth V3 distributes only CC0 and attribution-compatible CC BY
+source audio. NC, SA, and unknown-license material is excluded from the
+repository and release. The machine-readable
 record is `assets/asset_manifest.json`; its hashes and processing fields are the
 release authority.
 
@@ -21,6 +22,16 @@ All six source files are installed under `assets/raw/` and are marked
 exhaust pop/crackle, mechanical click, shift thump, and stereo cabin IR files
 are cropped from these recordings. The Ferrari acceleration file is retained
 as a listening reference and is not played by the runtime patch.
+
+## User-supplied local-only reference
+
+`/Users/saintpeter/Desktop/Ferrari.wav` is a user-supplied SF90 near-field
+reference. No redistribution permission is asserted. Its optional processed
+residual may be played locally by the V10/V12 profiles, but both source and
+derived audio are ignored by Git and must never be committed, synced, uploaded,
+or released. Source and derived SHA-256 hashes and the deterministic processing
+recipe are recorded under `local_only_references` in the manifest. A tracked,
+procedurally generated fallback is used whenever the local residual is absent.
 
 `tools/process_assets.py` converts sources to PCM16, resamples runtime material
 to 48 kHz, removes DC, applies short edge fades, and peak-normalizes every

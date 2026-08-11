@@ -8,5 +8,5 @@
 - Keep DSP muted on load and protect stereo output against peaks.
 - Keep the low-frequency system lifecycle-gated and high-passed near 28 Hz. Center deep bass after the cabin IR with the 120 Hz crossover; stereo phase shaping and early reflections belong only above that crossover.
 - Never commit or sync `media/local/` or `/Users/saintpeter/Desktop/Ferrari.wav`; only the non-audio target JSON and deterministic fallback may be tracked.
-- Treat `assets/asset_manifest.json` and `ASSET_LICENSES.md` as the provenance authority. Runtime field recordings must remain CC0/CC BY, hash-verified, DC-cleaned, faded, and normalized.
+- Treat `assets/asset_manifest.json` and `ASSET_LICENSES.md` as the provenance authority. Distributable runtime field recordings must remain CC0/CC BY, hash-verified, DC-cleaned, faded, and normalized. User-supplied local-only references are allowed only when separately hash-documented, ignored by Git, and never synced or redistributed.
 - Preserve `/Users/saintpeter/Downloads/VehicleSoundSynth` and `/Users/saintpeter/Downloads/VehicleSoundSynth-V2`; all V3 implementation work belongs in this repository.

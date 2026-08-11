@@ -82,6 +82,7 @@ class VehicleSoundProjectTests(unittest.TestCase):
         self.assertIn("tapout~ 0.65", text)
         self.assertIn("tapout~ 1.35", text)
         self.assertIn("expr 0.6 + 1.2*$f1", text)
+        self.assertIn("*~ 0.85", text)
         self.assertNotIn("svf~ 180 0.5", text)
 
     def test_v31_pad_has_independent_level_mute_solo_and_safe_stereo_sum(self):
@@ -91,7 +92,18 @@ class VehicleSoundProjectTests(unittest.TestCase):
         self.assertIn("pad_mute", driver_text)
         self.assertIn("expr pow(10., $f1/20.)", driver_text)
         self.assertIn("*~ 0.18", driver_text)
+        self.assertIn("*~ 0.5", driver_text)
         self.assertNotIn("*~ 0.04", driver_text)
+
+        boxes = {item["box"]["id"]: item["box"] for item in driver["boxes"]}
+        lines = [item["patchline"] for item in driver["lines"]]
+        low_mid = next(box_id for box_id, box in boxes.items() if box.get("text") == "*~ 0.5")
+        stereo_sums = {
+            line["destination"][0]
+            for line in lines
+            if line["source"][0] == low_mid
+        }
+        self.assertEqual(2, len(stereo_sums))
 
         power = self.load_json("patchers/powertrain~.maxpat")["patcher"]
         power_text = "\n".join(item["box"].get("text", "") for item in power["boxes"])
@@ -140,8 +152,42 @@ class VehicleSoundProjectTests(unittest.TestCase):
                 self.assertEqual(2, handle.getnchannels())
                 self.assertEqual(48000, handle.getframerate())
                 self.assertEqual(12000, handle.getnframes())
+                samples = struct.unpack("<24000h", handle.readframes(12000))
+            self.assertLess(abs(samples[-2] - samples[0]) / 32768.0, 0.05)
+            self.assertLess(abs(samples[-1] - samples[1]) / 32768.0, 0.05)
             self.assertAlmostEqual(-18.0, result["rms_dbfs"], delta=0.25)
             self.assertLessEqual(result["peak_dbfs"], -3.0 + 0.05)
+            left = [samples[index] / 32768.0 for index in range(0, len(samples), 2)]
+
+            def projected_amplitude(frequency):
+                cosine = sum(
+                    value * math.cos(2 * math.pi * frequency * index / 48000)
+                    for index, value in enumerate(left)
+                )
+                sine = sum(
+                    value * math.sin(2 * math.pi * frequency * index / 48000)
+                    for index, value in enumerate(left)
+                )
+                return 2.0 * math.hypot(cosine, sine) / len(left)
+
+            self.assertLess(projected_amplitude(61.5), projected_amplitude(347.0) * 0.10)
+
+    def test_v31_harmonic_lifts_match_the_approved_fixed_point_percentages(self):
+        expected = {
+            "v12_powertrain": (
+                "0.0945 + brightness * 0.108 + speedmix * 0.081",
+                "0.05625 + texture * 0.06875 + speedmix * 0.0625",
+            ),
+            "v10_powertrain": (
+                "0.08775 + brightness * 0.0945 + speedmix * 0.07425",
+                "0.0425 + aggression * 0.050 + speedmix * 0.050",
+            ),
+        }
+        for name, coefficients in expected.items():
+            patcher = self.load_json(f"gen/{name}.gendsp")["patcher"]
+            code = "\n".join(item["box"].get("code", "") for item in patcher["boxes"])
+            for coefficient in coefficients:
+                self.assertIn(coefficient, code)
 
     def test_v3_project_identity_and_public_entrypoint(self):
         project_path = ROOT / "VehicleSoundSynth-V3.maxproj"
@@ -553,6 +599,8 @@ class VehicleSoundProjectTests(unittest.TestCase):
         trigger_texts = [boxes[line["source"][0]].get("text") for line in coefficient_inputs]
         self.assertEqual(4, trigger_texts.count("t b l b"))
         self.assertEqual(1, trigger_texts.count("t b l"))
+        self.assertEqual(2, sum(box.get("text") == "unpack 0. 0." for box in boxes.values()))
+        self.assertEqual(2, sum(box.get("text") == "unpack 0. 0. 0." for box in boxes.values()))
         self.assertFalse(
             any(box.get("text", "").startswith("prepend lowshelf") for box in boxes.values())
         )
@@ -1240,8 +1288,50 @@ class VehicleSoundProjectTests(unittest.TestCase):
             side = analyze(side_path)
         self.assertLess(centered["low_side_ratio"], 0.001)
         self.assertGreater(side["low_side_ratio"], 0.99)
+        self.assertGreater(centered["low_band_correlation"], 0.999)
+        self.assertLess(side["low_band_correlation"], -0.999)
+        self.assertLess(centered["low_band_mono_fold_rms_loss_db"], 0.001)
+        self.assertGreater(side["low_band_mono_fold_rms_loss_db"], 60.0)
+        self.assertLess(centered["mono_fold_rms_loss_db"], 0.001)
+        self.assertGreater(side["mono_fold_rms_loss_db"], 60.0)
         self.assertAlmostEqual(centered["peak_dbfs"], side["peak_dbfs"], places=3)
         self.assertAlmostEqual(centered["rms_dbfs"], side["rms_dbfs"], places=3)
+
+    def test_audio_metrics_compare_third_octaves_and_expected_gain(self):
+        import math
+
+        sys.path.insert(0, str(ROOT / "tools"))
+        from audio_metrics import analyze, third_octave_similarity
+
+        def write_tones(path, gain, frequencies):
+            payload = []
+            for index in range(48000):
+                value = gain * sum(
+                    math.sin(2 * math.pi * frequency * index / 48000)
+                    for frequency in frequencies
+                ) / len(frequencies)
+                sample = round(max(-0.99, min(0.99, value)) * 32767)
+                payload.append(struct.pack("<hh", sample, sample))
+            with wave.open(str(path), "wb") as handle:
+                handle.setnchannels(2)
+                handle.setsampwidth(2)
+                handle.setframerate(48000)
+                handle.writeframes(b"".join(payload))
+
+        with tempfile.TemporaryDirectory() as directory:
+            reference = Path(directory) / "reference.wav"
+            quieter = Path(directory) / "quieter.wav"
+            different = Path(directory) / "different.wav"
+            write_tones(reference, 0.4, (80.0, 160.0, 320.0, 640.0))
+            write_tones(quieter, 0.2, (80.0, 160.0, 320.0, 640.0))
+            write_tones(different, 0.4, (2000.0, 4000.0, 8000.0))
+            reference_metrics = analyze(reference)
+            quiet_metrics = analyze(quieter)
+            similarity = third_octave_similarity(reference, quieter)
+            dissimilarity = third_octave_similarity(reference, different)
+        self.assertAlmostEqual(-6.0206, quiet_metrics["rms_dbfs"] - reference_metrics["rms_dbfs"], delta=0.02)
+        self.assertGreater(similarity, 0.999)
+        self.assertLess(dissimilarity, 0.10)
 
     def test_audio_metrics_detect_harmonic_complexity_and_single_tone_dominance(self):
         import math
@@ -1335,6 +1425,20 @@ class VehicleSoundProjectTests(unittest.TestCase):
                     self.assertRegex(output["processed_sha256"], r"^[0-9a-f]{64}$")
         self.assertIn("fallback-only", manifest["fallback_media"]["policy"])
         self.assertTrue((ROOT / "ASSET_LICENSES.md").is_file())
+
+    def test_local_reference_is_hash_documented_but_never_distributed(self):
+        manifest = self.load_json("assets/asset_manifest.json")
+        references = manifest["local_only_references"]
+        self.assertEqual(1, len(references))
+        reference = references[0]
+        self.assertIn("do not commit", reference["distribution"])
+        self.assertRegex(reference["source_sha256"], r"^[0-9a-f]{64}$")
+        self.assertRegex(reference["derived_sha256"], r"^[0-9a-f]{64}$")
+        self.assertEqual(["v12", "v10"], reference["runtime_profiles"])
+        self.assertIn("media/local/", (ROOT / ".gitignore").read_text(encoding="utf-8"))
+        derived = ROOT / reference["derived_path"]
+        if derived.is_file():
+            self.assertEqual(reference["derived_sha256"], hashlib.sha256(derived.read_bytes()).hexdigest())
 
     def test_all_runtime_foley_and_ir_are_processed_licensed_assets(self):
         manifest = self.load_json("assets/asset_manifest.json")

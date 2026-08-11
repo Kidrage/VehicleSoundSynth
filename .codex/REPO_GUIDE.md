@@ -35,7 +35,7 @@ python3 tools/build_project.py --output-root .
 python3 tools/process_assets.py --root .
 python3 tools/prepare_local_reference.py /Users/saintpeter/Desktop/Ferrari.wav media/local/ferrari_sf90_residual.wav
 python3 -m unittest discover -s tests -v
-python3 tools/audio_metrics.py render.wav --max-peak-dbfs -1 --min-rms-dbfs -45 --min-rumble-ratio 0.55 --max-subsonic-ratio 0.05 --max-high-ratio 0.10 --min-spectral-peaks 6 --max-dominant-peak-ratio 0.50
+python3 tools/audio_metrics.py render.wav --max-peak-dbfs -1 --min-rms-dbfs -45 --min-rumble-ratio 0.55 --max-subsonic-ratio 0.05 --max-low-side-ratio 0.05 --min-low-band-correlation 0.95 --max-mono-fold-rms-loss-db 1.5 --max-high-ratio 0.10 --min-spectral-peaks 6 --max-dominant-peak-ratio 0.50
 ```
 
 Regenerate twice and compare hashes when generator determinism matters. Never
