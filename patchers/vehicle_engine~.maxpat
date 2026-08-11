@@ -88,8 +88,13 @@
           "id": "obj-5",
           "maxclass": "newobj",
           "numinlets": 1,
-          "numoutlets": 39,
+          "numoutlets": 44,
           "outlettype": [
+            "",
+            "",
+            "",
+            "",
+            "",
             "",
             "",
             "",
@@ -136,7 +141,7 @@
             900.0,
             22.0
           ],
-          "text": "route engine_type ignition start speed_kph rpm throttle brake load accel gear shift shift_dir pop intake_backfire exhaust_pop click ev_weight v12_weight v10_weight aggression brightness body texture cabin_width cabin_rumble exhaust_boom structure_vibration cabin_ir_mix powertrain_level_db transient_level_db road_level_db rumble_level_db eq_low eq_lowmid eq_highmid eq_high eq_bypass master_trim_db"
+          "text": "route engine_type ignition start speed_kph rpm throttle brake load accel gear shift shift_dir pop intake_backfire exhaust_pop click ev_weight v12_weight v10_weight aggression brightness body texture cabin_width cabin_rumble exhaust_boom structure_vibration cabin_ir_mix powertrain_level_db transient_level_db road_level_db rumble_level_db pad_level_db pad_mute pad_solo reference_texture_level_db reference_texture_mute eq_low eq_lowmid eq_highmid eq_high eq_bypass master_trim_db"
         }
       },
       {
@@ -252,7 +257,8 @@
       {
         "box": {
           "id": "obj-12",
-          "maxclass": "newobj",
+          "maxclass": "bpatcher",
+          "name": "mix_master~.maxpat",
           "numinlets": 3,
           "numoutlets": 2,
           "outlettype": [
@@ -260,12 +266,18 @@
             ""
           ],
           "patching_rect": [
-            1010.0,
-            570.0,
-            100.0,
-            22.0
+            535.0,
+            500.0,
+            970.0,
+            340.0
           ],
-          "text": "mix_master~"
+          "presentation": 1,
+          "presentation_rect": [
+            15.0,
+            15.0,
+            970.0,
+            340.0
+          ]
         }
       },
       {
@@ -385,7 +397,7 @@
           "numoutlets": 0,
           "patching_rect": [
             1015.0,
-            690.0,
+            830.0,
             30.0,
             22.0
           ]
@@ -400,7 +412,7 @@
           "numoutlets": 0,
           "patching_rect": [
             1105.0,
-            690.0,
+            830.0,
             30.0,
             22.0
           ]
@@ -771,12 +783,12 @@
       }
     ],
     "objectsnaponopen": 1,
-    "openinpresentation": 0,
+    "openinpresentation": 1,
     "rect": [
       50.0,
       50.0,
-      1320,
-      760
+      1550,
+      900
     ],
     "toolbarvisible": 1
   }

@@ -231,9 +231,10 @@ def main() -> None:
         shutil.copy2(source, bundle / source.name)
     for source in (root / "gen").glob("*.gendsp"):
         shutil.copy2(source, bundle / source.name)
+    shutil.copy2(root / "code" / "local_reference_loader.js", bundle / "local_reference_loader.js")
     for source in (root / "media").glob("*.wav"):
         shutil.copy2(source, media / source.name)
-        if source.name.startswith("cabin_ir_"):
+        if source.name.startswith("cabin_ir_") or source.name == "reference_texture_fallback.wav":
             shutil.copy2(source, bundle / source.name)
     if args.sweep_to_rpm is not None:
         state = "sweep"

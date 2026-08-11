@@ -18,11 +18,13 @@ master EQ. The project uses only built-in Max/MSP/Gen objects.
 
 - `tools/build_project.py` — sole writer for patchers, Gen DSP, presets, and fallback WAVs.
 - `tools/process_assets.py` — deterministic curated-audio crop, resample, DC removal, fade, normalization, and hashing.
+- `tools/prepare_local_reference.py` — local-only Ferrari cadence removal, seamless loop creation, and normalization.
 - `assets/asset_manifest.json` / `ASSET_LICENSES.md` — runtime-audio provenance authority.
 - `main.maxpat` — runnable demo UI; DSP must start muted.
 - `patchers/vehicle_engine~.maxpat` — public engine seam: one message inlet, two signal outlets.
 - `patchers/ev_pad_driver~.maxpat` — generated vehicle-message to BEAP-CV adapter and safety trim.
 - `patchers/ev_pad_beap~.maxpat` — embedded dual-channel BEAP pad; user tuning is preserved on rebuild.
+- `patchers/reference_texture~.maxpat` — V10/V12-only optional local residual with deterministic fallback.
 - `patchers/`, `gen/`, `media/`, `presets/` — generated runtime resources.
 - `tests/` — deterministic structural and resource checks.
 
@@ -31,6 +33,7 @@ master EQ. The project uses only built-in Max/MSP/Gen objects.
 ```sh
 python3 tools/build_project.py --output-root .
 python3 tools/process_assets.py --root .
+python3 tools/prepare_local_reference.py /Users/saintpeter/Desktop/Ferrari.wav media/local/ferrari_sf90_residual.wav
 python3 -m unittest discover -s tests -v
 python3 tools/audio_metrics.py render.wav --max-peak-dbfs -1 --min-rms-dbfs -45 --min-rumble-ratio 0.55 --max-subsonic-ratio 0.05 --max-high-ratio 0.10 --min-spectral-peaks 6 --max-dominant-peak-ratio 0.50
 ```
@@ -51,7 +54,8 @@ On macOS, Max writes load diagnostics to
 
 - V3 starts from the verified V2 release commit `b8cefa5`.
 - Intended flow: lifecycle/state controller → powertrain/transient/road/rumble
-  layers → cabin low-frequency centering → four-band master EQ → one final
+  layers → 120 Hz cabin low-frequency centering and upper-band stereo field →
+  visible four-node master EQ → one final
   limiter/clip stage.
 - `tools/build_mix_probe.py` provides measured EQ/trim/bypass checks.
 - `tools/build_runtime_probe.py` builds a self-contained, monitor-muted Max

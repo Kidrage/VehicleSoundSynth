@@ -2,8 +2,9 @@
 
 Max/MSP 8.6.5 vehicle-acoustics project with an EV profile plus lifecycle-gated
 V12 and V10 combustion profiles. V3 uses crank-related combustion pulses,
-additive harmonics, FM/AM sidebands and non-integer orders instead of a dominant
-pure sine. The EV low fundamental is phase-coherent between channels and feeds
+phase-locked left/right cylinder banks, additive harmonics, bounded cycle variation,
+and pulse-gated narrowband residuals instead of a dominant pure sine or broadband
+noise. The EV low fundamental is phase-coherent between channels and feeds
 an EV-only, dual-channel BEAP pad. Its in-cabin low-frequency system is excited by the real powertrain
 signal and adds engine half-order structure vibration, damped cabin/body modes,
 and load-dependent exhaust boom. The seven-speed DCT, licensed CC0 transients,
@@ -28,6 +29,7 @@ V3 目录同时保留 V1 与 V2 手册作为参考，不会覆盖旧版本。
    suppressed, and leaving Manual mode releases both controls.
 6. Enable `Audio`; use `Internal Auto` to audition the seven-speed DCT.
 7. Shape the cabin with `Cabin Rumble`, `Exhaust Boom`, and `Structure Vibration`.
+8. Drag the four nodes in the visible master EQ immediately before the meters/DAC.
 
 The preset also sets four independent stem trims. If a dB field seems inactive,
 confirm the matching stem is actually sounding: `Rumble Level` cannot change
@@ -49,6 +51,11 @@ and neither voice uses micro-detuning, so the former slow beating is not recreat
 
 Save this patcher normally after adjusting it. Project regeneration deliberately
 preserves the file; all surrounding routing and level containment remain generated.
+
+`EV Pad dB` is the Pad's independent stem level. `Pad Mute` silences only the
+Pad, while `Pad Solo` silences only the EV motor so the two Pad chains can be
+tuned in isolation. The post-BEAP 82/18 crossmix keeps the stereo width useful
+without the previous near-antiphase mono loss.
 
 The V12/V10 profiles are procedural sound-design archetypes built from
 four-stroke firing orders, load envelopes, and resonant harmonic layers; they
@@ -81,6 +88,11 @@ powertrain_level_db -60..6
 transient_level_db -60..6
 road_level_db -60..6
 rumble_level_db -60..6
+pad_level_db -60..6
+pad_mute 0|1
+pad_solo 0|1
+reference_texture_level_db -60..6
+reference_texture_mute 0|1
 ```
 
 Global EQ and output controls:
@@ -94,11 +106,11 @@ eq_bypass 0|1
 master_trim_db -24..0
 ```
 
-EQ messages act on the complete stereo mix immediately before output trim and
-protection. Runtime probes measured approximately -6.1 dB at 90 Hz for a
--12 dB low shelf, -12.0 dB at the centers of the 250 Hz and 3.8 kHz peak bands,
-and -5.9 dB at 9 kHz for a -12 dB high shelf. `eq_bypass 1` crossfades to the
-unprocessed signal; `master_trim_db` affects every stem.
+EQ messages and graph edits control the same four-filter `filtergraph~`/
+stereo-`cascade~` system immediately before output trim and protection.
+Select node 0–3 beside the graph for synchronized frequency, gain, and Q/S
+editing. `eq_bypass 1` crossfades to the unprocessed signal;
+`master_trim_db` affects every stem.
 
 ## Audio sources and noise
 
@@ -108,10 +120,25 @@ the cabin IR are processed CC0 field recordings, not generated Foley. See
 normalization targets, and hashes.
 
 Broadband noise is deliberately limited to a centered `pink~` tire bed
-(70-900 Hz), a restrained stereo `noise~` wind layer (400-4000 Hz), and very
-low-level smoothed mechanical texture inside the fuel generators. Reduce it
+(70-900 Hz) and a restrained stereo `noise~` wind layer (400-4000 Hz). The
+V10/V12 generators no longer inject white noise. Reduce remaining road/air noise
 with `Road Level`, `Brightness`, `Texture`, the High-Mid/High Shelf EQ, or by
 lowering `road_air~` in the mix; do not use the limiter as an EQ.
+
+## Local Ferrari reference texture
+
+The optional SF90 reference remains local and is never committed. Prepare it with:
+
+```sh
+python3 tools/prepare_local_reference.py /Users/saintpeter/Desktop/Ferrari.wav media/local/ferrari_sf90_residual.wav
+```
+
+The tool removes DC, high-passes at 90 Hz, notches the 61.5 Hz V8 cadence and
+its harmonics, low-passes at 4 kHz, builds a 250 ms equal-power stereo loop,
+and normalizes it to -18 dBFS RMS with a -3 dBFS peak ceiling. V10/V12 load it
+quietly at -24 to -20 dB; EV gates it off. If the local file is absent, a
+deterministic stereo residual prevents missing-buffer errors. Measured targets,
+without copyrighted audio, are stored in `assets/ferrari_sf90_acoustic_target.json`.
 
 ## Regeneration and validation
 
@@ -126,8 +153,8 @@ python3 -m unittest discover -s tests -v
 python3 tools/audio_metrics.py render.wav --max-peak-dbfs -1 --min-rms-dbfs -45 --min-rumble-ratio 0.55 --max-subsonic-ratio 0.05 --max-low-side-ratio 0.10 --max-high-ratio 0.10
 ```
 
-The rumble layer is high-passed near 28 Hz. Cabin side energy is narrowed before
-the IR and again after IR wet/dry mixing; the final side path uses four 180 Hz
-high-pass stages so deep bass stays centered. The full signal then ends
-in `mix_master~`: four serial stereo EQ bands, click-safe dry/wet bypass,
+The rumble layer is high-passed near 28 Hz. After the cabin IR, `cross~ 120`
+centers deep bass while asymmetric short all-pass/early-reflection paths widen
+only the upper body and mechanical detail. The full signal then ends
+in `mix_master~`: one visible four-node graph driving stereo `cascade~`, click-safe dry/wet bypass,
 master trim, `omx.peaklim~`, and `clip~ -0.891 0.891`.

@@ -70,6 +70,11 @@ MACRO_NAMES = (
     "transient_level_db",
     "road_level_db",
     "rumble_level_db",
+    "pad_level_db",
+    "pad_mute",
+    "pad_solo",
+    "reference_texture_level_db",
+    "reference_texture_mute",
     "eq_low",
     "eq_lowmid",
     "eq_highmid",
@@ -87,12 +92,34 @@ MEDIA_FRAMES = {
     "mechanical_click": 2400,
     "starter_v12": 33600,
     "starter_v10": 33600,
+    "reference_texture_fallback": 12000,
     **{f"shift_up_{index:02d}": 7200 for index in range(1, 4)},
     **{f"shift_down_{index:02d}": 8400 for index in range(1, 4)},
     **{f"intake_backfire_{index:02d}": 9600 for index in range(1, 4)},
     **{f"exhaust_pop_{index:02d}": 7200 for index in range(1, 5)},
     **{f"exhaust_crackle_{index:02d}": 4800 for index in range(1, 4)},
 }
+
+LOCAL_REFERENCE_LOADER_JS = r'''autowatch = 1;
+outlets = 1;
+
+function bang() {
+    var patchPath = this.patcher.filepath || "";
+    var root = patchPath.replace(/\/patchers\/[^\/]+$/, "");
+    if (root === patchPath) {
+        root = patchPath.replace(/\/[^\/]+$/, "");
+    }
+    var localPath = root + "/media/local/ferrari_sf90_residual.wav";
+    var fallbackPath = root + "/media/reference_texture_fallback.wav";
+    var candidate = new File(localPath, "read");
+    if (candidate.isopen) {
+        candidate.close();
+        outlet(0, "replace", localPath);
+    } else {
+        outlet(0, "replace", fallbackPath);
+    }
+}
+'''
 
 
 def write_json(path: Path, value: Any) -> None:
@@ -446,7 +473,7 @@ def make_ev_pad_driver() -> dict[str, Any]:
     p = Patcher(980, 650)
     p.comment("EV-only BEAP pad driver — RPM pitch, ignition gate, throttle filter/level", 25, 15, 700)
     control = inlet(p, 35, 65)
-    router = route(p, ("rpm", "throttle", "ignition"), 35, 105, 300)
+    router = route(p, ("rpm", "throttle", "ignition", "pad_level_db", "pad_mute"), 35, 105, 500)
     p.connect(control, router)
 
     rpm_clip = p.new("clip 0. 10000.", 35, 155, 105, numinlets=3, numoutlets=1)
@@ -492,8 +519,22 @@ def make_ev_pad_driver() -> dict[str, Any]:
     pad = p.new("ev_pad_beap~", 285, 345, 115, numinlets=3, numoutlets=2)
     hp_l = p.new("svf~ 120 0.7", 215, 395, 100, numinlets=3, numoutlets=4)
     hp_r = p.new("svf~ 120 0.7", 455, 395, 100, numinlets=3, numoutlets=4)
-    scale_l = p.new("*~ 0.04", 215, 455, 65, numinlets=2, numoutlets=1)
-    scale_r = p.new("*~ 0.04", 455, 455, 65, numinlets=2, numoutlets=1)
+    direct_l = p.new("*~ 0.82", 165, 455, 65, numinlets=2, numoutlets=1)
+    cross_l = p.new("*~ 0.18", 245, 455, 65, numinlets=2, numoutlets=1)
+    direct_r = p.new("*~ 0.82", 405, 455, 65, numinlets=2, numoutlets=1)
+    cross_r = p.new("*~ 0.18", 485, 455, 65, numinlets=2, numoutlets=1)
+    sum_l = p.new("+~", 215, 495, 40, numinlets=2, numoutlets=1)
+    sum_r = p.new("+~", 455, 495, 40, numinlets=2, numoutlets=1)
+    pad_level = add_db_gain_control(p, router, 3, 665, 345, -3.0)
+    mute_clip = p.new("clip 0 1", 665, 495, 65, numinlets=3, numoutlets=1)
+    mute_gain = p.new("expr 1-$i1", 740, 495, 80, numinlets=1, numoutlets=1)
+    mute_pack = p.new("pack 0. 30", 665, 535, 85, numinlets=2, numoutlets=1)
+    mute_line = p.new("line~", 765, 535, 50, numinlets=2, numoutlets=2)
+    mute_default = p.new("loadmess 0", 835, 495, 80, numinlets=1, numoutlets=1)
+    gain_l = p.new("*~", 215, 535, 40, numinlets=2, numoutlets=1)
+    gain_r = p.new("*~", 455, 535, 40, numinlets=2, numoutlets=1)
+    mute_l = p.new("*~", 215, 575, 40, numinlets=2, numoutlets=1)
+    mute_r = p.new("*~", 455, 575, 40, numinlets=2, numoutlets=1)
     left = outlet(p, 215, 535, signal=True)
     right = outlet(p, 455, 535, signal=True)
     p.connect(pitch_line, pad, 0, 0)
@@ -501,10 +542,29 @@ def make_ev_pad_driver() -> dict[str, Any]:
     p.connect(throttle_line, pad, 0, 2)
     p.connect(pad, hp_l, 0, 0)
     p.connect(pad, hp_r, 1, 0)
-    p.connect(hp_l, scale_l, 1, 0)
-    p.connect(hp_r, scale_r, 1, 0)
-    p.connect(scale_l, left)
-    p.connect(scale_r, right)
+    p.connect(hp_l, direct_l, 1, 0)
+    p.connect(hp_r, cross_l, 1, 0)
+    p.connect(hp_r, direct_r, 1, 0)
+    p.connect(hp_l, cross_r, 1, 0)
+    p.connect(direct_l, sum_l, 0, 0)
+    p.connect(cross_l, sum_l, 0, 1)
+    p.connect(direct_r, sum_r, 0, 0)
+    p.connect(cross_r, sum_r, 0, 1)
+    p.connect(router, mute_clip, 4)
+    p.connect(mute_default, mute_clip)
+    p.connect(mute_clip, mute_gain)
+    p.connect(mute_gain, mute_pack)
+    p.connect(mute_pack, mute_line)
+    p.connect(sum_l, gain_l)
+    p.connect(sum_r, gain_r)
+    p.connect(pad_level, gain_l, 0, 1)
+    p.connect(pad_level, gain_r, 0, 1)
+    p.connect(gain_l, mute_l)
+    p.connect(gain_r, mute_r)
+    p.connect(mute_line, mute_l, 0, 1)
+    p.connect(mute_line, mute_r, 0, 1)
+    p.connect(mute_l, left)
+    p.connect(mute_r, right)
     return p.document()
 
 
@@ -531,7 +591,7 @@ def add_db_gain_control(
 
 
 def make_engine() -> dict[str, Any]:
-    p = Patcher(1320, 760)
+    p = Patcher(1550, 900)
     p.comment("vehicle_engine~ — lifecycle-aware public seam and layered stereo renderer", 25, 15, 620)
     control = inlet(p, 45, 65)
     controller = p.new("engine_controller", 45, 105, 125, numinlets=1, numoutlets=1)
@@ -543,15 +603,19 @@ def make_engine() -> dict[str, Any]:
     road = p.new("road_air~", 465, 260, 85, numinlets=1, numoutlets=2)
     rumble = p.new("cabin_rumble~", 625, 260, 110, numinlets=3, numoutlets=2)
     cabin = p.new("cabin_master~", 800, 460, 110, numinlets=3, numoutlets=2)
-    mix = p.new("mix_master~", 1010, 570, 100, numinlets=3, numoutlets=2)
+    mix = p.add(
+        "bpatcher", None, 535, 500, 970, 340,
+        numinlets=3, numoutlets=2, name="mix_master~.maxpat",
+        presentation=1, presentation_rect=[15.0, 15.0, 970.0, 340.0],
+    )
     add_l1 = p.new("+~", 130, 350, 35, numinlets=2, numoutlets=1)
     add_l2 = p.new("+~", 235, 390, 35, numinlets=2, numoutlets=1)
     add_l3 = p.new("+~", 340, 430, 35, numinlets=2, numoutlets=1)
     add_r1 = p.new("+~", 390, 350, 35, numinlets=2, numoutlets=1)
     add_r2 = p.new("+~", 495, 390, 35, numinlets=2, numoutlets=1)
     add_r3 = p.new("+~", 600, 430, 35, numinlets=2, numoutlets=1)
-    left = outlet(p, 1015, 690, signal=True)
-    right = outlet(p, 1105, 690, signal=True)
+    left = outlet(p, 1015, 830, signal=True)
+    right = outlet(p, 1105, 830, signal=True)
 
     p.connect(control, controller)
     p.connect(controller, fan)
@@ -582,7 +646,7 @@ def make_engine() -> dict[str, Any]:
     p.connect(cabin, mix, 1, 2)
     p.connect(mix, left, 0)
     p.connect(mix, right, 1)
-    return p.document()
+    return p.document(presentation=True)
 
 
 def make_engine_controller() -> dict[str, Any]:
@@ -713,8 +777,8 @@ def make_engine_controller() -> dict[str, Any]:
 
 
 def make_mix_master() -> dict[str, Any]:
-    p = Patcher(1540, 980)
-    p.comment("Four-band stereo parametric EQ, click-safe bypass, trim, and final protection", 25, 15, 700)
+    p = Patcher(1180, 800)
+    p.comment("VISIBLE MASTER EQ — drag four nodes or use the public eq_* messages", 25, 15, 700)
     control = inlet(p, 35, 60)
     left_in = inlet(p, 170, 60, signal=True)
     right_in = inlet(p, 280, 60, signal=True)
@@ -722,68 +786,132 @@ def make_mix_master() -> dict[str, Any]:
     p.connect(control, router)
 
     band_specs = (
-        ("lowshelf", 90.0, 30.0, 400.0, 0.7, 0),
-        ("peaknotch", 250.0, 120.0, 1200.0, 0.8, 1),
-        ("peaknotch", 3800.0, 1000.0, 8000.0, 1.0, 2),
-        ("highshelf", 9000.0, 4000.0, 16000.0, 0.7, 3),
+        ("lowshelf", 6, 90.0, 30.0, 400.0, 0.7),
+        ("peaknotch", 5, 250.0, 120.0, 1200.0, 0.8),
+        ("peaknotch", 5, 3800.0, 1000.0, 8000.0, 1.0),
+        ("highshelf", 7, 9000.0, 4000.0, 16000.0, 0.7),
     )
-    graphs: list[str] = []
-    for index, (mode, default_freq, min_freq, max_freq, default_q, route_outlet) in enumerate(band_specs):
-        x = 35 + index * 350
-        is_peak = mode == "peaknotch"
-        unpack = p.new("unpack 0. 0. 0." if is_peak else "unpack 0. 0.", x, 165, 105, numinlets=1, numoutlets=3 if is_peak else 2)
+    saved_filters: list[float | int] = []
+    for index, (_, mode, frequency, _, _, q_value) in enumerate(band_specs):
+        saved_filters.extend((index, mode, 1, 0, 0, frequency, 1.0, q_value, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0))
+    graph = p.add(
+        "filtergraph~", None, 35, 165, 720, 250,
+        numinlets=8, numoutlets=7, nfilters=4, autoout=1,
+        setfilter=saved_filters, presentation=1,
+        presentation_rect=[15.0, 35.0, 720.0, 250.0],
+    )
+
+    selected = p.add(
+        "number", None, 790, 445, 55, numinlets=1, numoutlets=2,
+        presentation=1, presentation_rect=[770.0, 55.0, 55.0, 22.0],
+    )
+    for label, rect in (
+        ("Node 0–3", [770.0, 35.0, 90.0, 18.0]),
+        ("Frequency Hz", [770.0, 85.0, 100.0, 18.0]),
+        ("Gain dB", [770.0, 135.0, 90.0, 18.0]),
+        ("Q / S", [770.0, 185.0, 90.0, 18.0]),
+        ("Bypass", [900.0, 295.0, 60.0, 18.0]),
+    ):
+        p.add("comment", label, 1080, 520, 100, 18, numinlets=1, numoutlets=0, presentation=1, presentation_rect=rect)
+    selected_clip = p.new("clip 0 3", 790, 475, 65, numinlets=3, numoutlets=1)
+    selected_message = p.new("prepend setfilter", 865, 475, 105, numinlets=1, numoutlets=1)
+    selected_set = p.new("prepend set", 980, 475, 85, numinlets=1, numoutlets=1)
+    selected_default = p.new("loadmess 0", 1070, 475, 80, numinlets=1, numoutlets=1)
+    p.connect(selected, selected_clip)
+    p.connect(selected_clip, selected_message)
+    p.connect(selected_message, graph)
+    p.connect(graph, selected_set, 6)
+    p.connect(selected_set, selected)
+    p.connect(selected_default, selected)
+
+    frequency_ui = p.add(
+        "flonum", None, 790, 515, 80, numinlets=1, numoutlets=2,
+        presentation=1, presentation_rect=[770.0, 105.0, 80.0, 22.0],
+    )
+    gain_ui = p.add(
+        "flonum", None, 885, 515, 70, numinlets=1, numoutlets=2,
+        presentation=1, presentation_rect=[770.0, 155.0, 80.0, 22.0],
+    )
+    q_ui = p.add(
+        "flonum", None, 970, 515, 70, numinlets=1, numoutlets=2,
+        presentation=1, presentation_rect=[770.0, 205.0, 80.0, 22.0],
+    )
+    frequency_set = p.new("prepend set", 790, 550, 85, numinlets=1, numoutlets=1)
+    gain_to_db = p.new("expr 20.*log(max($f1,0.000001))/log(10.)", 885, 550, 250, numinlets=1, numoutlets=1)
+    gain_set = p.new("prepend set", 885, 585, 85, numinlets=1, numoutlets=1)
+    q_set = p.new("prepend set", 970, 620, 85, numinlets=1, numoutlets=1)
+    edit_gain = p.new("expr pow(10., $f1/20.)", 885, 655, 150, numinlets=1, numoutlets=1)
+    edit_pack = p.new("pak 1000. 1. 0.8", 790, 690, 130, numinlets=3, numoutlets=1)
+    edit_order = p.new("t b l", 790, 725, 50, numinlets=1, numoutlets=2)
+    p.connect(graph, frequency_set, 1)
+    p.connect(frequency_set, frequency_ui)
+    p.connect(graph, gain_to_db, 2)
+    p.connect(gain_to_db, gain_set)
+    p.connect(gain_set, gain_ui)
+    p.connect(graph, q_set, 3)
+    p.connect(q_set, q_ui)
+    p.connect(frequency_ui, edit_pack, 0, 0)
+    p.connect(gain_ui, edit_gain)
+    p.connect(edit_gain, edit_pack, 0, 1)
+    p.connect(q_ui, edit_pack, 0, 2)
+    p.connect(edit_pack, edit_order)
+    p.connect(edit_order, graph, 1, 5)
+    p.connect(edit_order, graph, 0, 0)
+
+    for index, (_, _, default_freq, min_freq, max_freq, default_q) in enumerate(band_specs):
+        x = 35 + index * 260
+        unpack = p.new("unpack 0. 0. 0.", x, 445, 105, numinlets=1, numoutlets=3)
         freq_clip = p.new(f"clip {min_freq:g} {max_freq:g}", x, 205, 105, numinlets=3, numoutlets=1)
-        gain_clip = p.new("clip -12. 12.", x + 115, 205, 85, numinlets=3, numoutlets=1)
-        gain_linear = p.new("expr pow(10., $f1/20.)", x + 115, 245, 150, numinlets=1, numoutlets=1)
-        q_clip = p.new("clip 0.3 4.", x + 220, 205, 85, numinlets=3, numoutlets=1) if is_peak else None
-        packed = p.new(
-            f"pak {default_freq:g} 1. {default_q:g}",
-            x,
-            285,
-            125,
-            numinlets=3,
-            numoutlets=1,
-        )
-        graph = p.add("filtergraph~", None, x, 365, 230, 110, numinlets=8, numoutlets=7)
-        p.connect(router, unpack, route_outlet)
+        gain_clip = p.new("clip -12. 12.", x + 110, 485, 85, numinlets=3, numoutlets=1)
+        gain_linear = p.new("expr pow(10., $f1/20.)", x + 110, 525, 150, numinlets=1, numoutlets=1)
+        q_clip = p.new("clip 0.3 4.", x + 200, 485, 75, numinlets=3, numoutlets=1)
+        packed = p.new(f"pak {default_freq:g} 1. {default_q:g}", x, 565, 125, numinlets=3, numoutlets=1)
+        ordered = p.new("t b l b", x, 600, 65, numinlets=1, numoutlets=3)
+        select = p.message(f"setfilter {index}", x + 60, 600, 75)
+        p.connect(router, unpack, index)
         p.connect(unpack, freq_clip, 0)
         p.connect(unpack, gain_clip, 1)
         p.connect(freq_clip, packed, 0, 0)
         p.connect(gain_clip, gain_linear)
         p.connect(gain_linear, packed, 0, 1)
-        if q_clip is not None:
-            p.connect(unpack, q_clip, 2)
-            p.connect(q_clip, packed, 0, 2)
-        default = p.new(f"loadmess {mode} {default_freq:g} 1. {default_q:g}", x, 490, 210, numinlets=1, numoutlets=1)
-        # filtergraph~ inlet 5 consumes [frequency, linear gain, Q/S] and
-        # recalculates coefficients. Sending a named list to inlet 0 only
-        # changes the graph state in Max 8.6.5 and leaves unity coefficients.
-        p.connect(packed, graph, 0, 5)
-        p.connect(default, graph)
-        graphs.append(graph)
+        p.connect(unpack, q_clip, 2)
+        p.connect(q_clip, packed, 0, 2)
+        p.connect(packed, ordered)
+        p.connect(ordered, select, 2)
+        p.connect(select, graph)
+        p.connect(ordered, graph, 1, 5)
+        p.connect(ordered, graph, 0, 0)
 
-    left_signal = left_in
-    right_signal = right_in
-    for index, graph in enumerate(graphs):
-        x = 120 + index * 175
-        left_filter = p.new("biquad~", x, 570, 65, numinlets=6, numoutlets=1)
-        right_filter = p.new("biquad~", x, 615, 65, numinlets=6, numoutlets=1)
-        p.connect(left_signal, left_filter)
-        p.connect(right_signal, right_filter)
-        p.connect(graph, left_filter)
-        p.connect(graph, right_filter)
-        left_signal = left_filter
-        right_signal = right_filter
+    left_filter = p.new("cascade~ 4", 790, 205, 80, numinlets=2, numoutlets=1)
+    right_filter = p.new("cascade~ 4", 900, 205, 80, numinlets=2, numoutlets=1)
+    p.connect(left_in, left_filter)
+    p.connect(right_in, right_filter)
+    p.connect(graph, left_filter, 0, 1)
+    p.connect(graph, right_filter, 0, 1)
 
-    bypass_clip = p.new("clip 0 1", 1030, 165, 65, numinlets=3, numoutlets=1)
-    bypass_split = p.new("t f f", 1030, 205, 55, numinlets=1, numoutlets=2)
-    wet_expr = p.new("expr 1.-$f1", 1100, 245, 90, numinlets=1, numoutlets=1)
-    dry_pack = p.new("pack 0. 30", 980, 285, 85, numinlets=2, numoutlets=1)
-    wet_pack = p.new("pack 0. 30", 1100, 285, 85, numinlets=2, numoutlets=1)
-    dry_line = p.new("line~", 980, 325, 50, numinlets=2, numoutlets=2)
-    wet_line = p.new("line~", 1100, 325, 50, numinlets=2, numoutlets=2)
-    bypass_default = p.new("loadmess 0", 1210, 205, 80, numinlets=1, numoutlets=1)
+    reset = p.add(
+        "message", "Reset EQ", 760, 35, 70, numinlets=2, numoutlets=1,
+        presentation=1, presentation_rect=[870.0, 255.0, 75.0, 22.0],
+    )
+    reset_values = p.message(
+        "setparams 0 90. 1. 0.7, setparams 1 250. 1. 0.8, setparams 2 3800. 1. 1., setparams 3 9000. 1. 0.7, bang",
+        840, 35, 300,
+    )
+    p.connect(reset, reset_values)
+    p.connect(reset_values, graph)
+
+    bypass_ui = p.add("toggle", None, 760, 85, 22, 22, numinlets=1, numoutlets=1, presentation=1, presentation_rect=[870.0, 295.0, 22.0, 22.0])
+    p.comment("Bypass", 790, 85, 60)
+    bypass_clip = p.new("clip 0 1", 790, 125, 65, numinlets=3, numoutlets=1)
+    bypass_split = p.new("t f f", 865, 125, 55, numinlets=1, numoutlets=2)
+    wet_expr = p.new("expr 1.-$f1", 930, 125, 90, numinlets=1, numoutlets=1)
+    dry_pack = p.new("pack 0. 30", 865, 165, 85, numinlets=2, numoutlets=1)
+    wet_pack = p.new("pack 0. 30", 965, 165, 85, numinlets=2, numoutlets=1)
+    dry_line = p.new("line~", 865, 245, 50, numinlets=2, numoutlets=2)
+    wet_line = p.new("line~", 965, 245, 50, numinlets=2, numoutlets=2)
+    bypass_default = p.new("loadmess 0", 1060, 125, 80, numinlets=1, numoutlets=1)
     p.connect(router, bypass_clip, 4)
+    p.connect(bypass_ui, bypass_clip)
     p.connect(bypass_default, bypass_clip)
     p.connect(bypass_clip, bypass_split)
     p.connect(bypass_split, dry_pack, 1)
@@ -792,11 +920,11 @@ def make_mix_master() -> dict[str, Any]:
     p.connect(dry_pack, dry_line)
     p.connect(wet_pack, wet_line)
 
-    trim_clip = p.new("clip -24. 0.", 1230, 285, 85, numinlets=3, numoutlets=1)
-    trim_amp = p.new("expr pow(10., $f1/20.)", 1230, 325, 150, numinlets=1, numoutlets=1)
-    trim_pack = p.new("pack 0. 50", 1230, 365, 85, numinlets=2, numoutlets=1)
-    trim_line = p.new("line~", 1230, 405, 50, numinlets=2, numoutlets=2)
-    trim_default = p.new("loadmess -6.", 1360, 285, 95, numinlets=1, numoutlets=1)
+    trim_clip = p.new("clip -24. 0.", 790, 315, 85, numinlets=3, numoutlets=1)
+    trim_amp = p.new("expr pow(10., $f1/20.)", 790, 350, 150, numinlets=1, numoutlets=1)
+    trim_pack = p.new("pack 0. 50", 790, 385, 85, numinlets=2, numoutlets=1)
+    trim_line = p.new("line~", 790, 420, 50, numinlets=2, numoutlets=2)
+    trim_default = p.new("loadmess -8.", 900, 315, 95, numinlets=1, numoutlets=1)
     p.connect(router, trim_clip, 5)
     p.connect(trim_default, trim_clip)
     p.connect(trim_clip, trim_amp)
@@ -804,12 +932,12 @@ def make_mix_master() -> dict[str, Any]:
     p.connect(trim_pack, trim_line)
 
     masters: list[str] = []
-    for index, (dry, wet) in enumerate(((left_in, left_signal), (right_in, right_signal))):
-        x = 380 + index * 420
-        dry_gain = p.new("*~", x, 700, 40, numinlets=2, numoutlets=1)
-        wet_gain = p.new("*~", x + 90, 700, 40, numinlets=2, numoutlets=1)
-        blend = p.new("+~", x + 45, 745, 40, numinlets=2, numoutlets=1)
-        trim = p.new("*~", x + 45, 785, 40, numinlets=2, numoutlets=1)
+    for index, (dry, wet) in enumerate(((left_in, left_filter), (right_in, right_filter))):
+        x = 300 + index * 330
+        dry_gain = p.new("*~", x, 630, 40, numinlets=2, numoutlets=1)
+        wet_gain = p.new("*~", x + 70, 630, 40, numinlets=2, numoutlets=1)
+        blend = p.new("+~", x + 35, 670, 40, numinlets=2, numoutlets=1)
+        trim = p.new("*~", x + 35, 705, 40, numinlets=2, numoutlets=1)
         p.connect(dry, dry_gain, 0, 0)
         p.connect(dry_line, dry_gain, 0, 1)
         p.connect(wet, wet_gain, 0, 0)
@@ -819,18 +947,18 @@ def make_mix_master() -> dict[str, Any]:
         p.connect(blend, trim, 0, 0)
         p.connect(trim_line, trim, 0, 1)
         masters.append(trim)
-    limiter = p.new("omx.peaklim~", 610, 835, 105, numinlets=2, numoutlets=4)
-    clip_l = p.new("clip~ -0.891 0.891", 430, 875, 130, numinlets=3, numoutlets=1)
-    clip_r = p.new("clip~ -0.891 0.891", 810, 875, 130, numinlets=3, numoutlets=1)
-    left = outlet(p, 575, 925, signal=True)
-    right = outlet(p, 765, 925, signal=True)
+    limiter = p.new("omx.peaklim~", 500, 700, 105, numinlets=2, numoutlets=4)
+    clip_l = p.new("clip~ -0.891 0.891", 365, 740, 130, numinlets=3, numoutlets=1)
+    clip_r = p.new("clip~ -0.891 0.891", 630, 740, 130, numinlets=3, numoutlets=1)
+    left = outlet(p, 470, 770, signal=True)
+    right = outlet(p, 650, 770, signal=True)
     p.connect(masters[0], limiter, 0, 0)
     p.connect(masters[1], limiter, 0, 1)
     p.connect(limiter, clip_l, 0, 0)
     p.connect(limiter, clip_r, 1, 0)
     p.connect(clip_l, left)
     p.connect(clip_r, right)
-    return p.document()
+    return p.document(presentation=True)
 
 
 def make_powertrain() -> dict[str, Any]:
@@ -840,7 +968,10 @@ def make_powertrain() -> dict[str, Any]:
     tonal_names = ("rpm", "throttle", "load", "aggression", "brightness", "body", "texture")
     fuel_names = ("engine_running", "combustion_gain", "shift_cut")
     weight_names = ("ev_weight", "v12_weight", "v10_weight")
-    pad_names = ("ignition",)
+    pad_names = (
+        "ignition", "pad_level_db", "pad_mute", "pad_solo",
+        "reference_texture_level_db", "reference_texture_mute",
+    )
     names = tonal_names + fuel_names + weight_names + pad_names + ("powertrain_level_db",)
     router = route(p, names, 35, 105, 760)
     gens = [
@@ -849,10 +980,15 @@ def make_powertrain() -> dict[str, Any]:
         p.new("gen~ @gen v10_powertrain", 800, 395, 175, numinlets=1, numoutlets=2),
     ]
     ev_pad = p.new("ev_pad_driver~", 35, 395, 120, numinlets=1, numoutlets=2)
+    reference = p.new("reference_texture~", 1005, 395, 135, numinlets=1, numoutlets=2)
+    motor_l = p.new("*~", 165, 425, 40, numinlets=2, numoutlets=1)
+    motor_r = p.new("*~", 220, 425, 40, numinlets=2, numoutlets=1)
     ev_sum_l = p.new("+~", 220, 445, 40, numinlets=2, numoutlets=1)
     ev_sum_r = p.new("+~", 295, 445, 40, numinlets=2, numoutlets=1)
-    p.connect(gens[0], ev_sum_l, 0, 0)
-    p.connect(gens[0], ev_sum_r, 1, 0)
+    p.connect(gens[0], motor_l, 0, 0)
+    p.connect(gens[0], motor_r, 1, 0)
+    p.connect(motor_l, ev_sum_l, 0, 0)
+    p.connect(motor_r, ev_sum_r, 0, 0)
     p.connect(ev_pad, ev_sum_l, 0, 1)
     p.connect(ev_pad, ev_sum_r, 1, 1)
     bounds = {
@@ -885,15 +1021,25 @@ def make_powertrain() -> dict[str, Any]:
         p.connect(named, gens[1])
         p.connect(named, gens[2])
 
-    pad_ignition = p.new("clip 0. 1.", 1060, 175, 75, numinlets=3, numoutlets=1)
-    pad_ignition_named = p.message("ignition $1", 1060, 220, 105)
-    p.connect(
-        router,
-        pad_ignition,
-        len(tonal_names) + len(fuel_names) + len(weight_names),
-    )
-    p.connect(pad_ignition, pad_ignition_named)
-    p.connect(pad_ignition_named, ev_pad)
+    for offset, name in enumerate(("ignition", "pad_level_db", "pad_mute")):
+        x = 970 + offset * 100
+        named = p.new(f"prepend {name}", x, 245, 95, numinlets=1, numoutlets=1)
+        p.connect(router, named, names.index(name))
+        p.connect(named, ev_pad)
+
+    solo_clip = p.new("clip 0 1", 970, 285, 65, numinlets=3, numoutlets=1)
+    solo_gain = p.new("expr 1-$i1", 1045, 285, 80, numinlets=1, numoutlets=1)
+    solo_pack = p.new("pack 0. 30", 970, 325, 85, numinlets=2, numoutlets=1)
+    solo_line = p.new("line~", 1070, 325, 50, numinlets=2, numoutlets=2)
+    solo_default = p.new("loadmess 0", 1140, 285, 80, numinlets=1, numoutlets=1)
+    p.connect(router, solo_clip, names.index("pad_solo"))
+    p.connect(solo_default, solo_clip)
+    p.connect(solo_clip, solo_gain)
+    p.connect(solo_gain, solo_pack)
+    p.connect(solo_pack, solo_line)
+    p.connect(solo_line, motor_l, 0, 1)
+    p.connect(solo_line, motor_r, 0, 1)
+    p.connect(control, reference)
 
     lines: list[str] = []
     for index, name in enumerate(weight_names):
@@ -937,9 +1083,11 @@ def make_powertrain() -> dict[str, Any]:
     add_l2 = p.new("+~", 520, 610, 35, numinlets=2, numoutlets=1)
     add_r1 = p.new("+~", 650, 565, 35, numinlets=2, numoutlets=1)
     add_r2 = p.new("+~", 810, 610, 35, numinlets=2, numoutlets=1)
+    add_l3 = p.new("+~", 520, 645, 35, numinlets=2, numoutlets=1)
+    add_r3 = p.new("+~", 810, 645, 35, numinlets=2, numoutlets=1)
     stem_level = add_db_gain_control(p, router, len(names) - 1, 1030, 525, -3.0)
-    trim_l = p.new("*~", 520, 650, 40, numinlets=2, numoutlets=1)
-    trim_r = p.new("*~", 810, 650, 40, numinlets=2, numoutlets=1)
+    trim_l = p.new("*~", 520, 685, 40, numinlets=2, numoutlets=1)
+    trim_r = p.new("*~", 810, 685, 40, numinlets=2, numoutlets=1)
     left = outlet(p, 520, 720, signal=True)
     right = outlet(p, 810, 720, signal=True)
     p.connect(left_mults[0], add_l1, 0, 0)
@@ -950,13 +1098,108 @@ def make_powertrain() -> dict[str, Any]:
     p.connect(right_mults[1], add_r1, 0, 1)
     p.connect(add_r1, add_r2, 0, 0)
     p.connect(right_mults[2], add_r2, 0, 1)
-    p.connect(add_l2, trim_l)
-    p.connect(add_r2, trim_r)
+    p.connect(add_l2, add_l3, 0, 0)
+    p.connect(reference, add_l3, 0, 1)
+    p.connect(add_r2, add_r3, 0, 0)
+    p.connect(reference, add_r3, 1, 1)
+    p.connect(add_l3, trim_l)
+    p.connect(add_r3, trim_r)
     p.connect(stem_level, trim_l, 0, 1)
     p.connect(stem_level, trim_r, 0, 1)
     p.connect(trim_l, left)
     p.connect(trim_r, right)
     p.connect(control, router)
+    return p.document()
+
+
+def make_reference_texture() -> dict[str, Any]:
+    """Loop a local-only stereo residual when present, otherwise a safe fallback."""
+    p = Patcher(1120, 680)
+    p.comment(
+        "Optional Ferrari residual texture — local asset preferred, deterministic fallback otherwise",
+        25, 15, 760,
+    )
+    control = inlet(p, 35, 65)
+    names = (
+        "throttle", "engine_running", "v12_weight", "v10_weight",
+        "reference_texture_level_db", "reference_texture_mute",
+    )
+    router = route(p, names, 35, 105, 650)
+    p.connect(control, router)
+
+    loader = p.new("js local_reference_loader.js", 35, 155, 175, numinlets=1, numoutlets=1)
+    load = p.new("loadbang", 225, 155, 65, numinlets=0, numoutlets=1)
+    buffer = p.new(
+        "buffer~ sf90_residual reference_texture_fallback.wav",
+        35, 195, 330, numinlets=2, numoutlets=2,
+    )
+    speed = p.new("sig~ 1.", 390, 195, 55, numinlets=1, numoutlets=1)
+    groove = p.new("groove~ sf90_residual 2 @loop 1", 390, 235, 220, numinlets=3, numoutlets=3)
+    speed_default = p.new("loadmess 1.", 465, 195, 90, numinlets=1, numoutlets=1)
+    p.connect(load, loader)
+    p.connect(loader, buffer)
+    p.connect(speed_default, speed)
+    p.connect(speed, groove)
+
+    throttle = p.new("clip 0. 1.", 35, 285, 75, numinlets=3, numoutlets=1)
+    load_lift = p.new("expr pow(10., (4.*$f1)/20.)", 35, 325, 190, numinlets=1, numoutlets=1)
+    load_pack = p.new("pack 0. 80", 35, 365, 85, numinlets=2, numoutlets=1)
+    load_line = p.new("line~", 35, 405, 50, numinlets=2, numoutlets=2)
+    p.connect(router, throttle, 0)
+    p.connect(throttle, load_lift)
+    p.connect(load_lift, load_pack)
+    p.connect(load_pack, load_line)
+
+    running = p.new("clip 0. 1.", 250, 285, 75, numinlets=3, numoutlets=1)
+    v12 = p.new("clip 0. 1.", 335, 285, 75, numinlets=3, numoutlets=1)
+    v10 = p.new("clip 0. 1.", 420, 285, 75, numinlets=3, numoutlets=1)
+    profile_sum = p.new("+", 355, 325, 35, numinlets=2, numoutlets=1)
+    profile_clip = p.new("clip 0. 1.", 355, 365, 75, numinlets=3, numoutlets=1)
+    gate_product = p.new("*", 270, 405, 35, numinlets=2, numoutlets=1)
+    gate_pack = p.new("pack 0. 80", 270, 445, 85, numinlets=2, numoutlets=1)
+    gate_line = p.new("line~", 270, 485, 50, numinlets=2, numoutlets=2)
+    p.connect(router, running, 1)
+    p.connect(router, v12, 2)
+    p.connect(router, v10, 3)
+    p.connect(v12, profile_sum, 0, 0)
+    p.connect(v10, profile_sum, 0, 1)
+    p.connect(profile_sum, profile_clip)
+    p.connect(running, gate_product, 0, 0)
+    p.connect(profile_clip, gate_product, 0, 1)
+    p.connect(gate_product, gate_pack)
+    p.connect(gate_pack, gate_line)
+
+    level = add_db_gain_control(p, router, 4, 560, 325, -24.0)
+    mute_clip = p.new("clip 0 1", 770, 325, 65, numinlets=3, numoutlets=1)
+    mute_gain = p.new("expr 1-$i1", 845, 325, 80, numinlets=1, numoutlets=1)
+    mute_pack = p.new("pack 0. 30", 770, 365, 85, numinlets=2, numoutlets=1)
+    mute_line = p.new("line~", 870, 365, 50, numinlets=2, numoutlets=2)
+    mute_default = p.new("loadmess 0", 940, 325, 80, numinlets=1, numoutlets=1)
+    p.connect(router, mute_clip, 5)
+    p.connect(mute_default, mute_clip)
+    p.connect(mute_clip, mute_gain)
+    p.connect(mute_gain, mute_pack)
+    p.connect(mute_pack, mute_line)
+
+    outputs: list[str] = []
+    for channel, x in ((0, 390), (1, 650)):
+        load_gain = p.new("*~", x, 455, 40, numinlets=2, numoutlets=1)
+        life_gain = p.new("*~", x, 495, 40, numinlets=2, numoutlets=1)
+        level_gain = p.new("*~", x, 535, 40, numinlets=2, numoutlets=1)
+        mute_stage = p.new("*~", x, 575, 40, numinlets=2, numoutlets=1)
+        p.connect(groove, load_gain, channel, 0)
+        p.connect(load_line, load_gain, 0, 1)
+        p.connect(load_gain, life_gain)
+        p.connect(gate_line, life_gain, 0, 1)
+        p.connect(life_gain, level_gain)
+        p.connect(level, level_gain, 0, 1)
+        p.connect(level_gain, mute_stage)
+        p.connect(mute_line, mute_stage, 0, 1)
+        outputs.append(mute_stage)
+    left = outlet(p, 390, 625, signal=True)
+    right = outlet(p, 650, 625, signal=True)
+    p.connect(outputs[0], left)
+    p.connect(outputs[1], right)
     return p.document()
 
 
@@ -1015,7 +1258,7 @@ def make_cabin_rumble() -> dict[str, Any]:
 
     mode_signals: list[str] = []
     for index, (frequency, resonance, weight) in enumerate(
-        ((48, 0.78, 0.46), (68, 0.72, 0.38), (92, 0.66, 0.28), (118, 0.60, 0.20))
+        ((48, 0.72, 0.14), (68, 0.72, 0.42), (92, 0.66, 0.34), (118, 0.60, 0.22))
     ):
         x = 380 + index * 185
         mode = p.new(f"svf~ {frequency} {resonance:g}", x, 430, 105, numinlets=3, numoutlets=4)
@@ -1362,8 +1605,8 @@ def make_road_air() -> dict[str, Any]:
 
 
 def make_cabin_master() -> dict[str, Any]:
-    p = Patcher(1320, 1080)
-    p.comment("Cabin tone, stereo width, and short cabin IR; final EQ/protection lives in mix_master~", 25, 15, 680)
+    p = Patcher(1320, 1000)
+    p.comment("Cinema-safe cabin field: mono bass below 120 Hz, phase-shaped width above", 25, 15, 760)
     control = inlet(p, 35, 65)
     left_in = inlet(p, 210, 65, signal=True)
     right_in = inlet(p, 330, 65, signal=True)
@@ -1375,7 +1618,7 @@ def make_cabin_master() -> dict[str, Any]:
         "brightness": "expr 4500. + 14500.*$f1",
         "body": "expr 0.78 + 0.25*$f1",
         "texture": "expr 0.94 + 0.06*$f1",
-        "cabin_width": "expr 0.25 + 1.05*$f1",
+        "cabin_width": "expr 0.6 + 1.2*$f1",
     }
     for index, name in enumerate(expressions):
         x = 35 + index * 205
@@ -1389,7 +1632,7 @@ def make_cabin_master() -> dict[str, Any]:
         p.connect(packed, line)
         controls[name] = line
 
-    defaults = {"aggression": 0.55, "brightness": 12000.0, "body": 0.9, "texture": 0.97, "cabin_width": 0.9}
+    defaults = {"aggression": 0.55, "brightness": 12000.0, "body": 0.9, "texture": 0.97, "cabin_width": 1.5}
     for index, (name, value) in enumerate(defaults.items()):
         initial = p.new(f"loadmess {value:g}", 1040, 175 + index * 36, 100, numinlets=1, numoutlets=1)
         p.connect(initial, controls[name])
@@ -1411,32 +1654,8 @@ def make_cabin_master() -> dict[str, Any]:
     p.connect(dry_pack, dry_line)
     p.connect(wet_pack, wet_line)
 
-    mid_sum = p.new("+~", 220, 390, 40, numinlets=2, numoutlets=1)
-    mid = p.new("*~ 0.5", 220, 430, 60, numinlets=2, numoutlets=1)
-    side_diff = p.new("-~", 400, 390, 40, numinlets=2, numoutlets=1)
-    side = p.new("*~ 0.5", 400, 430, 60, numinlets=2, numoutlets=1)
-    side_highpass = p.new("svf~ 120 0.7", 400, 470, 100, numinlets=3, numoutlets=4)
-    side_highpass_2 = p.new("svf~ 120 0.7", 400, 510, 100, numinlets=3, numoutlets=4)
-    side_width = p.new("*~", 400, 550, 40, numinlets=2, numoutlets=1)
-    reconstruct_l = p.new("+~", 280, 550, 40, numinlets=2, numoutlets=1)
-    reconstruct_r = p.new("-~", 520, 550, 40, numinlets=2, numoutlets=1)
-    p.connect(left_in, mid_sum, 0, 0)
-    p.connect(right_in, mid_sum, 0, 1)
-    p.connect(mid_sum, mid)
-    p.connect(left_in, side_diff, 0, 0)
-    p.connect(right_in, side_diff, 0, 1)
-    p.connect(side_diff, side)
-    p.connect(side, side_highpass, 0, 0)
-    p.connect(side_highpass, side_highpass_2, 1, 0)
-    p.connect(side_highpass_2, side_width, 1, 0)
-    p.connect(controls["cabin_width"], side_width, 0, 1)
-    p.connect(mid, reconstruct_l, 0, 0)
-    p.connect(side_width, reconstruct_l, 0, 1)
-    p.connect(mid, reconstruct_r, 0, 0)
-    p.connect(side_width, reconstruct_r, 0, 1)
-
     masters: list[str] = []
-    for signal, x in ((reconstruct_l, 300), (reconstruct_r, 650)):
+    for signal, x in ((left_in, 300), (right_in, 650)):
         lowpass = p.new("onepole~ 12000", x, 565, 105, numinlets=2, numoutlets=1)
         body_gain = p.new("*~", x, 605, 40, numinlets=2, numoutlets=1)
         texture_gain = p.new("*~", x, 640, 40, numinlets=2, numoutlets=1)
@@ -1460,18 +1679,6 @@ def make_cabin_master() -> dict[str, Any]:
     wet_r = p.new("*~", 740, 785, 40, numinlets=2, numoutlets=1)
     mixed_l = p.new("+~", 345, 830, 40, numinlets=2, numoutlets=1)
     mixed_r = p.new("+~", 695, 830, 40, numinlets=2, numoutlets=1)
-    final_mid_sum = p.new("+~", 440, 875, 40, numinlets=2, numoutlets=1)
-    final_mid = p.new("*~ 0.5", 440, 910, 60, numinlets=2, numoutlets=1)
-    final_side_diff = p.new("-~", 620, 875, 40, numinlets=2, numoutlets=1)
-    final_side = p.new("*~ 0.5", 620, 910, 60, numinlets=2, numoutlets=1)
-    final_side_hp_1 = p.new("svf~ 180 0.5", 620, 945, 100, numinlets=3, numoutlets=4)
-    final_side_hp_2 = p.new("svf~ 180 0.5", 730, 945, 100, numinlets=3, numoutlets=4)
-    final_side_hp_3 = p.new("svf~ 180 0.5", 840, 945, 100, numinlets=3, numoutlets=4)
-    final_side_hp_4 = p.new("svf~ 180 0.5", 950, 945, 100, numinlets=3, numoutlets=4)
-    final_l = p.new("+~", 440, 1015, 40, numinlets=2, numoutlets=1)
-    final_r = p.new("-~", 620, 1015, 40, numinlets=2, numoutlets=1)
-    left = outlet(p, 460, 1050, signal=True)
-    right = outlet(p, 640, 1050, signal=True)
     p.connect(masters[0], ir_l)
     p.connect(masters[1], ir_r)
     p.connect(masters[0], dry_l)
@@ -1486,20 +1693,68 @@ def make_cabin_master() -> dict[str, Any]:
     p.connect(wet_l, mixed_l, 0, 1)
     p.connect(dry_r, mixed_r, 0, 0)
     p.connect(wet_r, mixed_r, 0, 1)
-    p.connect(mixed_l, final_mid_sum, 0, 0)
-    p.connect(mixed_r, final_mid_sum, 0, 1)
-    p.connect(final_mid_sum, final_mid)
-    p.connect(mixed_l, final_side_diff, 0, 0)
-    p.connect(mixed_r, final_side_diff, 0, 1)
-    p.connect(final_side_diff, final_side)
-    p.connect(final_side, final_side_hp_1)
-    p.connect(final_side_hp_1, final_side_hp_2, 1, 0)
-    p.connect(final_side_hp_2, final_side_hp_3, 1, 0)
-    p.connect(final_side_hp_3, final_side_hp_4, 1, 0)
-    p.connect(final_mid, final_l, 0, 0)
-    p.connect(final_side_hp_4, final_l, 1, 1)
-    p.connect(final_mid, final_r, 0, 0)
-    p.connect(final_side_hp_4, final_r, 1, 1)
+
+    cross_l = p.new("cross~ 120", 300, 865, 80, numinlets=2, numoutlets=2)
+    cross_r = p.new("cross~ 120", 650, 865, 80, numinlets=2, numoutlets=2)
+    low_sum = p.new("+~", 395, 900, 40, numinlets=2, numoutlets=1)
+    low_mid = p.new("*~ 0.5", 395, 935, 60, numinlets=2, numoutlets=1)
+    phase_l = p.new("allpass~ 8. 1.7 0.42", 500, 865, 135, numinlets=3, numoutlets=1)
+    phase_r = p.new("allpass~ 8. 2.3 -0.36", 790, 865, 145, numinlets=3, numoutlets=1)
+    high_sum = p.new("+~", 535, 900, 40, numinlets=2, numoutlets=1)
+    high_mid = p.new("*~ 0.5", 535, 935, 60, numinlets=2, numoutlets=1)
+    high_diff = p.new("-~", 675, 900, 40, numinlets=2, numoutlets=1)
+    high_side = p.new("*~ 0.5", 675, 935, 60, numinlets=2, numoutlets=1)
+    width_side = p.new("*~", 745, 935, 40, numinlets=2, numoutlets=1)
+
+    tap_l = p.new("tapin~ 8.", 960, 865, 75, numinlets=1, numoutlets=1)
+    reflect_l = p.new("tapout~ 0.65", 960, 900, 85, numinlets=1, numoutlets=1)
+    reflect_l_gain = p.new("*~ 0.12", 960, 935, 65, numinlets=2, numoutlets=1)
+    tap_r = p.new("tapin~ 8.", 1060, 865, 75, numinlets=1, numoutlets=1)
+    reflect_r = p.new("tapout~ 1.35", 1060, 900, 85, numinlets=1, numoutlets=1)
+    reflect_r_gain = p.new("*~ 0.12", 1060, 935, 65, numinlets=2, numoutlets=1)
+
+    left_high = p.new("+~", 500, 970, 40, numinlets=2, numoutlets=1)
+    right_high = p.new("-~", 675, 970, 40, numinlets=2, numoutlets=1)
+    left_high_ref = p.new("+~", 550, 970, 40, numinlets=2, numoutlets=1)
+    right_high_ref = p.new("+~", 725, 970, 40, numinlets=2, numoutlets=1)
+    final_l = p.new("+~", 450, 970, 40, numinlets=2, numoutlets=1)
+    final_r = p.new("+~", 825, 970, 40, numinlets=2, numoutlets=1)
+    left = outlet(p, 450, 1010, signal=True)
+    right = outlet(p, 825, 1010, signal=True)
+
+    p.connect(mixed_l, cross_l)
+    p.connect(mixed_r, cross_r)
+    p.connect(cross_l, low_sum, 0, 0)
+    p.connect(cross_r, low_sum, 0, 1)
+    p.connect(low_sum, low_mid)
+    p.connect(cross_l, phase_l, 1, 0)
+    p.connect(cross_r, phase_r, 1, 0)
+    p.connect(phase_l, high_sum, 0, 0)
+    p.connect(phase_r, high_sum, 0, 1)
+    p.connect(high_sum, high_mid)
+    p.connect(phase_l, high_diff, 0, 0)
+    p.connect(phase_r, high_diff, 0, 1)
+    p.connect(high_diff, high_side)
+    p.connect(high_side, width_side)
+    p.connect(controls["cabin_width"], width_side, 0, 1)
+    p.connect(phase_r, tap_l)
+    p.connect(tap_l, reflect_l)
+    p.connect(reflect_l, reflect_l_gain)
+    p.connect(phase_l, tap_r)
+    p.connect(tap_r, reflect_r)
+    p.connect(reflect_r, reflect_r_gain)
+    p.connect(high_mid, left_high, 0, 0)
+    p.connect(width_side, left_high, 0, 1)
+    p.connect(high_mid, right_high, 0, 0)
+    p.connect(width_side, right_high, 0, 1)
+    p.connect(left_high, left_high_ref, 0, 0)
+    p.connect(reflect_l_gain, left_high_ref, 0, 1)
+    p.connect(right_high, right_high_ref, 0, 0)
+    p.connect(reflect_r_gain, right_high_ref, 0, 1)
+    p.connect(low_mid, final_l, 0, 0)
+    p.connect(left_high_ref, final_l, 0, 1)
+    p.connect(low_mid, final_r, 0, 0)
+    p.connect(right_high_ref, final_r, 0, 1)
     p.connect(final_l, left)
     p.connect(final_r, right)
     p.connect(control, router)
@@ -1822,7 +2077,7 @@ def add_eq_band(
 
 
 def make_main() -> dict[str, Any]:
-    p = Patcher(1680, 1300)
+    p = Patcher(1680, 1600)
     p.comment("VehicleSoundSynth V3 — combustion lifecycle, cabin rumble, 7-speed DCT, and final mix", 25, 15, 860)
     p.comment("Audio starts OFF — lower your monitoring level, then enable DSP", 25, 45, 520)
     load_off = p.new("loadmess 0", 25, 80, 80, numinlets=1, numoutlets=1)
@@ -1850,7 +2105,10 @@ def make_main() -> dict[str, Any]:
     drive = p.new("drive_simulator", 25, 375, 110, numinlets=1, numoutlets=1)
     external = p.new("r vss.input", 150, 375, 85, numinlets=0, numoutlets=1)
     selector = p.new("switch 2", 25, 420, 75, numinlets=3, numoutlets=1)
-    engine = p.new("vehicle_engine~", 650, 1020, 115, numinlets=1, numoutlets=2)
+    engine = p.add(
+        "bpatcher", None, 650, 970, 1000, 370,
+        numinlets=1, numoutlets=2, name="vehicle_engine~.maxpat",
+    )
     p.connect(mode, mode_select)
     p.connect(mode, auto_mode)
     p.connect(load_off, mode)
@@ -1889,9 +2147,9 @@ def make_main() -> dict[str, Any]:
     )
     preset_select = p.new("sel 0 1 2", 680, 165, 80, numinlets=1, numoutlets=4)
     presets = [
-        "engine_type ev, ev_weight 1., v12_weight 0., v10_weight 0., aggression 0.25, brightness 0.72, body 0.34, texture 0.20, cabin_width 0.82, cabin_rumble 0., exhaust_boom 0., structure_vibration 0., cabin_ir_mix 0.10, powertrain_level_db -2., transient_level_db -9., road_level_db -14., rumble_level_db -60., master_trim_db -8.",
-        "engine_type v12, ev_weight 0., v12_weight 1., v10_weight 0., aggression 0.62, brightness 0.78, body 0.72, texture 0.52, cabin_width 0.64, cabin_rumble 0.90, exhaust_boom 0.62, structure_vibration 0.58, cabin_ir_mix 0.20, powertrain_level_db -3., transient_level_db -7., road_level_db -16., rumble_level_db -5., master_trim_db -8.",
-        "engine_type v10, ev_weight 0., v12_weight 0., v10_weight 1., aggression 0.90, brightness 0.66, body 0.84, texture 0.86, cabin_width 0.56, cabin_rumble 0.92, exhaust_boom 0.74, structure_vibration 0.72, cabin_ir_mix 0.18, powertrain_level_db -3., transient_level_db -6., road_level_db -16., rumble_level_db -4., master_trim_db -8.",
+        "engine_type ev, ev_weight 1., v12_weight 0., v10_weight 0., aggression 0.25, brightness 0.72, body 0.34, texture 0.20, cabin_width 0.90, cabin_rumble 0., exhaust_boom 0., structure_vibration 0., cabin_ir_mix 0.10, powertrain_level_db -2., transient_level_db -9., road_level_db -14., rumble_level_db -60., pad_level_db -3., pad_mute 0, pad_solo 0, reference_texture_level_db -24., reference_texture_mute 0, master_trim_db -8.",
+        "engine_type v12, ev_weight 0., v12_weight 1., v10_weight 0., aggression 0.62, brightness 0.78, body 0.72, texture 0.52, cabin_width 0.82, cabin_rumble 0.90, exhaust_boom 0.62, structure_vibration 0.58, cabin_ir_mix 0.20, powertrain_level_db -3., transient_level_db -7., road_level_db -16., rumble_level_db -5., pad_level_db -3., pad_mute 0, pad_solo 0, reference_texture_level_db -24., reference_texture_mute 0, master_trim_db -8.",
+        "engine_type v10, ev_weight 0., v12_weight 0., v10_weight 1., aggression 0.90, brightness 0.66, body 0.84, texture 0.86, cabin_width 0.78, cabin_rumble 0.92, exhaust_boom 0.74, structure_vibration 0.72, cabin_ir_mix 0.18, powertrain_level_db -3., transient_level_db -6., road_level_db -16., rumble_level_db -4., pad_level_db -3., pad_mute 0, pad_solo 0, reference_texture_level_db -24., reference_texture_mute 0, master_trim_db -8.",
     ]
     preset_messages: list[str] = []
     for index, value in enumerate(presets):
@@ -1932,6 +2190,23 @@ def make_main() -> dict[str, Any]:
         ui_targets[name] = add_labeled_db_number(
             p, label, name, default_db, 730 + index * 200, 565, engine
         )
+
+    ui_targets["pad_level_db"] = add_labeled_db_number(
+        p, "EV Pad dB", "pad_level_db", -3.0, 730, 635, engine
+    )
+    ui_targets["reference_texture_level_db"] = add_labeled_db_number(
+        p, "Ferrari Texture dB", "reference_texture_level_db", -24.0, 930, 635, engine
+    )
+    for index, (label, name) in enumerate(
+        (("Pad Mute", "pad_mute"), ("Pad Solo", "pad_solo"), ("Texture Mute", "reference_texture_mute"))
+    ):
+        x = 1130 + index * 150
+        p.comment(label, x, 635, 110)
+        toggle = p.add("toggle", None, x, 660, 24, 24, numinlets=1, numoutlets=1)
+        named = p.new(f"prepend {name}", x + 35, 660, 110, numinlets=1, numoutlets=1)
+        p.connect(toggle, named)
+        p.connect(named, engine)
+        ui_targets[name] = toggle
 
     p.comment("Fuel lifecycle", 25, 690, 140)
     p.comment("Ignition", 25, 720, 75)
@@ -1978,6 +2253,8 @@ def make_main() -> dict[str, Any]:
         "body", "texture", "cabin_width", "cabin_rumble", "exhaust_boom",
         "structure_vibration", "cabin_ir_mix", "powertrain_level_db", "transient_level_db",
         "road_level_db", "rumble_level_db", "master_trim_db",
+        "pad_level_db", "pad_mute", "pad_solo", "reference_texture_level_db",
+        "reference_texture_mute",
     )
     p.comment("Preset/UI state synchronizer", 1380, 830, 220)
     preset_sync = route(p, sync_names, 1380, 860, 280)
@@ -1986,14 +2263,14 @@ def make_main() -> dict[str, Any]:
     for index, name in enumerate(sync_names):
         p.connect(preset_sync, ui_targets[name], index)
 
-    mute_l = p.new("*~", 650, 1065, 40, numinlets=2, numoutlets=1)
-    mute_r = p.new("*~", 790, 1065, 40, numinlets=2, numoutlets=1)
-    p.comment("Stereo meter~ and spectroscope~ monitoring", 925, 1015, 315)
-    meter_l = p.add("meter~", None, 650, 1115, 65, numinlets=1, numoutlets=1)
-    meter_r = p.add("meter~", None, 790, 1115, 65, numinlets=1, numoutlets=1)
-    spectrum_l = p.add("spectroscope~", None, 925, 1065, 105, numinlets=2, numoutlets=1)
-    spectrum_r = p.add("spectroscope~", None, 1045, 1065, 105, numinlets=2, numoutlets=1)
-    dac = p.add("ezdac~", None, 720, 1200, 65, 48, numinlets=2, numoutlets=0)
+    mute_l = p.new("*~", 1460, 1010, 40, numinlets=2, numoutlets=1)
+    mute_r = p.new("*~", 1550, 1010, 40, numinlets=2, numoutlets=1)
+    p.comment("Post-EQ stereo monitoring", 1450, 970, 210)
+    meter_l = p.add("meter~", None, 1460, 1060, 65, numinlets=1, numoutlets=1)
+    meter_r = p.add("meter~", None, 1550, 1060, 65, numinlets=1, numoutlets=1)
+    spectrum_l = p.add("spectroscope~", None, 1440, 1120, 105, numinlets=2, numoutlets=1)
+    spectrum_r = p.add("spectroscope~", None, 1550, 1120, 105, numinlets=2, numoutlets=1)
+    dac = p.add("ezdac~", None, 1510, 1240, 65, 48, numinlets=2, numoutlets=0)
     p.connect(audio_toggle, dac)
     p.connect(engine, mute_l, 0, 0)
     p.connect(engine, mute_r, 1, 0)
@@ -2121,7 +2398,7 @@ left_drive = (base + sheen_l) * a;
 right_drive = (coherent_low + h2 * 0.99 + h3 * 1.02 + inverter * 0.98 + sheen_r) * a;
 out1 = tanh(left_drive * 1.2) / 1.2;
 out2 = tanh(right_drive * 1.2) / 1.2;""",
-    "v12_powertrain": """// Four-stroke V12: shared crank phase drives combustion pulses; sine layers are secondary resonances.
+    "v12_powertrain": """// Four-stroke V12: two phase-locked six-cylinder banks and load-shaped combustion residual.
 Param rpm(780, min=0, max=10000);
 Param throttle(0, min=0, max=1);
 Param load(0, min=-1, max=1);
@@ -2139,36 +2416,44 @@ run = slide(clamp(engine_running * combustion_gain * shift_cut, 0, 1), 480, 1900
 speedmix = clamp((r - 780) / 8220, 0, 1);
 events = 6;
 crank = clamp(r / 60, 6, 170);
-fm = cycle(crank * 0.19) * (0.004 * (1-speedmix)) + cycle(crank * 0.31) * 0.0012;
-fire = clamp(crank * events * (1 + fm), 35, 1050);
-phase = phasor(fire);
+bank_events = 3;
+cycle_variation = clamp(cycle(crank * 0.5) * 0.020 + cycle(crank * 1.5) * 0.008, -0.03, 0.03);
+bank_fire = clamp(crank * bank_events * (1 + cycle_variation), 18, 525);
+fire = bank_fire * 2;
+bank_phase_l = phasor(bank_fire);
+bank_phase_r = bank_phase_l + 0.5;
+bank_phase_r = bank_phase_r - floor(bank_phase_r);
 sharpness = 8 + t * 7 + aggression * 3;
 pulse_mean = (1 - exp(-sharpness)) / sharpness;
-pulse = exp(-phase * sharpness) - pulse_mean;
-cylinder = 0.97 + cycle(crank * 0.5) * (0.030 + speedmix * 0.055) + cycle(crank * 1.5) * (0.014 + speedmix * 0.025);
+pulse_l = exp(-bank_phase_l * sharpness) - pulse_mean;
+pulse_r = exp(-bank_phase_r * sharpness) - pulse_mean;
+cylinder = 0.97 + cycle(crank * 0.5) * (0.020 + speedmix * 0.035) + cycle(crank * 1.5) * (0.010 + speedmix * 0.020);
 idle = 0.205 + body * 0.050;
 a = clamp(idle + t * 0.30 + l * 0.16, 0, 0.67) * run;
-sub = cycle(clamp(fire * 0.5, 24, 520)) * (0.18 + body * 0.20) * (1-speedmix*0.48);
-h1 = cycle(fire) * (0.10 + body * 0.06);
-h2 = cycle(clamp(fire * 2, 45, 3200)) * (0.070 + brightness * 0.08 + speedmix * 0.060);
-h3 = cycle(clamp(fire * 3, 55, 5200)) * (0.045 + texture * 0.055 + speedmix * 0.050);
-h4 = cycle(clamp(fire * 4, 70, 7000)) * (0.025 + speedmix * 0.060);
+sub = cycle(clamp(fire * 0.5, 24, 520)) * (0.055 + body * 0.045) * (1-speedmix*0.55);
+h1 = cycle(fire) * (0.16 + body * 0.08);
+h2 = cycle(clamp(fire * 2, 45, 3200)) * (0.105 + brightness * 0.095 + speedmix * 0.070);
+h3 = cycle(clamp(fire * 3, 55, 5200)) * (0.060 + texture * 0.070 + speedmix * 0.060);
+h4 = cycle(clamp(fire * 4, 70, 7000)) * speedmix * (0.025 + brightness * 0.050);
 h6 = cycle(clamp(fire * 6, 90, 9800)) * brightness * speedmix * 0.025;
 h8 = cycle(clamp(fire * 8, 110, 12000)) * texture * speedmix * 0.014;
-sideband_low = cycle(clamp(fire * 0.83, 35, 1500)) * (0.025 + speedmix * 0.110);
-sideband_high = cycle(clamp(fire * 1.17, 40, 1900)) * (0.025 + speedmix * 0.105);
-order23 = cycle(clamp(fire * 2.33, 60, 4100)) * speedmix * 0.065;
-order27 = cycle(clamp(fire * 2.67, 70, 4700)) * speedmix * 0.055;
+sideband_low = cycle(clamp(fire * 0.83, 35, 1500)) * (0.018 + speedmix * 0.075);
+sideband_high = cycle(clamp(fire * 1.17, 40, 1900)) * (0.018 + speedmix * 0.072);
+order23 = cycle(clamp(fire * 2.33, 60, 4100)) * speedmix * 0.045;
+order27 = cycle(clamp(fire * 2.67, 70, 4700)) * speedmix * 0.040;
 intake = cycle(clamp(fire * 1.5, 45, 2200)) * t * (0.025 + texture * 0.040);
-colored_noise = slide(noise(), 36, 36) * (0.004 + texture * speedmix * 0.010);
-combustion = pulse * cylinder * (0.62 + body * 0.18) * (1 - speedmix * 0.38);
-resonance = sub + h1 + sideband_low + sideband_high + h2 + order23 + order27 + h3 + h4 + h6 + h8 + intake + colored_noise;
-left_drive = (combustion + resonance) * a * (0.86 + aggression * 0.14);
-right_resonance = sub + h1*0.98 + sideband_low*1.03 + sideband_high*0.97 + h2*1.03 + order23*0.96 + order27*1.04 + h3*0.96 + h4*1.04 + h6*0.97 + h8*1.03 + intake + colored_noise*0.82;
-right_drive = (combustion * 0.995 + right_resonance) * a * (0.86 + aggression * 0.14);
+residual_gate_l = clamp(abs(pulse_l) * 1.7, 0, 1);
+residual_gate_r = clamp(abs(pulse_r) * 1.7, 0, 1);
+residual_l = (cycle(clamp(fire * 1.33, 40, 2200)) * 0.040 + cycle(clamp(fire * 2.17, 65, 4200)) * 0.024) * residual_gate_l * (0.35 + texture * 0.65);
+residual_r = (cycle(clamp(fire * 1.33, 40, 2200)) * 0.040 + cycle(clamp(fire * 2.17, 65, 4200)) * 0.024) * residual_gate_r * (0.35 + texture * 0.65);
+bank_l = (pulse_l * 0.88 + pulse_r * 0.12) * cylinder * (0.58 + body * 0.18) * (1 - speedmix * 0.30);
+bank_r = (pulse_r * 0.88 + pulse_l * 0.12) * cylinder * (0.58 + body * 0.18) * (1 - speedmix * 0.30);
+resonance = sub + h1 + sideband_low + sideband_high + h2 + order23 + order27 + h3 + h4 + h6 + h8 + intake;
+left_drive = (bank_l + resonance + residual_l) * a * (0.86 + aggression * 0.14);
+right_drive = (bank_r + resonance + residual_r) * a * (0.86 + aggression * 0.14);
 out1 = clamp(tanh(left_drive * 1.35) / 1.25, -0.86, 0.86);
 out2 = clamp(tanh(right_drive * 1.35) / 1.25, -0.86, 0.86);""",
-    "v10_powertrain": """// Four-stroke V10: uneven combustion pulses, odd-order intake modes, and stronger high-rpm mechanical character.
+    "v10_powertrain": """// Four-stroke V10: phase-locked five-cylinder banks with odd-order intake colour.
 Param rpm(850, min=0, max=10000);
 Param throttle(0, min=0, max=1);
 Param load(0, min=-1, max=1);
@@ -2186,35 +2471,43 @@ run = slide(clamp(engine_running * combustion_gain * shift_cut, 0, 1), 420, 1650
 speedmix = clamp((r - 850) / 7650, 0, 1);
 events = 5;
 crank = clamp(r / 60, 6, 170);
-fm = cycle(crank * 0.17) * (0.008 * (1-speedmix)) + cycle(crank * 0.37) * 0.0025;
-fire = clamp(crank * events * (1 + fm), 32, 900);
-phase = phasor(fire);
+bank_events = 2.5;
+cycle_variation = clamp(cycle(crank * 0.5) * 0.024 + cycle(crank * 2.5) * 0.006, -0.03, 0.03);
+bank_fire = clamp(crank * bank_events * (1 + cycle_variation), 16, 450);
+fire = bank_fire * 2;
+bank_phase_l = phasor(bank_fire);
+bank_phase_r = bank_phase_l + 0.5;
+bank_phase_r = bank_phase_r - floor(bank_phase_r);
 sharpness = 7 + t * 9 + aggression * 4;
 pulse_mean = (1 - exp(-sharpness)) / sharpness;
-pulse = exp(-phase * sharpness) - pulse_mean;
-cylinder = 0.94 + cycle(crank * 0.5) * (0.045 + speedmix * 0.065) + cycle(crank * 2.5) * (0.022 + speedmix * 0.030);
+pulse_l = exp(-bank_phase_l * sharpness) - pulse_mean;
+pulse_r = exp(-bank_phase_r * sharpness) - pulse_mean;
+cylinder = 0.95 + cycle(crank * 0.5) * (0.030 + speedmix * 0.045) + cycle(crank * 2.5) * (0.016 + speedmix * 0.024);
 idle = 0.225 + body * 0.055;
 a = clamp(idle + t * 0.32 + l * 0.18, 0, 0.70) * run;
-sub = cycle(clamp(fire * 0.5, 24, 460)) * (0.22 + body * 0.24) * (1-speedmix*0.42);
-h1 = cycle(fire) * (0.09 + aggression * 0.07);
+sub = cycle(clamp(fire * 0.5, 24, 460)) * (0.060 + body * 0.052) * (1-speedmix*0.50);
+h1 = cycle(fire) * (0.17 + aggression * 0.08);
 h15 = cycle(clamp(fire * 1.5, 45, 1800)) * (0.040 + texture * 0.050);
-h2 = cycle(clamp(fire * 2, 55, 3500)) * (0.065 + brightness * 0.070 + speedmix * 0.055);
-h25 = cycle(clamp(fire * 2.5, 65, 5200)) * (0.070 + texture * 0.100 + speedmix * 0.075);
-h3 = cycle(clamp(fire * 3, 75, 6500)) * (0.034 + aggression * 0.040 + speedmix * 0.040);
+h2 = cycle(clamp(fire * 2, 55, 3500)) * (0.105 + brightness * 0.085 + speedmix * 0.065);
+h25 = cycle(clamp(fire * 2.5, 65, 5200)) * (0.055 + texture * 0.075 + speedmix * 0.060);
+h3 = cycle(clamp(fire * 3, 75, 6500)) * (0.060 + aggression * 0.045 + speedmix * 0.050);
 h5 = cycle(clamp(fire * 5, 95, 9000)) * brightness * speedmix * 0.040;
 h7 = cycle(clamp(fire * 7, 120, 12000)) * texture * speedmix * 0.020;
-sideband_low = cycle(clamp(fire * 0.81, 32, 1450)) * (0.030 + speedmix * 0.115);
-sideband_high = cycle(clamp(fire * 1.19, 40, 1900)) * (0.030 + speedmix * 0.110);
+sideband_low = cycle(clamp(fire * 0.81, 32, 1450)) * (0.022 + speedmix * 0.080);
+sideband_high = cycle(clamp(fire * 1.19, 40, 1900)) * (0.022 + speedmix * 0.078);
 order22 = cycle(clamp(fire * 2.20, 60, 4000)) * speedmix * 0.070;
 order28 = cycle(clamp(fire * 2.80, 75, 5100)) * speedmix * 0.060;
 intake_fm = fire * 1.25 * (1 + cycle(crank) * 0.008);
 intake = cycle(clamp(intake_fm, 45, 2600)) * t * (0.035 + texture * 0.055);
-colored_noise = slide(noise(), 28, 28) * (0.005 + texture * speedmix * 0.014);
-combustion = pulse * cylinder * (0.64 + body * 0.18) * (1 - speedmix * 0.40);
-resonance = sub + h1 + sideband_low + sideband_high + h15 + h2 + order22 + h25 + order28 + h3 + h5 + h7 + intake + colored_noise;
-left_drive = (combustion + resonance) * a * (0.88 + aggression * 0.12);
-right_resonance = sub + h1*1.02 + sideband_low*0.97 + sideband_high*1.03 + h15*0.95 + h2*1.04 + order22*1.04 + h25*0.97 + order28*0.96 + h3*1.05 + h5*0.96 + h7*1.04 + intake + colored_noise*0.78;
-right_drive = (combustion * 0.99 + right_resonance) * a * (0.88 + aggression * 0.12);
+residual_gate_l = clamp(abs(pulse_l) * 1.8, 0, 1);
+residual_gate_r = clamp(abs(pulse_r) * 1.8, 0, 1);
+residual_l = (cycle(clamp(fire * 1.37, 40, 2300)) * 0.045 + cycle(clamp(fire * 2.23, 65, 4300)) * 0.028) * residual_gate_l * (0.30 + texture * 0.70);
+residual_r = (cycle(clamp(fire * 1.37, 40, 2300)) * 0.045 + cycle(clamp(fire * 2.23, 65, 4300)) * 0.028) * residual_gate_r * (0.30 + texture * 0.70);
+bank_l = (pulse_l * 0.86 + pulse_r * 0.14) * cylinder * (0.60 + body * 0.18) * (1 - speedmix * 0.32);
+bank_r = (pulse_r * 0.86 + pulse_l * 0.14) * cylinder * (0.60 + body * 0.18) * (1 - speedmix * 0.32);
+resonance = sub + h1 + sideband_low + sideband_high + h15 + h2 + order22 + h25 + order28 + h3 + h5 + h7 + intake;
+left_drive = (bank_l + resonance + residual_l) * a * (0.88 + aggression * 0.12);
+right_drive = (bank_r + resonance + residual_r) * a * (0.88 + aggression * 0.12);
 out1 = clamp(tanh(left_drive * 1.42) / 1.27, -0.88, 0.88);
 out2 = clamp(tanh(right_drive * 1.42) / 1.27, -0.88, 0.88);""",
 })
@@ -2278,7 +2571,7 @@ PRESETS = {
         "aggression": 0.90,
         "body": 0.84,
         "brightness": 0.66,
-        "cabin_width": 0.56,
+        "cabin_width": 0.78,
         "cabin_rumble": 0.92,
         "exhaust_boom": 0.74,
         "structure_vibration": 0.72,
@@ -2287,6 +2580,11 @@ PRESETS = {
         "transient_level_db": -6.0,
         "road_level_db": -16.0,
         "rumble_level_db": -4.0,
+        "pad_level_db": -3.0,
+        "pad_mute": 0.0,
+        "pad_solo": 0.0,
+        "reference_texture_level_db": -24.0,
+        "reference_texture_mute": 0.0,
         "ev_weight": 0.0,
         "texture": 0.86,
         "v10_weight": 1.0,
@@ -2298,7 +2596,7 @@ PRESETS = {
         "aggression": 0.25,
         "body": 0.34,
         "brightness": 0.72,
-        "cabin_width": 0.82,
+        "cabin_width": 0.90,
         "cabin_rumble": 0.0,
         "exhaust_boom": 0.0,
         "structure_vibration": 0.0,
@@ -2307,6 +2605,11 @@ PRESETS = {
         "transient_level_db": -9.0,
         "road_level_db": -14.0,
         "rumble_level_db": -60.0,
+        "pad_level_db": -3.0,
+        "pad_mute": 0.0,
+        "pad_solo": 0.0,
+        "reference_texture_level_db": -24.0,
+        "reference_texture_mute": 0.0,
         "ev_weight": 1.0,
         "texture": 0.20,
         "v10_weight": 0.0,
@@ -2318,7 +2621,7 @@ PRESETS = {
         "aggression": 0.62,
         "body": 0.72,
         "brightness": 0.78,
-        "cabin_width": 0.64,
+        "cabin_width": 0.82,
         "cabin_rumble": 0.90,
         "exhaust_boom": 0.62,
         "structure_vibration": 0.58,
@@ -2327,6 +2630,11 @@ PRESETS = {
         "transient_level_db": -7.0,
         "road_level_db": -16.0,
         "rumble_level_db": -5.0,
+        "pad_level_db": -3.0,
+        "pad_mute": 0.0,
+        "pad_solo": 0.0,
+        "reference_texture_level_db": -24.0,
+        "reference_texture_mute": 0.0,
         "ev_weight": 0.0,
         "texture": 0.52,
         "v10_weight": 0.0,
@@ -2359,6 +2667,15 @@ def wav_samples(name: str, frames: int, sample_rate: int = 48000) -> list[float]
                 811 + side * 31: 0.032,
             }
             value = reflections.get(index, 0.0)
+        elif name == "reference_texture_fallback":
+            # A seamless, narrow-band combustion residual. Runtime gain is low;
+            # this exists only to avoid missing-buffer errors without local media.
+            value = (
+                0.115 * math.sin(2.0 * math.pi * 160.0 * time)
+                + 0.060 * math.sin(2.0 * math.pi * 320.0 * time + 0.35)
+                + 0.032 * math.sin(2.0 * math.pi * 480.0 * time + 0.8)
+                + 0.018 * math.sin(2.0 * math.pi * 800.0 * time + 1.1)
+            )
         elif name.startswith("starter_"):
             attack = 1.0 - math.exp(-time * 45.0)
             envelope = attack * math.exp(-time * 2.8)
@@ -2408,9 +2725,21 @@ def wav_samples(name: str, frames: int, sample_rate: int = 48000) -> list[float]
 def write_wav(path: Path, name: str, frames: int) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     samples = wav_samples(name, frames)
-    payload = b"".join(struct.pack("<h", round(sample * 32767.0)) for sample in samples)
+    channels = 2 if name == "reference_texture_fallback" else 1
+    if channels == 2:
+        delayed = 17
+        payload = b"".join(
+            struct.pack(
+                "<hh",
+                round(sample * 32767.0),
+                round((0.88 * sample + 0.12 * samples[(index - delayed) % frames]) * 32767.0),
+            )
+            for index, sample in enumerate(samples)
+        )
+    else:
+        payload = b"".join(struct.pack("<h", round(sample * 32767.0)) for sample in samples)
     with wave.open(str(path), "wb") as handle:
-        handle.setnchannels(1)
+        handle.setnchannels(channels)
         handle.setsampwidth(2)
         handle.setframerate(48000)
         handle.writeframes(payload)
@@ -2430,6 +2759,7 @@ def project_file() -> dict[str, Any]:
         "patchers/powertrain~.maxpat",
         "patchers/ev_pad_driver~.maxpat",
         "patchers/ev_pad_beap~.maxpat",
+        "patchers/reference_texture~.maxpat",
         "patchers/cabin_rumble~.maxpat",
         "patchers/transient~.maxpat",
         "patchers/road_air~.maxpat",
@@ -2441,9 +2771,11 @@ def project_file() -> dict[str, Any]:
         contents["patchers"][name] = {"kind": "patcher", "local": 1}
     for name in GEN_CODE:
         contents["code"][f"gen/{name}.gendsp"] = {"kind": "gendsp", "local": 1}
+    contents["code"]["code/local_reference_loader.js"] = {"kind": "javascript", "local": 1}
     for name in MEDIA_FRAMES:
         contents["media"][f"media/{name}.wav"] = {"kind": "mediafile", "local": 1}
     contents["data"]["presets/sound_dna.json"] = {"kind": "data", "local": 1}
+    contents["data"]["assets/ferrari_sf90_acoustic_target.json"] = {"kind": "data", "local": 1}
     return {
         "autolocalize": 0,
         "autoorganize": 0,
@@ -2455,7 +2787,7 @@ def project_file() -> dict[str, Any]:
         # to Max's built-in directories instead of this project.
         "searchpath": {
             name: {"path": f"./{name}", "recursive": 1}
-            for name in ("patchers", "gen", "media", "presets")
+            for name in ("patchers", "gen", "code", "media", "presets")
         },
         "showdependencies": 1,
         "version": 1,
@@ -2473,6 +2805,7 @@ def build_project(root: Path) -> None:
         "patchers/engine_controller.maxpat": make_engine_controller(),
         "patchers/powertrain~.maxpat": make_powertrain(),
         "patchers/ev_pad_driver~.maxpat": make_ev_pad_driver(),
+        "patchers/reference_texture~.maxpat": make_reference_texture(),
         "patchers/cabin_rumble~.maxpat": make_cabin_rumble(),
         "patchers/transient~.maxpat": make_transient(),
         "patchers/road_air~.maxpat": make_road_air(),
@@ -2484,6 +2817,9 @@ def build_project(root: Path) -> None:
     }
     for relative_path, value in outputs.items():
         write_json(root / relative_path, value)
+    loader_path = root / "code" / "local_reference_loader.js"
+    loader_path.parent.mkdir(parents=True, exist_ok=True)
+    loader_path.write_text(LOCAL_REFERENCE_LOADER_JS, encoding="utf-8")
     user_pad = root / "patchers" / "ev_pad_beap~.maxpat"
     if not user_pad.exists():
         write_json(user_pad, make_ev_pad_beap())

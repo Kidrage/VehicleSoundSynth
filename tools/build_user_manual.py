@@ -473,7 +473,7 @@ def add_cover(doc: Document) -> None:
     meta = doc.add_paragraph()
     meta.alignment = WD_ALIGN_PARAGRAPH.CENTER
     meta.paragraph_format.space_after = Pt(4)
-    run = meta.add_run("手册版本 3.1  |  适用 Max 8.6.5  |  2026-08-10")
+    run = meta.add_run("手册版本 3.1  |  适用 Max 8.6.5  |  2026-08-11")
     set_run_font(run, size=10.5, bold=True, color=INK_BLUE)
     meta2 = doc.add_paragraph()
     meta2.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -1025,7 +1025,7 @@ def build_document(output: Path) -> None:
             ["连续声源", "powertrain~ / Gen", "EV、四冲程 V12、四冲程 V10；燃油声受 engine_running 门控"],
             ["座舱低频", "cabin_rumble~ / MSP", "真实 powertrain 信号激励 48/68/92/118 Hz 阻尼模态、结构振动与排气轰鸣"],
             ["瞬态与环境", "transient~ / road_air~", "CC0 启动机、升降挡、回火、爆音/crackle；粉红轮胎与受控白噪风声"],
-            ["座舱与播出", "cabin_master~ / mix_master~", "短车舱 IR、IR 后低频收中、四段 EQ、总增益与唯一 limiter/clip"],
+            ["座舱与播出", "cabin_master~ / mix_master~", "120 Hz 以下收中、上频段相位/早反射扩宽、可视化四节点 EQ 与唯一 limiter/clip"],
         ],
         [1800, 2700, 4860],
     )
@@ -1062,15 +1062,16 @@ def build_document(output: Path) -> None:
             ["五个宏", "0-1", "Aggression、Brightness、Body、Texture、Cabin Width"],
             ["三个低频宏", "0-1", "Cabin Rumble、Exhaust Boom、Structure Vibration；Future EV 默认全部为 0"],
             ["四个 Stem Level", "-60..+6 dB", "Powertrain、Transient、Road、Rumble 独立 50 ms 平滑增益"],
+            ["Pad / Ferrari Texture", "dB、Mute、Solo", "Pad 与 EV 电机并列；Solo 只静音 EV 电机。Ferrari 纹理只用于 V10/V12"],
             ["Cabin IR Mix", "0-1", "原声与 4096 tap 车舱 IR 的等功率湿/干混合"],
-            ["Global EQ", "四段", "Low Shelf、Low-Mid、High-Mid、High Shelf；峰值段带 Q"],
+            ["Global EQ", "可视化四节点", "拖动曲线节点，或选 0-3 后输入 Frequency/Gain/Q；与 eq_* 消息同步"],
             ["EQ Bypass / Master Trim", "0/1；-24..0 dB", "30 ms 平滑干湿旁路；50 ms 输出增益平滑"],
         ],
         [2100, 1900, 5360],
     )
 
     add_heading(doc, "4. V12/V10 声学、怠速与座舱轰鸣", 1)
-    add_text(doc, "燃油 Gen 使用四冲程点火阶次：V12 主阶为 rpm/60×6，V10 主阶为 rpm/60×5。V12 在 780 rpm 时主阶约 78 Hz、半阶约 39 Hz；V10 在 850 rpm 时主阶约 70.8 Hz、半阶约 35.4 Hz。主声不是单一 cycle~：由曲轴相关点火脉冲、二至八阶加法谐波、AM/FM 侧带、V12 的 0.83/1.17 与 2.33/2.67 非整数阶次、V10 的 0.81/1.19 与 2.20/2.80 阶次共同构成。新低频模块再用同一 powertrain 音频激励车身与座舱模态，而不是另开一个不相关的正弦振荡器。")
+    add_text(doc, "燃油 Gen 使用四冲程点火阶次：V12 主阶为 rpm/60×6，V10 主阶为 rpm/60×5。左右声道现在分别模拟两个真实缸列：每个缸列以总点火率的一半工作，右缸列固定错开半个缸列周期，并以少量交叉馈送保持相位稳定，不再使用微失谐制造拍频。主声由点火脉冲、二至八阶加法谐波、±3% 以内的循环差异与脉冲门控窄带燃烧残差共同构成；燃油 Gen 不再注入白噪声。")
     add_table(
         doc,
         ["Profile", "默认怠速方向", "主要特征", "安全建议"],
@@ -1103,7 +1104,7 @@ def build_document(output: Path) -> None:
     add_callout(
         doc,
         "低频安全",
-        "低频层在约 28 Hz 高通；Side 在车舱处理前高通，并在 IR 湿/干混合后再经四级 180 Hz 高通，所以真正的深低频保持居中。最后仍经过全局 EQ、Master Trim 和唯一的 limiter/clip。普通音箱听不清 35 Hz 时，不要盲目把三个旋钮全部推满。",
+        "低频层在约 28 Hz 高通；IR 湿/干混合后用 cross~ 120 将 120 Hz 以下合成严格居中的 Mid，上频段才进入左右不同的短 allpass 和 0.65/1.35 ms 早反射，所以低频兼容 mono、机械细节仍有宽度。最后仍经过全局 EQ、Master Trim 和唯一的 limiter/clip。",
         kind="caution",
     )
 
@@ -1139,8 +1140,8 @@ def build_document(output: Path) -> None:
         "信号顺序是 powertrain/transient/road/cabin_rumble → cabin_master~ → mix_master~ 四段 EQ/trim → omx.peaklim~ → ±0.891 clip~。因此全局 EQ 会同时作用于发动机与新增低频层；cabin_master~ 不再二次限幅。",
         kind="info",
     )
-    add_text(doc, "EQ 已用 Max 运行时 probe 验证：各峰值段在中心频率发送 -12 dB 时约衰减 12 dB；90 Hz 与 9 kHz 的 -12 dB shelf 在测量点约衰减 6 dB（符合 shelf 转折频率定义）；Master Trim 从 -8 到 -24 dB 实测约 -15.9 dB；Bypass 与 flat 的差异约 0.05 dB。")
-    add_text(doc, "road_air~ 只有两类持续噪声：居中的 pink~ 轮胎床（约 70-900 Hz）和受控立体声 noise~ 风声（约 400-4000 Hz）。Road Level 默认 -16 dB，风声随速度约 1.7 次幂上升；这两层不会再用宽带白噪覆盖整个频谱。")
+    add_text(doc, "新的 EQ 只使用一张 nfilters=4 的 filtergraph~，系数列表同时送到左右 cascade~。曲线拖动、节点数值、eq_* 消息、Bypass 与 Reset 共用同一 DSP 路径，不再出现界面数值改变但音频仍绕过旧 biquad 的情况。")
+    add_text(doc, "road_air~ 只有两类持续噪声：居中的 pink~ 轮胎床（约 70-900 Hz）和受控立体声 noise~ 风声（约 400-4000 Hz）。Road Level 默认 -16 dB；V10/V12 Gen 内已移除白噪声。")
 
     add_heading(doc, "8. 素材、归一化与拟真边界", 1)
     add_table(
@@ -1152,7 +1153,7 @@ def build_document(output: Path) -> None:
             ["richwise — Sports/Supercar", "进气回火、排气 pop/crackle", "回火 -6、pop -5、crackle -8 dBFS"],
             ["microman502 — Gear shift", "机械 click 与 shift thump", "裁切、去 DC、-6 dBFS"],
             ["jamespeacock4616 — Mini car IR", "左右 4096 tap 车舱 IR", "每声道单独裁切、-3 dBFS"],
-            ["biholao — Ferrari acceleration", "仅作听觉参考", "不进入运行 patch"],
+            ["用户 SF90 近场 Ferrari.wav", "本地去基频残差层，仅 V10/V12", "250 ms stereo loop、-18 dBFS RMS；media/local 永不提交"],
         ],
         [2600, 3200, 3560],
         font_size=8.6,
@@ -1180,6 +1181,8 @@ def build_document(output: Path) -> None:
         doc,
         "powertrain_level_db -3.   transient_level_db -7.\n"
         "road_level_db -16.        rumble_level_db -5.\n"
+        "pad_level_db -3.          pad_mute 0            pad_solo 0\n"
+        "reference_texture_level_db -24.   reference_texture_mute 0\n"
         "cabin_ir_mix 0.20",
     )
     add_text(doc, "EQ 消息格式：")

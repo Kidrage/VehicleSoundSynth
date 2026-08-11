@@ -1,0 +1,50 @@
+{
+  "reference": {
+    "description": "Ferrari SF90 external near-field stationary/rev reference supplied by the user",
+    "distribution": "local-only; neither source nor derived audio may be committed or synced",
+    "format": {
+      "channels": 2,
+      "sample_rate_hz": 48000,
+      "sample_width_bits": 16,
+      "duration_seconds": 33.219771
+    }
+  },
+  "idle_window_1_to_5_seconds": {
+    "rms_dbfs": -15.425,
+    "peak_dbfs": -3.581,
+    "spectral_centroid_hz": 102.0,
+    "low_mid_ratio_40_to_500_hz": 0.9418,
+    "rumble_ratio_40_to_160_hz": 0.8189,
+    "stereo_correlation": 0.9565,
+    "right_delay_ms": 0.083,
+    "dominant_frequency_hz": 61.5
+  },
+  "high_rpm_comparison_window_22_75_to_23_25_seconds": {
+    "dominant_firing_frequency_hz": 345.7,
+    "compare_v10_rpm": 4200,
+    "compare_v12_rpm": 3500,
+    "minimum_normalized_third_octave_similarity": 0.85
+  },
+  "synthesis_acceptance": {
+    "idle_half_order_below_firing_db": -8.0,
+    "idle_h2_relative_db_range": [-16.0, -8.0],
+    "idle_h3_relative_db_range": [-20.0, -10.0],
+    "idle_low_mid_ratio_min": 0.8,
+    "idle_centroid_hz_range": [90.0, 180.0],
+    "low_band_side_ratio_max": 0.05,
+    "low_band_correlation_min": 0.95,
+    "mono_fold_rms_loss_db_max": 1.5
+  },
+  "local_residual_recipe": {
+    "source_window_start_seconds": 1.0,
+    "dc_remove": true,
+    "highpass_hz": 90.0,
+    "cadence_notch_fundamental_hz": 61.5,
+    "cadence_notch_q": 18.0,
+    "lowpass_hz": 4000.0,
+    "loop_duration_ms": 250.0,
+    "equal_power_crossfade_ms": 20.0,
+    "target_rms_dbfs": -18.0,
+    "peak_ceiling_dbfs": -3.0
+  }
+}

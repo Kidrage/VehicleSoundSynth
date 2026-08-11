@@ -3,6 +3,10 @@
   "autoorganize": 0,
   "contents": {
     "code": {
+      "code/local_reference_loader.js": {
+        "kind": "javascript",
+        "local": 1
+      },
       "gen/ev_powertrain.gendsp": {
         "kind": "gendsp",
         "local": 1
@@ -17,6 +21,10 @@
       }
     },
     "data": {
+      "assets/ferrari_sf90_acoustic_target.json": {
+        "kind": "data",
+        "local": 1
+      },
       "presets/sound_dna.json": {
         "kind": "data",
         "local": 1
@@ -76,6 +84,10 @@
         "local": 1
       },
       "media/mechanical_click.wav": {
+        "kind": "mediafile",
+        "local": 1
+      },
+      "media/reference_texture_fallback.wav": {
         "kind": "mediafile",
         "local": 1
       },
@@ -153,6 +165,10 @@
         "kind": "patcher",
         "local": 1
       },
+      "patchers/reference_texture~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
       "patchers/road_air~.maxpat": {
         "kind": "patcher",
         "local": 1
@@ -170,6 +186,10 @@
   "hideprojectwindow": 0,
   "name": "VehicleSoundSynth-V3",
   "searchpath": {
+    "code": {
+      "path": "./code",
+      "recursive": 1
+    },
     "gen": {
       "path": "./gen",
       "recursive": 1
