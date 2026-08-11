@@ -9,12 +9,12 @@
 - Working root: `.`
 - Repository name: `VehicleSoundSynth-V3`
 - Git repository: `true`
-- Generated at: `2026-08-11T02:16:43.095807+00:00`
+- Generated at: `2026-08-11T02:18:00.083960+00:00`
 
 ## Current State
 
 - Branch: `codex/vehicle-sound-v3`
-- HEAD: `99b6895`
+- HEAD: `2f73f2b`
 - Indexed paths: 66
 - Inventory truncated: `false`
 - Inaccessible paths: 0
@@ -89,6 +89,7 @@
 
 ## Change History
 
+- `2f73f2b 2026-08-11 feat: stabilize EV and add dual BEAP pad`
 - `99b6895 2026-08-10 docs: refresh Manual keyboard handoff`
 - `1e811ab 2026-08-10 fix: synchronize Manual keyboard and pedal state`
 - `5ff0aa0 2026-08-10 feat: add Manual mode W/S controls`
@@ -108,27 +109,11 @@
 - `594acd1 2026-08-06 fix: make generated Max project produce audio`
 - `7dada34 2026-08-06 fix: use Max-compatible project search path schema`
 - `e1cc86c 2026-08-06 docs: refresh project handoff`
-- `ed5201e 2026-08-06 docs: add complete VehicleSoundSynth user manual`
 
 ## Current Changes
 
 - `## codex/vehicle-sound-v3`
-- `M  .codex/REPO_GUIDE.md`
-- `M  .codex/repo_files.txt`
-- `M  .codex/source_index.txt`
-- `M  AGENTS.md`
-- `M  PROJECT_HANDOFF.md`
-- `M  README.md`
-- `M  VehicleSoundSynth-V3.maxproj`
-- `M  gen/ev_powertrain.gendsp`
 - ` M main.maxpat`
-- `A  patchers/ev_pad_beap~.maxpat`
-- `A  patchers/ev_pad_driver~.maxpat`
-- `M  patchers/powertrain~.maxpat`
-- `M  tests/test_project.py`
-- `M  tools/audio_metrics.py`
-- `M  tools/build_project.py`
-- `M  tools/build_runtime_probe.py`
 
 ## Related Repositories
 
