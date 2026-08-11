@@ -9,13 +9,13 @@
 - Working root: `.`
 - Repository name: `VehicleSoundSynth-V3`
 - Git repository: `true`
-- Generated at: `2026-08-10T09:53:11.974032+00:00`
+- Generated at: `2026-08-11T02:16:43.095807+00:00`
 
 ## Current State
 
 - Branch: `codex/vehicle-sound-v3`
-- HEAD: `1e811ab`
-- Indexed paths: 64
+- HEAD: `99b6895`
+- Indexed paths: 66
 - Inventory truncated: `false`
 - Inaccessible paths: 0
 - Scan mode: complete path/metadata inventory; no bulk content read; no symlink traversal.
@@ -44,8 +44,8 @@
 | Route | Files |
 |---|---:|
 | `media` | 23 |
+| `patchers` | 11 |
 | `.` | 10 |
-| `patchers` | 9 |
 | `assets` | 8 |
 | `assets/raw` | 7 |
 | `tools` | 6 |
@@ -59,15 +59,15 @@
 ### Categories
 
 - audio: 29 files, 93695022 bytes
-- code: 7 files, 250568 bytes
-- literature: 11 files, 172602 bytes
-- other: 15 files, 477380 bytes
+- code: 7 files, 273202 bytes
+- literature: 11 files, 175889 bytes
+- other: 17 files, 2250184 bytes
 - structured_data: 2 files, 14799 bytes
 
 ### Common Extensions
 
 - `.wav`: 29
-- `.maxpat`: 10
+- `.maxpat`: 12
 - `.py`: 7
 - `.md`: 6
 - `.docx`: 3
@@ -89,6 +89,7 @@
 
 ## Change History
 
+- `99b6895 2026-08-10 docs: refresh Manual keyboard handoff`
 - `1e811ab 2026-08-10 fix: synchronize Manual keyboard and pedal state`
 - `5ff0aa0 2026-08-10 feat: add Manual mode W/S controls`
 - `127d6fc 2026-08-10 docs: refresh V3 final handoff`
@@ -108,11 +109,26 @@
 - `7dada34 2026-08-06 fix: use Max-compatible project search path schema`
 - `e1cc86c 2026-08-06 docs: refresh project handoff`
 - `ed5201e 2026-08-06 docs: add complete VehicleSoundSynth user manual`
-- `cfc59a0 2026-08-06 docs: refresh project handoff`
 
 ## Current Changes
 
 - `## codex/vehicle-sound-v3`
+- `M  .codex/REPO_GUIDE.md`
+- `M  .codex/repo_files.txt`
+- `M  .codex/source_index.txt`
+- `M  AGENTS.md`
+- `M  PROJECT_HANDOFF.md`
+- `M  README.md`
+- `M  VehicleSoundSynth-V3.maxproj`
+- `M  gen/ev_powertrain.gendsp`
+- ` M main.maxpat`
+- `A  patchers/ev_pad_beap~.maxpat`
+- `A  patchers/ev_pad_driver~.maxpat`
+- `M  patchers/powertrain~.maxpat`
+- `M  tests/test_project.py`
+- `M  tools/audio_metrics.py`
+- `M  tools/build_project.py`
+- `M  tools/build_runtime_probe.py`
 
 ## Related Repositories
 
@@ -189,10 +205,12 @@
 - Rebuilt the V12/V10 sources as differentiated multi-harmonic combustion models with AM/FM sidebands, load texture, lifecycle gating, automatic seven-speed DCT events, intake backfire, exhaust pops/crackle, and a powertrain-excited cabin-rumble stage using damped 48/68/92/118 Hz modes.
 - Starter playback now stops on the controller's 500 ms catch transition and ignition-off path; a start lock prevents retriggering while the engine is already running, with explicit patchcord regression coverage.
 - Internal Manual now supports uppercase/lowercase W/S keyboard pedals: W ramps throttle up over 2.5 s and releases over 1.4 s; S applies brake over 120 ms and releases immediately. Key repeat is collapsed, controls reset when leaving Manual, and the keyboard envelopes stay synchronized with the existing flonums.
+- EV low-frequency synthesis now shares one phase-coherent fundamental between channels; the former 1.007x/1.013x near-unison layers were replaced by locked second/third harmonics, separated high-order sheen, lower drive gain, and soft saturation.
+- EV includes an ignition-gated, RPM/throttle-following dual BEAP pad. `ev_pad_driver~` contains CV mapping and level/bandwidth safety, while `ev_pad_beap~` exposes independent L/R Oscillator/Mixer/Ladder/ADSR/VCA chains and is intentionally preserved when the project is regenerated.
 - Repaired the four-band global EQ coefficient path and all master/stem dB controls. Public stem messages are `powertrain_level_db`, `transient_level_db`, `road_level_db`, and `rumble_level_db` (-60..+6 dB); `cabin_ir_mix`, master trim, bypass, limiter, and clip protection remain downstream.
 - Installed six documented CC0 source recordings under `assets/raw/`; deterministic processing creates normalized 48 kHz PCM16 runtime media without overwriting curated output. The Ferrari acceleration file is preserved intentionally as the sixth downloaded listening reference and is not loaded at runtime.
 - Reduced the white-noise impression by separating centered band-limited tire noise from restrained stereo wind, lowering mechanical-noise contributions, and centering low-frequency cabin/IR content before the final master chain.
-- Validation: all 45 Python tests pass and `git diff --check` is clean. A post-change Max 8.6.5 project/main smoke check loaded with DSP muted and produced none of the blocking category, missing-object, Gen-outlet, or patchcord errors. Runtime component probes previously confirmed EQ turnover/peak response, master/stem gain response, and differentiated V12/V10 spectra; the last post-IR side-filter revision remains structurally covered rather than repeatedly rendered after Core Audio instance contention.
+- Validation: all 53 Python tests pass and `git diff --check` is clean. Max 8.6.5 loaded the project first and then the current `main.maxpat` copy without new category, missing-object, Gen-outlet, patchcord, BEAP, or media errors. An ignition-on EV+Pad CoreAudio render measured -25.13 dBFS RMS, -18.70 dBFS peak, 0 clipped samples, 1.06 dB envelope spread, four spectral peaks, and a 0.759 dominant-peak ratio; it passed the explicit slow-AM, clipping, audibility, and harmonic-complexity thresholds.
 - Primary operator documentation is `VehicleSoundSynthV3_完整使用手册.docx`; V1/V2 manuals remain byte-for-byte unchanged. The V3 DOCX passed deterministic OOXML/ZIP audits and QuickLook cover inspection; full multi-page PDF/image QA is unavailable because LibreOffice is not installed.
 - Remaining realism boundary: event and cabin-IR layers use recordings, while continuous V12/V10 operation is still procedural rather than a measured multi-load, multi-microphone engine corpus. No Git remote or CI is configured for this repository.
 <!-- AGENT_NOTES_END -->

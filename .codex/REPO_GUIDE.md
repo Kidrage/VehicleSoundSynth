@@ -21,6 +21,8 @@ master EQ. The project uses only built-in Max/MSP/Gen objects.
 - `assets/asset_manifest.json` / `ASSET_LICENSES.md` — runtime-audio provenance authority.
 - `main.maxpat` — runnable demo UI; DSP must start muted.
 - `patchers/vehicle_engine~.maxpat` — public engine seam: one message inlet, two signal outlets.
+- `patchers/ev_pad_driver~.maxpat` — generated vehicle-message to BEAP-CV adapter and safety trim.
+- `patchers/ev_pad_beap~.maxpat` — embedded dual-channel BEAP pad; user tuning is preserved on rebuild.
 - `patchers/`, `gen/`, `media/`, `presets/` — generated runtime resources.
 - `tests/` — deterministic structural and resource checks.
 
@@ -34,7 +36,9 @@ python3 tools/audio_metrics.py render.wav --max-peak-dbfs -1 --min-rms-dbfs -45 
 ```
 
 Regenerate twice and compare hashes when generator determinism matters. Never
-hand-edit generated `.maxpat`, `.gendsp`, or `.wav` files. The project generator
+hand-edit generated `.maxpat`, `.gendsp`, or `.wav` files except the explicitly
+user-tunable `patchers/ev_pad_beap~.maxpat`. The project generator preserves that
+file after its first seed. The project generator
 never overwrites curated runtime WAVs already present in `media/`.
 
 Runtime smoke-check the generated project in Max 8.6.5 after structural tests.

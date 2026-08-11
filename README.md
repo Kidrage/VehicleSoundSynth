@@ -3,7 +3,8 @@
 Max/MSP 8.6.5 vehicle-acoustics project with an EV profile plus lifecycle-gated
 V12 and V10 combustion profiles. V3 uses crank-related combustion pulses,
 additive harmonics, FM/AM sidebands and non-integer orders instead of a dominant
-pure sine. Its in-cabin low-frequency system is excited by the real powertrain
+pure sine. The EV low fundamental is phase-coherent between channels and feeds
+an EV-only, dual-channel BEAP pad. Its in-cabin low-frequency system is excited by the real powertrain
 signal and adds engine half-order structure vibration, damped cabin/body modes,
 and load-dependent exhaust boom. The seven-speed DCT, licensed CC0 transients,
 short cabin IR, and final four-band stereo EQ complete the path.
@@ -32,7 +33,22 @@ The preset also sets four independent stem trims. If a dB field seems inactive,
 confirm the matching stem is actually sounding: `Rumble Level` cannot change
 Future EV because that preset intentionally sets the rumble stem to -60 dB.
 
-Future EV does not require the combustion ignition/start lifecycle.
+Future EV's base motor does not require the combustion ignition/start lifecycle.
+Its BEAP pad is intentionally gated by Ignition, so enable Ignition when you
+want to hear the pad layer; Engine Start remains specific to V12/V10.
+
+## EV BEAP pad tuning
+
+Open `patchers/ev_pad_beap~.maxpat` to edit the two independent signal chains.
+Each side contains two BEAP oscillators, an Audio Mixer, Ladder filter, ADSR,
+and VCA. RPM supplies common 1V/oct pitch CV, throttle opens the filters and
+raises the VCA control level, and Ignition supplies the gate. The
+default voices sit +12 and +19.0196 semitones above the EV fundamental. The
+second interval is an exact 3:2 fifth rather than an equal-tempered near match,
+and neither voice uses micro-detuning, so the former slow beating is not recreated.
+
+Save this patcher normally after adjusting it. Project regeneration deliberately
+preserves the file; all surrounding routing and level containment remain generated.
 
 The V12/V10 profiles are procedural sound-design archetypes built from
 four-stroke firing orders, load envelopes, and resonant harmonic layers; they
@@ -100,7 +116,9 @@ lowering `road_air~` in the mix; do not use the limiter as an EQ.
 ## Regeneration and validation
 
 Generated `.maxpat`, `.gendsp`, preset, and media files are owned by
-`tools/build_project.py` and should not be hand-edited.
+`tools/build_project.py` and should not be hand-edited. The exception is
+`patchers/ev_pad_beap~.maxpat`, which is seeded only when absent and is the
+supported place for user Pad tuning.
 
 ```sh
 python3 tools/build_project.py --output-root .

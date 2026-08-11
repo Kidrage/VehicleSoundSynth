@@ -539,6 +539,32 @@ class VehicleSoundProjectTests(unittest.TestCase):
                 if text.startswith("expr "):
                     self.assertLess(len(text), 240, f"{path.name}: {text}")
 
+    def test_ev_low_frequency_output_is_phase_coherent_between_channels(self):
+        patcher = self.load_json("gen/ev_powertrain.gendsp")["patcher"]
+        code = "\n".join(
+            item["box"].get("code", item["box"].get("text", ""))
+            for item in patcher["boxes"]
+        )
+        for near_unison_ratio in ("1.007", "1.013"):
+            self.assertNotIn(near_unison_ratio, code)
+        self.assertIn("coherent_low", code)
+        self.assertIn("out1 =", code)
+        self.assertIn("out2 =", code)
+
+    def test_ev_generator_source_has_no_obsolete_near_unison_model(self):
+        source = (ROOT / "tools" / "build_project.py").read_text(encoding="utf-8")
+        for near_unison_ratio in ("1.007", "1.013"):
+            self.assertNotIn(near_unison_ratio, source)
+
+    def test_ev_pad_uses_an_exact_three_to_two_fifth(self):
+        patcher = self.load_json("patchers/ev_pad_beap~.maxpat")["patcher"]
+        texts = {
+            item["box"].get("text", "")
+            for item in patcher["boxes"]
+        }
+        self.assertIn("+~ 1.5849625", texts)
+        self.assertNotIn("+~ 1.583333", texts)
+
     def test_gen_patchers_expose_bounded_required_parameters(self):
         gen_paths = sorted((ROOT / "gen").glob("*.gendsp"))
         self.assertEqual(3, len(gen_paths))
@@ -568,6 +594,83 @@ class VehicleSoundProjectTests(unittest.TestCase):
                 for line in patcher["lines"]
             }
             self.assertTrue(output_ids.issubset(destinations), path.name)
+
+    def test_ev_profile_exposes_two_complete_user_tunable_beap_pad_chains(self):
+        project = self.load_json("VehicleSoundSynth-V3.maxproj")
+        declared = {
+            relative_path
+            for category in project["contents"].values()
+            for relative_path in category
+        }
+        self.assertIn("patchers/ev_pad_driver~.maxpat", declared)
+        self.assertIn("patchers/ev_pad_beap~.maxpat", declared)
+
+        powertrain = self.load_json("patchers/powertrain~.maxpat")["patcher"]
+        powertrain_text = "\n".join(
+            item["box"].get("text", "") for item in powertrain["boxes"]
+        )
+        self.assertIn("ev_pad_driver~", powertrain_text)
+
+        driver = self.load_json("patchers/ev_pad_driver~.maxpat")["patcher"]
+        driver_text = "\n".join(
+            item["box"].get("text", "") for item in driver["boxes"]
+        )
+        self.assertIn("route rpm throttle ignition", driver_text)
+        self.assertNotIn("route rpm throttle engine_running", driver_text)
+
+        pad = self.load_json("patchers/ev_pad_beap~.maxpat")["patcher"]
+        modules = [
+            item["box"] for item in pad["boxes"]
+            if item["box"].get("maxclass") == "bpatcher"
+        ]
+        self.assertEqual(12, len(modules))
+        self.assertEqual(12, len({module.get("varname") for module in modules}))
+        signal_inlets = [
+            item for item in pad["boxes"]
+            if item["box"].get("maxclass") == "inlet"
+            and item["box"].get("outlettype") == ["signal"]
+        ]
+        signal_outlets = [
+            item for item in pad["boxes"]
+            if item["box"].get("maxclass") == "outlet"
+            and item["box"].get("comment") == "signal"
+        ]
+        self.assertEqual(3, len(signal_inlets))
+        self.assertEqual(2, len(signal_outlets))
+
+    def test_seeded_beap_pad_restores_audible_pad_defaults(self):
+        pad = self.load_json("patchers/ev_pad_beap~.maxpat")["patcher"]
+        modules = {
+            item["box"]["varname"]: item["box"]
+            for item in pad["boxes"]
+            if item["box"].get("maxclass") == "bpatcher"
+        }
+
+        def restored(module, parameter):
+            values = []
+
+            def visit(item):
+                if isinstance(item, dict):
+                    restore = item.get("restore", {})
+                    if parameter in restore:
+                        values.append(restore[parameter][0])
+                    for child in item.values():
+                        visit(child)
+                elif isinstance(item, list):
+                    for child in item:
+                        visit(child)
+
+            visit(module)
+            self.assertEqual(1, len(values), f"{module['varname']}: {parameter}")
+            return values[0]
+
+        for channel in ("L", "R"):
+            self.assertEqual(-15, restored(modules[f"{channel}_Mixer"], "in1"))
+            self.assertEqual(-18, restored(modules[f"{channel}_Mixer"], "in2"))
+            self.assertEqual(1200, restored(modules[f"{channel}_Ladder"], "Freq"))
+            self.assertEqual(8, restored(modules[f"{channel}_Ladder"], "Res"))
+            self.assertEqual(450, restored(modules[f"{channel}_ADSR"], "Attack"))
+            self.assertEqual(1600, restored(modules[f"{channel}_ADSR"], "Release"))
 
     def test_project_search_path_schema_and_runtime_resources_are_declared(self):
         project = self.load_json("VehicleSoundSynth-V3.maxproj")
@@ -811,6 +914,27 @@ class VehicleSoundProjectTests(unittest.TestCase):
         self.assertEqual(first_hashes, second_hashes)
         self.assertIn("main.maxpat", first_hashes)
 
+    def test_project_rebuild_preserves_user_tuned_beap_pad(self):
+        with tempfile.TemporaryDirectory() as directory:
+            destination = Path(directory)
+            command = [
+                sys.executable,
+                str(ROOT / "tools" / "build_project.py"),
+                "--output-root",
+                str(destination),
+            ]
+            subprocess.run(command, check=True, cwd=ROOT, capture_output=True, text=True)
+            pad_path = destination / "patchers" / "ev_pad_beap~.maxpat"
+            pad = json.loads(pad_path.read_text(encoding="utf-8"))
+            pad["patcher"]["description"] = "user tuning sentinel"
+            pad_path.write_text(
+                json.dumps(pad, indent=2, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
+            tuned_bytes = pad_path.read_bytes()
+            subprocess.run(command, check=True, cwd=ROOT, capture_output=True, text=True)
+            self.assertEqual(tuned_bytes, pad_path.read_bytes())
+
     def test_runtime_probe_builder_creates_self_contained_temp_bundle(self):
         with tempfile.TemporaryDirectory() as directory:
             subprocess.run(
@@ -843,6 +967,42 @@ class VehicleSoundProjectTests(unittest.TestCase):
             self.assertIn(";\rdsp setdriver NonRealTime", text)
             self.assertIn("dsptime~", text)
             self.assertIn("past 4000", text)
+
+    def test_runtime_probe_can_isolate_ev_motor_with_pad_gate_off(self):
+        with tempfile.TemporaryDirectory() as directory:
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / "tools" / "build_runtime_probe.py"),
+                    "--bundle-root",
+                    directory,
+                    "--profile",
+                    "ev",
+                    "--rumble",
+                    "off",
+                    "--start",
+                    "off",
+                    "--ignition",
+                    "off",
+                    "--render-ms",
+                    "8000",
+                ],
+                check=True,
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+            )
+            bundle = Path(directory)
+            probe_path = bundle / "runtime_probe_ev_idle_off.maxpat"
+            self.assertTrue(probe_path.is_file())
+            self.assertTrue((bundle / "ev_pad_driver~.maxpat").is_file())
+            self.assertTrue((bundle / "ev_pad_beap~.maxpat").is_file())
+            patch = json.loads(probe_path.read_text(encoding="utf-8"))
+            text = "\n".join(item["box"].get("text", "") for item in patch["patcher"]["boxes"])
+            self.assertIn("engine_type ev", text)
+            self.assertIn("ev_weight 1", text)
+            self.assertIn("ignition 0", text)
+            self.assertNotIn("start 1", text)
 
     def test_mix_runtime_probe_builder_exposes_eq_trim_and_bypass_scenarios(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -969,6 +1129,38 @@ class VehicleSoundProjectTests(unittest.TestCase):
         self.assertGreater(pure["dominant_peak_ratio_80_6000"], 0.70)
         self.assertGreaterEqual(rich["spectral_peak_count_80_6000"], 6)
         self.assertLess(rich["dominant_peak_ratio_80_6000"], 0.25)
+
+    def test_audio_metrics_detect_slow_amplitude_beating(self):
+        import math
+
+        sys.path.insert(0, str(ROOT / "tools"))
+        from audio_metrics import analyze
+
+        def write_modulated_tone(path, modulation_depth):
+            payload = []
+            sample_rate = 48000
+            for index in range(sample_rate * 4):
+                time = index / sample_rate
+                envelope = 1.0 - modulation_depth + modulation_depth * (
+                    0.5 + 0.5 * math.sin(2 * math.pi * 0.62 * time)
+                )
+                value = 0.25 * envelope * math.sin(2 * math.pi * 88.8 * time)
+                payload.append(struct.pack("<h", round(value * 32767)))
+            with wave.open(str(path), "wb") as handle:
+                handle.setnchannels(1)
+                handle.setsampwidth(2)
+                handle.setframerate(sample_rate)
+                handle.writeframes(b"".join(payload))
+
+        with tempfile.TemporaryDirectory() as directory:
+            stable_path = Path(directory) / "stable.wav"
+            beating_path = Path(directory) / "beating.wav"
+            write_modulated_tone(stable_path, 0.0)
+            write_modulated_tone(beating_path, 0.9)
+            stable = analyze(stable_path)
+            beating = analyze(beating_path)
+        self.assertLess(stable["envelope_spread_db"], 0.2)
+        self.assertGreater(beating["envelope_spread_db"], 10.0)
 
     def test_generated_combustion_transients_are_not_high_frequency_dominated(self):
         sys.path.insert(0, str(ROOT / "tools"))

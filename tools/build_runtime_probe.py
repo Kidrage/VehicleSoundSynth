@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build a monitor-muted Max patch for V12/V10 idle rumble A/B renders."""
+"""Build a monitor-muted Max patch for EV/V12/V10 runtime renders."""
 
 from __future__ import annotations
 
@@ -11,6 +11,12 @@ from build_project import Patcher, write_json
 
 
 PROFILE_SETTINGS = {
+    "ev": {
+        "rpm": 650.0,
+        "weights": (1.0, 0.0, 0.0),
+        "rumble": (0.0, 0.0, 0.0),
+        "ir_mix": 0.10,
+    },
     "v12": {
         "rpm": 780.0,
         "weights": (0.0, 1.0, 0.0),
@@ -39,6 +45,8 @@ def make_probe(
     sweep_to_rpm: float | None = None,
     render_ms: int = 4000,
     driver_mode: str = "nonrealtime",
+    start_enabled: bool = True,
+    ignition_enabled: bool = True,
 ) -> dict:
     settings = PROFILE_SETTINGS[profile]
     ev_weight, v12_weight, v10_weight = settings["weights"]
@@ -73,7 +81,7 @@ def make_probe(
             f"ev_weight {ev_weight:g}",
             f"v12_weight {v12_weight:g}",
             f"v10_weight {v10_weight:g}",
-            "ignition 1",
+            f"ignition {int(ignition_enabled)}",
             f"rpm {initial_rpm:g}",
             f"throttle {throttle:g}",
             f"load {load_value:g}",
@@ -91,12 +99,13 @@ def make_probe(
 
     load = p.new("loadbang", 500, 110, 65, numinlets=1, numoutlets=1)
     start_delay = p.new("delay 100", 500, 150, 70, numinlets=2, numoutlets=1)
-    start = p.message("start 1", 500, 190, 55)
     record_start = p.message("1", 590, 190, 30)
     record_stop = p.message("0", 680, 190, 30)
     p.connect(load, start_delay)
-    p.connect(start_delay, start)
-    p.connect(start, controller)
+    if start_enabled:
+        start = p.message("start 1", 500, 190, 55)
+        p.connect(start_delay, start)
+        p.connect(start, controller)
 
     if sweep_to_rpm is not None:
         sweep_delay = p.new(f"delay {DSP_SETTLE_MS}", 500, 230, 85, numinlets=2, numoutlets=1)
@@ -206,6 +215,8 @@ def main() -> None:
     parser.add_argument("--load", dest="load_value", type=float, default=0.0)
     parser.add_argument("--sweep-to-rpm", type=float)
     parser.add_argument("--render-ms", type=int, default=4000)
+    parser.add_argument("--start", choices=("on", "off"), default="on")
+    parser.add_argument("--ignition", choices=("on", "off"), default="on")
     parser.add_argument(
         "--driver", choices=("nonrealtime", "coreaudio"), default="nonrealtime"
     )
@@ -244,6 +255,8 @@ def main() -> None:
             sweep_to_rpm=args.sweep_to_rpm,
             render_ms=args.render_ms,
             driver_mode=args.driver,
+            start_enabled=args.start == "on",
+            ignition_enabled=args.ignition == "on",
         ),
     )
     print(patch)

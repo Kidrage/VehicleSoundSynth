@@ -55,6 +55,33 @@ def analyze(path: Path, fft_size: int = 32768) -> dict[str, float | int | str]:
         raise ValueError("WAV contains no samples")
     peak = max(abs(value) for value in level_samples)
     rms = math.sqrt(sum(value * value for value in level_samples) / len(level_samples))
+    envelope_block_size = max(1, sample_rate // 5)
+    envelope_blocks = [
+        math.sqrt(
+            sum(value * value for value in samples[index:index + envelope_block_size])
+            / envelope_block_size
+        )
+        for index in range(0, len(samples) - envelope_block_size + 1, envelope_block_size)
+    ]
+
+    def percentile(values: list[float], fraction: float) -> float:
+        ordered = sorted(values)
+        if not ordered:
+            return 0.0
+        position = fraction * (len(ordered) - 1)
+        low = math.floor(position)
+        high = math.ceil(position)
+        if low == high:
+            return ordered[low]
+        weight = position - low
+        return ordered[low] * (1.0 - weight) + ordered[high] * weight
+
+    envelope_low = percentile(envelope_blocks, 0.05)
+    envelope_high = percentile(envelope_blocks, 0.95)
+    envelope_spread_db = 20.0 * math.log10(
+        max(envelope_high, 1e-12) / max(envelope_low, 1e-12)
+    )
+    clipped_ratio = sum(abs(value) >= 0.999 for value in level_samples) / len(level_samples)
     size = min(fft_size, 1 << (len(samples).bit_length() - 1))
     windowed = [
         complex(samples[index] * (0.5 - 0.5 * math.cos(2.0 * math.pi * index / (size - 1))))
@@ -111,6 +138,8 @@ def analyze(path: Path, fft_size: int = 32768) -> dict[str, float | int | str]:
         "peak_dbfs": 20.0 * math.log10(max(peak, 1e-12)),
         "rms_dbfs": 20.0 * math.log10(max(rms, 1e-12)),
         "crest_db": 20.0 * math.log10(max(peak / max(rms, 1e-12), 1e-12)),
+        "envelope_spread_db": envelope_spread_db,
+        "clipped_sample_ratio": clipped_ratio,
         "subsonic_ratio": subsonic,
         "rumble_ratio": rumble,
         "low_mid_ratio": low_mid,
@@ -133,6 +162,8 @@ def main() -> int:
     parser.add_argument("--max-low-side-ratio", type=float)
     parser.add_argument("--min-spectral-peaks", type=int)
     parser.add_argument("--max-dominant-peak-ratio", type=float)
+    parser.add_argument("--max-envelope-spread-db", type=float)
+    parser.add_argument("--max-clipped-sample-ratio", type=float)
     args = parser.parse_args()
     metrics = analyze(args.wav)
     print(json.dumps(metrics, indent=2, sort_keys=True))
@@ -155,6 +186,10 @@ def main() -> int:
         failures.append("spectral_peak_count_80_6000")
     if args.max_dominant_peak_ratio is not None and metrics["dominant_peak_ratio_80_6000"] > args.max_dominant_peak_ratio:
         failures.append("dominant_peak_ratio_80_6000")
+    if args.max_envelope_spread_db is not None and metrics["envelope_spread_db"] > args.max_envelope_spread_db:
+        failures.append("envelope_spread_db")
+    if args.max_clipped_sample_ratio is not None and metrics["clipped_sample_ratio"] > args.max_clipped_sample_ratio:
+        failures.append("clipped_sample_ratio")
     if failures:
         print("Acceptance failed: " + ", ".join(failures))
         return 1

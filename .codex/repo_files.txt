@@ -49,6 +49,8 @@ patchers/cabin_master~.maxpat
 patchers/cabin_rumble~.maxpat
 patchers/drive_simulator.maxpat
 patchers/engine_controller.maxpat
+patchers/ev_pad_beap~.maxpat
+patchers/ev_pad_driver~.maxpat
 patchers/mix_master~.maxpat
 patchers/powertrain~.maxpat
 patchers/road_air~.maxpat

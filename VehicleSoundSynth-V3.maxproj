@@ -137,6 +137,14 @@
         "kind": "patcher",
         "local": 1
       },
+      "patchers/ev_pad_beap~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/ev_pad_driver~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
       "patchers/mix_master~.maxpat": {
         "kind": "patcher",
         "local": 1

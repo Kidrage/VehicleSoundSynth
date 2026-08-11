@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 import argparse
+import copy
+import hashlib
 import json
 import math
 import random
@@ -22,6 +24,16 @@ APP_VERSION = {
 }
 PROJECT_NAME = "VehicleSoundSynth-V3"
 PROJECT_FILENAME = f"{PROJECT_NAME}.maxproj"
+BEAP_CLIPPING_ROOT = Path(
+    "/Applications/Max.app/Contents/Resources/C74/packages/BEAP/clippings/BEAP"
+)
+BEAP_CLIPPING_SHA256 = {
+    "Oscillator/bp.Oscillator.maxpat": "b911b4447ae94090f1e64582eca1e761e7a3593d5d9852369e4644a1a42efc2b",
+    "Mixers/bp.Audio Mixer.maxpat": "e63e00727b7bd5bf8b5aa8119dc276578ba9122e7e282040364aa82435061ce5",
+    "Filter/bp.Ladder.maxpat": "1292c18863374400f4f1924939c3321fb66c0f04dae357184a373f819be3c380",
+    "Envelope/bp.ADSR.maxpat": "86e9594b9aa21a6794eb544f3ecb9730d2154e60acefdbc903f06c30fe4231dd",
+    "Level/bp.VCA.maxpat": "aa62bb0c452f34fb7f326b7a9ca74db9f5c85f7dfde5898d13e1ba96255b74ed",
+}
 
 STATE_NAMES = (
     "engine_type",
@@ -94,6 +106,7 @@ class Patcher:
     def __init__(self, width: float = 1100.0, height: float = 760.0) -> None:
         self.boxes: list[dict[str, Any]] = []
         self.lines: list[dict[str, Any]] = []
+        self.parameters: dict[str, Any] = {}
         self._next_id = 1
         self.width = width
         self.height = height
@@ -126,6 +139,32 @@ class Patcher:
             box["outlettype"] = [""] * numoutlets
         box.update(extra)
         self.boxes.append({"box": box})
+        return box_id
+
+    def embedded_bpatcher(
+        self,
+        template: dict[str, Any],
+        source_parameters: dict[str, Any],
+        x: float,
+        y: float,
+        varname: str,
+    ) -> str:
+        box = copy.deepcopy(template)
+        source_id = box["id"]
+        box_id = f"obj-{self._next_id}"
+        self._next_id += 1
+        width, height = box["patching_rect"][2:4]
+        box["id"] = box_id
+        box["patching_rect"] = [float(x), float(y), float(width), float(height)]
+        box["varname"] = varname
+        self.boxes.append({"box": box})
+        for key, value in source_parameters.items():
+            if key == "parameterbanks" or not key.startswith(f"{source_id}::"):
+                continue
+            localized = copy.deepcopy(value)
+            localized[0] = f"{varname}.{localized[0]}"
+            localized[1] = f"{varname}.{localized[1]}"
+            self.parameters[f"{box_id}{key[len(source_id):]}"] = localized
         return box_id
 
     def new(
@@ -167,7 +206,7 @@ class Patcher:
         )
 
     def document(self, *, presentation: bool = False) -> dict[str, Any]:
-        return {
+        document = {
             "patcher": {
                 "appversion": APP_VERSION,
                 "bglocked": 0,
@@ -189,6 +228,12 @@ class Patcher:
                 "toolbarvisible": 1,
             }
         }
+        if self.parameters:
+            document["patcher"]["parameters"] = {
+                **self.parameters,
+                "parameterbanks": {},
+            }
+        return document
 
 
 def inlet(patch: Patcher, x: float, y: float, *, signal: bool = False) -> str:
@@ -226,6 +271,241 @@ def route(patch: Patcher, names: tuple[str, ...], x: float, y: float, width: flo
         numinlets=1,
         numoutlets=len(names) + 1,
     )
+
+
+def _set_beap_initial(box: dict[str, Any], varname: str, value: float | int) -> None:
+    matches = 0
+    restore_matches = 0
+
+    def visit(item: Any) -> None:
+        nonlocal matches, restore_matches
+        if isinstance(item, dict):
+            if item.get("varname") == varname:
+                attributes = item.setdefault("saved_attribute_attributes", {}).setdefault(
+                    "valueof", {}
+                )
+                attributes["parameter_initial"] = [value]
+                attributes["parameter_initial_enable"] = 1
+                matches += 1
+            restore = item.get("restore")
+            if isinstance(restore, dict) and varname in restore:
+                restore[varname] = [value]
+                restore_matches += 1
+            for child in item.values():
+                visit(child)
+        elif isinstance(item, list):
+            for child in item:
+                visit(child)
+
+    visit(box)
+    if matches != 1:
+        raise ValueError(f"Expected one BEAP parameter {varname!r}, found {matches}")
+    if restore_matches != 1:
+        raise ValueError(
+            f"Expected one BEAP restore value {varname!r}, found {restore_matches}"
+        )
+
+
+def add_beap_module(
+    patch: Patcher,
+    relative_path: str,
+    x: float,
+    y: float,
+    varname: str,
+    *,
+    initial: dict[str, float | int] | None = None,
+) -> str:
+    clipping = BEAP_CLIPPING_ROOT / relative_path
+    if not clipping.is_file():
+        raise FileNotFoundError(
+            f"BEAP clipping not found: {clipping}. Install Max 8.6.5 with BEAP."
+        )
+    payload = clipping.read_bytes()
+    expected_digest = BEAP_CLIPPING_SHA256[relative_path]
+    actual_digest = hashlib.sha256(payload).hexdigest()
+    if actual_digest != expected_digest:
+        raise RuntimeError(
+            f"Unsupported BEAP clipping revision: {clipping} "
+            f"(expected Max 8.6.5 SHA-256 {expected_digest}, got {actual_digest})"
+        )
+    document = json.loads(payload)["patcher"]
+    box = copy.deepcopy(document["boxes"][0]["box"])
+    for parameter, value in (initial or {}).items():
+        _set_beap_initial(box, parameter, value)
+    return patch.embedded_bpatcher(
+        box,
+        document.get("parameters", {}),
+        x,
+        y,
+        varname,
+    )
+
+
+def make_ev_pad_beap() -> dict[str, Any]:
+    """Seed a user-editable dual-mono BEAP pad; never overwrite it after creation."""
+    p = Patcher(1780, 790)
+    p.comment(
+        "USER-TUNABLE EV PAD — two independent BEAP chains; this file is preserved on rebuild",
+        25,
+        15,
+        900,
+    )
+    pitch_cv = inlet(p, 45, 60, signal=True)
+    gate_cv = inlet(p, 145, 60, signal=True)
+    throttle_cv = inlet(p, 245, 60, signal=True)
+    p.comment("Pitch CV (1V/oct)", 25, 95, 125)
+    p.comment("Gate (0/5V)", 145, 95, 100)
+    p.comment("Throttle CV", 260, 95, 100)
+
+    root_pitch = p.new("+~ 1.", 380, 75, 55, numinlets=2, numoutlets=1)
+    # One octave plus log2(3/2): an exact fifth, so shared harmonics remain
+    # locked instead of producing a slow equal-temperament beat.
+    fifth_pitch = p.new("+~ 1.5849625", 465, 75, 90, numinlets=2, numoutlets=1)
+    filter_cv_offset = p.new("-~ 0.75", 590, 75, 70, numinlets=2, numoutlets=1)
+    filter_cv = p.new("*~ 0.666667", 675, 75, 85, numinlets=2, numoutlets=1)
+    p.connect(pitch_cv, root_pitch)
+    p.connect(pitch_cv, fifth_pitch)
+    p.connect(throttle_cv, filter_cv_offset)
+    p.connect(filter_cv_offset, filter_cv)
+
+    channel_specs = (
+        ("L", 140.0, 2, 1),
+        ("R", 430.0, 1, 2),
+    )
+    for channel, y, first_waveform, second_waveform in channel_specs:
+        p.comment(f"{channel} CHANNEL", 25, y - 25, 110)
+        osc_a = add_beap_module(
+            p,
+            "Oscillator/bp.Oscillator.maxpat",
+            25,
+            y,
+            f"{channel}_Osc_A",
+            initial={"Waveform": first_waveform},
+        )
+        osc_b = add_beap_module(
+            p,
+            "Oscillator/bp.Oscillator.maxpat",
+            355,
+            y,
+            f"{channel}_Osc_B",
+            initial={"Waveform": second_waveform},
+        )
+        mixer = add_beap_module(
+            p,
+            "Mixers/bp.Audio Mixer.maxpat",
+            685,
+            y,
+            f"{channel}_Mixer",
+            initial={"in1": -15, "in2": -18},
+        )
+        ladder = add_beap_module(
+            p,
+            "Filter/bp.Ladder.maxpat",
+            910,
+            y,
+            f"{channel}_Ladder",
+            initial={"Freq": 1200, "Res": 8},
+        )
+        envelope = add_beap_module(
+            p,
+            "Envelope/bp.ADSR.maxpat",
+            1225,
+            y,
+            f"{channel}_ADSR",
+            initial={"Attack": 450, "Decay": 1000, "Sustain": 70, "Release": 1600},
+        )
+        vca = add_beap_module(
+            p,
+            "Level/bp.VCA.maxpat",
+            1480,
+            y,
+            f"{channel}_VCA",
+        )
+        envelope_throttle = p.new("*~", 1235, y + 135, 40, numinlets=2, numoutlets=1)
+        vca_cv = p.new("*~ 0.2", 1295, y + 135, 65, numinlets=2, numoutlets=1)
+        channel_out = outlet(p, 1645, y + 70, signal=True)
+
+        p.connect(root_pitch, osc_a, 0, 0)
+        p.connect(fifth_pitch, osc_b, 0, 0)
+        p.connect(osc_a, mixer, 0, 0)
+        p.connect(osc_b, mixer, 0, 1)
+        p.connect(mixer, ladder, 0, 0)
+        p.connect(filter_cv, ladder, 0, 1)
+        p.connect(gate_cv, envelope, 0, 0)
+        p.connect(envelope, envelope_throttle, 0, 0)
+        p.connect(throttle_cv, envelope_throttle, 0, 1)
+        p.connect(envelope_throttle, vca_cv)
+        p.connect(ladder, vca, 0, 0)
+        p.connect(vca_cv, vca, 0, 1)
+        p.connect(vca, channel_out)
+    return p.document()
+
+
+def make_ev_pad_driver() -> dict[str, Any]:
+    """Translate EV messages to BEAP CV and contain pad bandwidth/level."""
+    p = Patcher(980, 650)
+    p.comment("EV-only BEAP pad driver — RPM pitch, ignition gate, throttle filter/level", 25, 15, 700)
+    control = inlet(p, 35, 65)
+    router = route(p, ("rpm", "throttle", "ignition"), 35, 105, 300)
+    p.connect(control, router)
+
+    rpm_clip = p.new("clip 0. 10000.", 35, 155, 105, numinlets=3, numoutlets=1)
+    pitch_map = p.new(
+        "expr log(max(55.,min(760.,55.+$f1*.052))/261.625565)/log(2.)",
+        35,
+        195,
+        390,
+        numinlets=1,
+        numoutlets=1,
+    )
+    pitch_pack = p.new("pack 0. 60", 35, 235, 85, numinlets=2, numoutlets=1)
+    pitch_line = p.new("line~", 35, 275, 50, numinlets=2, numoutlets=2)
+    p.connect(router, rpm_clip, 0)
+    p.connect(rpm_clip, pitch_map)
+    p.connect(pitch_map, pitch_pack)
+    p.connect(pitch_pack, pitch_line)
+
+    throttle_clip = p.new("clip 0. 1.", 455, 155, 75, numinlets=3, numoutlets=1)
+    throttle_map = p.new("expr 0.75+3.*$f1", 455, 195, 125, numinlets=1, numoutlets=1)
+    throttle_pack = p.new("pack 0. 120", 455, 235, 95, numinlets=2, numoutlets=1)
+    throttle_line = p.new("line~", 455, 275, 50, numinlets=2, numoutlets=2)
+    p.connect(router, throttle_clip, 1)
+    p.connect(throttle_clip, throttle_map)
+    p.connect(throttle_map, throttle_pack)
+    p.connect(throttle_pack, throttle_line)
+
+    ignition_clip = p.new("clip 0. 1.", 625, 155, 75, numinlets=3, numoutlets=1)
+    gate_map = p.new("expr $f1*5.", 625, 195, 90, numinlets=1, numoutlets=1)
+    gate_pack = p.new("pack 0. 10", 625, 235, 85, numinlets=2, numoutlets=1)
+    gate_line = p.new("line~", 625, 275, 50, numinlets=2, numoutlets=2)
+    p.connect(router, ignition_clip, 2)
+    p.connect(ignition_clip, gate_map)
+    p.connect(gate_map, gate_pack)
+    p.connect(gate_pack, gate_line)
+
+    for index, (text, target) in enumerate(
+        (("650", rpm_clip), ("0.", throttle_clip), ("0.", ignition_clip))
+    ):
+        initial = p.new(f"loadmess {text}", 760, 155 + index * 40, 90, numinlets=1, numoutlets=1)
+        p.connect(initial, target)
+
+    pad = p.new("ev_pad_beap~", 285, 345, 115, numinlets=3, numoutlets=2)
+    hp_l = p.new("svf~ 120 0.7", 215, 395, 100, numinlets=3, numoutlets=4)
+    hp_r = p.new("svf~ 120 0.7", 455, 395, 100, numinlets=3, numoutlets=4)
+    scale_l = p.new("*~ 0.04", 215, 455, 65, numinlets=2, numoutlets=1)
+    scale_r = p.new("*~ 0.04", 455, 455, 65, numinlets=2, numoutlets=1)
+    left = outlet(p, 215, 535, signal=True)
+    right = outlet(p, 455, 535, signal=True)
+    p.connect(pitch_line, pad, 0, 0)
+    p.connect(gate_line, pad, 0, 1)
+    p.connect(throttle_line, pad, 0, 2)
+    p.connect(pad, hp_l, 0, 0)
+    p.connect(pad, hp_r, 1, 0)
+    p.connect(hp_l, scale_l, 1, 0)
+    p.connect(hp_r, scale_r, 1, 0)
+    p.connect(scale_l, left)
+    p.connect(scale_r, right)
+    return p.document()
 
 
 def add_db_gain_control(
@@ -555,18 +835,26 @@ def make_mix_master() -> dict[str, Any]:
 
 def make_powertrain() -> dict[str, Any]:
     p = Patcher(1280, 780)
-    p.comment("Three bounded Gen powertrains, smoothed and continuously weighted", 25, 15, 500)
+    p.comment("Three bounded Gen powertrains plus an EV-only dual BEAP pad", 25, 15, 580)
     control = inlet(p, 35, 65)
     tonal_names = ("rpm", "throttle", "load", "aggression", "brightness", "body", "texture")
     fuel_names = ("engine_running", "combustion_gain", "shift_cut")
     weight_names = ("ev_weight", "v12_weight", "v10_weight")
-    names = tonal_names + fuel_names + weight_names + ("powertrain_level_db",)
+    pad_names = ("ignition",)
+    names = tonal_names + fuel_names + weight_names + pad_names + ("powertrain_level_db",)
     router = route(p, names, 35, 105, 760)
     gens = [
         p.new("gen~ @gen ev_powertrain", 220, 395, 165, numinlets=1, numoutlets=2),
         p.new("gen~ @gen v12_powertrain", 510, 395, 175, numinlets=1, numoutlets=2),
         p.new("gen~ @gen v10_powertrain", 800, 395, 175, numinlets=1, numoutlets=2),
     ]
+    ev_pad = p.new("ev_pad_driver~", 35, 395, 120, numinlets=1, numoutlets=2)
+    ev_sum_l = p.new("+~", 220, 445, 40, numinlets=2, numoutlets=1)
+    ev_sum_r = p.new("+~", 295, 445, 40, numinlets=2, numoutlets=1)
+    p.connect(gens[0], ev_sum_l, 0, 0)
+    p.connect(gens[0], ev_sum_r, 1, 0)
+    p.connect(ev_pad, ev_sum_l, 0, 1)
+    p.connect(ev_pad, ev_sum_r, 1, 1)
     bounds = {
         "rpm": (0.0, 10000.0),
         "throttle": (0.0, 1.0),
@@ -585,6 +873,8 @@ def make_powertrain() -> dict[str, Any]:
         p.connect(bounded, named)
         for gen in gens:
             p.connect(named, gen)
+        if name in {"rpm", "throttle"}:
+            p.connect(named, ev_pad)
 
     for index, name in enumerate(fuel_names):
         x = 720 + index * 160
@@ -594,6 +884,16 @@ def make_powertrain() -> dict[str, Any]:
         p.connect(bounded, named)
         p.connect(named, gens[1])
         p.connect(named, gens[2])
+
+    pad_ignition = p.new("clip 0. 1.", 1060, 175, 75, numinlets=3, numoutlets=1)
+    pad_ignition_named = p.message("ignition $1", 1060, 220, 105)
+    p.connect(
+        router,
+        pad_ignition,
+        len(tonal_names) + len(fuel_names) + len(weight_names),
+    )
+    p.connect(pad_ignition, pad_ignition_named)
+    p.connect(pad_ignition_named, ev_pad)
 
     lines: list[str] = []
     for index, name in enumerate(weight_names):
@@ -622,8 +922,12 @@ def make_powertrain() -> dict[str, Any]:
         x = 210 + index * 290
         left_mult = p.new("*~", x, 485, 40, numinlets=2, numoutlets=1)
         right_mult = p.new("*~", x + 75, 485, 40, numinlets=2, numoutlets=1)
-        p.connect(gen, left_mult, 0, 0)
-        p.connect(gen, right_mult, 1, 0)
+        if index == 0:
+            p.connect(ev_sum_l, left_mult, 0, 0)
+            p.connect(ev_sum_r, right_mult, 0, 0)
+        else:
+            p.connect(gen, left_mult, 0, 0)
+            p.connect(gen, right_mult, 1, 0)
         p.connect(lines[index], left_mult, 0, 1)
         p.connect(lines[index], right_mult, 0, 1)
         left_mults.append(left_mult)
@@ -1784,16 +2088,39 @@ def make_main() -> dict[str, Any]:
 
 
 GEN_CODE = {
-    "ev_powertrain": """// Smooth, bounded EV inverter/motor identity.\nParam rpm(650, min=0, max=10000);\nParam throttle(0, min=0, max=1);\nParam load(0, min=-1, max=1);\nParam aggression(0.25, min=0, max=1);\nParam brightness(0.7, min=0, max=1);\nParam body(0.35, min=0, max=1);\nParam texture(0.2, min=0, max=1);\nr = slide(clamp(rpm, 0, 10000), 1200, 1800);\nt = slide(clamp(throttle, 0, 1), 700, 1400);\nf = clamp(55 + r * 0.052, 55, 760);\na = clamp(0.03 + t * 0.25 + abs(clamp(load, -1, 1)) * 0.08, 0, 0.42);\ncore = cycle(f) * (0.60 + body * 0.20);\ninverter = cycle(clamp(f * (2.8 + brightness), 100, 4200)) * (0.12 + texture * 0.18);\nair = cycle(clamp(f * 1.013, 55, 1000)) * aggression * 0.10;\nsig = clamp((core + inverter + air) * a, -0.78, 0.78);\nout1 = sig;\nout2 = clamp((cycle(f * 1.007) * 0.55 + inverter + air) * a, -0.78, 0.78);""",
     "v12_powertrain": """// Lifecycle-gated four-stroke V12 with idle body and load-dependent harmonic lift.\nParam rpm(780, min=0, max=10000);\nParam throttle(0, min=0, max=1);\nParam load(0, min=-1, max=1);\nParam aggression(0.6, min=0, max=1);\nParam brightness(0.75, min=0, max=1);\nParam body(0.7, min=0, max=1);\nParam texture(0.5, min=0, max=1);\nParam engine_running(0, min=0, max=1);\nParam combustion_gain(0, min=0, max=1);\nParam shift_cut(1, min=0, max=1);\nr = slide(clamp(rpm, 0, 10000), 700, 1100);\nt = slide(clamp(throttle, 0, 1), 420, 850);\nl = max(clamp(load, -1, 1), 0);\nrun = slide(clamp(engine_running * combustion_gain * shift_cut, 0, 1), 480, 1900);\nspeedmix = clamp((r - 780) / 8220, 0, 1);\nrough = 1 + cycle(1.31) * (0.004 * (1-speedmix)) + cycle(2.17) * 0.0015;\nf = clamp(r / 60 * 6 * rough, 35, 1000);\nidle = 0.145 + body * 0.035;\na = clamp(idle + t * 0.26 + l * 0.13, 0, 0.56) * run;\nsub = cycle(clamp(f * 0.5, 24, 520)) * (0.34 + body * 0.24) * (1-speedmix*0.45);\nfund = cycle(f) * (0.58 + body * 0.12);\nh2 = cycle(clamp(f * 2, 45, 3000)) * (0.16 + brightness * 0.18 + speedmix * 0.12);\nh3 = cycle(clamp(f * 3, 55, 5000)) * (0.07 + texture * 0.11 + speedmix * 0.12);\nh5 = cycle(clamp(f * 5, 70, 8000)) * (0.025 + brightness * speedmix * 0.10);\nh8 = cycle(clamp(f * 8, 90, 11000)) * (0.008 + texture * speedmix * 0.055);\nintake = cycle(clamp(f * 1.5, 45, 1800)) * t * (0.035 + texture * 0.055);\nleft = (sub + fund + h2 + h3 + h5 + h8 + intake) * a * (0.82 + aggression * 0.15);\nright = (cycle(clamp(f * 0.5015, 24, 520)) * (0.32 + body*0.22) * (1-speedmix*0.45) + cycle(f * 0.9985) * 0.58 + h2*0.96 + h3*1.03 + h5*0.98 + h8*1.04 + intake) * a * (0.82 + aggression*0.15);\nout1 = clamp(left, -0.86, 0.86);\nout2 = clamp(right, -0.86, 0.86);""",
     "v10_powertrain": """// Lifecycle-gated four-stroke V10 with stronger half-order rumble and uneven sidebands.\nParam rpm(850, min=0, max=10000);\nParam throttle(0, min=0, max=1);\nParam load(0, min=-1, max=1);\nParam aggression(0.9, min=0, max=1);\nParam brightness(0.65, min=0, max=1);\nParam body(0.85, min=0, max=1);\nParam texture(0.85, min=0, max=1);\nParam engine_running(0, min=0, max=1);\nParam combustion_gain(0, min=0, max=1);\nParam shift_cut(1, min=0, max=1);\nr = slide(clamp(rpm, 0, 10000), 620, 980);\nt = slide(clamp(throttle, 0, 1), 360, 760);\nl = max(clamp(load, -1, 1), 0);\nrun = slide(clamp(engine_running * combustion_gain * shift_cut, 0, 1), 420, 1650);\nspeedmix = clamp((r - 850) / 7650, 0, 1);\nrough = 1 + cycle(0.93) * (0.008 * (1-speedmix)) + cycle(1.71) * 0.003;\nf = clamp(r / 60 * 5 * rough, 32, 850);\nidle = 0.165 + body * 0.04;\na = clamp(idle + t * 0.29 + l * 0.15, 0, 0.60) * run;\nsub = cycle(clamp(f * 0.5, 24, 450)) * (0.42 + body * 0.24) * (1-speedmix*0.38);\nfire = cycle(f) * (0.50 + aggression * 0.16);\nside = cycle(clamp(f * 1.5, 48, 1900)) * (0.06 + texture * 0.10);\nh2 = cycle(clamp(f * 2, 55, 3400)) * (0.11 + brightness * 0.14);\nrasp = cycle(clamp(f * 2.5, 65, 5000)) * (0.08 + texture * 0.17 + speedmix * 0.10);\nmetal = cycle(clamp(f * 5, 90, 8500)) * brightness * speedmix * 0.075;\nleft = (sub + fire + side + h2 + rasp + metal) * a;\nright = (cycle(clamp(f * 0.503, 24, 450)) * (0.40 + body*0.22) * (1-speedmix*0.38) + cycle(f*0.997)*0.50 + side*1.08 + h2*0.94 + rasp*1.06 + metal) * a;\nout1 = clamp(left, -0.88, 0.88);\nout2 = clamp(right, -0.88, 0.88);""",
     "cabin_rumble": """// Strong but bounded in-cabin combustion rumble with centered low-frequency output.\nParam firing_order(0, min=0, max=6);\nParam rpm(780, min=0, max=10000);\nParam throttle(0, min=0, max=1);\nParam load(0, min=-1, max=1);\nParam gear(1, min=1, max=7);\nParam engine_running(0, min=0, max=1);\nParam combustion_gain(0, min=0, max=1);\nParam shift_cut(1, min=0, max=1);\nParam cabin_rumble(0, min=0, max=1);\nParam exhaust_boom(0, min=0, max=1);\nParam structure_vibration(0, min=0, max=1);\nParam body(0.7, min=0, max=1);\nParam aggression(0.6, min=0, max=1);\nr = slide(clamp(rpm, 0, 10000), 700, 1200);\nt = slide(clamp(throttle, 0, 1), 420, 900);\nl = max(clamp(load, -1, 1), 0);\ng = clamp(gear, 1, 7);\norder = clamp(firing_order, 0, 6);\nfuel = clamp(order / 5, 0, 1);\nrun = slide(clamp(engine_running * combustion_gain, 0, 1), 360, 2200);\nshift = slide(clamp(0.35 + 0.65 * shift_cut, 0, 1), 150, 1100);\nfire_hz = clamp(r / 60 * order, 28, 1000);\nhalf_hz = clamp(fire_hz * 0.5, 28, 420);\nspeedmix = clamp((r - 780) / 8220, 0, 1);\nidle_weight = 1 - speedmix * 0.55;\ndrive_weight = 0.45 + 0.55 * max(t, l);\ngear_weight = 0.86 + 0.02 * g;\nrough = 1 + cycle(1.17) * (0.006 * idle_weight) + cycle(2.03) * 0.002;\nmount = (cycle(half_hz * rough) * 0.72 + cycle(clamp(half_hz * 1.5, 35, 630)) * 0.18) * structure_vibration * (0.055 + body * 0.045) * idle_weight;\nmode_pulse = 0.62 + 0.38 * abs(cycle(clamp(fire_hz * 0.5, 28, 500)));\nmode1 = cycle(clamp(48 + (half_hz - 39) * 0.10, 44, 54)) * 0.45;\nmode2 = cycle(clamp(68 + (half_hz - 39) * 0.08, 63, 74)) * 0.33;\nmode3 = cycle(clamp(92 + (half_hz - 39) * 0.06, 86, 100)) * 0.20;\nmode4 = cycle(clamp(118 + (half_hz - 39) * 0.04, 110, 126)) * 0.12;\ncabin = (mode1 + mode2 + mode3 + mode4) * mode_pulse * cabin_rumble * (0.025 + body * 0.020) * (0.70 + idle_weight * 0.30);\nexhaust = (cycle(half_hz) * 0.65 + cycle(fire_hz) * 0.25 + cycle(clamp(fire_hz * 2, 56, 2000)) * 0.10) * exhaust_boom * (0.025 + t * 0.055 + l * 0.045) * (0.80 + aggression * 0.20);\nsig = clamp((mount + cabin + exhaust * drive_weight) * run * shift * gear_weight * fuel * 1.18, -0.48, 0.48);\nout1 = sig;\nout2 = sig;""",
 }
 
-# V3 realism models replace the V2 steady sine-bank prototypes above. Keeping
-# the prototypes in the source dictionary makes regression A/B generation
-# possible, while these are the only V12/V10 definitions emitted at runtime.
+# V3 realism models replace the V2 steady sine-bank prototypes above. The
+# combustion prototypes remain available for A/B generation; the unstable V2
+# EV model is intentionally absent so it cannot be emitted accidentally.
 GEN_CODE.update({
+    "ev_powertrain": """// Phase-coherent EV motor: stable low fundamental with harmonic upper structure.
+Param rpm(650, min=0, max=10000);
+Param throttle(0, min=0, max=1);
+Param load(0, min=-1, max=1);
+Param aggression(0.25, min=0, max=1);
+Param brightness(0.7, min=0, max=1);
+Param body(0.35, min=0, max=1);
+Param texture(0.2, min=0, max=1);
+r = slide(clamp(rpm, 0, 10000), 1200, 1800);
+t = slide(clamp(throttle, 0, 1), 700, 1400);
+l = abs(clamp(load, -1, 1));
+f = clamp(55 + r * 0.052, 55, 760);
+a = clamp(0.03 + t * 0.20 + l * 0.05, 0, 0.28);
+coherent_low = cycle(f) * (0.58 + body * 0.18);
+h2 = cycle(clamp(f * 2, 110, 1520)) * (0.08 + body * 0.05);
+h3 = cycle(clamp(f * 3, 165, 2280)) * (0.035 + texture * 0.055);
+inverter = cycle(clamp(f * (2.8 + brightness), 150, 4200)) * (0.10 + texture * 0.14);
+sheen_l = cycle(clamp(f * (5.2 + brightness * 0.4), 300, 6200)) * aggression * 0.025;
+sheen_r = cycle(clamp(f * (6.2 + brightness * 0.4), 360, 7200)) * aggression * 0.025;
+base = coherent_low + h2 + h3 + inverter;
+left_drive = (base + sheen_l) * a;
+right_drive = (coherent_low + h2 * 0.99 + h3 * 1.02 + inverter * 0.98 + sheen_r) * a;
+out1 = tanh(left_drive * 1.2) / 1.2;
+out2 = tanh(right_drive * 1.2) / 1.2;""",
     "v12_powertrain": """// Four-stroke V12: shared crank phase drives combustion pulses; sine layers are secondary resonances.
 Param rpm(780, min=0, max=10000);
 Param throttle(0, min=0, max=1);
@@ -2101,6 +2428,8 @@ def project_file() -> dict[str, Any]:
         "patchers/vehicle_engine~.maxpat",
         "patchers/engine_controller.maxpat",
         "patchers/powertrain~.maxpat",
+        "patchers/ev_pad_driver~.maxpat",
+        "patchers/ev_pad_beap~.maxpat",
         "patchers/cabin_rumble~.maxpat",
         "patchers/transient~.maxpat",
         "patchers/road_air~.maxpat",
@@ -2143,6 +2472,7 @@ def build_project(root: Path) -> None:
         "patchers/vehicle_engine~.maxpat": make_engine(),
         "patchers/engine_controller.maxpat": make_engine_controller(),
         "patchers/powertrain~.maxpat": make_powertrain(),
+        "patchers/ev_pad_driver~.maxpat": make_ev_pad_driver(),
         "patchers/cabin_rumble~.maxpat": make_cabin_rumble(),
         "patchers/transient~.maxpat": make_transient(),
         "patchers/road_air~.maxpat": make_road_air(),
@@ -2154,6 +2484,9 @@ def build_project(root: Path) -> None:
     }
     for relative_path, value in outputs.items():
         write_json(root / relative_path, value)
+    user_pad = root / "patchers" / "ev_pad_beap~.maxpat"
+    if not user_pad.exists():
+        write_json(user_pad, make_ev_pad_beap())
     for name, code in GEN_CODE.items():
         write_json(root / "gen" / f"{name}.gendsp", make_gen(code))
     for name, frames in MEDIA_FRAMES.items():
