@@ -1253,8 +1253,13 @@ class VehicleSoundProjectTests(unittest.TestCase):
             self.assertIn("cabin_rumble~", text)
             self.assertIn("cabin_rumble 0.9", text)
             self.assertIn(";\rdsp setdriver NonRealTime", text)
+            self.assertIn(";\rdsp sr 48000", text)
             self.assertIn("dsptime~", text)
             self.assertIn("past 4000", text)
+            project = json.loads((bundle / f"{bundle.name}.maxproj").read_text(encoding="utf-8"))
+            self.assertIn("vehicle_engine~.maxpat", project["contents"]["patchers"])
+            self.assertIn("v12_powertrain.gendsp", project["contents"]["code"])
+            self.assertIn("media/starter_v12.wav", project["contents"]["media"])
 
             failed_rate = subprocess.run(
                 [

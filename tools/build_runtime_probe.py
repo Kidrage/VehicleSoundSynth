@@ -183,8 +183,7 @@ def make_probe(
         driver_delay = p.new("delay 3000", 595, 535, 75, numinlets=2, numoutlets=1)
         driver_select = p.message(";\rdsp setdriver NonRealTime", 500, 565, 165)
         sample_rate_delay = p.new("delay 1000", 500, 600, 75, numinlets=2, numoutlets=1)
-        sample_rate_value = p.message("48000", 500, 630, 55)
-        sample_rate = p.new("adstatus sr", 565, 630, 80, numinlets=1, numoutlets=2)
+        sample_rate_value = p.message(";\rdsp sr 48000", 500, 630, 110)
         driver_ready = p.new("delay 2000", 630, 565, 75, numinlets=2, numoutlets=1)
         start_trigger = p.new("t b b b b b", 630, 600, 90, numinlets=1, numoutlets=5)
         dsp_start = p.message("1", 720, 600, 30)
@@ -202,7 +201,6 @@ def make_probe(
         p.connect(driver_delay, driver_select)
         p.connect(driver_delay, sample_rate_delay)
         p.connect(sample_rate_delay, sample_rate_value)
-        p.connect(sample_rate_value, sample_rate)
         p.connect(sample_rate_delay, driver_ready)
         p.connect(driver_ready, start_trigger)
         p.connect(start_trigger, open_file, 4, 0)
@@ -259,7 +257,7 @@ def main() -> None:
     parser.add_argument(
         "--bundle-root",
         type=Path,
-        default=Path("/private/tmp/VehicleSoundSynthV3_probe_bundle"),
+        default=Path("/private/tmp/VehicleSoundSynthV4_probe_bundle"),
         help="Dedicated temporary bundle directory populated with runtime dependencies",
     )
     parser.add_argument("--profile", choices=sorted(PROFILE_SETTINGS), default="v12")
@@ -349,6 +347,19 @@ def main() -> None:
         ),
     )
     project_name = bundle.name
+    patcher_contents = {
+        path.name: {"kind": "patcher", "local": 1}
+        for path in sorted(bundle.glob("*.maxpat"))
+    }
+    code_contents = {
+        path.name: {"kind": "gendsp", "local": 1}
+        for path in sorted(bundle.glob("*.gendsp"))
+    }
+    code_contents["local_reference_loader.js"] = {"kind": "javascript", "local": 1}
+    media_contents = {
+        f"media/{path.name}": {"kind": "mediafile", "local": 1}
+        for path in sorted(media.glob("*.wav"))
+    }
     write_json(
         bundle / f"{project_name}.maxproj",
         {
@@ -357,7 +368,9 @@ def main() -> None:
             "autolocalize": 0,
             "autoorganize": 0,
             "contents": {
-                "patchers": {patch.name: {"kind": "patcher", "local": 1}},
+                "patchers": patcher_contents,
+                "code": code_contents,
+                "media": media_contents,
             },
             "searchpath": {
                 "bundle": {"path": ".", "recursive": 1},
