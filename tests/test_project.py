@@ -1285,6 +1285,15 @@ class VehicleSoundProjectTests(unittest.TestCase):
         self.assertIn("send~ vss_pre_cabin_l", text)
         self.assertIn("send~ vss_pre_cabin_r", text)
 
+    def test_audio_metrics_exposes_mid_and_high_stereo_safety_thresholds(self):
+        source = (ROOT / "tools" / "audio_metrics.py").read_text(encoding="utf-8")
+        for option in (
+            "--max-mid-side-ratio", "--min-mid-band-correlation",
+            "--max-mid-band-mono-fold-rms-loss-db", "--max-high-side-ratio",
+            "--min-high-band-correlation", "--max-high-band-mono-fold-rms-loss-db",
+        ):
+            self.assertIn(option, source)
+
     def test_runtime_probe_can_isolate_ev_motor_with_pad_gate_off(self):
         with tempfile.TemporaryDirectory() as directory:
             subprocess.run(

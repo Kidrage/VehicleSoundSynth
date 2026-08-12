@@ -319,6 +319,12 @@ def main() -> int:
     parser.add_argument("--max-subsonic-ratio", type=float)
     parser.add_argument("--max-low-side-ratio", type=float)
     parser.add_argument("--min-low-band-correlation", type=float)
+    parser.add_argument("--max-mid-side-ratio", type=float)
+    parser.add_argument("--min-mid-band-correlation", type=float)
+    parser.add_argument("--max-mid-band-mono-fold-rms-loss-db", type=float)
+    parser.add_argument("--max-high-side-ratio", type=float)
+    parser.add_argument("--min-high-band-correlation", type=float)
+    parser.add_argument("--max-high-band-mono-fold-rms-loss-db", type=float)
     parser.add_argument("--max-mono-fold-rms-loss-db", type=float)
     parser.add_argument("--compare-wav", type=Path)
     parser.add_argument("--min-third-octave-similarity", type=float)
@@ -365,6 +371,16 @@ def main() -> int:
         and metrics["low_band_correlation"] < args.min_low_band_correlation
     ):
         failures.append("low_band_correlation")
+    for band in ("mid", "high"):
+        side_limit = getattr(args, f"max_{band}_side_ratio")
+        correlation_limit = getattr(args, f"min_{band}_band_correlation")
+        mono_limit = getattr(args, f"max_{band}_band_mono_fold_rms_loss_db")
+        if side_limit is not None and metrics[f"{band}_band_side_ratio"] > side_limit:
+            failures.append(f"{band}_band_side_ratio")
+        if correlation_limit is not None and metrics[f"{band}_band_correlation"] < correlation_limit:
+            failures.append(f"{band}_band_correlation")
+        if mono_limit is not None and metrics[f"{band}_band_mono_fold_rms_loss_db"] > mono_limit:
+            failures.append(f"{band}_band_mono_fold_rms_loss_db")
     if (
         args.max_mono_fold_rms_loss_db is not None
         and metrics["mono_fold_rms_loss_db"] > args.max_mono_fold_rms_loss_db
