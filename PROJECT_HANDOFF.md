@@ -9,12 +9,12 @@
 - Working root: `.`
 - Repository name: `VehicleSoundSynth-V4`
 - Git repository: `true`
-- Generated at: `2026-08-12T02:21:45.349884+00:00`
+- Generated at: `2026-08-12T02:36:40.819276+00:00`
 
 ## Current State
 
 - Branch: `codex/vehicle-sound-v4`
-- HEAD: `cb5ce78`
+- HEAD: `cdcc641`
 - Indexed paths: 76
 - Inventory truncated: `false`
 - Inaccessible paths: 0
@@ -60,9 +60,9 @@
 ### Categories
 
 - audio: 30 files, 93743066 bytes
-- code: 11 files, 397093 bytes
-- literature: 14 files, 569881 bytes
-- other: 18 files, 2390246 bytes
+- code: 11 files, 398483 bytes
+- literature: 14 files, 568576 bytes
+- other: 18 files, 2398965 bytes
 - structured_data: 3 files, 18325 bytes
 
 ### Common Extensions
@@ -92,6 +92,9 @@
 
 ## Change History
 
+- `cdcc641 2026-08-12 fix: harden V4 runtime probe setup`
+- `6814cc4 2026-08-12 fix: expose Gen parameters to Max runtime`
+- `660866e 2026-08-12 docs: refresh V4 handoff`
 - `cb5ce78 2026-08-12 feat: create V4 acoustic repair archive`
 - `81e1345 2026-08-11 docs: refresh V3.1 handoff`
 - `9066183 2026-08-11 fix: harden V3.1 stereo EQ and reference processing`
@@ -109,9 +112,6 @@
 - `e9cd491 2026-08-07 feat: add combustion cabin rumble V3`
 - `b8cefa5 2026-08-07 docs: refresh final V2 handoff state`
 - `20332d0 2026-08-07 fix: reject start events before ignition`
-- `9449ee8 2026-08-07 docs: record final V2 validation`
-- `f5f2a4a 2026-08-07 fix: gate automatic drive and transient events`
-- `e3562cf 2026-08-07 docs: refresh V2 project handoff`
 
 ## Current Changes
 
@@ -196,8 +196,8 @@
 - V4 implements RPM-adaptive three-band cabin stereo: strict mono below 120 Hz, a bounded 120–2000 Hz Side path, and a bounded >2 kHz Side/reflection path. V10/V12 cylinder banks use explicit Mid/Side with bank Side gain decreasing from 0.30 at idle to 0.12 at high RPM.
 - The local-only SF90 texture is now two normalized layers: a 250 ms idle residual from 1.0 s and a 500 ms high-RPM residual from 22.75 s. Their SHA-256 values are recorded in `assets/asset_manifest.json`; they crossfade equal-power from 1800–3000 RPM and never leave ignored `media/local/`.
 - Future EV defaults `pad_level_db` to +6 dB and the generated driver adds fixed +3 dB post-BEAP makeup while preserving strict low-frequency centering and the user-owned `ev_pad_beap~` patcher.
-- Validation on the final source: 69 Python tests pass; generated artifacts are deterministic across two rebuilds; `git diff --check` is clean. A real Max NonRealTime V12 idle render after the cabin Side correction measured low Side 0.00018, low correlation 0.99968, mid Side 0.21877, high Side 0.52132, total mono loss 0.11566 dB, and zero clipping. That render was 44.1 kHz, so it is diagnostic only and the required 48 kHz full scenario/stem/EQ/event matrix remains open; `audio_metrics.py --require-sample-rate 48000` now treats any other rate as failure.
-- Max runtime also logged `doesn't understand` messages for some fan-out control messages and relative `media/...` opens during isolated probe startup. They do not appear in structural tests and the partial render produced audio, but they remain release blockers for claiming the complete V3.2 acoustic acceptance matrix.
+- Validation on the final source: 70 Python tests pass; generated artifacts are deterministic across two rebuilds; `git diff --check` is clean. After reducing high-band Side safety to 0.42 and cross-reflections to 0.04, the latest Max NonRealTime V12 idle render measured low Side 0.00060/correlation 0.99884, mid Side 0.20804/correlation 0.58705/mono loss 1.01296 dB, high Side 0.36953/correlation 0.27271/mono loss 2.00333 dB, total mono loss 0.09483 dB, and zero clipping. The installed NonRealTime driver still wrote 44.1 kHz even after the probe sent the documented global `dsp sr 48000` command, so the render is diagnostic only and the required 48 kHz full scenario/stem/EQ/event matrix remains open; `audio_metrics.py --require-sample-rate 48000` treats any other rate as failure.
+- The three generated Gen patchers expose every codebox `Param` through a bounded top-level `param` object. A fresh Max 8.6.5 probe no longer logged `doesn't understand` for `rpm`, `combustion_gain`, `shift_cut`, or the other engine controls. Transient buffers now resolve bare filenames through the project media search path instead of embedding `media/` in abstraction-relative arguments; a fresh shift-up probe rendered non-silent, unclipped output, though the complete event matrix and clean-console audit remain open.
 - V4 operator documentation is `VehicleSoundSynthV4_完整使用手册.docx`; the prior V3 RTPC/DSP DOCX/PDF are retained as baseline documentation rather than represented as V4 validation evidence.
 - V3 is an independent clone of committed V2 and uses `VehicleSoundSynth-V3.maxproj`; the sibling V1/V2 folders and their manuals remain unchanged.
 - V3.1 rebuilds V12/V10 as phase-locked left/right cylinder banks at half the total firing-event rate, with bounded cycle variation, pulse-gated narrowband residuals, exact +35% h2/+25% h3 lifts from the fixed point, automatic seven-speed DCT events, intake backfire, exhaust pops/crackle, and a powertrain-excited cabin-rumble stage using damped 48/68/92/118 Hz modes.
@@ -209,7 +209,7 @@
 - Installed six documented CC0 source recordings under `assets/raw/`; deterministic processing creates normalized 48 kHz PCM16 runtime media without overwriting curated output. A separate user-supplied SF90 file may create an ignored local V10/V12 residual: it now notches 61.5 Hz and its harmonics after filter preroll, loops for 250 ms, normalizes to -18 dBFS RMS, and is hash-documented but never committed, synced, or redistributed.
 - Reduced the white-noise impression by separating centered band-limited tire noise from restrained stereo wind, lowering mechanical-noise contributions, and centering low-frequency cabin/IR content before the final master chain.
 - Validation: all 63 Python tests pass, generator determinism and patchcord ports pass, DOCX ZIP/OOXML audit passes, and `git diff --check` is clean. Max 8.6.5 loaded the project then `main.maxpat`; the recent system log contained no category, missing-object, Gen-outlet, or patchcord errors. Earlier real Max EQ probes measured -6.03 dB at the -12 dB shelf corner and -16.00 dB for a -16 dB trim delta (both within ±1 dB). The newest render matrix is not claimed complete: an attempted current probe produced a zero-byte WAV because other live Max instances held incompatible audio-driver state.
-- `tools/audio_metrics.py` now reports per-band Side ratio/correlation/mono fold loss, fullband mono loss, 1/3-octave similarity, and comparison gain tolerance. The previous V3.1 V12 idle render met low-band Side (0.0188), correlation (0.9638), rumble (0.8879), low-mid (0.9186), and clipping (0) targets; the added 0.85 upper-band Side safety trim was structurally verified after that render.
+- `tools/audio_metrics.py` reports per-band Side ratio/correlation/mono fold loss, fullband mono loss, 1/3-octave similarity, comparison gain tolerance, and independently enforceable mid/high stereo-safety thresholds.
 - Primary operator documentation is `VehicleSoundSynthV3_完整使用手册.docx`; V1/V2 manuals remain byte-for-byte unchanged. The V3 DOCX passed deterministic OOXML/ZIP audits and QuickLook cover inspection; full multi-page PDF/image QA is unavailable because LibreOffice is not installed.
 - Added `VehicleSoundSynthV3_车机RTPC_DSP链路技术说明.docx` and its 12-page PDF companion. They document the current V3 signal chain, all 43 public RTPC messages, internal lifecycle/event mappings, EV/V12/V10 synthesis equations, event/sample normalization, cabin rumble/IR/M-S, four-band EQ, output protection, and Float32/fixed-point porting forms. The DOCX passed OOXML/content audits; every PDF page was rasterized and visually checked. Reproducible builders are `tools/build_rtpc_dsp_spec.py` and `tools/render_rtpc_spec_pdf.py`.
 - Remaining realism boundary: event and cabin-IR layers use recordings, while continuous V12/V10 operation is still procedural rather than a measured multi-load, multi-microphone engine corpus. No Git remote or CI is configured for this repository.
