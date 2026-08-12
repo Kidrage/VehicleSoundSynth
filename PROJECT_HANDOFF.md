@@ -9,12 +9,12 @@
 - Working root: `.`
 - Repository name: `VehicleSoundSynth-V4`
 - Git repository: `true`
-- Generated at: `2026-08-12T06:56:55.945339+00:00`
+- Generated at: `2026-08-12T07:01:26.121660+00:00`
 
 ## Current State
 
 - Branch: `codex/vehicle-sound-v4`
-- HEAD: `e6ac257`
+- HEAD: `613d929`
 - Indexed paths: 76
 - Inventory truncated: `false`
 - Inaccessible paths: 0
@@ -60,8 +60,8 @@
 ### Categories
 
 - audio: 30 files, 93743066 bytes
-- code: 11 files, 400528 bytes
-- literature: 14 files, 569035 bytes
+- code: 11 files, 400531 bytes
+- literature: 14 files, 569023 bytes
 - other: 18 files, 2398851 bytes
 - structured_data: 3 files, 18325 bytes
 
@@ -92,6 +92,8 @@
 
 ## Change History
 
+- `613d929 2026-08-12 docs: correct V4 manual identity`
+- `c36ebb0 2026-08-12 docs: refresh V4 integrity handoff`
 - `e6ac257 2026-08-12 docs: align V4 acoustic guidance`
 - `2d654bf 2026-08-12 docs: refresh V4 repository handoff`
 - `6b4ddd7 2026-08-12 docs: record final V4 acoustic evidence`
@@ -110,8 +112,6 @@
 - `99b6895 2026-08-10 docs: refresh Manual keyboard handoff`
 - `1e811ab 2026-08-10 fix: synchronize Manual keyboard and pedal state`
 - `5ff0aa0 2026-08-10 feat: add Manual mode W/S controls`
-- `127d6fc 2026-08-10 docs: refresh V3 final handoff`
-- `01a234e 2026-08-10 fix: stop starter on lifecycle transitions`
 
 ## Current Changes
 
