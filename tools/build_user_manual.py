@@ -1154,7 +1154,7 @@ def build_document(output: Path) -> None:
             ["richwise — Sports/Supercar", "进气回火、排气 pop/crackle", "回火 -6、pop -5、crackle -8 dBFS"],
             ["microman502 — Gear shift", "机械 click 与 shift thump", "裁切、去 DC、-6 dBFS"],
             ["jamespeacock4616 — Mini car IR", "左右 4096 tap 车舱 IR", "每声道单独裁切、-3 dBFS"],
-            ["用户 SF90 近场 Ferrari.wav", "本地去基频残差层，仅 V10/V12", "250 ms stereo loop、-18 dBFS RMS；media/local 永不提交"],
+            ["用户 SF90 近场 Ferrari.wav", "本地双层去基频残差，仅 V10/V12", "1.0 s 起点/250 ms idle loop；22.75 s 起点/500 ms high-RPM loop；均为 -18 dBFS RMS，media/local 永不提交"],
         ],
         [2600, 3200, 3560],
         font_size=8.6,
@@ -1220,7 +1220,8 @@ def build_document(output: Path) -> None:
         "cd /Users/saintpeter/Downloads/VehicleSoundSynth-V4\n"
         "python3 tools/build_project.py --output-root .\n"
         "python3 -m unittest discover -s tests -v\n"
-        "python3 tools/audio_metrics.py <render.wav> --max-peak-dbfs -1 --min-rms-dbfs -45 --min-rumble-ratio 0.55 --max-subsonic-ratio 0.05 --max-low-side-ratio 0.05 --min-low-band-correlation 0.95 --max-mono-fold-rms-loss-db 1.5 --max-high-ratio 0.10 --min-spectral-peaks 6 --max-dominant-peak-ratio 0.50",
+        "python3 tools/audio_metrics.py <render.wav> --max-peak-dbfs -1 --min-rms-dbfs -45 --min-rumble-ratio 0.55 --max-subsonic-ratio 0.05 --max-low-side-ratio 0.05 --min-low-band-correlation 0.95 --max-mono-fold-rms-loss-db 1.5 --max-high-ratio 0.10 --min-spectral-peaks 6 --max-dominant-peak-ratio 0.50\n"
+        "python3 tools/audio_metrics.py <high_rpm.wav> --compare-wav <ferrari_window.wav> --min-third-octave-similarity-left 0.85 --min-third-octave-similarity-right 0.85 --min-third-octave-similarity 0.87 --max-third-octave-similarity-lr-delta 0.05",
     )
     add_bullets(
         doc,
