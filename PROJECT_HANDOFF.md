@@ -9,12 +9,12 @@
 - Working root: `.`
 - Repository name: `VehicleSoundSynth-V4`
 - Git repository: `true`
-- Generated at: `2026-08-12T02:36:40.819276+00:00`
+- Generated at: `2026-08-12T02:47:21.944374+00:00`
 
 ## Current State
 
 - Branch: `codex/vehicle-sound-v4`
-- HEAD: `cdcc641`
+- HEAD: `6b4ddd7`
 - Indexed paths: 76
 - Inventory truncated: `false`
 - Inaccessible paths: 0
@@ -60,9 +60,9 @@
 ### Categories
 
 - audio: 30 files, 93743066 bytes
-- code: 11 files, 398483 bytes
-- literature: 14 files, 568576 bytes
-- other: 18 files, 2398965 bytes
+- code: 11 files, 400491 bytes
+- literature: 14 files, 568819 bytes
+- other: 18 files, 2398851 bytes
 - structured_data: 3 files, 18325 bytes
 
 ### Common Extensions
@@ -92,6 +92,10 @@
 
 ## Change History
 
+- `6b4ddd7 2026-08-12 docs: record final V4 acoustic evidence`
+- `0637838 2026-08-12 fix: resolve transient media from project path`
+- `72ba1d3 2026-08-12 test: enforce upper-band stereo safety`
+- `a26e162 2026-08-12 fix: improve cabin mono compatibility`
 - `cdcc641 2026-08-12 fix: harden V4 runtime probe setup`
 - `6814cc4 2026-08-12 fix: expose Gen parameters to Max runtime`
 - `660866e 2026-08-12 docs: refresh V4 handoff`
@@ -108,10 +112,6 @@
 - `01a234e 2026-08-10 fix: stop starter on lifecycle transitions`
 - `c3307f6 2026-08-10 feat: complete V3 vehicle sound realism overhaul`
 - `4931e74 2026-08-07 docs: refresh final V3 handoff`
-- `c015005 2026-08-07 fix: harden stereo level validation`
-- `e9cd491 2026-08-07 feat: add combustion cabin rumble V3`
-- `b8cefa5 2026-08-07 docs: refresh final V2 handoff state`
-- `20332d0 2026-08-07 fix: reject start events before ignition`
 
 ## Current Changes
 
