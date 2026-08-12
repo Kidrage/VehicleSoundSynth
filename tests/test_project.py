@@ -851,6 +851,10 @@ class VehicleSoundProjectTests(unittest.TestCase):
                 required |= {"engine_running", "combustion_gain", "shift_cut"}
             for name in required:
                 self.assertIn(f"Param {name}", code, path.name)
+                self.assertTrue(any(
+                    item["box"].get("text", "").startswith(f"param {name} ")
+                    for item in patcher["boxes"]
+                ), f"{path.name}: {name} is not exposed by a top-level Gen param")
             self.assertIn("clamp(", code, path.name)
             self.assertIn("cycle(", code, path.name)
 

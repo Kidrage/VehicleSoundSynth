@@ -9,6 +9,7 @@ import hashlib
 import json
 import math
 import random
+import re
 import struct
 import wave
 from pathlib import Path
@@ -2657,42 +2658,52 @@ GEN_CODE.pop("cabin_rumble")
 
 
 def make_gen(code: str) -> dict[str, Any]:
+    """Build a Gen patcher and expose every codebox Param at patcher scope."""
+    matches = re.findall(
+        r"^Param\s+(\w+)\(([-+0-9.]+),\s*min=([-+0-9.]+),\s*max=([-+0-9.]+)\);",
+        code,
+        flags=re.MULTILINE,
+    )
+    boxes = [
+        {
+            "box": {
+                "code": code,
+                "id": "obj-1",
+                "maxclass": "codebox",
+                "numinlets": 1,
+                "numoutlets": 2,
+                "outlettype": ["", ""],
+                "patching_rect": [40.0, 40.0, 760.0, 580.0],
+            }
+        },
+        {
+            "box": {
+                "id": "obj-2", "maxclass": "newobj", "numinlets": 1,
+                "numoutlets": 0, "patching_rect": [40.0, 640.0, 45.0, 22.0],
+                "text": "out 1",
+            }
+        },
+        {
+            "box": {
+                "id": "obj-3", "maxclass": "newobj", "numinlets": 1,
+                "numoutlets": 0, "patching_rect": [120.0, 640.0, 45.0, 22.0],
+                "text": "out 2",
+            }
+        },
+    ]
+    for index, (name, default, minimum, maximum) in enumerate(matches, start=4):
+        boxes.append({
+            "box": {
+                "id": f"obj-{index}", "maxclass": "newobj", "numinlets": 0,
+                "numoutlets": 1,
+                "patching_rect": [840.0, 40.0 + (index - 4) * 32.0, 220.0, 22.0],
+                "text": f"param {name} {default} @min {minimum} @max {maximum}",
+            }
+        })
     return {
         "patcher": {
             "appversion": APP_VERSION,
-            "boxes": [
-                {
-                    "box": {
-                        "code": code,
-                        "id": "obj-1",
-                        "maxclass": "codebox",
-                        "numinlets": 1,
-                        "numoutlets": 2,
-                        "outlettype": ["", ""],
-                        "patching_rect": [40.0, 40.0, 760.0, 580.0],
-                    }
-                },
-                {
-                    "box": {
-                        "id": "obj-2",
-                        "maxclass": "newobj",
-                        "numinlets": 1,
-                        "numoutlets": 0,
-                        "patching_rect": [40.0, 640.0, 45.0, 22.0],
-                        "text": "out 1",
-                    }
-                },
-                {
-                    "box": {
-                        "id": "obj-3",
-                        "maxclass": "newobj",
-                        "numinlets": 1,
-                        "numoutlets": 0,
-                        "patching_rect": [120.0, 640.0, 45.0, 22.0],
-                        "text": "out 2",
-                    }
-                },
-            ],
+            "boxes": boxes,
             "classnamespace": "dsp.gen",
             "fileversion": 1,
             "lines": [
