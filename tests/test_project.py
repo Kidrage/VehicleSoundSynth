@@ -97,7 +97,7 @@ class VehicleSoundProjectTests(unittest.TestCase):
         self.assertIn("cross~ 2000", text)
         self.assertIn("expr 1.-0.8*min(1.,max(0.,($f1-1500.)/2500.))", text)
         self.assertIn("expr 1.-0.35*min(1.,max(0.,($f1-1500.)/2500.))", text)
-        self.assertIn("*~ 0.08", text)
+        self.assertIn("*~ 0.04", text)
         self.assertNotIn("*~ 0.12", text)
 
         engine = self.load_json("patchers/vehicle_engine~.maxpat")["patcher"]
@@ -121,7 +121,7 @@ class VehicleSoundProjectTests(unittest.TestCase):
         self.assertIn("tapout~ 1.35", text)
         self.assertIn("expr 0.6 + 1.2*$f1", text)
         self.assertIn("*~ 0.20", text)
-        self.assertIn("*~ 0.58", text)
+        self.assertIn("*~ 0.42", text)
         self.assertNotIn("svf~ 180 0.5", text)
 
     def test_v31_pad_has_independent_level_mute_solo_and_safe_stereo_sum(self):

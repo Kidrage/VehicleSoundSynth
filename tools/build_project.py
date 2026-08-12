@@ -1812,14 +1812,14 @@ def make_cabin_master() -> dict[str, Any]:
     high_side = p.new("*~ 0.5", 935, 985, 60, numinlets=2, numoutlets=1)
     high_width = p.new("*~", 1005, 985, 40, numinlets=2, numoutlets=1)
     high_rpm = p.new("*~", 1055, 985, 40, numinlets=2, numoutlets=1)
-    high_safe = p.new("*~ 0.58", 1105, 985, 65, numinlets=2, numoutlets=1)
+    high_safe = p.new("*~ 0.42", 1105, 985, 65, numinlets=2, numoutlets=1)
 
     tap_l = p.new("tapin~ 8.", 1200, 900, 75, numinlets=1, numoutlets=1)
     reflect_l = p.new("tapout~ 0.65", 1200, 935, 85, numinlets=1, numoutlets=1)
-    reflect_l_gain = p.new("*~ 0.08", 1200, 970, 65, numinlets=2, numoutlets=1)
+    reflect_l_gain = p.new("*~ 0.04", 1200, 970, 65, numinlets=2, numoutlets=1)
     tap_r = p.new("tapin~ 8.", 1290, 900, 75, numinlets=1, numoutlets=1)
     reflect_r = p.new("tapout~ 1.35", 1290, 935, 85, numinlets=1, numoutlets=1)
-    reflect_r_gain = p.new("*~ 0.08", 1290, 970, 65, numinlets=2, numoutlets=1)
+    reflect_r_gain = p.new("*~ 0.04", 1290, 970, 65, numinlets=2, numoutlets=1)
 
     high_left = p.new("+~", 835, 1025, 40, numinlets=2, numoutlets=1)
     high_right = p.new("-~", 935, 1025, 40, numinlets=2, numoutlets=1)
