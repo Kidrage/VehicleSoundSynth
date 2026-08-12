@@ -390,8 +390,38 @@
       },
       {
         "box": {
-          "comment": "signal",
           "id": "obj-19",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            675.0,
+            390.0,
+            145.0,
+            22.0
+          ],
+          "text": "send~ vss_pre_cabin_l"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-20",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            675.0,
+            430.0,
+            145.0,
+            22.0
+          ],
+          "text": "send~ vss_pre_cabin_r"
+        }
+      },
+      {
+        "box": {
+          "comment": "signal",
+          "id": "obj-21",
           "maxclass": "outlet",
           "numinlets": 1,
           "numoutlets": 0,
@@ -406,7 +436,7 @@
       {
         "box": {
           "comment": "signal",
-          "id": "obj-20",
+          "id": "obj-22",
           "maxclass": "outlet",
           "numinlets": 1,
           "numoutlets": 0,
@@ -628,6 +658,18 @@
       {
         "patchline": {
           "destination": [
+            "obj-19",
+            0
+          ],
+          "source": [
+            "obj-15",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
             "obj-16",
             0
           ],
@@ -712,6 +754,18 @@
       {
         "patchline": {
           "destination": [
+            "obj-20",
+            0
+          ],
+          "source": [
+            "obj-18",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
             "obj-11",
             1
           ],
@@ -760,7 +814,7 @@
       {
         "patchline": {
           "destination": [
-            "obj-19",
+            "obj-21",
             0
           ],
           "source": [
@@ -772,7 +826,7 @@
       {
         "patchline": {
           "destination": [
-            "obj-20",
+            "obj-22",
             0
           ],
           "source": [

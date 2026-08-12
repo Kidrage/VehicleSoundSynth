@@ -1,7 +1,7 @@
-# VehicleSoundSynth V3
+# VehicleSoundSynth V4
 
-Max/MSP 8.6.5 vehicle-acoustics project with an EV profile plus lifecycle-gated
-V12 and V10 combustion profiles. V3 uses crank-related combustion pulses,
+Max/MSP 8.6.5 vehicle-acoustics project derived as an independent V4 archive from V3. V4 adds an EV profile plus lifecycle-gated
+V12 and V10 combustion profiles. V4 uses crank-related combustion pulses,
 phase-locked left/right cylinder banks, additive harmonics, bounded cycle variation,
 and pulse-gated narrowband residuals instead of a dominant pure sine or broadband
 noise. The EV low fundamental is phase-coherent between channels and feeds
@@ -10,16 +10,16 @@ signal and adds engine half-order structure vibration, damped cabin/body modes,
 and load-dependent exhaust boom. The seven-speed DCT, licensed CC0 transients,
 short cabin IR, and final four-band stereo EQ complete the path.
 
-Open `VehicleSoundSynth-V3.maxproj` first, wait for its Project window to load,
+Open `VehicleSoundSynth-V4.maxproj` first, wait for its Project window to load,
 then open `main.maxpat` from that same Max instance. Audio starts muted.
 
 完整中文操作说明见
-[`VehicleSoundSynthV3_完整使用手册.docx`](VehicleSoundSynthV3_完整使用手册.docx)。
-V3 目录同时保留 V1 与 V2 手册作为参考，不会覆盖旧版本。
+[`VehicleSoundSynthV4_完整使用手册.docx`](VehicleSoundSynthV4_完整使用手册.docx)。
+V4 目录保留旧手册作为参考，V3 原目录未被覆盖。
 
 ## Quick start
 
-1. Lower monitoring level and open `VehicleSoundSynth-V3.maxproj`.
+1. Lower monitoring level and open `VehicleSoundSynth-V4.maxproj`.
 2. Open `main.maxpat` from the loaded project.
 3. Select `High-Rev V12` or `Aggressive V10`.
 4. Enable `Ignition`, click `Engine Start`, and confirm idle reaches the meters.
@@ -57,6 +57,11 @@ Pad, while `Pad Solo` silences only the EV motor so the two Pad chains can be
 tuned in isolation. Below 120 Hz the two Pad outputs are folded to one centered
 Mid signal; above 120 Hz an 82/18 crossmix keeps useful stereo width without the
 previous near-antiphase mono loss.
+
+V4 uses RPM-adaptive three-band cabin stereo: below 120 Hz is strict mono,
+120–2000 Hz uses restrained Side, and above 2 kHz preserves bounded mechanical
+space. The optional local Ferrari texture now crossfades equal-power between a
+normalized idle residual and a 22.75 s high-RPM residual from 1800–3000 RPM.
 
 The V12/V10 profiles are procedural sound-design archetypes built from
 four-stroke firing orders, load envelopes, and resonant harmonic layers; they
@@ -131,13 +136,13 @@ lowering `road_air~` in the mix; do not use the limiter as an EQ.
 The optional SF90 reference remains local and is never committed. Prepare it with:
 
 ```sh
-python3 tools/prepare_local_reference.py /Users/saintpeter/Desktop/Ferrari.wav media/local/ferrari_sf90_residual.wav
+python3 tools/prepare_local_reference.py /Users/saintpeter/Desktop/Ferrari.wav media/local --bundle
 ```
 
-The tool removes DC, high-passes at 90 Hz, notches the 61.5 Hz V8 cadence and
-its harmonics, low-passes at 4 kHz, builds a 250 ms equal-power stereo loop,
-and normalizes it to -18 dBFS RMS with a -3 dBFS peak ceiling. V10/V12 load it
-quietly at -24 to -20 dB; EV gates it off. If the local file is absent, a
+The tool creates a 250 ms idle residual from 1.0 s and a 500 ms high-RPM
+residual from 22.75 s. Both remove cadence, crossfade their loop seam, and
+normalize to -18 dBFS RMS with a -3 dBFS peak ceiling. V10/V12 load them
+with an RPM-dependent 1800–3000 RPM equal-power fade; EV gates them off. If local files are absent, a
 deterministic stereo residual prevents missing-buffer errors. Measured targets,
 without copyrighted audio, are stored in `assets/ferrari_sf90_acoustic_target.json`.
 

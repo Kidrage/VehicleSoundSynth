@@ -5,17 +5,17 @@
 
 ## Repository Identity
 
-- Repository ID: `VehicleSoundSynth-V3-e69f9ccd340b`
+- Repository ID: `VehicleSoundSynth-V4-f1d8c907be6f`
 - Working root: `.`
-- Repository name: `VehicleSoundSynth-V3`
+- Repository name: `VehicleSoundSynth-V4`
 - Git repository: `true`
-- Generated at: `2026-08-11T04:41:48.887308+00:00`
+- Generated at: `2026-08-12T02:18:46.300953+00:00`
 
 ## Current State
 
-- Branch: `codex/vehicle-sound-v3`
-- HEAD: `9066183`
-- Indexed paths: 71
+- Branch: `codex/vehicle-sound-v4`
+- HEAD: `81e1345`
+- Indexed paths: 76
 - Inventory truncated: `false`
 - Inaccessible paths: 0
 - Scan mode: complete path/metadata inventory; no bulk content read; no symlink traversal.
@@ -44,11 +44,11 @@
 | Route | Files |
 |---|---:|
 | `media` | 24 |
+| `.` | 13 |
 | `patchers` | 12 |
-| `.` | 10 |
 | `assets` | 9 |
+| `tools` | 9 |
 | `assets/raw` | 7 |
-| `tools` | 7 |
 | `.codex` | 3 |
 | `gen` | 3 |
 | `code` | 1 |
@@ -60,23 +60,24 @@
 ### Categories
 
 - audio: 30 files, 93743066 bytes
-- code: 9 files, 316172 bytes
-- literature: 11 files, 179394 bytes
-- other: 18 files, 2361122 bytes
-- structured_data: 3 files, 17420 bytes
+- code: 11 files, 397093 bytes
+- literature: 14 files, 569885 bytes
+- other: 18 files, 2390246 bytes
+- structured_data: 3 files, 18325 bytes
 
 ### Common Extensions
 
 - `.wav`: 30
 - `.maxpat`: 13
-- `.py`: 8
+- `.py`: 10
 - `.md`: 6
-- `.docx`: 3
+- `.docx`: 5
 - `.json`: 3
 - `.gendsp`: 3
 - `.txt`: 2
 - `[no extension]`: 1
 - `.maxproj`: 1
+- `.pdf`: 1
 - `.js`: 1
 
 ### Schema / Model / Interface Candidates
@@ -91,6 +92,7 @@
 
 ## Change History
 
+- `81e1345 2026-08-11 docs: refresh V3.1 handoff`
 - `9066183 2026-08-11 fix: harden V3.1 stereo EQ and reference processing`
 - `22bb3f1 2026-08-11 feat: add V3.1 cinematic engine mix`
 - `030708f 2026-08-11 docs: refresh project handoff`
@@ -110,11 +112,40 @@
 - `f5f2a4a 2026-08-07 fix: gate automatic drive and transient events`
 - `e3562cf 2026-08-07 docs: refresh V2 project handoff`
 - `ec29ab4 2026-08-07 fix: tighten lifecycle and DCT event causality`
-- `99e87ba 2026-08-07 feat: build combustion-focused vehicle sound V2`
 
 ## Current Changes
 
-- `## codex/vehicle-sound-v3`
+- `## codex/vehicle-sound-v4`
+- `M  .codex/REPO_GUIDE.md`
+- `M  .codex/repo_files.txt`
+- `M  .codex/source_index.txt`
+- `M  AGENTS.md`
+- `M  PROJECT_HANDOFF.md`
+- `M  README.md`
+- `R  VehicleSoundSynth-V3.maxproj -> VehicleSoundSynth-V4.maxproj`
+- `A  "VehicleSoundSynthV3_\350\275\246\346\234\272RTPC_DSP\351\223\276\350\267\257\346\212\200\346\234\257\350\257\264\346\230\216.docx"`
+- `A  "VehicleSoundSynthV3_\350\275\246\346\234\272RTPC_DSP\351\223\276\350\267\257\346\212\200\346\234\257\350\257\264\346\230\216.pdf"`
+- `A  "VehicleSoundSynthV4_\345\256\214\346\225\264\344\275\277\347\224\250\346\211\213\345\206\214.docx"`
+- `M  assets/asset_manifest.json`
+- `M  assets/ferrari_sf90_acoustic_target.json`
+- `M  code/local_reference_loader.js`
+- `M  gen/v10_powertrain.gendsp`
+- `M  gen/v12_powertrain.gendsp`
+- `M  main.maxpat`
+- `M  patchers/cabin_master~.maxpat`
+- `M  patchers/ev_pad_driver~.maxpat`
+- `M  patchers/powertrain~.maxpat`
+- `M  patchers/reference_texture~.maxpat`
+- `M  patchers/vehicle_engine~.maxpat`
+- `M  presets/sound_dna.json`
+- `M  tests/test_project.py`
+- `M  tools/audio_metrics.py`
+- `M  tools/build_project.py`
+- `A  tools/build_rtpc_dsp_spec.py`
+- `M  tools/build_runtime_probe.py`
+- `M  tools/build_user_manual.py`
+- `M  tools/prepare_local_reference.py`
+- `A  tools/render_rtpc_spec_pdf.py`
 
 ## Related Repositories
 
@@ -139,6 +170,9 @@
 - `README.md`
 - `VehicleSoundSynthV2_完整使用手册.docx`
 - `VehicleSoundSynthV3_完整使用手册.docx`
+- `VehicleSoundSynthV3_车机RTPC_DSP链路技术说明.docx`
+- `VehicleSoundSynthV3_车机RTPC_DSP链路技术说明.pdf`
+- `VehicleSoundSynthV4_完整使用手册.docx`
 - `VehicleSoundSynth_完整使用手册.docx`
 - `assets/raw/README.md`
 
@@ -188,6 +222,13 @@
 ## Agent Notes
 
 <!-- AGENT_NOTES_START -->
+- V4 is an independent full copy of V3 commit `81e1345` in `/Users/saintpeter/Downloads/VehicleSoundSynth-V4`; its public project is `VehicleSoundSynth-V4.maxproj` on branch `codex/vehicle-sound-v4`. The sibling V3 directory was not modified.
+- V4 implements RPM-adaptive three-band cabin stereo: strict mono below 120 Hz, a bounded 120–2000 Hz Side path, and a bounded >2 kHz Side/reflection path. V10/V12 cylinder banks use explicit Mid/Side with bank Side gain decreasing from 0.30 at idle to 0.12 at high RPM.
+- The local-only SF90 texture is now two normalized layers: a 250 ms idle residual from 1.0 s and a 500 ms high-RPM residual from 22.75 s. Their SHA-256 values are recorded in `assets/asset_manifest.json`; they crossfade equal-power from 1800–3000 RPM and never leave ignored `media/local/`.
+- Future EV defaults `pad_level_db` to +6 dB and the generated driver adds fixed +3 dB post-BEAP makeup while preserving strict low-frequency centering and the user-owned `ev_pad_beap~` patcher.
+- Validation on the final source: 69 Python tests pass; generated artifacts are deterministic across two rebuilds; `git diff --check` is clean. A real Max NonRealTime V12 idle render after the cabin Side correction measured low Side 0.00018, low correlation 0.99968, mid Side 0.21877, high Side 0.52132, total mono loss 0.11566 dB, and zero clipping. That render was 44.1 kHz, so it is diagnostic only and the required 48 kHz full scenario/stem/EQ/event matrix remains open; `audio_metrics.py --require-sample-rate 48000` now treats any other rate as failure.
+- Max runtime also logged `doesn't understand` messages for some fan-out control messages and relative `media/...` opens during isolated probe startup. They do not appear in structural tests and the partial render produced audio, but they remain release blockers for claiming the complete V3.2 acoustic acceptance matrix.
+- V4 operator documentation is `VehicleSoundSynthV4_完整使用手册.docx`; the prior V3 RTPC/DSP DOCX/PDF are retained as baseline documentation rather than represented as V4 validation evidence.
 - V3 is an independent clone of committed V2 and uses `VehicleSoundSynth-V3.maxproj`; the sibling V1/V2 folders and their manuals remain unchanged.
 - V3.1 rebuilds V12/V10 as phase-locked left/right cylinder banks at half the total firing-event rate, with bounded cycle variation, pulse-gated narrowband residuals, exact +35% h2/+25% h3 lifts from the fixed point, automatic seven-speed DCT events, intake backfire, exhaust pops/crackle, and a powertrain-excited cabin-rumble stage using damped 48/68/92/118 Hz modes.
 - Starter playback now stops on the controller's 500 ms catch transition and ignition-off path; a start lock prevents retriggering while the engine is already running, with explicit patchcord regression coverage.
@@ -200,6 +241,7 @@
 - Validation: all 63 Python tests pass, generator determinism and patchcord ports pass, DOCX ZIP/OOXML audit passes, and `git diff --check` is clean. Max 8.6.5 loaded the project then `main.maxpat`; the recent system log contained no category, missing-object, Gen-outlet, or patchcord errors. Earlier real Max EQ probes measured -6.03 dB at the -12 dB shelf corner and -16.00 dB for a -16 dB trim delta (both within ±1 dB). The newest render matrix is not claimed complete: an attempted current probe produced a zero-byte WAV because other live Max instances held incompatible audio-driver state.
 - `tools/audio_metrics.py` now reports per-band Side ratio/correlation/mono fold loss, fullband mono loss, 1/3-octave similarity, and comparison gain tolerance. The previous V3.1 V12 idle render met low-band Side (0.0188), correlation (0.9638), rumble (0.8879), low-mid (0.9186), and clipping (0) targets; the added 0.85 upper-band Side safety trim was structurally verified after that render.
 - Primary operator documentation is `VehicleSoundSynthV3_完整使用手册.docx`; V1/V2 manuals remain byte-for-byte unchanged. The V3 DOCX passed deterministic OOXML/ZIP audits and QuickLook cover inspection; full multi-page PDF/image QA is unavailable because LibreOffice is not installed.
+- Added `VehicleSoundSynthV3_车机RTPC_DSP链路技术说明.docx` and its 12-page PDF companion. They document the current V3 signal chain, all 43 public RTPC messages, internal lifecycle/event mappings, EV/V12/V10 synthesis equations, event/sample normalization, cabin rumble/IR/M-S, four-band EQ, output protection, and Float32/fixed-point porting forms. The DOCX passed OOXML/content audits; every PDF page was rasterized and visually checked. Reproducible builders are `tools/build_rtpc_dsp_spec.py` and `tools/render_rtpc_spec_pdf.py`.
 - Remaining realism boundary: event and cabin-IR layers use recordings, while continuous V12/V10 operation is still procedural rather than a measured multi-load, multi-microphone engine corpus. No Git remote or CI is configured for this repository.
 <!-- AGENT_NOTES_END -->
 

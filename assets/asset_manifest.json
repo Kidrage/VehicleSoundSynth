@@ -365,8 +365,22 @@
       "distribution": "local-only; do not commit, sync, upload, or redistribute",
       "source_path": "/Users/saintpeter/Desktop/Ferrari.wav",
       "source_sha256": "04d590aec4cbd3af615a195ef21e193c5da595875821fe82eb6789292f496111",
-      "derived_path": "media/local/ferrari_sf90_residual.wav",
-      "derived_sha256": "4d55c3a73d9cfb857a3a7618481850ce7e029eda9db4eef01d113ae768a77733",
+      "derived_outputs": [
+        {
+          "role": "idle_residual",
+          "path": "media/local/ferrari_sf90_idle_residual.wav",
+          "sha256": "4d55c3a73d9cfb857a3a7618481850ce7e029eda9db4eef01d113ae768a77733",
+          "duration_seconds": 0.25,
+          "rms_dbfs": -18.0
+        },
+        {
+          "role": "high_rpm_residual",
+          "path": "media/local/ferrari_sf90_high_residual.wav",
+          "sha256": "ebe4829aabdee3c967a2c3993e8c66fa4c838354fbb108a63b022588b36d620f",
+          "duration_seconds": 0.5,
+          "rms_dbfs": -18.0
+        }
+      ],
       "processor": "tools/prepare_local_reference.py",
       "runtime_profiles": [
         "v12",

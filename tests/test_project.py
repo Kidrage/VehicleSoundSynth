@@ -77,12 +77,51 @@ class VehicleSoundProjectTests(unittest.TestCase):
         patcher = self.load_json("patchers/cabin_master~.maxpat")["patcher"]
         text = "\n".join(item["box"].get("text", "") for item in patcher["boxes"])
         self.assertGreaterEqual(text.count("cross~ 120"), 2)
+
+    def test_v4_combustion_banks_preserve_interleaving_with_bounded_side(self):
+        for name in ("v10_powertrain.gendsp", "v12_powertrain.gendsp"):
+            patcher = self.load_json(f"gen/{name}")["patcher"]
+            code = "\n".join(item["box"].get("code", "") for item in patcher["boxes"])
+            self.assertIn("bank_mid = (pulse_l + pulse_r) * 0.5", code)
+            self.assertIn("bank_side_raw = (pulse_l - pulse_r) * 0.5", code)
+            self.assertIn("bank_side_gain = 0.30 - 0.18 * speedmix", code)
+            self.assertIn("bank_l = bank_mid + bank_side_raw * bank_side_gain", code)
+            self.assertIn("bank_r = bank_mid - bank_side_raw * bank_side_gain", code)
+            self.assertNotIn("pulse_l * 0.88 + pulse_r * 0.12", code)
+            self.assertNotIn("pulse_l * 0.86 + pulse_r * 0.14", code)
+
+    def test_v4_cabin_field_uses_rpm_adaptive_three_band_side_control(self):
+        patcher = self.load_json("patchers/cabin_master~.maxpat")["patcher"]
+        text = "\n".join(item["box"].get("text", "") for item in patcher["boxes"])
+        self.assertIn("rpm", text)
+        self.assertIn("cross~ 2000", text)
+        self.assertIn("expr 1.-0.8*min(1.,max(0.,($f1-1500.)/2500.))", text)
+        self.assertIn("expr 1.-0.35*min(1.,max(0.,($f1-1500.)/2500.))", text)
+        self.assertIn("*~ 0.08", text)
+        self.assertNotIn("*~ 0.12", text)
+
+        engine = self.load_json("patchers/vehicle_engine~.maxpat")["patcher"]
+        boxes = {item["box"]["id"]: item["box"] for item in engine["boxes"]}
+        controller = next(box_id for box_id, box in boxes.items() if box.get("text") == "engine_controller")
+        fan = next(box_id for box_id, box in boxes.items() if box.get("text") == "t l l l l l l l")
+        cabin = next(box_id for box_id, box in boxes.items() if box.get("text") == "cabin_master~")
+        self.assertTrue(any(
+            line["patchline"]["source"][0] == controller
+            and line["patchline"]["destination"][0] == fan
+            for line in engine["lines"]
+        ))
+        self.assertTrue(any(
+            line["patchline"]["source"][0] == fan
+            and line["patchline"]["destination"][0] == cabin
+            for line in engine["lines"]
+        ))
         self.assertIn("allpass~ 8. 1.7 0.42", text)
         self.assertIn("allpass~ 8. 2.3 -0.36", text)
         self.assertIn("tapout~ 0.65", text)
         self.assertIn("tapout~ 1.35", text)
         self.assertIn("expr 0.6 + 1.2*$f1", text)
-        self.assertIn("*~ 0.85", text)
+        self.assertIn("*~ 0.20", text)
+        self.assertIn("*~ 0.58", text)
         self.assertNotIn("svf~ 180 0.5", text)
 
     def test_v31_pad_has_independent_level_mute_solo_and_safe_stereo_sum(self):
@@ -93,6 +132,8 @@ class VehicleSoundProjectTests(unittest.TestCase):
         self.assertIn("expr pow(10., $f1/20.)", driver_text)
         self.assertIn("*~ 0.18", driver_text)
         self.assertIn("*~ 0.5", driver_text)
+        self.assertEqual(2, driver_text.count("*~ 1.412537545"))
+        self.assertIn("loadmess 6", driver_text)
         self.assertNotIn("*~ 0.04", driver_text)
 
         boxes = {item["box"]["id"]: item["box"] for item in driver["boxes"]}
@@ -111,7 +152,7 @@ class VehicleSoundProjectTests(unittest.TestCase):
         self.assertIn("reference_texture~", power_text)
 
     def test_v31_reference_texture_has_local_loader_and_deterministic_fallback(self):
-        project = self.load_json("VehicleSoundSynth-V3.maxproj")
+        project = self.load_json("VehicleSoundSynth-V4.maxproj")
         declared = {
             path for category in project["contents"].values() for path in category
         }
@@ -123,8 +164,55 @@ class VehicleSoundProjectTests(unittest.TestCase):
         self.assertIn("reference_texture_level_db", text)
         self.assertIn("reference_texture_mute", text)
         loader = (ROOT / "code" / "local_reference_loader.js").read_text(encoding="utf-8")
-        self.assertIn("media/local/ferrari_sf90_residual.wav", loader)
+        self.assertIn("media/local/ferrari_sf90_idle_residual.wav", loader)
+        self.assertIn("media/local/ferrari_sf90_high_residual.wav", loader)
         self.assertIn("media/reference_texture_fallback.wav", loader)
+
+        self.assertIn("sqrt(min(1.,max(0.,($f1-1800.)/1200.)))", text)
+        self.assertIn("345.7", text)
+        self.assertIn("sf90_idle_residual", text)
+        self.assertIn("sf90_high_residual", text)
+        self.assertIn("reference_texture_mute rpm", text)
+        patcher = self.load_json("patchers/reference_texture~.maxpat")["patcher"]
+        boxes = {item["box"]["id"]: item["box"] for item in patcher["boxes"]}
+        router = next(
+            box_id for box_id, box in boxes.items()
+            if box.get("text", "").startswith("route throttle engine_running")
+        )
+        rpm_targets = {
+            line["patchline"]["destination"][0]
+            for line in patcher["lines"]
+            if line["patchline"]["source"] == [router, 6]
+        }
+        self.assertGreaterEqual(len(rpm_targets), 2)
+
+    def test_v4_local_reference_bundle_normalizes_idle_and_high_layers(self):
+        import math
+
+        sys.path.insert(0, str(ROOT / "tools"))
+        from prepare_local_reference import prepare_reference_bundle
+
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / "source.wav"
+            output = Path(directory) / "local"
+            frames = 24 * 48000
+            with wave.open(str(source), "wb") as handle:
+                handle.setnchannels(2)
+                handle.setsampwidth(2)
+                handle.setframerate(48000)
+                payload = []
+                for index in range(frames):
+                    time = index / 48000
+                    value = 0.35 * math.sin(2 * math.pi * 61.5 * time)
+                    value += 0.12 * math.sin(2 * math.pi * 345.7 * time)
+                    payload.append(struct.pack("<hh", round(value * 32767), round(value * 0.97 * 32767)))
+                handle.writeframes(b"".join(payload))
+            result = prepare_reference_bundle(source, output)
+            self.assertEqual(0.25, result["idle"]["duration_seconds"])
+            self.assertEqual(0.5, result["high"]["duration_seconds"])
+            for name in ("idle", "high"):
+                self.assertAlmostEqual(-18.0, result[name]["rms_dbfs"], delta=0.25)
+                self.assertLessEqual(result[name]["peak_dbfs"], -3.0 + 0.05)
 
     def test_v31_local_reference_processor_writes_normalized_stereo_loop(self):
         import math
@@ -190,10 +278,10 @@ class VehicleSoundProjectTests(unittest.TestCase):
                 self.assertIn(coefficient, code)
 
     def test_v3_project_identity_and_public_entrypoint(self):
-        project_path = ROOT / "VehicleSoundSynth-V3.maxproj"
+        project_path = ROOT / "VehicleSoundSynth-V4.maxproj"
         self.assertTrue(project_path.is_file())
-        project = self.load_json("VehicleSoundSynth-V3.maxproj")
-        self.assertEqual("VehicleSoundSynth-V3", project["name"])
+        project = self.load_json("VehicleSoundSynth-V4.maxproj")
+        self.assertEqual("VehicleSoundSynth-V4", project["name"])
         self.assertTrue((ROOT / "main.maxpat").is_file())
 
     def test_v2_public_engine_contract_covers_lifecycle_events_and_master_eq(self):
@@ -284,7 +372,7 @@ class VehicleSoundProjectTests(unittest.TestCase):
             self.assertEqual(value, presets[name]["cabin_ir_mix"])
 
     def test_v3_cabin_rumble_module_is_declared_and_runnable(self):
-        project = self.load_json("VehicleSoundSynth-V3.maxproj")
+        project = self.load_json("VehicleSoundSynth-V4.maxproj")
         declared = {
             relative_path
             for category in project["contents"].values()
@@ -363,7 +451,7 @@ class VehicleSoundProjectTests(unittest.TestCase):
         main = self.load_json("main.maxpat")
         text = "\n".join(item["box"].get("text", "") for item in main["patcher"]["boxes"])
         for token in (
-            "VehicleSoundSynth V3",
+            "VehicleSoundSynth V4",
             "Cabin Rumble",
             "Exhaust Boom",
             "Structure Vibration",
@@ -487,7 +575,7 @@ class VehicleSoundProjectTests(unittest.TestCase):
 
     def test_runnable_project_has_public_engine_interface(self):
         required = [
-            "VehicleSoundSynth-V3.maxproj",
+            "VehicleSoundSynth-V4.maxproj",
             "main.maxpat",
             "patchers/vehicle_engine~.maxpat",
         ]
@@ -779,7 +867,7 @@ class VehicleSoundProjectTests(unittest.TestCase):
             self.assertTrue(output_ids.issubset(destinations), path.name)
 
     def test_ev_profile_exposes_two_complete_user_tunable_beap_pad_chains(self):
-        project = self.load_json("VehicleSoundSynth-V3.maxproj")
+        project = self.load_json("VehicleSoundSynth-V4.maxproj")
         declared = {
             relative_path
             for category in project["contents"].values()
@@ -856,7 +944,7 @@ class VehicleSoundProjectTests(unittest.TestCase):
             self.assertEqual(1600, restored(modules[f"{channel}_ADSR"], "Release"))
 
     def test_project_search_path_schema_and_runtime_resources_are_declared(self):
-        project = self.load_json("VehicleSoundSynth-V3.maxproj")
+        project = self.load_json("VehicleSoundSynth-V4.maxproj")
         # Max 8.6.x expects a dictionary here and can crash while opening a
         # project whose searchpath is encoded as an array. Explicit relative
         # paths avoid collisions with Max's own patchers/gen/media folders.
@@ -1066,7 +1154,7 @@ class VehicleSoundProjectTests(unittest.TestCase):
         main = self.load_json("main.maxpat")
         text = "\n".join(item["box"].get("text", "") for item in main["patcher"]["boxes"])
         for token in (
-            "VehicleSoundSynth V3",
+            "VehicleSoundSynth V4",
             "Ignition",
             "Engine Start",
             "prepend ignition",
@@ -1144,6 +1232,7 @@ class VehicleSoundProjectTests(unittest.TestCase):
             bundle = Path(directory)
             for relative_path in (
                 "runtime_probe_v12_idle_on.maxpat",
+                f"{bundle.name}.maxproj",
                 "vehicle_engine~.maxpat",
                 "engine_controller.maxpat",
                 "cabin_rumble~.maxpat",
@@ -1162,6 +1251,30 @@ class VehicleSoundProjectTests(unittest.TestCase):
             self.assertIn(";\rdsp setdriver NonRealTime", text)
             self.assertIn("dsptime~", text)
             self.assertIn("past 4000", text)
+
+            failed_rate = subprocess.run(
+                [
+                    sys.executable, str(ROOT / "tools" / "audio_metrics.py"),
+                    str(bundle / "reference_texture_fallback.wav"),
+                    "--require-sample-rate", "44100",
+                ],
+                cwd=ROOT, capture_output=True, text=True,
+            )
+            self.assertNotEqual(0, failed_rate.returncode)
+
+    def test_v4_runtime_probe_exposes_full_acoustic_matrix_and_dual_taps(self):
+        source = (ROOT / "tools" / "build_runtime_probe.py").read_text(encoding="utf-8")
+        for scenario in (
+            "idle-v12", "idle-v10", "high-v12-3500", "high-v10-4200",
+            "ev-pad-on", "ev-pad-off", "ev-pad-solo", "ev-pad-mute",
+            "shift-up", "shift-down", "intake-backfire", "exhaust-pop",
+        ):
+            self.assertIn(f'"{scenario}"', source)
+        self.assertIn('choices=("pre-cabin", "final")', source)
+        engine = self.load_json("patchers/vehicle_engine~.maxpat")["patcher"]
+        text = "\n".join(item["box"].get("text", "") for item in engine["boxes"])
+        self.assertIn("send~ vss_pre_cabin_l", text)
+        self.assertIn("send~ vss_pre_cabin_r", text)
 
     def test_runtime_probe_can_isolate_ev_motor_with_pad_gate_off(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -1333,6 +1446,73 @@ class VehicleSoundProjectTests(unittest.TestCase):
         self.assertGreater(similarity, 0.999)
         self.assertLess(dissimilarity, 0.10)
 
+    def test_v4_audio_metrics_compare_left_right_and_mid_profiles(self):
+        import math
+
+        sys.path.insert(0, str(ROOT / "tools"))
+        from audio_metrics import third_octave_similarities
+
+        def write_stereo(path, left_frequencies, right_frequencies):
+            payload = []
+            for index in range(48000):
+                left = 0.35 * sum(
+                    math.sin(2 * math.pi * frequency * index / 48000)
+                    for frequency in left_frequencies
+                ) / len(left_frequencies)
+                right = 0.35 * sum(
+                    math.sin(2 * math.pi * frequency * index / 48000)
+                    for frequency in right_frequencies
+                ) / len(right_frequencies)
+                payload.append(struct.pack("<hh", round(left * 32767), round(right * 32767)))
+            with wave.open(str(path), "wb") as handle:
+                handle.setnchannels(2)
+                handle.setsampwidth(2)
+                handle.setframerate(48000)
+                handle.writeframes(b"".join(payload))
+
+        with tempfile.TemporaryDirectory() as directory:
+            reference = Path(directory) / "reference.wav"
+            matching = Path(directory) / "matching.wav"
+            swapped = Path(directory) / "swapped.wav"
+            write_stereo(reference, (80.0, 320.0), (160.0, 640.0))
+            write_stereo(matching, (80.0, 320.0), (160.0, 640.0))
+            write_stereo(swapped, (160.0, 640.0), (80.0, 320.0))
+            exact = third_octave_similarities(reference, matching)
+            channel_wrong = third_octave_similarities(reference, swapped)
+
+        self.assertGreater(exact["left"], 0.999)
+        self.assertGreater(exact["right"], 0.999)
+        self.assertGreater(exact["mid"], 0.999)
+        self.assertLess(channel_wrong["left"], 0.2)
+        self.assertLess(channel_wrong["right"], 0.2)
+        self.assertGreater(channel_wrong["mid"], 0.999)
+
+    def test_v4_audio_metrics_report_right_channel_delay(self):
+        import math
+
+        sys.path.insert(0, str(ROOT / "tools"))
+        from audio_metrics import stereo_delay_ms
+
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory) / "delayed.wav"
+            delay = 12
+            signal = [
+                0.45 * math.sin(2 * math.pi * 313.0 * index / 48000)
+                + 0.2 * math.sin(2 * math.pi * 877.0 * index / 48000)
+                for index in range(12000)
+            ]
+            right = [0.0] * delay + signal[:-delay]
+            with wave.open(str(target), "wb") as handle:
+                handle.setnchannels(2)
+                handle.setsampwidth(2)
+                handle.setframerate(48000)
+                handle.writeframes(b"".join(
+                    struct.pack("<hh", round(left * 32767), round(r * 32767))
+                    for left, r in zip(signal, right)
+                ))
+            measured = stereo_delay_ms(target)
+        self.assertAlmostEqual(0.25, measured, delta=0.03)
+
     def test_audio_metrics_detect_harmonic_complexity_and_single_tone_dominance(self):
         import math
         import struct
@@ -1433,12 +1613,17 @@ class VehicleSoundProjectTests(unittest.TestCase):
         reference = references[0]
         self.assertIn("do not commit", reference["distribution"])
         self.assertRegex(reference["source_sha256"], r"^[0-9a-f]{64}$")
-        self.assertRegex(reference["derived_sha256"], r"^[0-9a-f]{64}$")
+        self.assertEqual({"idle_residual", "high_rpm_residual"}, {
+            output["role"] for output in reference["derived_outputs"]
+        })
+        for output in reference["derived_outputs"]:
+            self.assertRegex(output["sha256"], r"^[0-9a-f]{64}$")
         self.assertEqual(["v12", "v10"], reference["runtime_profiles"])
         self.assertIn("media/local/", (ROOT / ".gitignore").read_text(encoding="utf-8"))
-        derived = ROOT / reference["derived_path"]
-        if derived.is_file():
-            self.assertEqual(reference["derived_sha256"], hashlib.sha256(derived.read_bytes()).hexdigest())
+        for output in reference["derived_outputs"]:
+            derived = ROOT / output["path"]
+            if derived.is_file():
+                self.assertEqual(output["sha256"], hashlib.sha256(derived.read_bytes()).hexdigest())
 
     def test_all_runtime_foley_and_ir_are_processed_licensed_assets(self):
         manifest = self.load_json("assets/asset_manifest.json")

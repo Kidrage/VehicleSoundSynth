@@ -1,33 +1,43 @@
-AGENTS.md
-ASSET_LICENSES.md
-PROJECT_HANDOFF.md
-README.md
-VehicleSoundSynth-V3.maxproj
-assets/asset_manifest.json
-assets/ferrari_sf90_acoustic_target.json
-assets/raw/README.md
-code/local_reference_loader.js
-gen/ev_powertrain.gendsp
-gen/v10_powertrain.gendsp
-gen/v12_powertrain.gendsp
-patchers/cabin_master~.maxpat
-patchers/cabin_rumble~.maxpat
-patchers/drive_simulator.maxpat
-patchers/engine_controller.maxpat
-patchers/ev_pad_beap~.maxpat
-patchers/ev_pad_driver~.maxpat
-patchers/mix_master~.maxpat
-patchers/powertrain~.maxpat
-patchers/reference_texture~.maxpat
-patchers/road_air~.maxpat
-patchers/transient~.maxpat
-patchers/vehicle_engine~.maxpat
-presets/sound_dna.json
-tests/test_project.py
-tools/audio_metrics.py
-tools/build_mix_probe.py
-tools/build_project.py
-tools/build_runtime_probe.py
-tools/build_user_manual.py
-tools/process_assets.py
-tools/prepare_local_reference.py
+# Source Index
+
+Repository: /Users/saintpeter/Downloads/VehicleSoundSynth-V4
+Tracked filtered files: 46
+High-value indexed files: 20
+
+Read this file before broad repository exploration. Prefer focused `rg`
+or `git grep` against the listed areas before opening source files.
+
+## first-read
+
+- AGENTS.md
+- README.md
+- assets/raw/README.md
+
+## source
+
+- code/local_reference_loader.js
+- tools/audio_metrics.py
+- tools/build_mix_probe.py
+- tools/build_project.py
+- tools/build_rtpc_dsp_spec.py
+- tools/build_runtime_probe.py
+- tools/build_user_manual.py
+- tools/prepare_local_reference.py
+- tools/process_assets.py
+- tools/render_rtpc_spec_pdf.py
+
+## tests
+
+- tests/test_project.py
+
+## config
+
+- assets/asset_manifest.json
+- assets/ferrari_sf90_acoustic_target.json
+- presets/sound_dna.json
+
+## docs
+
+- .codex/REPO_GUIDE.md
+- ASSET_LICENSES.md
+- PROJECT_HANDOFF.md

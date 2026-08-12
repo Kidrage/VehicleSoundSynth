@@ -35,6 +35,14 @@ def read_mid_side(path: Path) -> tuple[int, list[float], list[float], list[float
     return sample_rate, mid, side, level_samples
 
 
+def read_channels(path: Path) -> tuple[int, list[float], list[float], list[float]]:
+    """Return sample rate plus left, right, and Mid signals from PCM16 WAV."""
+    sample_rate, mid, side, _ = read_mid_side(path)
+    left = [mid_value + side_value for mid_value, side_value in zip(mid, side)]
+    right = [mid_value - side_value for mid_value, side_value in zip(mid, side)]
+    return sample_rate, left, right, mid
+
+
 def fft(values: list[complex]) -> list[complex]:
     size = len(values)
     if size <= 1:
@@ -91,6 +99,57 @@ def third_octave_similarity(first: Path, second: Path, fft_size: int = 32768) ->
         return _third_octave_profile(power, first_rate, size)
 
     return sum(left * right for left, right in zip(profile(first_mid), profile(second_mid)))
+
+
+def third_octave_similarities(
+    first: Path, second: Path, fft_size: int = 32768
+) -> dict[str, float]:
+    """Compare left, right, and Mid 1/3-octave profiles independently."""
+    first_rate, *first_channels = read_channels(first)
+    second_rate, *second_channels = read_channels(second)
+    if first_rate != second_rate:
+        raise ValueError("comparison WAV files must use the same sample rate")
+    shortest = min(*(len(channel) for channel in first_channels + second_channels))
+    if shortest < 2:
+        raise ValueError("comparison WAV files are too short")
+    size = min(fft_size, 1 << (shortest.bit_length() - 1))
+
+    def profile(samples: list[float]) -> list[float]:
+        windowed = [
+            complex(samples[index] * (0.5 - 0.5 * math.cos(2.0 * math.pi * index / (size - 1))))
+            for index in range(size)
+        ]
+        power = [abs(value) ** 2 for value in fft(windowed)[: size // 2]]
+        return _third_octave_profile(power, first_rate, size)
+
+    names = ("left", "right", "mid")
+    return {
+        name: sum(a * b for a, b in zip(profile(first_channel), profile(second_channel)))
+        for name, first_channel, second_channel in zip(names, first_channels, second_channels)
+    }
+
+
+def stereo_delay_ms(path: Path, max_delay_ms: float = 5.0) -> float:
+    """Estimate inter-channel delay; positive means the right channel is later."""
+    sample_rate, left, right, _ = read_channels(path)
+    count = min(len(left), len(right), 12000)
+    left = left[:count]
+    right = right[:count]
+    max_lag = min(round(sample_rate * max_delay_ms / 1000.0), count - 2)
+
+    def score(lag: int) -> float:
+        if lag >= 0:
+            first, second = left[: count - lag], right[lag:count]
+        else:
+            first, second = left[-lag:count], right[: count + lag]
+        numerator = sum(a * b for a, b in zip(first, second))
+        energy = math.sqrt(
+            sum(a * a for a in first) * sum(b * b for b in second)
+        )
+        return numerator / max(energy, 1e-30)
+
+    best = max(range(-max_lag, max_lag + 1), key=score)
+    return best * 1000.0 / sample_rate
 
 
 def analyze(path: Path, fft_size: int = 32768) -> dict[str, float | int | str]:
@@ -242,6 +301,7 @@ def analyze(path: Path, fft_size: int = 32768) -> dict[str, float | int | str]:
         "high_band_correlation": high_band[1],
         "high_band_mono_fold_rms_loss_db": high_band[2],
         "mono_fold_rms_loss_db": mono_fold_loss,
+        "right_channel_delay_ms": stereo_delay_ms(path),
         "high_ratio": high,
         "spectral_peak_count_80_6000": len(peak_bins),
         "dominant_peak_ratio_80_6000": dominant_neighborhood / band_total,
@@ -262,20 +322,30 @@ def main() -> int:
     parser.add_argument("--max-mono-fold-rms-loss-db", type=float)
     parser.add_argument("--compare-wav", type=Path)
     parser.add_argument("--min-third-octave-similarity", type=float)
+    parser.add_argument("--min-third-octave-similarity-left", type=float)
+    parser.add_argument("--min-third-octave-similarity-right", type=float)
+    parser.add_argument("--max-third-octave-similarity-lr-delta", type=float)
+    parser.add_argument("--max-abs-right-delay-ms", type=float)
     parser.add_argument("--expected-gain-db", type=float)
     parser.add_argument("--gain-tolerance-db", type=float, default=1.0)
     parser.add_argument("--min-spectral-peaks", type=int)
     parser.add_argument("--max-dominant-peak-ratio", type=float)
     parser.add_argument("--max-envelope-spread-db", type=float)
     parser.add_argument("--max-clipped-sample-ratio", type=float)
+    parser.add_argument("--require-sample-rate", type=int)
     args = parser.parse_args()
     metrics = analyze(args.wav)
     if args.compare_wav is not None:
         comparison = analyze(args.compare_wav)
         metrics["comparison_rms_delta_db"] = metrics["rms_dbfs"] - comparison["rms_dbfs"]
-        metrics["third_octave_similarity"] = third_octave_similarity(args.wav, args.compare_wav)
+        similarities = third_octave_similarities(args.wav, args.compare_wav)
+        metrics["third_octave_similarity"] = similarities["mid"]
+        metrics.update({f"third_octave_similarity_{name}": value for name, value in similarities.items()})
+        metrics["third_octave_similarity_lr_delta"] = abs(similarities["left"] - similarities["right"])
     print(json.dumps(metrics, indent=2, sort_keys=True))
     failures = []
+    if args.require_sample_rate is not None and metrics["sample_rate"] != args.require_sample_rate:
+        failures.append("sample_rate")
     if args.max_peak_dbfs is not None and metrics["peak_dbfs"] > args.max_peak_dbfs:
         failures.append("peak_dbfs")
     if args.min_rms_dbfs is not None and metrics["rms_dbfs"] < args.min_rms_dbfs:
@@ -305,6 +375,23 @@ def main() -> int:
             parser.error("--min-third-octave-similarity requires --compare-wav")
         if metrics["third_octave_similarity"] < args.min_third_octave_similarity:
             failures.append("third_octave_similarity")
+    for channel in ("left", "right"):
+        threshold = getattr(args, f"min_third_octave_similarity_{channel}")
+        if threshold is not None:
+            if args.compare_wav is None:
+                parser.error(f"--min-third-octave-similarity-{channel} requires --compare-wav")
+            if metrics[f"third_octave_similarity_{channel}"] < threshold:
+                failures.append(f"third_octave_similarity_{channel}")
+    if args.max_third_octave_similarity_lr_delta is not None:
+        if args.compare_wav is None:
+            parser.error("--max-third-octave-similarity-lr-delta requires --compare-wav")
+        if metrics["third_octave_similarity_lr_delta"] > args.max_third_octave_similarity_lr_delta:
+            failures.append("third_octave_similarity_lr_delta")
+    if (
+        args.max_abs_right_delay_ms is not None
+        and abs(metrics["right_channel_delay_ms"]) > args.max_abs_right_delay_ms
+    ):
+        failures.append("right_channel_delay_ms")
     if args.expected_gain_db is not None:
         if args.compare_wav is None:
             parser.error("--expected-gain-db requires --compare-wav")

@@ -22,7 +22,7 @@ from docx.shared import Inches, Pt, RGBColor
 
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_OUTPUT = ROOT / "VehicleSoundSynthV3_完整使用手册.docx"
+DEFAULT_OUTPUT = ROOT / "VehicleSoundSynthV4_完整使用手册.docx"
 
 # compact_reference_guide preset; CJK font is a named glyph-support override.
 BASE_FONT = "Calibri"
@@ -334,7 +334,7 @@ def add_running_furniture(section, *, first_page: bool = False) -> None:
     p = header.paragraphs[0]
     p.alignment = WD_ALIGN_PARAGRAPH.LEFT
     p.paragraph_format.space_after = Pt(0)
-    run = p.add_run("VehicleSoundSynth V3  |  使用与调音手册")
+    run = p.add_run("VehicleSoundSynth V4  |  使用与调音手册")
     set_run_font(run, size=8.5, color=MUTED)
     set_paragraph_border_bottom(p, color="D7DBE2", size=6)
     footer = section.footer
@@ -458,7 +458,7 @@ def add_cover(doc: Document) -> None:
     title = doc.add_paragraph()
     title.alignment = WD_ALIGN_PARAGRAPH.CENTER
     title.paragraph_format.space_after = Pt(9)
-    run = title.add_run("VehicleSoundSynth V3")
+    run = title.add_run("VehicleSoundSynth V4")
     set_run_font(run, size=30, bold=True, color=INK_BLUE)
     subtitle = doc.add_paragraph()
     subtitle.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -993,22 +993,22 @@ def build_v1_document(output: Path) -> None:
 
 
 def build_document(output: Path) -> None:
-    """Build the V3 compact operator reference without overwriting V1/V2 manuals."""
+    """Build the V4 compact operator reference without overwriting prior manuals."""
     doc = Document()
     configure_styles(doc)
     configure_section(doc.sections[0])
     add_running_furniture(doc.sections[0], first_page=True)
     add_cover(doc)
 
-    add_heading(doc, "1. V3 是什么", 1)
+    add_heading(doc, "1. V4 是什么", 1)
     add_text(
         doc,
-        "VehicleSoundSynth V3 是面向 Max 8.6.5 的实时车辆声学工程。它保留 V2 的 Future EV、V12/V10 燃油生命周期、七速 DCT 和因果瞬态，并新增独立座舱低频系统，用发动机半阶、车身模态和排气轰鸣模拟真实油车车内的低频压力与结构振动。",
+        "VehicleSoundSynth V4 是从 V3 独立复制的新版本工程。它保留 Future EV、V12/V10 燃油生命周期、七速 DCT 和因果瞬态，并增加 RPM 自适应三频段座舱声场、双层 Ferrari 本地参考纹理与更严格的声学指标工具。",
     )
     add_callout(
         doc,
         "版本边界",
-        "V3 位于 VehicleSoundSynth-V3 文件夹，入口是 VehicleSoundSynth-V3.maxproj。V1 与 V2 文件夹、工程文件和旧版手册均应保持原样。",
+        "V4 位于 VehicleSoundSynth-V4 文件夹，入口是 VehicleSoundSynth-V4.maxproj。V1、V2、V3 文件夹与旧版手册均保持原样。",
         kind="caution",
     )
     add_callout(
@@ -1034,7 +1034,7 @@ def build_document(output: Path) -> None:
     add_steps(
         doc,
         [
-            "先把监听音量调低。在 Finder 或 Max 中打开 VehicleSoundSynth-V3.maxproj，并等待 Project 窗口完成加载。",
+            "先把监听音量调低。在 Finder 或 Max 中打开 VehicleSoundSynth-V4.maxproj，并等待 Project 窗口完成加载。",
             "从同一个 Max 实例的 Project 窗口打开 main.maxpat。不要同时双击工程与 main，否则搜索路径可能尚未注册。",
             "在 Preset 选择 High-Rev V12 或 Aggressive V10。",
             "把 Ignition 打开，再单击 Engine Start。先确认启动机和怠速已经进入电平表。",
@@ -1203,7 +1203,7 @@ def build_document(output: Path) -> None:
         ["现象", "优先检查", "处理"],
         [
             ["燃油预设完全无声", "Ignition / Start / Audio", "先点火、启动，看到怠速电平后再开 Audio"],
-            ["No such object / gen patcher not found", "工程是否先打开", "从 VehicleSoundSynth-V3.maxproj 进入，同一实例再开 main"],
+            ["No such object / gen patcher not found", "工程是否先打开", "从 VehicleSoundSynth-V4.maxproj 进入，同一实例再开 main"],
             ["低频听不到", "监听设备与三个低频宏", "先确认设备能播放 35-120 Hz；提高 Cabin Rumble，再按需增加 Structure Vibration"],
             ["buffer~ can't open", "media 搜索路径", "确认 Project 的 media 搜索路径及所有生成 WAV 存在"],
             ["高频噪声过多", "road_air、Brightness、High-Mid/High Shelf", "先削 3.8 kHz 与 9 kHz，再判断是否需要减 Texture"],
@@ -1217,7 +1217,7 @@ def build_document(output: Path) -> None:
     add_text(doc, "开发验证命令：")
     add_code(
         doc,
-        "cd /Users/saintpeter/Downloads/VehicleSoundSynth-V3\n"
+        "cd /Users/saintpeter/Downloads/VehicleSoundSynth-V4\n"
         "python3 tools/build_project.py --output-root .\n"
         "python3 -m unittest discover -s tests -v\n"
         "python3 tools/audio_metrics.py <render.wav> --max-peak-dbfs -1 --min-rms-dbfs -45 --min-rumble-ratio 0.55 --max-subsonic-ratio 0.05 --max-low-side-ratio 0.05 --min-low-band-correlation 0.95 --max-mono-fold-rms-loss-db 1.5 --max-high-ratio 0.10 --min-spectral-peaks 6 --max-dominant-peak-ratio 0.50",
@@ -1244,11 +1244,11 @@ def build_document(output: Path) -> None:
                             set_run_font(run)
 
     core = doc.core_properties
-    core.title = "VehicleSoundSynth V3 完整使用与调音手册"
+    core.title = "VehicleSoundSynth V4 完整使用与调音手册"
     core.subject = "Max/MSP 座舱低频轰鸣、多阶燃油车辆声学、CC0 瞬态、七速 DCT 与四段总线 EQ"
     core.author = "VehicleSoundSynth Project"
     core.keywords = "Max/MSP, Vehicle Sound, V12, V10, Cabin Rumble, DCT, EQ, 使用手册"
-    core.comments = "Generated for VehicleSoundSynth V3; V1 and V2 manuals remain unchanged."
+    core.comments = "Generated for VehicleSoundSynth V4; prior version manuals remain unchanged."
     settings = doc.settings.element
     update_fields = settings.find(qn("w:updateFields"))
     if update_fields is None:

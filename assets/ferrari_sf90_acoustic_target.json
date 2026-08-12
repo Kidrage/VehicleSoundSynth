@@ -23,7 +23,9 @@
     "dominant_firing_frequency_hz": 345.7,
     "compare_v10_rpm": 4200,
     "compare_v12_rpm": 3500,
-    "minimum_normalized_third_octave_similarity": 0.85
+    "minimum_normalized_third_octave_similarity_left_right": 0.85,
+    "minimum_normalized_third_octave_similarity_mid": 0.87,
+    "maximum_left_right_similarity_delta": 0.05
   },
   "synthesis_acceptance": {
     "idle_half_order_below_firing_db": -8.0,
@@ -45,6 +47,16 @@
     "loop_duration_ms": 250.0,
     "equal_power_crossfade_ms": 20.0,
     "target_rms_dbfs": -18.0,
-    "peak_ceiling_dbfs": -3.0
+    "peak_ceiling_dbfs": -3.0,
+    "v4_high_layer": {
+      "source_window_start_seconds": 22.75,
+      "cadence_notch_fundamental_hz": 345.7,
+      "highpass_hz": 180.0,
+      "lowpass_hz": 12000.0,
+      "loop_duration_ms": 500.0,
+      "playback_speed_equation": "((rpm/60)*(5+v12_weight))/345.7",
+      "equal_power_crossfade_rpm": [1800.0, 3000.0],
+      "texture_lift_db": 12.0
+    }
   }
 }

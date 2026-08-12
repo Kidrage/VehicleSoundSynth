@@ -46,8 +46,9 @@
           "id": "obj-3",
           "maxclass": "newobj",
           "numinlets": 1,
-          "numoutlets": 21,
+          "numoutlets": 22,
           "outlettype": [
+            "",
             "",
             "",
             "",
@@ -76,7 +77,7 @@
             760.0,
             22.0
           ],
-          "text": "route rpm throttle load aggression brightness body texture engine_running combustion_gain shift_cut ev_weight v12_weight v10_weight ignition pad_level_db pad_mute pad_solo reference_texture_level_db reference_texture_mute powertrain_level_db"
+          "text": "route rpm throttle load aggression brightness body texture engine_running combustion_gain shift_cut ev_weight v12_weight v10_weight ignition pad_level_db pad_mute pad_solo reference_texture_level_db reference_texture_mute rpm powertrain_level_db"
         }
       },
       {
@@ -2608,7 +2609,7 @@
           ],
           "source": [
             "obj-3",
-            19
+            20
           ]
         }
       },

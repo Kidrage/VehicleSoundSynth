@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Prepare a local-only Ferrari residual texture for VehicleSoundSynth V3.1."""
+"""Prepare normalized local-only Ferrari idle/high-RPM residuals for V4."""
 
 from __future__ import annotations
 
@@ -63,22 +63,34 @@ def _rbj(kind: str, frequency: float, q_value: float = 0.707) -> tuple[float, fl
     return b0 / a0, b1 / a0, b2 / a0, a1 / a0, a2 / a0
 
 
-def _residual_filter(samples: list[float]) -> list[float]:
+def _residual_filter(
+    samples: list[float], *, cadence_hz: float = 61.5, highpass_hz: float = 90.0,
+    lowpass_hz: float = 4000.0,
+) -> list[float]:
     mean = sum(samples) / max(1, len(samples))
     output = [sample - mean for sample in samples]
-    output = _biquad(output, _rbj("highpass", 90.0))
+    output = _biquad(output, _rbj("highpass", highpass_hz))
     for multiple in range(1, 17):
-        frequency = 61.5 * multiple
-        if frequency >= 4000.0:
+        frequency = cadence_hz * multiple
+        if frequency >= lowpass_hz:
             break
         output = _biquad(output, _rbj("notch", frequency, 18.0))
-    return _biquad(output, _rbj("lowpass", 4000.0))
+    return _biquad(output, _rbj("lowpass", lowpass_hz))
 
 
-def prepare_reference(source: Path, destination: Path, *, start_seconds: float = 1.0) -> dict[str, float | str]:
+def prepare_reference(
+    source: Path,
+    destination: Path,
+    *,
+    start_seconds: float = 1.0,
+    loop_frames: int = LOOP_FRAMES,
+    cadence_hz: float = 61.5,
+    highpass_hz: float = 90.0,
+    lowpass_hz: float = 4000.0,
+) -> dict[str, float | str]:
     channels = _read_pcm16_stereo(source)
     start = round(start_seconds * SAMPLE_RATE)
-    required = LOOP_FRAMES + FADE_FRAMES
+    required = loop_frames + FADE_FRAMES
     if start < 0 or start + required > len(channels[0]):
         raise ValueError("reference window is outside the source WAV")
     processed: list[list[float]] = []
@@ -88,11 +100,12 @@ def prepare_reference(source: Path, destination: Path, *, start_seconds: float =
         # leaks the very cadence the residual is meant to remove.
         preroll = min(start, SAMPLE_RATE * 2)
         filtered_with_history = _residual_filter(
-            channel[start - preroll : start + required]
+            channel[start - preroll : start + required], cadence_hz=cadence_hz,
+            highpass_hz=highpass_hz, lowpass_hz=lowpass_hz,
         )
         filtered = filtered_with_history[preroll : preroll + required]
-        loop = filtered[:LOOP_FRAMES]
-        continuation = filtered[LOOP_FRAMES : LOOP_FRAMES + FADE_FRAMES]
+        loop = filtered[:loop_frames]
+        continuation = filtered[loop_frames : loop_frames + FADE_FRAMES]
         for index in range(FADE_FRAMES):
             phase = index / max(1, FADE_FRAMES - 1) * math.pi / 2.0
             # Overlap the post-loop continuation into the beginning. The file
@@ -113,7 +126,7 @@ def prepare_reference(source: Path, destination: Path, *, start_seconds: float =
     destination.parent.mkdir(parents=True, exist_ok=True)
     payload = b"".join(
         struct.pack("<hh", round(processed[0][index] * 32767.0), round(processed[1][index] * 32767.0))
-        for index in range(LOOP_FRAMES)
+        for index in range(loop_frames)
     )
     with wave.open(str(destination), "wb") as handle:
         handle.setnchannels(2)
@@ -127,10 +140,26 @@ def prepare_reference(source: Path, destination: Path, *, start_seconds: float =
     return {
         "source": str(source),
         "destination": str(destination),
-        "duration_seconds": LOOP_FRAMES / SAMPLE_RATE,
+        "duration_seconds": loop_frames / SAMPLE_RATE,
         "rms_dbfs": 20.0 * math.log10(max(rms, 1e-12)),
         "peak_dbfs": 20.0 * math.log10(max(peak, 1e-12)),
         "sha256": hashlib.sha256(destination.read_bytes()).hexdigest(),
+    }
+
+
+def prepare_reference_bundle(source: Path, destination_dir: Path) -> dict[str, dict[str, float | str]]:
+    """Create the two normalized local layers used by the V4 RPM crossfade."""
+    return {
+        "idle": prepare_reference(
+            source, destination_dir / "ferrari_sf90_idle_residual.wav",
+            start_seconds=1.0, loop_frames=12000, cadence_hz=61.5,
+            highpass_hz=90.0, lowpass_hz=4000.0,
+        ),
+        "high": prepare_reference(
+            source, destination_dir / "ferrari_sf90_high_residual.wav",
+            start_seconds=22.75, loop_frames=24000, cadence_hz=345.7,
+            highpass_hz=180.0, lowpass_hz=12000.0,
+        ),
     }
 
 
@@ -139,8 +168,14 @@ def main() -> int:
     parser.add_argument("source", type=Path)
     parser.add_argument("destination", type=Path)
     parser.add_argument("--start-seconds", type=float, default=1.0)
+    parser.add_argument("--bundle", action="store_true")
     args = parser.parse_args()
-    print(json.dumps(prepare_reference(args.source, args.destination, start_seconds=args.start_seconds), indent=2))
+    result = (
+        prepare_reference_bundle(args.source, args.destination)
+        if args.bundle
+        else prepare_reference(args.source, args.destination, start_seconds=args.start_seconds)
+    )
+    print(json.dumps(result, indent=2))
     return 0
 
 

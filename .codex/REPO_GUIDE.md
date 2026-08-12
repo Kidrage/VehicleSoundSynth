@@ -1,8 +1,8 @@
-# VehicleSoundSynth V3 Repository Guide
+# VehicleSoundSynth V4 Repository Guide
 
 ## Purpose
 
-Max 8.6.5 vehicle-sound V3 with isolated EV and combustion lifecycles, credible
+Max 8.6.5 vehicle-sound V4 with isolated EV and combustion lifecycles, credible
 V12/V10 archetypes, a seven-speed DCT event model, a dedicated in-cabin rumble
 module, licensed field-recorded event assets, a short cabin IR, and a global
 master EQ. The project uses only built-in Max/MSP/Gen objects.
@@ -33,7 +33,7 @@ master EQ. The project uses only built-in Max/MSP/Gen objects.
 ```sh
 python3 tools/build_project.py --output-root .
 python3 tools/process_assets.py --root .
-python3 tools/prepare_local_reference.py /Users/saintpeter/Desktop/Ferrari.wav media/local/ferrari_sf90_residual.wav
+python3 tools/prepare_local_reference.py /Users/saintpeter/Desktop/Ferrari.wav media/local --bundle
 python3 -m unittest discover -s tests -v
 python3 tools/audio_metrics.py render.wav --max-peak-dbfs -1 --min-rms-dbfs -45 --min-rumble-ratio 0.55 --max-subsonic-ratio 0.05 --max-low-side-ratio 0.05 --min-low-band-correlation 0.95 --max-mono-fold-rms-loss-db 1.5 --max-high-ratio 0.10 --min-spectral-peaks 6 --max-dominant-peak-ratio 0.50
 ```
@@ -52,9 +52,9 @@ On macOS, Max writes load diagnostics to
 
 ## Runtime Design
 
-- V3 starts from the verified V2 release commit `b8cefa5`.
+- V4 is an independent full copy of V3 at commit `81e1345` plus its saved documentation artifacts.
 - Intended flow: lifecycle/state controller → powertrain/transient/road/rumble
-  layers → 120 Hz cabin low-frequency centering and upper-band stereo field →
+  layers → RPM-adaptive three-band cabin field (120 Hz/2 kHz crossovers) →
   visible four-node master EQ → one final
   limiter/clip stage.
 - `tools/build_mix_probe.py` provides measured EQ/trim/bypass checks.
@@ -66,7 +66,7 @@ On macOS, Max writes load diagnostics to
 
 ## Repository State
 
-- Branch: `codex/vehicle-sound-v3`; V2 commit `b8cefa5` is the baseline.
+- Branch: `codex/vehicle-sound-v4`; V3 commit `81e1345` is the baseline.
 - Remote: none.
 - Avoid cache files such as `tests/__pycache__/`.
-- Never edit the sibling V1 or V2 repositories while implementing V3.
+- Never edit sibling V1, V2, or V3 repositories while implementing V4.

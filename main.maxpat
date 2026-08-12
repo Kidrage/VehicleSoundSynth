@@ -18,10 +18,10 @@
           "patching_rect": [
             25.0,
             15.0,
-            860.0,
+            900.0,
             22.0
           ],
-          "text": "VehicleSoundSynth V3 \u2014 combustion lifecycle, cabin rumble, 7-speed DCT, and final mix"
+          "text": "VehicleSoundSynth V4 \u2014 RPM-adaptive cabin field, dual Ferrari texture, 7-speed DCT, and final mix"
         }
       },
       {
@@ -494,7 +494,7 @@
             760.0,
             22.0
           ],
-          "text": "engine_type ev, ev_weight 1., v12_weight 0., v10_weight 0., aggression 0.25, brightness 0.72, body 0.34, texture 0.20, cabin_width 0.90, cabin_rumble 0., exhaust_boom 0., structure_vibration 0., cabin_ir_mix 0.10, powertrain_level_db -2., transient_level_db -9., road_level_db -14., rumble_level_db -60., pad_level_db -3., pad_mute 0, pad_solo 0, reference_texture_level_db -24., reference_texture_mute 0, master_trim_db -8."
+          "text": "engine_type ev, ev_weight 1., v12_weight 0., v10_weight 0., aggression 0.25, brightness 0.72, body 0.34, texture 0.20, cabin_width 0.90, cabin_rumble 0., exhaust_boom 0., structure_vibration 0., cabin_ir_mix 0.10, powertrain_level_db -2., transient_level_db -9., road_level_db -14., rumble_level_db -60., pad_level_db 6., pad_mute 0, pad_solo 0, reference_texture_level_db -24., reference_texture_mute 0, master_trim_db -8."
         }
       },
       {
@@ -1811,7 +1811,7 @@
             90.0,
             22.0
           ],
-          "text": "loadmess -3"
+          "text": "loadmess 6"
         }
       },
       {
