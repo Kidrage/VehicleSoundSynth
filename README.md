@@ -157,14 +157,15 @@ supported place for user Pad tuning.
 python3 tools/build_project.py --output-root .
 python3 -m unittest discover -s tests -v
 python3 tools/audio_metrics.py render.wav --max-peak-dbfs -1 --min-rms-dbfs -45 --min-rumble-ratio 0.55 --max-subsonic-ratio 0.05 --max-low-side-ratio 0.05 --min-low-band-correlation 0.95 --max-mono-fold-rms-loss-db 1.5 --max-high-ratio 0.10
-python3 tools/audio_metrics.py high_rpm.wav --compare-wav ferrari_window.wav --min-third-octave-similarity 0.85
+python3 tools/audio_metrics.py high_rpm.wav --compare-wav ferrari_window.wav --min-third-octave-similarity-left 0.85 --min-third-octave-similarity-right 0.85 --min-third-octave-similarity 0.87 --max-third-octave-similarity-lr-delta 0.05
 python3 tools/audio_metrics.py eq_cut.wav --compare-wav eq_flat.wav --expected-gain-db -6 --gain-tolerance-db 1
 ```
 
 The rumble layer is high-passed near 28 Hz. After the cabin IR, `cross~ 120`
 centers deep bass while asymmetric short all-pass/early-reflection paths widen
-only the upper body and mechanical detail. A fixed 0.85 Side safety trim keeps
-the default fold-down near the 1.5 dB target without removing stereo phase detail.
+only the upper body and mechanical detail. The mid band uses a 0.20 Side safety
+trim; the high band uses 0.42 plus 0.04 cross-reflections. This keeps the default
+fold-down near the target without removing stereo phase detail.
 The full signal then ends
 in `mix_master~`: one visible four-node graph driving stereo `cascade~`, click-safe dry/wet bypass,
 master trim, `omx.peaklim~`, and `clip~ -0.891 0.891`.

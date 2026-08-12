@@ -1105,7 +1105,7 @@ def build_document(output: Path) -> None:
     add_callout(
         doc,
         "低频安全",
-        "低频层在约 28 Hz 高通；IR 湿/干混合后用 cross~ 120 将 120 Hz 以下合成严格居中的 Mid，上频段才进入左右不同的短 allpass 和 0.65/1.35 ms 早反射，并有固定 0.85 Side 安全衰减，所以低频兼容 mono、机械细节仍有宽度。最后仍经过全局 EQ、Master Trim 和唯一的 limiter/clip。",
+        "低频层在约 28 Hz 高通；IR 湿/干混合后用 cross~ 120 将 120 Hz 以下合成严格居中的 Mid，上频段才进入左右不同的短 allpass 和 0.65/1.35 ms 早反射。中频 Side 安全系数为 0.20，高频为 0.42，交叉反射为 0.04，所以低频兼容 mono、机械细节仍有宽度。最后仍经过全局 EQ、Master Trim 和唯一的 limiter/clip。",
         kind="caution",
     )
 
