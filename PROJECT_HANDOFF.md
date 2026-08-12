@@ -9,12 +9,12 @@
 - Working root: `.`
 - Repository name: `VehicleSoundSynth-V4`
 - Git repository: `true`
-- Generated at: `2026-08-12T07:01:26.121660+00:00`
+- Generated at: `2026-08-12T07:09:15.673087+00:00`
 
 ## Current State
 
 - Branch: `codex/vehicle-sound-v4`
-- HEAD: `613d929`
+- HEAD: `32bc86d`
 - Indexed paths: 76
 - Inventory truncated: `false`
 - Inaccessible paths: 0
@@ -60,8 +60,8 @@
 ### Categories
 
 - audio: 30 files, 93743066 bytes
-- code: 11 files, 400531 bytes
-- literature: 14 files, 569023 bytes
+- code: 11 files, 400843 bytes
+- literature: 14 files, 569139 bytes
 - other: 18 files, 2398851 bytes
 - structured_data: 3 files, 18325 bytes
 
@@ -92,6 +92,8 @@
 
 ## Change History
 
+- `32bc86d 2026-08-12 docs: complete V4 Ferrari validation guide`
+- `32873f8 2026-08-12 docs: finalize V4 integrity record`
 - `613d929 2026-08-12 docs: correct V4 manual identity`
 - `c36ebb0 2026-08-12 docs: refresh V4 integrity handoff`
 - `e6ac257 2026-08-12 docs: align V4 acoustic guidance`
@@ -110,8 +112,6 @@
 - `030708f 2026-08-11 docs: refresh project handoff`
 - `2f73f2b 2026-08-11 feat: stabilize EV and add dual BEAP pad`
 - `99b6895 2026-08-10 docs: refresh Manual keyboard handoff`
-- `1e811ab 2026-08-10 fix: synchronize Manual keyboard and pedal state`
-- `5ff0aa0 2026-08-10 feat: add Manual mode W/S controls`
 
 ## Current Changes
 
