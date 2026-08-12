@@ -9,12 +9,12 @@
 - Working root: `.`
 - Repository name: `VehicleSoundSynth-V4`
 - Git repository: `true`
-- Generated at: `2026-08-12T02:18:46.300953+00:00`
+- Generated at: `2026-08-12T02:21:45.349884+00:00`
 
 ## Current State
 
 - Branch: `codex/vehicle-sound-v4`
-- HEAD: `81e1345`
+- HEAD: `cb5ce78`
 - Indexed paths: 76
 - Inventory truncated: `false`
 - Inaccessible paths: 0
@@ -61,7 +61,7 @@
 
 - audio: 30 files, 93743066 bytes
 - code: 11 files, 397093 bytes
-- literature: 14 files, 569885 bytes
+- literature: 14 files, 569881 bytes
 - other: 18 files, 2390246 bytes
 - structured_data: 3 files, 18325 bytes
 
@@ -92,6 +92,7 @@
 
 ## Change History
 
+- `cb5ce78 2026-08-12 feat: create V4 acoustic repair archive`
 - `81e1345 2026-08-11 docs: refresh V3.1 handoff`
 - `9066183 2026-08-11 fix: harden V3.1 stereo EQ and reference processing`
 - `22bb3f1 2026-08-11 feat: add V3.1 cinematic engine mix`
@@ -111,41 +112,10 @@
 - `9449ee8 2026-08-07 docs: record final V2 validation`
 - `f5f2a4a 2026-08-07 fix: gate automatic drive and transient events`
 - `e3562cf 2026-08-07 docs: refresh V2 project handoff`
-- `ec29ab4 2026-08-07 fix: tighten lifecycle and DCT event causality`
 
 ## Current Changes
 
 - `## codex/vehicle-sound-v4`
-- `M  .codex/REPO_GUIDE.md`
-- `M  .codex/repo_files.txt`
-- `M  .codex/source_index.txt`
-- `M  AGENTS.md`
-- `M  PROJECT_HANDOFF.md`
-- `M  README.md`
-- `R  VehicleSoundSynth-V3.maxproj -> VehicleSoundSynth-V4.maxproj`
-- `A  "VehicleSoundSynthV3_\350\275\246\346\234\272RTPC_DSP\351\223\276\350\267\257\346\212\200\346\234\257\350\257\264\346\230\216.docx"`
-- `A  "VehicleSoundSynthV3_\350\275\246\346\234\272RTPC_DSP\351\223\276\350\267\257\346\212\200\346\234\257\350\257\264\346\230\216.pdf"`
-- `A  "VehicleSoundSynthV4_\345\256\214\346\225\264\344\275\277\347\224\250\346\211\213\345\206\214.docx"`
-- `M  assets/asset_manifest.json`
-- `M  assets/ferrari_sf90_acoustic_target.json`
-- `M  code/local_reference_loader.js`
-- `M  gen/v10_powertrain.gendsp`
-- `M  gen/v12_powertrain.gendsp`
-- `M  main.maxpat`
-- `M  patchers/cabin_master~.maxpat`
-- `M  patchers/ev_pad_driver~.maxpat`
-- `M  patchers/powertrain~.maxpat`
-- `M  patchers/reference_texture~.maxpat`
-- `M  patchers/vehicle_engine~.maxpat`
-- `M  presets/sound_dna.json`
-- `M  tests/test_project.py`
-- `M  tools/audio_metrics.py`
-- `M  tools/build_project.py`
-- `A  tools/build_rtpc_dsp_spec.py`
-- `M  tools/build_runtime_probe.py`
-- `M  tools/build_user_manual.py`
-- `M  tools/prepare_local_reference.py`
-- `A  tools/render_rtpc_spec_pdf.py`
 
 ## Related Repositories
 
