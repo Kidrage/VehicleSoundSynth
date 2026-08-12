@@ -1430,7 +1430,7 @@ def make_transient() -> dict[str, Any]:
 
     for index, (name, gate_outlet) in enumerate((("starter_v12", 0), ("starter_v10", 1))):
         x = 35 + index * 300
-        p.new(f"buffer~ {name} media/{name}.wav", x, 245, 245, numinlets=1, numoutlets=2)
+        p.new(f"buffer~ {name} {name}.wav", x, 245, 210, numinlets=1, numoutlets=2)
         start = p.message("start", x, 285, 45)
         player = p.new(f"play~ {name} 1", x, 325, 145, numinlets=1, numoutlets=2)
         gain = p.new("*~ 0.26", x, 365, 65, numinlets=2, numoutlets=1)
@@ -1498,7 +1498,7 @@ def make_transient() -> dict[str, Any]:
             p.connect(source, counter, source_outlet)
         for index, name in enumerate(names):
             px = x + index * 190
-            p.new(f"buffer~ {name} media/{name}.wav", px, y + 82, 180, numinlets=1, numoutlets=2)
+            p.new(f"buffer~ {name} {name}.wav", px, y + 82, 165, numinlets=1, numoutlets=2)
             start = p.message("start", px, y + 122, 45)
             player = p.new(f"play~ {name} 1", px, y + 162, 155, numinlets=1, numoutlets=2)
             gain = p.new(f"*~ {gain_value:.2f}", px, y + 202, 65, numinlets=2, numoutlets=1)
@@ -1513,7 +1513,7 @@ def make_transient() -> dict[str, Any]:
     add_family(tuple(f"exhaust_pop_{index:02d}" for index in range(1, 5)), 0.30, 35, 740, ((exhaust_gate, 0),))
     add_family(tuple(f"exhaust_crackle_{index:02d}" for index in range(1, 4)), 0.18, 830, 740, ((crackle_gate, 0),))
 
-    p.new("buffer~ mechanical_click media/mechanical_click.wav", 1445, 740, 245, numinlets=1, numoutlets=2)
+    p.new("buffer~ mechanical_click mechanical_click.wav", 1445, 740, 220, numinlets=1, numoutlets=2)
     click_start = p.message("start", 1445, 780, 45)
     click_player = p.new("play~ mechanical_click 1", 1445, 820, 155, numinlets=1, numoutlets=2)
     click_gain = p.new("*~ 0.18", 1445, 860, 65, numinlets=2, numoutlets=1)

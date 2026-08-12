@@ -1271,6 +1271,15 @@ class VehicleSoundProjectTests(unittest.TestCase):
             )
             self.assertNotEqual(0, failed_rate.returncode)
 
+    def test_runtime_buffers_resolve_media_through_project_search_path(self):
+        transient = self.load_json("patchers/transient~.maxpat")["patcher"]
+        buffer_texts = [
+            item["box"].get("text", "") for item in transient["boxes"]
+            if item["box"].get("text", "").startswith("buffer~ ")
+        ]
+        self.assertTrue(buffer_texts)
+        self.assertTrue(all(" media/" not in text for text in buffer_texts))
+
     def test_v4_runtime_probe_exposes_full_acoustic_matrix_and_dual_taps(self):
         source = (ROOT / "tools" / "build_runtime_probe.py").read_text(encoding="utf-8")
         for scenario in (
