@@ -473,12 +473,12 @@ def add_cover(doc: Document) -> None:
     meta = doc.add_paragraph()
     meta.alignment = WD_ALIGN_PARAGRAPH.CENTER
     meta.paragraph_format.space_after = Pt(4)
-    run = meta.add_run("手册版本 3.1  |  适用 Max 8.6.5  |  2026-08-11")
+    run = meta.add_run("手册版本 4.0  |  适用 Max 8.6.5  |  2026-08-12")
     set_run_font(run, size=10.5, bold=True, color=INK_BLUE)
     meta2 = doc.add_paragraph()
     meta2.alignment = WD_ALIGN_PARAGRAPH.CENTER
     meta2.paragraph_format.space_after = Pt(0)
-    run = meta2.add_run("项目分支：codex/vehicle-sound-v3  |  V1/V2 保持独立不变")
+    run = meta2.add_run("项目分支：codex/vehicle-sound-v4  |  V1/V2/V3 保持独立不变")
     set_run_font(run, size=9, italic=True, color=MUTED)
     doc.add_page_break()
 
