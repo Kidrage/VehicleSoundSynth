@@ -1,6 +1,6 @@
 # Asset licenses and provenance
 
-VehicleSoundSynth V3 distributes only CC0 and attribution-compatible CC BY
+VehicleSoundSynth V4 distributes only CC0 and attribution-compatible CC BY
 source audio. NC, SA, and unknown-license material is excluded from the
 repository and release. The machine-readable
 record is `assets/asset_manifest.json`; its hashes and processing fields are the
@@ -15,23 +15,22 @@ release authority.
 | Revs, pops, crackles | [Sports/Supercar Rev & Pops](https://freesound.org/people/richwise/sounds/478756/) | richwise | CC0 1.0 |
 | Mechanical selector | [Mechanical gear shift](https://freesound.org/people/microman502/sounds/818294/) | microman502 | CC0 1.0 |
 | Cabin IR | [Mini car impulse response](https://freesound.org/people/jamespeacock4616/sounds/555787/) | jamespeacock4616 | CC0 1.0 |
-| Reference recording | [Ferrari acceleration](https://freesound.org/people/biholao/sounds/370278/) | biholao | CC0 1.0 |
+| Engine residual bank/reference | [Ferrari acceleration](https://freesound.org/people/biholao/sounds/370278/) | biholao | CC0 1.0 |
 
 All six source files are installed under `assets/raw/` and are marked
 `processed` in the manifest. The runtime starter, shift, intake backfire,
-exhaust pop/crackle, mechanical click, shift thump, and stereo cabin IR files
-are cropped from these recordings. The Ferrari acceleration file is retained
-as a listening reference and is not played by the runtime patch.
+exhaust pop/crackle, mechanical click, shift thump, stereo cabin IR, and the
+six-anchor/twelve-loop engine residual bank are processed from these recordings.
+Every residual loop is 48 kHz stereo and normalized to -18 dBFS RMS; hashes are
+recorded in `assets/engine_texture_bank.json`.
 
 ## User-supplied local-only reference
 
 `/Users/saintpeter/Desktop/Ferrari.wav` is a user-supplied SF90 near-field
-reference. No redistribution permission is asserted. Its optional processed
-residual may be played locally by the V10/V12 profiles, but both source and
-derived audio are ignored by Git and must never be committed, synced, uploaded,
-or released. Source and derived SHA-256 hashes and the deterministic processing
-recipe are recorded under `local_only_references` in the manifest. A tracked,
-procedurally generated fallback is used whenever the local residual is absent.
+reference. No redistribution permission is asserted. It is an analysis target,
+not a runtime source. Both source and any local derivatives are ignored by Git
+and must never be committed, synced, uploaded, or released. Its SHA-256 and
+measurement recipe are recorded under `local_only_references` in the manifest.
 
 `tools/process_assets.py` converts sources to PCM16, resamples runtime material
 to 48 kHz, removes DC, applies short edge fades, and peak-normalizes every

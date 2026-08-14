@@ -1,10 +1,11 @@
 # VehicleSoundSynth V4
 
 Max/MSP 8.6.5 vehicle-acoustics project derived as an independent V4 archive from V3. V4 adds an EV profile plus lifecycle-gated
-V12 and V10 combustion profiles. V4 uses crank-related combustion pulses,
-phase-locked left/right cylinder banks, additive harmonics, bounded cycle variation,
-and pulse-gated narrowband residuals instead of a dominant pure sine or broadband
-noise. The EV low fundamental is phase-coherent between channels and feeds
+V12 and V10 combustion profiles. V4 uses crank-related combustion events,
+bounded per-ignition timing/energy variation, three stable low/mid orders, and a
+normalized six-anchor stereo residual bank instead of periodic AM, a dominant
+pure sine, or a saw-like high-order stack. The EV low fundamental is
+phase-coherent between channels and feeds
 an EV-only, dual-channel BEAP pad. Its in-cabin low-frequency system is excited by the real powertrain
 signal and adds engine half-order structure vibration, damped cabin/body modes,
 and load-dependent exhaust boom. The seven-speed DCT, licensed CC0 transients,
@@ -59,13 +60,13 @@ Mid signal; above 120 Hz an 82/18 crossmix keeps useful stereo width without the
 previous near-antiphase mono loss.
 
 V4 uses RPM-adaptive three-band cabin stereo: below 120 Hz is strict mono,
-120–2000 Hz uses restrained Side, and above 2 kHz preserves bounded mechanical
-space. The optional local Ferrari texture now crossfades equal-power between a
-normalized idle residual and a 22.75 s high-RPM residual from 1800–3000 RPM.
+120–2000 Hz preserves a fold-safe Mid/Side field, and above 2 kHz keeps bounded
+mechanical space and short asymmetric reflections. High RPM no longer collapses
+the mid band toward mono.
 
-The V12/V10 profiles are procedural sound-design archetypes built from
-four-stroke firing orders, load envelopes, and resonant harmonic layers; they
-are not measurement-matched replicas of a specific production vehicle.
+The V12/V10 profiles are hybrid sound-design archetypes built from four-stroke
+firing events, load envelopes, bounded harmonics, and real residual texture;
+they are not measurement-matched replicas of a specific production vehicle.
 
 ## Public control messages
 
@@ -116,12 +117,17 @@ EQ messages and graph edits control the same four-filter `filtergraph~`/
 stereo-`cascade~` system immediately before output trim and protection.
 Select node 0–3 beside the graph for synchronized frequency, gain, and Q/S
 editing. `eq_bypass 1` crossfades to the unprocessed signal;
-`master_trim_db` affects every stem.
+`master_trim_db` affects every stem. The filtergraph power-gain parameter is
+converted with `10^(dB/10)`, so a requested EQ change in dB matches the measured
+center-frequency change instead of producing half the requested amount.
 
 ## Audio sources and noise
 
-The continuous EV/V12/V10 engines remain procedural. Runtime event samples and
-the cabin IR are processed CC0 field recordings, not generated Foley. See
+The EV motor remains procedural. V10/V12 are hybrid: event-driven synthesis
+supplies firing order and load response, while twelve normalized stereo residual
+loops from a CC0 Ferrari acceleration recording supply irregular intake,
+mechanical, and exhaust texture. Runtime events and the cabin IR are also
+processed CC0 field recordings, not generated Foley. See
 `ASSET_LICENSES.md` and `assets/asset_manifest.json` for provenance, crops,
 normalization targets, and hashes.
 
@@ -131,20 +137,25 @@ V10/V12 generators no longer inject white noise. Reduce remaining road/air noise
 with `Road Level`, `Brightness`, `Texture`, the High-Mid/High Shelf EQ, or by
 lowering `road_air~` in the mix; do not use the limiter as an EQ.
 
-## Local Ferrari reference texture
+## Engine texture bank and local Ferrari target
 
-The optional SF90 reference remains local and is never committed. Prepare it with:
+Rebuild the distributable CC0 residual bank with:
 
 ```sh
-python3 tools/prepare_local_reference.py /Users/saintpeter/Desktop/Ferrari.wav media/local --bundle
+python3 tools/prepare_engine_texture.py assets/raw/biholao_370278_ferrari_acceleration.wav media --metadata assets/engine_texture_bank.json
 ```
 
-The tool creates a 250 ms idle residual from 1.0 s and a 500 ms high-RPM
-residual from 22.75 s. Both remove cadence, crossfade their loop seam, and
-normalize to -18 dBFS RMS with a -3 dBFS peak ceiling. V10/V12 load them
-with an RPM-dependent 1800–3000 RPM equal-power fade; EV gates them off. If local files are absent, a
-deterministic stereo residual prevents missing-buffer errors. Measured targets,
-without copyrighted audio, are stored in `assets/ferrari_sf90_acoustic_target.json`.
+The bank contains six firing-frequency anchors (65–520 Hz), each with two
+asynchronous stereo loops longer than four seconds. The processor removes DC and
+dominant cadence, stabilizes slow source-level rides, adds mono-compatible
+upper-band Side microstructure, closes each loop with a 250 ms cyclic seam ease,
+and normalizes every output to -18 dBFS RMS. Runtime pitch ratios are clamped to 0.9–1.1 and adjacent anchors
+crossfade continuously. V10/V12 enable this bank; EV gates it off.
+
+The user-supplied `/Users/saintpeter/Desktop/Ferrari.wav` remains local-only and
+is used only as an acoustic comparison target. It is never loaded, committed,
+synced, or redistributed. Its measured non-audio targets are stored in
+`assets/ferrari_sf90_acoustic_target.json`.
 
 ## Regeneration and validation
 
@@ -158,13 +169,13 @@ python3 tools/build_project.py --output-root .
 python3 -m unittest discover -s tests -v
 python3 tools/audio_metrics.py render.wav --max-peak-dbfs -1 --min-rms-dbfs -45 --min-rumble-ratio 0.55 --max-subsonic-ratio 0.05 --max-low-side-ratio 0.05 --min-low-band-correlation 0.95 --max-mono-fold-rms-loss-db 1.5 --max-high-ratio 0.10
 python3 tools/audio_metrics.py high_rpm.wav --compare-wav ferrari_window.wav --min-third-octave-similarity-left 0.85 --min-third-octave-similarity-right 0.85 --min-third-octave-similarity 0.87 --max-third-octave-similarity-lr-delta 0.05
-python3 tools/audio_metrics.py eq_cut.wav --compare-wav eq_flat.wav --expected-gain-db -6 --gain-tolerance-db 1
+python3 tools/audio_metrics.py eq_cut.wav --compare-wav eq_flat.wav --expected-gain-db -12 --gain-tolerance-db 0.25
 ```
 
 The rumble layer is high-passed near 28 Hz. After the cabin IR, `cross~ 120`
 centers deep bass while asymmetric short all-pass/early-reflection paths widen
-only the upper body and mechanical detail. The mid band uses a 0.20 Side safety
-trim; the high band uses 0.42 plus 0.04 cross-reflections. This keeps the default
+only the upper body and mechanical detail. The mid band uses a 0.24 Side safety
+trim; the high band uses 0.26 plus 0.04 cross-reflections. This keeps the default
 fold-down near the target without removing stereo phase detail.
 The full signal then ends
 in `mix_master~`: one visible four-node graph driving stereo `cascade~`, click-safe dry/wet bypass,

@@ -3202,7 +3202,7 @@
                     42.0,
                     20.0
                   ],
-                  "text": "*~ 0.2"
+        "text": "*~ 0.6"
                 }
               },
               {
@@ -3540,7 +3540,7 @@
                         "square"
                       ],
                       "parameter_initial": [
-                        2
+                        1
                       ],
                       "parameter_initial_enable": 1,
                       "parameter_longname": "Waveform",
@@ -3726,7 +3726,7 @@
                       0.0
                     ],
                     "Waveform": [
-                      2
+                      1
                     ]
                   },
                   "text": "autopattr",
@@ -8457,7 +8457,7 @@
                     42.0,
                     20.0
                   ],
-                  "text": "*~ 0.2"
+        "text": "*~ 0.6"
                 }
               },
               {
@@ -8795,7 +8795,7 @@
                         "square"
                       ],
                       "parameter_initial": [
-                        1
+                        0
                       ],
                       "parameter_initial_enable": 1,
                       "parameter_longname": "Waveform",
@@ -8981,7 +8981,7 @@
                       0.0
                     ],
                     "Waveform": [
-                      1
+                      0
                     ]
                   },
                   "text": "autopattr",
@@ -26685,7 +26685,7 @@
             65.0,
             22.0
           ],
-          "text": "*~ 0.2"
+          "text": "*~ 0.6"
         }
       },
       {
@@ -30051,7 +30051,7 @@
                         "square"
                       ],
                       "parameter_initial": [
-                        1
+                        0
                       ],
                       "parameter_initial_enable": 1,
                       "parameter_longname": "Waveform",
@@ -30237,7 +30237,7 @@
                       0.0
                     ],
                     "Waveform": [
-                      1
+                      0
                     ]
                   },
                   "text": "autopattr",
@@ -35306,7 +35306,7 @@
                         "square"
                       ],
                       "parameter_initial": [
-                        2
+                        1
                       ],
                       "parameter_initial_enable": 1,
                       "parameter_longname": "Waveform",
@@ -35492,7 +35492,7 @@
                       0.0
                     ],
                     "Waveform": [
-                      2
+                      1
                     ]
                   },
                   "text": "autopattr",
@@ -53196,7 +53196,7 @@
             65.0,
             22.0
           ],
-          "text": "*~ 0.2"
+          "text": "*~ 0.6"
         }
       },
       {

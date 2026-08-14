@@ -14,9 +14,9 @@ VehicleSoundSynth-V4.maxproj
 "VehicleSoundSynthV4_\345\256\214\346\225\264\344\275\277\347\224\250\346\211\213\345\206\214.docx"
 "VehicleSoundSynth_\345\256\214\346\225\264\344\275\277\347\224\250\346\211\213\345\206\214.docx"
 assets/asset_manifest.json
+assets/engine_texture_bank.json
 assets/ferrari_sf90_acoustic_target.json
 assets/raw/README.md
-code/local_reference_loader.js
 gen/ev_powertrain.gendsp
 gen/v10_powertrain.gendsp
 gen/v12_powertrain.gendsp
@@ -42,5 +42,6 @@ tools/build_rtpc_dsp_spec.py
 tools/build_runtime_probe.py
 tools/build_user_manual.py
 tools/prepare_local_reference.py
+tools/prepare_engine_texture.py
 tools/process_assets.py
 tools/render_rtpc_spec_pdf.py

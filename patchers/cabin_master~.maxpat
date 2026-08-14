@@ -21,7 +21,7 @@
             860.0,
             22.0
           ],
-          "text": "RPM-adaptive three-band cabin field: mono bass, restrained mid Side, spacious high Side"
+          "text": "RPM-adaptive cabin field: mono bass below 120 Hz, preserved stereo mid/high field"
         }
       },
       {
@@ -734,7 +734,7 @@
             285.0,
             22.0
           ],
-          "text": "expr 1.-0.8*min(1.,max(0.,($f1-1500.)/2500.))"
+          "text": "expr 1.-0.1*min(1.,max(0.,($f1-1500.)/2500.))"
         }
       },
       {
@@ -752,7 +752,7 @@
             295.0,
             22.0
           ],
-          "text": "expr 1.-0.35*min(1.,max(0.,($f1-1500.)/2500.))"
+          "text": "expr 1.-0.05*min(1.,max(0.,($f1-1500.)/2500.))"
         }
       },
       {
@@ -1444,7 +1444,7 @@
             65.0,
             22.0
           ],
-          "text": "*~ 0.20"
+          "text": "*~ 0.24"
         }
       },
       {
@@ -1606,7 +1606,7 @@
             65.0,
             22.0
           ],
-          "text": "*~ 0.42"
+          "text": "*~ 0.26"
         }
       },
       {

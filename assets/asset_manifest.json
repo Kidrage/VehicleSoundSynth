@@ -345,8 +345,8 @@
     },
     {
       "id": "ferrari_acceleration_reference",
-      "purpose": "offline loudness-matched spectral and acceleration reference",
-      "status": "downloaded",
+      "purpose": "runtime six-anchor stereo residual bank and offline acoustic reference",
+      "status": "processed",
       "raw_path": "assets/raw/biholao_370278_ferrari_acceleration.wav",
       "raw_sha256": "6c5f1169d01403d2323435e7c27fd747e89c35db637cf989e4040240819baa4d",
       "source": {
@@ -356,13 +356,22 @@
         "license": "CC0-1.0",
         "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
       },
-      "outputs": []
+      "outputs": [],
+      "runtime_texture_bank": {
+        "processor": "tools/prepare_engine_texture.py",
+        "metadata": "assets/engine_texture_bank.json",
+        "output_count": 12,
+        "normalization_rms_dbfs": -18.0,
+        "minimum_duration_seconds": 4.0,
+        "maximum_runtime_playback_ratio": 1.1
+      }
     }
   ],
   "local_only_references": [
     {
       "id": "user_sf90_nearfield",
       "distribution": "local-only; do not commit, sync, upload, or redistribute",
+      "usage": "analysis-only acoustic target; never loaded by the runtime patch",
       "source_path": "/Users/saintpeter/Desktop/Ferrari.wav",
       "source_sha256": "04d590aec4cbd3af615a195ef21e193c5da595875821fe82eb6789292f496111",
       "derived_outputs": [
@@ -382,7 +391,7 @@
         }
       ],
       "processor": "tools/prepare_local_reference.py",
-      "runtime_profiles": [
+      "comparison_profiles": [
         "v12",
         "v10"
       ]

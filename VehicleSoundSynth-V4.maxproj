@@ -3,10 +3,6 @@
   "autoorganize": 0,
   "contents": {
     "code": {
-      "code/local_reference_loader.js": {
-        "kind": "javascript",
-        "local": 1
-      },
       "gen/ev_powertrain.gendsp": {
         "kind": "gendsp",
         "local": 1
@@ -21,6 +17,10 @@
       }
     },
     "data": {
+      "assets/engine_texture_bank.json": {
+        "kind": "data",
+        "local": 1
+      },
       "assets/ferrari_sf90_acoustic_target.json": {
         "kind": "data",
         "local": 1
@@ -36,6 +36,54 @@
         "local": 1
       },
       "media/cabin_ir_r.wav": {
+        "kind": "mediafile",
+        "local": 1
+      },
+      "media/engine_texture_065_a.wav": {
+        "kind": "mediafile",
+        "local": 1
+      },
+      "media/engine_texture_065_b.wav": {
+        "kind": "mediafile",
+        "local": 1
+      },
+      "media/engine_texture_110_a.wav": {
+        "kind": "mediafile",
+        "local": 1
+      },
+      "media/engine_texture_110_b.wav": {
+        "kind": "mediafile",
+        "local": 1
+      },
+      "media/engine_texture_180_a.wav": {
+        "kind": "mediafile",
+        "local": 1
+      },
+      "media/engine_texture_180_b.wav": {
+        "kind": "mediafile",
+        "local": 1
+      },
+      "media/engine_texture_260_a.wav": {
+        "kind": "mediafile",
+        "local": 1
+      },
+      "media/engine_texture_260_b.wav": {
+        "kind": "mediafile",
+        "local": 1
+      },
+      "media/engine_texture_380_a.wav": {
+        "kind": "mediafile",
+        "local": 1
+      },
+      "media/engine_texture_380_b.wav": {
+        "kind": "mediafile",
+        "local": 1
+      },
+      "media/engine_texture_520_a.wav": {
+        "kind": "mediafile",
+        "local": 1
+      },
+      "media/engine_texture_520_b.wav": {
         "kind": "mediafile",
         "local": 1
       },
@@ -84,10 +132,6 @@
         "local": 1
       },
       "media/mechanical_click.wav": {
-        "kind": "mediafile",
-        "local": 1
-      },
-      "media/reference_texture_fallback.wav": {
         "kind": "mediafile",
         "local": 1
       },

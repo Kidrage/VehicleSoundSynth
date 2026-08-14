@@ -38,9 +38,9 @@ SCENARIOS = {
     "idle-v10": {"profile": "v10", "rpm": 850.0},
     "high-v12-3500": {"profile": "v12", "rpm": 3500.0, "throttle": 0.72, "load": 0.65},
     "high-v10-4200": {"profile": "v10", "rpm": 4200.0, "throttle": 0.78, "load": 0.70},
-    "ev-pad-on": {"profile": "ev", "rpm": 1800.0, "pad_level_db": 6.0},
-    "ev-pad-off": {"profile": "ev", "rpm": 1800.0, "pad_mute": 1},
-    "ev-pad-solo": {"profile": "ev", "rpm": 1800.0, "pad_solo": 1},
+    "ev-pad-on": {"profile": "ev", "rpm": 1800.0, "throttle": 0.35, "pad_level_db": -3.0},
+    "ev-pad-off": {"profile": "ev", "rpm": 1800.0, "throttle": 0.35, "pad_mute": 1},
+    "ev-pad-solo": {"profile": "ev", "rpm": 1800.0, "throttle": 0.35, "pad_solo": 1},
     "ev-pad-mute": {"profile": "ev", "rpm": 1800.0, "pad_mute": 1},
     "shift-up": {"profile": "v12", "rpm": 3200.0, "event": "shift_dir 1, shift 1"},
     "shift-down": {"profile": "v10", "rpm": 2800.0, "event": "shift_dir -1, shift 1"},
@@ -108,8 +108,7 @@ def make_probe(
     p.connect(sum_r, cabin, 0, 2)
     p.connect(cabin, mix, 0, 1)
     p.connect(cabin, mix, 1, 2)
-    for index, message in enumerate(
-        (
+    default_messages = (
             f"engine_type {profile}",
             f"ev_weight {ev_weight:g}",
             f"v12_weight {v12_weight:g}",
@@ -125,8 +124,13 @@ def make_probe(
             "eq_highmid 3800. -3. 1.",
             "eq_high 9000. -4.",
             "master_trim_db -8.",
-        ) + extra_messages
-    ):
+    )
+    overridden = {message.split(maxsplit=1)[0] for message in extra_messages}
+    control_messages = tuple(
+        message for message in default_messages
+        if message.split(maxsplit=1)[0] not in overridden
+    ) + extra_messages
+    for index, message in enumerate(control_messages):
         initial = p.new(f"loadmess {message}", 25, 110 + index * 32, 245, numinlets=1, numoutlets=1)
         p.connect(initial, controller)
 
@@ -305,18 +309,11 @@ def main() -> None:
         shutil.copy2(source, bundle / source.name)
     for source in (root / "gen").glob("*.gendsp"):
         shutil.copy2(source, bundle / source.name)
-    shutil.copy2(root / "code" / "local_reference_loader.js", bundle / "local_reference_loader.js")
     for source in (root / "media").glob("*.wav"):
         shutil.copy2(source, media / source.name)
         # Some patchers use an explicit media/foo.wav argument while Max resolves
         # abstractions from the bundle root. Keep both layouts in the probe.
         shutil.copy2(source, bundle / source.name)
-    local_media = root / "media" / "local"
-    if local_media.is_dir():
-        local_bundle = media / "local"
-        local_bundle.mkdir(parents=True, exist_ok=True)
-        for source in local_media.glob("*.wav"):
-            shutil.copy2(source, local_bundle / source.name)
     if args.sweep_to_rpm is not None:
         state = "sweep"
     elif args.rpm is not None:
@@ -355,7 +352,6 @@ def main() -> None:
         path.name: {"kind": "gendsp", "local": 1}
         for path in sorted(bundle.glob("*.gendsp"))
     }
-    code_contents["local_reference_loader.js"] = {"kind": "javascript", "local": 1}
     media_contents = {
         f"media/{path.name}": {"kind": "mediafile", "local": 1}
         for path in sorted(media.glob("*.wav"))

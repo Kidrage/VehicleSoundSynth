@@ -1,0 +1,128 @@
+{
+  "source": "assets/raw/biholao_370278_ferrari_acceleration.wav",
+  "target_rms_dbfs": -18.0,
+  "crossfade_seconds": 0.25,
+  "outputs": [
+    {
+      "path": "media/engine_texture_065_a.wav",
+      "frames": 196800,
+      "sample_rate": 48000,
+      "rms_dbfs": -18.000000000000014,
+      "peak_dbfs": -6.285682048167972,
+      "sha256": "46a668ab2abcaf8f98ce7f984b2d08ff70c905960e9921d7e107ee38a570836e",
+      "anchor_hz": 65.0,
+      "variant": "a"
+    },
+    {
+      "path": "media/engine_texture_065_b.wav",
+      "frames": 225600,
+      "sample_rate": 48000,
+      "rms_dbfs": -18.000000000000053,
+      "peak_dbfs": -6.1695409789587865,
+      "sha256": "35a96dd5937aee106bf1e8210fec9261d34ed8c938a4d2a657c095cd988ff94d",
+      "anchor_hz": 65.0,
+      "variant": "b"
+    },
+    {
+      "path": "media/engine_texture_110_a.wav",
+      "frames": 196800,
+      "sample_rate": 48000,
+      "rms_dbfs": -17.99999999999995,
+      "peak_dbfs": -5.300011555196525,
+      "sha256": "686316478c3843d944c4910d05f071e3efcf6fb631b25ac3cbd93a76465e6da6",
+      "anchor_hz": 110.0,
+      "variant": "a"
+    },
+    {
+      "path": "media/engine_texture_110_b.wav",
+      "frames": 225600,
+      "sample_rate": 48000,
+      "rms_dbfs": -18.000000000000014,
+      "peak_dbfs": -6.926324209122731,
+      "sha256": "b2b038815bd9c1082cb750066fd85979a4c7780867a09b3768816d689e773aff",
+      "anchor_hz": 110.0,
+      "variant": "b"
+    },
+    {
+      "path": "media/engine_texture_180_a.wav",
+      "frames": 196800,
+      "sample_rate": 48000,
+      "rms_dbfs": -17.999999999999947,
+      "peak_dbfs": -6.345031924986701,
+      "sha256": "bb3c90891b98af1ff136add70fd70c48c6fd5ff0a03a0f59ed31c64eca99c1df",
+      "anchor_hz": 180.0,
+      "variant": "a"
+    },
+    {
+      "path": "media/engine_texture_180_b.wav",
+      "frames": 225600,
+      "sample_rate": 48000,
+      "rms_dbfs": -18.000000000000032,
+      "peak_dbfs": -5.478077218932716,
+      "sha256": "891b44a0a582de9e7a25080b991afae7b4e7a9ed10f3dfbf6d525ddcfca7e709",
+      "anchor_hz": 180.0,
+      "variant": "b"
+    },
+    {
+      "path": "media/engine_texture_260_a.wav",
+      "frames": 196800,
+      "sample_rate": 48000,
+      "rms_dbfs": -17.999999999999964,
+      "peak_dbfs": -6.586524230875504,
+      "sha256": "7a30f45b223f75740c172d2cd265a957e691717367ffecac5bb11effc5cce5ab",
+      "anchor_hz": 260.0,
+      "variant": "a"
+    },
+    {
+      "path": "media/engine_texture_260_b.wav",
+      "frames": 225600,
+      "sample_rate": 48000,
+      "rms_dbfs": -18.00000000000003,
+      "peak_dbfs": -7.0535122698185235,
+      "sha256": "b1f17419f9cb8e8085c86155d3cf04577ff89a7c9a684f45bfee4008ad19fe30",
+      "anchor_hz": 260.0,
+      "variant": "b"
+    },
+    {
+      "path": "media/engine_texture_380_a.wav",
+      "frames": 196800,
+      "sample_rate": 48000,
+      "rms_dbfs": -18.000000000000032,
+      "peak_dbfs": -6.594624962505311,
+      "sha256": "8a43f8bac99908471be83145855d4445556001b61ab384a80966f0ecfe2e5354",
+      "anchor_hz": 380.0,
+      "variant": "a"
+    },
+    {
+      "path": "media/engine_texture_380_b.wav",
+      "frames": 225600,
+      "sample_rate": 48000,
+      "rms_dbfs": -17.999999999999975,
+      "peak_dbfs": -5.15696416287917,
+      "sha256": "af632c956bc95128297d4d8da04257073413e5c36a54c6b113b30fc89071c863",
+      "anchor_hz": 380.0,
+      "variant": "b"
+    },
+    {
+      "path": "media/engine_texture_520_a.wav",
+      "frames": 196800,
+      "sample_rate": 48000,
+      "rms_dbfs": -17.999999999999993,
+      "peak_dbfs": -5.274545739109657,
+      "sha256": "65395e421ca1d258b2fb58cb04b7383870a214b50f2d9f264502f8706c82cdaa",
+      "anchor_hz": 520.0,
+      "variant": "a"
+    },
+    {
+      "path": "media/engine_texture_520_b.wav",
+      "frames": 225600,
+      "sample_rate": 48000,
+      "rms_dbfs": -17.999999999999986,
+      "peak_dbfs": -6.773147197563201,
+      "sha256": "dfbaabc06676685e9d4f4739dfa1224e14c74742f65d3925aa8c3012d7df2a9e",
+      "anchor_hz": 520.0,
+      "variant": "b"
+    }
+  ],
+  "source_sha256": "6c5f1169d01403d2323435e7c27fd747e89c35db637cf989e4040240819baa4d"
+}

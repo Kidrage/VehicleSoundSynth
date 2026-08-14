@@ -1,8 +1,8 @@
 # Source Index
 
 Repository: /Users/saintpeter/Downloads/VehicleSoundSynth-V4
-Tracked filtered files: 46
-High-value indexed files: 20
+Tracked filtered files: 58
+High-value indexed files: 21
 
 Read this file before broad repository exploration. Prefer focused `rg`
 or `git grep` against the listed areas before opening source files.
@@ -15,7 +15,6 @@ or `git grep` against the listed areas before opening source files.
 
 ## source
 
-- code/local_reference_loader.js
 - tools/audio_metrics.py
 - tools/build_mix_probe.py
 - tools/build_project.py
@@ -23,6 +22,7 @@ or `git grep` against the listed areas before opening source files.
 - tools/build_runtime_probe.py
 - tools/build_user_manual.py
 - tools/prepare_local_reference.py
+- tools/prepare_engine_texture.py
 - tools/process_assets.py
 - tools/render_rtpc_spec_pdf.py
 
@@ -34,6 +34,7 @@ or `git grep` against the listed areas before opening source files.
 
 - assets/asset_manifest.json
 - assets/ferrari_sf90_acoustic_target.json
+- assets/engine_texture_bank.json
 - presets/sound_dna.json
 
 ## docs

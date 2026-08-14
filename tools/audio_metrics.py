@@ -152,6 +152,73 @@ def stereo_delay_ms(path: Path, max_delay_ms: float = 5.0) -> float:
     return best * 1000.0 / sample_rate
 
 
+def envelope_modulation_metrics(
+    samples: list[float], sample_rate: int
+) -> dict[str, float]:
+    """Measure slow envelope cycling without mistaking steady tones for AM."""
+    window = max(1, round(sample_rate * 0.10))
+    hop = max(1, round(sample_rate * 0.02))
+    envelope = [
+        math.sqrt(sum(value * value for value in samples[index:index + window]) / window)
+        for index in range(0, len(samples) - window + 1, hop)
+    ]
+    if len(envelope) < 4:
+        return {
+            "modulation_peak_hz": 0.0,
+            "modulation_peak_ratio_0_5_20_hz": 0.0,
+            "envelope_autocorrelation_period_seconds": 0.0,
+            "envelope_autocorrelation_peak": 0.0,
+        }
+    mean = sum(envelope) / len(envelope)
+    normalized = [value / max(mean, 1e-12) - 1.0 for value in envelope]
+    energy = sum(value * value for value in normalized)
+    if energy / len(normalized) < 1e-4:
+        return {
+            "modulation_peak_hz": 0.0,
+            "modulation_peak_ratio_0_5_20_hz": 0.0,
+            "envelope_autocorrelation_period_seconds": 0.0,
+            "envelope_autocorrelation_peak": 0.0,
+        }
+
+    envelope_rate = sample_rate / hop
+    spectrum: list[tuple[float, float]] = []
+    for bin_index in range(1, len(normalized) // 2 + 1):
+        frequency = bin_index * envelope_rate / len(normalized)
+        if frequency > 20.0:
+            break
+        if frequency < 0.5:
+            continue
+        value = sum(
+            sample
+            * (0.5 - 0.5 * math.cos(2.0 * math.pi * index / (len(normalized) - 1)))
+            * cmath.exp(-2j * math.pi * bin_index * index / len(normalized))
+            for index, sample in enumerate(normalized)
+        )
+        spectrum.append((abs(value) ** 2, frequency))
+    modulation_power = sum(power for power, _ in spectrum)
+    peak_power, peak_frequency = max(spectrum, default=(0.0, 0.0))
+
+    correlations: list[tuple[float, float]] = []
+    minimum_lag = max(1, round(0.15 * envelope_rate))
+    maximum_lag = min(len(normalized) - 2, round(2.5 * envelope_rate))
+    for lag in range(minimum_lag, maximum_lag + 1):
+        first = normalized[:-lag]
+        second = normalized[lag:]
+        numerator = sum(left * right for left, right in zip(first, second))
+        denominator = math.sqrt(
+            sum(value * value for value in first)
+            * sum(value * value for value in second)
+        )
+        correlations.append((numerator / max(denominator, 1e-30), lag / envelope_rate))
+    autocorrelation, period = max(correlations, default=(0.0, 0.0))
+    return {
+        "modulation_peak_hz": peak_frequency,
+        "modulation_peak_ratio_0_5_20_hz": peak_power / max(modulation_power, 1e-30),
+        "envelope_autocorrelation_period_seconds": period,
+        "envelope_autocorrelation_peak": autocorrelation,
+    }
+
+
 def analyze(path: Path, fft_size: int = 32768) -> dict[str, float | int | str]:
     sample_rate, samples, side_samples, level_samples = read_mid_side(path)
     if not samples:
@@ -305,6 +372,7 @@ def analyze(path: Path, fft_size: int = 32768) -> dict[str, float | int | str]:
         "high_ratio": high,
         "spectral_peak_count_80_6000": len(peak_bins),
         "dominant_peak_ratio_80_6000": dominant_neighborhood / band_total,
+        **envelope_modulation_metrics(samples, sample_rate),
     }
 
 
