@@ -9,12 +9,12 @@
 - Working root: `.`
 - Repository name: `VehicleSoundSynth-V4`
 - Git repository: `true`
-- Generated at: `2026-08-17T06:26:10.998864+00:00`
+- Generated at: `2026-08-17T06:27:58.363031+00:00`
 
 ## Current State
 
 - Branch: `codex/vehicle-sound-v4`
-- HEAD: `745207c`
+- HEAD: `8cf0f1e`
 - Indexed paths: 88
 - Inventory truncated: `false`
 - Inaccessible paths: 0
@@ -60,7 +60,7 @@
 
 - audio: 41 files, 103833150 bytes
 - code: 11 files, 420024 bytes
-- literature: 14 files, 572764 bytes
+- literature: 14 files, 574171 bytes
 - other: 18 files, 2450722 bytes
 - structured_data: 4 files, 22823 bytes
 
@@ -90,6 +90,7 @@
 
 ## Change History
 
+- `8cf0f1e 2026-08-17 fix: remove full-rate combustion reset harshness`
 - `745207c 2026-08-14 fix: rebuild V4 engine realism and stereo field`
 - `f138ccb 2026-08-12 docs: seal V4 integrity audit`
 - `32bc86d 2026-08-12 docs: complete V4 Ferrari validation guide`
@@ -109,22 +110,10 @@
 - `81e1345 2026-08-11 docs: refresh V3.1 handoff`
 - `9066183 2026-08-11 fix: harden V3.1 stereo EQ and reference processing`
 - `22bb3f1 2026-08-11 feat: add V3.1 cinematic engine mix`
-- `030708f 2026-08-11 docs: refresh project handoff`
 
 ## Current Changes
 
 - `## codex/vehicle-sound-v4`
-- ` M .codex/REPO_GUIDE.md`
-- ` M README.md`
-- ` M gen/v10_powertrain.gendsp`
-- ` M gen/v12_powertrain.gendsp`
-- ` M main.maxpat`
-- ` M patchers/reference_texture~.maxpat`
-- ` M patchers/transient~.maxpat`
-- ` M presets/sound_dna.json`
-- ` M tests/test_project.py`
-- ` M tools/audio_metrics.py`
-- ` M tools/build_project.py`
 
 ## Related Repositories
 
