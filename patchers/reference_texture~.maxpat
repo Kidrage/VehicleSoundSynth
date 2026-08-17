@@ -408,7 +408,7 @@
             95.0,
             22.0
           ],
-          "text": "loadmess -6"
+          "text": "loadmess -24"
         }
       },
       {

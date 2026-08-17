@@ -286,6 +286,7 @@ def analyze(path: Path, fft_size: int = 32768) -> dict[str, float | int | str]:
     subsonic = band_energy(20.0, 30.0) / audible
     rumble = band_energy(30.0, 140.0) / audible
     low_mid = band_energy(40.0, 500.0) / audible
+    harsh = band_energy(2000.0, 6000.0) / audible
     high = band_energy(6000.0, min(20000.0, sample_rate / 2.0)) / audible
     low_mid_energy = band_energy(30.0, 120.0)
     low_side_energy = sum(
@@ -369,6 +370,7 @@ def analyze(path: Path, fft_size: int = 32768) -> dict[str, float | int | str]:
         "high_band_mono_fold_rms_loss_db": high_band[2],
         "mono_fold_rms_loss_db": mono_fold_loss,
         "right_channel_delay_ms": stereo_delay_ms(path),
+        "harsh_ratio": harsh,
         "high_ratio": high,
         "spectral_peak_count_80_6000": len(peak_bins),
         "dominant_peak_ratio_80_6000": dominant_neighborhood / band_total,
@@ -381,6 +383,7 @@ def main() -> int:
     parser.add_argument("wav", type=Path)
     parser.add_argument("--max-peak-dbfs", type=float)
     parser.add_argument("--min-rms-dbfs", type=float)
+    parser.add_argument("--max-harsh-ratio", type=float)
     parser.add_argument("--max-high-ratio", type=float)
     parser.add_argument("--min-low-mid-ratio", type=float)
     parser.add_argument("--min-rumble-ratio", type=float)
@@ -424,6 +427,8 @@ def main() -> int:
         failures.append("peak_dbfs")
     if args.min_rms_dbfs is not None and metrics["rms_dbfs"] < args.min_rms_dbfs:
         failures.append("rms_dbfs")
+    if args.max_harsh_ratio is not None and metrics["harsh_ratio"] > args.max_harsh_ratio:
+        failures.append("harsh_ratio")
     if args.max_high_ratio is not None and metrics["high_ratio"] > args.max_high_ratio:
         failures.append("high_ratio")
     if args.min_low_mid_ratio is not None and metrics["low_mid_ratio"] < args.min_low_mid_ratio:

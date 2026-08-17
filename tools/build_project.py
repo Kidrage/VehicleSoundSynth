@@ -1168,7 +1168,7 @@ def make_reference_texture() -> dict[str, Any]:
     p.connect(gate_product, gate_pack)
     p.connect(gate_pack, gate_line)
 
-    level = add_db_gain_control(p, router, 4, 1570, 155, -6.0)
+    level = add_db_gain_control(p, router, 4, 1570, 155, -24.0)
     mute_clip = p.new("clip 0 1", 1770, 155, 65, numinlets=3, numoutlets=1)
     mute_gain = p.new("expr 1-$i1", 1850, 155, 80, numinlets=1, numoutlets=1)
     mute_pack = p.new("pack 0. 40", 1945, 155, 85, numinlets=2, numoutlets=1)
@@ -1410,7 +1410,7 @@ def make_transient() -> dict[str, Any]:
         p.new(f"buffer~ {name} {name}.wav", x, 245, 210, numinlets=1, numoutlets=2)
         start = p.message("start", x, 285, 45)
         player = p.new(f"play~ {name} 1", x, 325, 145, numinlets=1, numoutlets=2)
-        gain = p.new("*~ 0.26", x, 365, 65, numinlets=2, numoutlets=1)
+        gain = p.new("*~ 0.16", x, 365, 65, numinlets=2, numoutlets=1)
         p.connect(profile_gate, start, gate_outlet)
         p.connect(start, player)
         p.connect(starter_stop, player)
@@ -1520,6 +1520,14 @@ def make_transient() -> dict[str, Any]:
     p.connect(texture_gain, texture_pack)
     p.connect(texture_pack, texture_line)
     p.connect(texture_default, texture_clip)
+
+    for index in range(2):
+        starter_lowpass = p.new(
+            "svf~ 3500 0.7", 35 + index * 300, 1040, 105,
+            numinlets=3, numoutlets=4,
+        )
+        p.connect(players[index], starter_lowpass)
+        players[index] = starter_lowpass
 
     mixed = players[0]
     for index, player in enumerate(players[1:]):
@@ -2259,8 +2267,8 @@ def make_main() -> dict[str, Any]:
     preset_select = p.new("sel 0 1 2", 680, 165, 80, numinlets=1, numoutlets=4)
     presets = [
         "engine_type ev, ev_weight 1., v12_weight 0., v10_weight 0., aggression 0.25, brightness 0.72, body 0.34, texture 0.20, cabin_width 0.90, cabin_rumble 0., exhaust_boom 0., structure_vibration 0., cabin_ir_mix 0.10, powertrain_level_db -2., transient_level_db -9., road_level_db -14., rumble_level_db -60., pad_level_db -3., pad_mute 0, pad_solo 0, reference_texture_level_db -20., reference_texture_mute 0, master_trim_db -8.",
-        "engine_type v12, ev_weight 0., v12_weight 1., v10_weight 0., aggression 0.62, brightness 0.78, body 0.72, texture 0.52, cabin_width 0.82, cabin_rumble 0.90, exhaust_boom 0.62, structure_vibration 0.58, cabin_ir_mix 0.20, powertrain_level_db -3., transient_level_db -7., road_level_db -16., rumble_level_db -5., pad_level_db -3., pad_mute 0, pad_solo 0, reference_texture_level_db -6., reference_texture_mute 0, master_trim_db -8.",
-        "engine_type v10, ev_weight 0., v12_weight 0., v10_weight 1., aggression 0.90, brightness 0.66, body 0.84, texture 0.86, cabin_width 0.78, cabin_rumble 0.92, exhaust_boom 0.74, structure_vibration 0.72, cabin_ir_mix 0.18, powertrain_level_db -3., transient_level_db -6., road_level_db -16., rumble_level_db -4., pad_level_db -3., pad_mute 0, pad_solo 0, reference_texture_level_db -6., reference_texture_mute 0, master_trim_db -8.",
+        "engine_type v12, ev_weight 0., v12_weight 1., v10_weight 0., aggression 0.62, brightness 0.78, body 0.72, texture 0.52, cabin_width 0.82, cabin_rumble 0.90, exhaust_boom 0.62, structure_vibration 0.58, cabin_ir_mix 0.20, powertrain_level_db -3., transient_level_db -7., road_level_db -16., rumble_level_db -5., pad_level_db -3., pad_mute 0, pad_solo 0, reference_texture_level_db -24., reference_texture_mute 0, master_trim_db -8.",
+        "engine_type v10, ev_weight 0., v12_weight 0., v10_weight 1., aggression 0.90, brightness 0.66, body 0.84, texture 0.86, cabin_width 0.78, cabin_rumble 0.92, exhaust_boom 0.74, structure_vibration 0.72, cabin_ir_mix 0.18, powertrain_level_db -3., transient_level_db -6., road_level_db -16., rumble_level_db -4., pad_level_db -3., pad_mute 0, pad_solo 0, reference_texture_level_db -24., reference_texture_mute 0, master_trim_db -8.",
     ]
     preset_messages: list[str] = []
     for index, value in enumerate(presets):
@@ -2306,7 +2314,7 @@ def make_main() -> dict[str, Any]:
         p, "EV Pad dB", "pad_level_db", -3.0, 730, 635, engine
     )
     ui_targets["reference_texture_level_db"] = add_labeled_db_number(
-        p, "Engine Texture dB", "reference_texture_level_db", -6.0, 930, 635, engine
+        p, "Engine Texture dB", "reference_texture_level_db", -24.0, 930, 635, engine
     )
     for index, (label, name) in enumerate(
         (("Pad Mute", "pad_mute"), ("Pad Solo", "pad_solo"), ("Texture Mute", "reference_texture_mute"))
@@ -2509,7 +2517,7 @@ left_drive = (base + sheen_l) * a;
 right_drive = (coherent_low + h2 * 0.99 + h3 * 1.02 + inverter * 0.98 + sheen_r) * a;
 out1 = tanh(left_drive * 1.2) / 1.2;
 out2 = tanh(right_drive * 1.2) / 1.2;""",
-    "v12_powertrain": """// Four-stroke V12: event-driven combustion with bounded stochastic cylinder variation.
+    "v12_powertrain": """// Four-stroke V12: two phase-locked six-cylinder banks and load-shaped combustion residual.
 Param rpm(780, min=0, max=10000);
 Param throttle(0, min=0, max=1);
 Param load(0, min=-1, max=1);
@@ -2520,60 +2528,51 @@ Param texture(0.5, min=0, max=1);
 Param engine_running(0, min=0, max=1);
 Param combustion_gain(0, min=0, max=1);
 Param shift_cut(1, min=0, max=1);
-History previous_phase(0);
-History event_gain_common(0);
-History event_gain_l(0);
-History event_gain_r(0);
-History timing_common(0);
-History timing_l(0);
-History timing_r(0);
 r = slide(clamp(rpm, 0, 10000), 700, 1100);
 t = slide(clamp(throttle, 0, 1), 420, 850);
 l = max(clamp(load, -1, 1), 0);
 run = slide(clamp(engine_running * combustion_gain * shift_cut, 0, 1), 480, 1900);
 speedmix = clamp((r - 780) / 8220, 0, 1);
+events = 6;
 crank = clamp(r / 60, 6, 170);
-fire = clamp(crank * 6, 36, 1020);
-raw_phase = phasor(fire);
-event_trigger = raw_phase < previous_phase;
-if (event_trigger) {
-    event_gain_common = noise();
-    event_gain_l = noise();
-    event_gain_r = noise();
-    timing_common = noise();
-    timing_l = noise();
-    timing_r = noise();
-}
-previous_phase = raw_phase;
-event_gain_db_l = (event_gain_common * 0.72 + event_gain_l * 0.28) * 1.2 * (1 - speedmix * 0.5);
-event_gain_db_r = (event_gain_common * 0.72 + event_gain_r * 0.28) * 1.2 * (1 - speedmix * 0.5);
-event_gain_left = pow(10, event_gain_db_l / 20);
-event_gain_right = pow(10, event_gain_db_r / 20);
-timing_depth = 0.0035 * (1 - speedmix * 0.55);
-event_phase_l = wrap(raw_phase + (timing_common * 0.70 + timing_l * 0.30) * timing_depth, 0, 1);
-event_phase_r = wrap(raw_phase + (timing_common * 0.70 + timing_r * 0.30) * timing_depth, 0, 1);
-sharpness = 6.5 + t * 5.5 + aggression * 2;
+bank_events = 3;
+cycle_variation = clamp(cycle(crank * 0.5) * 0.020 + cycle(crank * 1.5) * 0.008, -0.03, 0.03);
+bank_fire = clamp(crank * bank_events * (1 + cycle_variation), 18, 525);
+fire = bank_fire * 2;
+bank_phase_l = phasor(bank_fire);
+bank_phase_r = bank_phase_l + 0.5;
+bank_phase_r = bank_phase_r - floor(bank_phase_r);
+sharpness = 8 + t * 7 + aggression * 3;
 pulse_mean = (1 - exp(-sharpness)) / sharpness;
-pulse_l = (exp(-event_phase_l * sharpness) - pulse_mean) * event_gain_left;
-pulse_r = (exp(-event_phase_r * sharpness) - pulse_mean) * event_gain_right;
+pulse_l = exp(-bank_phase_l * sharpness) - pulse_mean;
+pulse_r = exp(-bank_phase_r * sharpness) - pulse_mean;
+cylinder = 0.97 + cycle(crank * 0.5) * (0.020 + speedmix * 0.035) + cycle(crank * 1.5) * (0.010 + speedmix * 0.020);
 idle = 0.205 + body * 0.050;
 a = clamp(idle + t * 0.30 + l * 0.16, 0, 0.67) * run;
-tone_phase = raw_phase;
-phase_offset = 0.006 + speedmix * 0.026;
-sub = cycle(clamp(fire * 0.5, 24, 510)) * (0.060 + body * 0.050) * (1 - speedmix * 0.62);
-h1_l = sin(tone_phase * 6.28318530718) * (0.065 + body * 0.030);
-h1_r = sin(wrap(tone_phase + phase_offset, 0, 1) * 6.28318530718) * (0.065 + body * 0.030);
-h2_l = sin(wrap(tone_phase * 2, 0, 1) * 6.28318530718) * (0.040 + brightness * 0.040 + speedmix * 0.025);
-h2_r = sin(wrap(tone_phase * 2 + phase_offset * 1.7, 0, 1) * 6.28318530718) * (0.040 + brightness * 0.040 + speedmix * 0.025);
-h3_l = sin(wrap(tone_phase * 3, 0, 1) * 6.28318530718) * (0.018 + texture * 0.025 + speedmix * 0.016);
-h3_r = sin(wrap(tone_phase * 3 + phase_offset * 2.3, 0, 1) * 6.28318530718) * (0.018 + texture * 0.025 + speedmix * 0.016);
-combustion_l = pulse_l * (0.60 + body * 0.18) * (1 - speedmix * 0.18);
-combustion_r = pulse_r * (0.60 + body * 0.18) * (1 - speedmix * 0.18);
-left_drive = (combustion_l + sub + h1_l + h2_l + h3_l) * a * (0.88 + aggression * 0.12);
-right_drive = (combustion_r + sub + h1_r + h2_r + h3_r) * a * (0.88 + aggression * 0.12);
-out1 = tanh(left_drive * 1.10) / 1.16;
-out2 = tanh(right_drive * 1.10) / 1.16;""",
-    "v10_powertrain": """// Four-stroke V10: event-driven combustion with irregular cylinder energy and stable orders.
+sub = cycle(clamp(fire * 0.5, 24, 520)) * (0.055 + body * 0.045) * (1-speedmix*0.55);
+h1 = cycle(fire) * (0.16 + body * 0.08);
+h2 = cycle(clamp(fire * 2, 45, 3200)) * (0.0945 + brightness * 0.108 + speedmix * 0.081);
+h3 = cycle(clamp(fire * 3, 55, 5200)) * (0.05625 + texture * 0.06875 + speedmix * 0.0625);
+h4 = cycle(clamp(fire * 4, 70, 7000)) * speedmix * (0.025 + brightness * 0.050);
+h6 = cycle(clamp(fire * 6, 90, 9800)) * brightness * speedmix * 0.025;
+h8 = cycle(clamp(fire * 8, 110, 12000)) * texture * speedmix * 0.014;
+sideband_low = cycle(clamp(fire * 0.83, 35, 1500)) * (0.018 + speedmix * 0.075);
+sideband_high = cycle(clamp(fire * 1.17, 40, 1900)) * (0.018 + speedmix * 0.072);
+order23 = cycle(clamp(fire * 2.33, 60, 4100)) * speedmix * 0.045;
+order27 = cycle(clamp(fire * 2.67, 70, 4700)) * speedmix * 0.040;
+intake = cycle(clamp(fire * 1.5, 45, 2200)) * t * (0.025 + texture * 0.040);
+residual_gate_l = clamp(abs(pulse_l) * 1.7, 0, 1);
+residual_gate_r = clamp(abs(pulse_r) * 1.7, 0, 1);
+residual_l = (cycle(clamp(fire * 1.33, 40, 2200)) * 0.040 + cycle(clamp(fire * 2.17, 65, 4200)) * 0.024) * residual_gate_l * (0.35 + texture * 0.65);
+residual_r = (cycle(clamp(fire * 1.33, 40, 2200)) * 0.040 + cycle(clamp(fire * 2.17, 65, 4200)) * 0.024) * residual_gate_r * (0.35 + texture * 0.65);
+bank_l = (pulse_l * 0.88 + pulse_r * 0.12) * cylinder * (0.48 + body * 0.16) * (1 - speedmix * 0.30);
+bank_r = (pulse_r * 0.88 + pulse_l * 0.12) * cylinder * (0.48 + body * 0.16) * (1 - speedmix * 0.30);
+resonance = sub + h1 + sideband_low + sideband_high + h2 + order23 + order27 + h3 + h4 + h6 + h8 + intake;
+left_drive = (bank_l + resonance + residual_l) * a * (0.86 + aggression * 0.14);
+right_drive = (bank_r + resonance + residual_r) * a * (0.86 + aggression * 0.14);
+out1 = clamp(tanh(left_drive * 1.35) / 1.25, -0.86, 0.86);
+out2 = clamp(tanh(right_drive * 1.35) / 1.25, -0.86, 0.86);""",
+    "v10_powertrain": """// Four-stroke V10: phase-locked five-cylinder banks with odd-order intake colour.
 Param rpm(850, min=0, max=10000);
 Param throttle(0, min=0, max=1);
 Param load(0, min=-1, max=1);
@@ -2584,59 +2583,52 @@ Param texture(0.85, min=0, max=1);
 Param engine_running(0, min=0, max=1);
 Param combustion_gain(0, min=0, max=1);
 Param shift_cut(1, min=0, max=1);
-History previous_phase(0);
-History event_gain_common(0);
-History event_gain_l(0);
-History event_gain_r(0);
-History timing_common(0);
-History timing_l(0);
-History timing_r(0);
 r = slide(clamp(rpm, 0, 10000), 620, 980);
 t = slide(clamp(throttle, 0, 1), 360, 760);
 l = max(clamp(load, -1, 1), 0);
 run = slide(clamp(engine_running * combustion_gain * shift_cut, 0, 1), 420, 1650);
 speedmix = clamp((r - 850) / 7650, 0, 1);
+events = 5;
 crank = clamp(r / 60, 6, 170);
-fire = clamp(crank * 5, 30, 850);
-raw_phase = phasor(fire);
-event_trigger = raw_phase < previous_phase;
-if (event_trigger) {
-    event_gain_common = noise();
-    event_gain_l = noise();
-    event_gain_r = noise();
-    timing_common = noise();
-    timing_l = noise();
-    timing_r = noise();
-}
-previous_phase = raw_phase;
-event_gain_db_l = (event_gain_common * 0.68 + event_gain_l * 0.32) * 1.8 * (1 - speedmix * 0.5);
-event_gain_db_r = (event_gain_common * 0.68 + event_gain_r * 0.32) * 1.8 * (1 - speedmix * 0.5);
-event_gain_left = pow(10, event_gain_db_l / 20);
-event_gain_right = pow(10, event_gain_db_r / 20);
-timing_depth = 0.0055 * (1 - speedmix * 0.55);
-event_phase_l = wrap(raw_phase + (timing_common * 0.65 + timing_l * 0.35) * timing_depth, 0, 1);
-event_phase_r = wrap(raw_phase + (timing_common * 0.65 + timing_r * 0.35) * timing_depth, 0, 1);
-sharpness = 6 + t * 6 + aggression * 2.5;
+bank_events = 2.5;
+cycle_variation = clamp(cycle(crank * 0.5) * 0.024 + cycle(crank * 2.5) * 0.006, -0.03, 0.03);
+bank_fire = clamp(crank * bank_events * (1 + cycle_variation), 16, 450);
+fire = bank_fire * 2;
+bank_phase_l = phasor(bank_fire);
+bank_phase_r = bank_phase_l + 0.5;
+bank_phase_r = bank_phase_r - floor(bank_phase_r);
+sharpness = 7 + t * 9 + aggression * 4;
 pulse_mean = (1 - exp(-sharpness)) / sharpness;
-pulse_l = (exp(-event_phase_l * sharpness) - pulse_mean) * event_gain_left;
-pulse_r = (exp(-event_phase_r * sharpness) - pulse_mean) * event_gain_right;
+pulse_l = exp(-bank_phase_l * sharpness) - pulse_mean;
+pulse_r = exp(-bank_phase_r * sharpness) - pulse_mean;
+cylinder = 0.95 + cycle(crank * 0.5) * (0.030 + speedmix * 0.045) + cycle(crank * 2.5) * (0.016 + speedmix * 0.024);
 idle = 0.225 + body * 0.055;
 a = clamp(idle + t * 0.32 + l * 0.18, 0, 0.70) * run;
-tone_phase = raw_phase;
-phase_offset = 0.008 + speedmix * 0.032;
-sub = cycle(clamp(fire * 0.5, 24, 425)) * (0.065 + body * 0.055) * (1 - speedmix * 0.58);
-h1_l = sin(tone_phase * 6.28318530718) * (0.070 + aggression * 0.032);
-h1_r = sin(wrap(tone_phase + phase_offset, 0, 1) * 6.28318530718) * (0.070 + aggression * 0.032);
-h2_l = sin(wrap(tone_phase * 2, 0, 1) * 6.28318530718) * (0.045 + brightness * 0.042 + speedmix * 0.025);
-h2_r = sin(wrap(tone_phase * 2 + phase_offset * 1.8, 0, 1) * 6.28318530718) * (0.045 + brightness * 0.042 + speedmix * 0.025);
-h3_l = sin(wrap(tone_phase * 3, 0, 1) * 6.28318530718) * (0.020 + texture * 0.028 + speedmix * 0.017);
-h3_r = sin(wrap(tone_phase * 3 + phase_offset * 2.5, 0, 1) * 6.28318530718) * (0.020 + texture * 0.028 + speedmix * 0.017);
-combustion_l = pulse_l * (0.62 + body * 0.18) * (1 - speedmix * 0.16);
-combustion_r = pulse_r * (0.62 + body * 0.18) * (1 - speedmix * 0.16);
-left_drive = (combustion_l + sub + h1_l + h2_l + h3_l) * a * (0.88 + aggression * 0.12);
-right_drive = (combustion_r + sub + h1_r + h2_r + h3_r) * a * (0.88 + aggression * 0.12);
-out1 = tanh(left_drive * 1.12) / 1.17;
-out2 = tanh(right_drive * 1.12) / 1.17;""",
+sub = cycle(clamp(fire * 0.5, 24, 460)) * (0.060 + body * 0.052) * (1-speedmix*0.50);
+h1 = cycle(fire) * (0.17 + aggression * 0.08);
+h15 = cycle(clamp(fire * 1.5, 45, 1800)) * (0.040 + texture * 0.050);
+h2 = cycle(clamp(fire * 2, 55, 3500)) * (0.08775 + brightness * 0.0945 + speedmix * 0.07425);
+h25 = cycle(clamp(fire * 2.5, 65, 5200)) * (0.055 + texture * 0.075 + speedmix * 0.060);
+h3 = cycle(clamp(fire * 3, 75, 6500)) * (0.0425 + aggression * 0.050 + speedmix * 0.050);
+h5 = cycle(clamp(fire * 5, 95, 9000)) * brightness * speedmix * 0.040;
+h7 = cycle(clamp(fire * 7, 120, 12000)) * texture * speedmix * 0.020;
+sideband_low = cycle(clamp(fire * 0.81, 32, 1450)) * (0.022 + speedmix * 0.080);
+sideband_high = cycle(clamp(fire * 1.19, 40, 1900)) * (0.022 + speedmix * 0.078);
+order22 = cycle(clamp(fire * 2.20, 60, 4000)) * speedmix * 0.070;
+order28 = cycle(clamp(fire * 2.80, 75, 5100)) * speedmix * 0.060;
+intake_fm = fire * 1.25 * (1 + cycle(crank) * 0.008);
+intake = cycle(clamp(intake_fm, 45, 2600)) * t * (0.035 + texture * 0.055);
+residual_gate_l = clamp(abs(pulse_l) * 1.8, 0, 1);
+residual_gate_r = clamp(abs(pulse_r) * 1.8, 0, 1);
+residual_l = (cycle(clamp(fire * 1.37, 40, 2300)) * 0.045 + cycle(clamp(fire * 2.23, 65, 4300)) * 0.028) * residual_gate_l * (0.30 + texture * 0.70);
+residual_r = (cycle(clamp(fire * 1.37, 40, 2300)) * 0.045 + cycle(clamp(fire * 2.23, 65, 4300)) * 0.028) * residual_gate_r * (0.30 + texture * 0.70);
+bank_l = (pulse_l * 0.86 + pulse_r * 0.14) * cylinder * (0.50 + body * 0.16) * (1 - speedmix * 0.32);
+bank_r = (pulse_r * 0.86 + pulse_l * 0.14) * cylinder * (0.50 + body * 0.16) * (1 - speedmix * 0.32);
+resonance = sub + h1 + sideband_low + sideband_high + h15 + h2 + order22 + h25 + order28 + h3 + h5 + h7 + intake;
+left_drive = (bank_l + resonance + residual_l) * a * (0.88 + aggression * 0.12);
+right_drive = (bank_r + resonance + residual_r) * a * (0.88 + aggression * 0.12);
+out1 = clamp(tanh(left_drive * 1.42) / 1.27, -0.88, 0.88);
+out2 = clamp(tanh(right_drive * 1.42) / 1.27, -0.88, 0.88);""",
 })
 # Cabin rumble is now a signal-driven MSP resonator bank fed by the same
 # combustion signal as the main powertrain; the former free-running Gen model
@@ -2720,7 +2712,7 @@ PRESETS = {
         "pad_level_db": -3.0,
         "pad_mute": 0.0,
         "pad_solo": 0.0,
-        "reference_texture_level_db": -6.0,
+        "reference_texture_level_db": -24.0,
         "reference_texture_mute": 0.0,
         "ev_weight": 0.0,
         "texture": 0.86,
@@ -2770,7 +2762,7 @@ PRESETS = {
         "pad_level_db": -3.0,
         "pad_mute": 0.0,
         "pad_solo": 0.0,
-        "reference_texture_level_db": -6.0,
+        "reference_texture_level_db": -24.0,
         "reference_texture_mute": 0.0,
         "ev_weight": 0.0,
         "texture": 0.52,

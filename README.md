@@ -123,7 +123,7 @@ center-frequency change instead of producing half the requested amount.
 
 ## Audio sources and noise
 
-The EV motor remains procedural. V10/V12 are hybrid: event-driven synthesis
+The EV motor remains procedural. V10/V12 are hybrid: phase-locked cylinder-bank synthesis
 supplies firing order and load response, while twelve normalized stereo residual
 loops from a CC0 Ferrari acceleration recording supply irregular intake,
 mechanical, and exhaust texture. Runtime events and the cabin IR are also
@@ -167,10 +167,15 @@ supported place for user Pad tuning.
 ```sh
 python3 tools/build_project.py --output-root .
 python3 -m unittest discover -s tests -v
-python3 tools/audio_metrics.py render.wav --max-peak-dbfs -1 --min-rms-dbfs -45 --min-rumble-ratio 0.55 --max-subsonic-ratio 0.05 --max-low-side-ratio 0.05 --min-low-band-correlation 0.95 --max-mono-fold-rms-loss-db 1.5 --max-high-ratio 0.10
+python3 tools/audio_metrics.py steady_render.wav --max-harsh-ratio 0.03 --max-high-ratio 0.001 --min-low-mid-ratio 0.85 --min-rumble-ratio 0.80 --max-clipped-sample-ratio 0
+python3 tools/audio_metrics.py start_render.wav --max-harsh-ratio 0.35 --max-high-ratio 0.03 --max-clipped-sample-ratio 0
 python3 tools/audio_metrics.py high_rpm.wav --compare-wav ferrari_window.wav --min-third-octave-similarity-left 0.85 --min-third-octave-similarity-right 0.85 --min-third-octave-similarity 0.87 --max-third-octave-similarity-lr-delta 0.05
 python3 tools/audio_metrics.py eq_cut.wav --compare-wav eq_flat.wav --expected-gain-db -12 --gain-tolerance-db 0.25
 ```
+
+For the steady-state gate, trim the first second so the starter transient is not
+measured as continuous combustion. The separate start gate keeps that transient
+audible while preventing it from becoming a high-frequency fault burst.
 
 The rumble layer is high-passed near 28 Hz. After the cabin IR, `cross~ 120`
 centers deep bass while asymmetric short all-pass/early-reflection paths widen

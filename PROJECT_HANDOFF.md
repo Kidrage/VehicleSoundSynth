@@ -9,13 +9,13 @@
 - Working root: `.`
 - Repository name: `VehicleSoundSynth-V4`
 - Git repository: `true`
-- Generated at: `2026-08-12T07:09:15.673087+00:00`
+- Generated at: `2026-08-17T06:26:10.998864+00:00`
 
 ## Current State
 
 - Branch: `codex/vehicle-sound-v4`
-- HEAD: `32bc86d`
-- Indexed paths: 76
+- HEAD: `745207c`
+- Indexed paths: 88
 - Inventory truncated: `false`
 - Inaccessible paths: 0
 - Scan mode: complete path/metadata inventory; no bulk content read; no symlink traversal.
@@ -43,15 +43,14 @@
 
 | Route | Files |
 |---|---:|
-| `media` | 24 |
+| `media` | 35 |
 | `.` | 13 |
 | `patchers` | 12 |
-| `assets` | 9 |
-| `tools` | 9 |
+| `assets` | 10 |
+| `tools` | 10 |
 | `assets/raw` | 7 |
 | `.codex` | 3 |
 | `gen` | 3 |
-| `code` | 1 |
 | `presets` | 1 |
 | `tests` | 1 |
 
@@ -59,26 +58,25 @@
 
 ### Categories
 
-- audio: 30 files, 93743066 bytes
-- code: 11 files, 400843 bytes
-- literature: 14 files, 569139 bytes
-- other: 18 files, 2398851 bytes
-- structured_data: 3 files, 18325 bytes
+- audio: 41 files, 103833150 bytes
+- code: 11 files, 420024 bytes
+- literature: 14 files, 572764 bytes
+- other: 18 files, 2450722 bytes
+- structured_data: 4 files, 22823 bytes
 
 ### Common Extensions
 
-- `.wav`: 30
+- `.wav`: 41
 - `.maxpat`: 13
-- `.py`: 10
+- `.py`: 11
 - `.md`: 6
 - `.docx`: 5
-- `.json`: 3
+- `.json`: 4
 - `.gendsp`: 3
 - `.txt`: 2
 - `[no extension]`: 1
 - `.maxproj`: 1
 - `.pdf`: 1
-- `.js`: 1
 
 ### Schema / Model / Interface Candidates
 
@@ -92,6 +90,8 @@
 
 ## Change History
 
+- `745207c 2026-08-14 fix: rebuild V4 engine realism and stereo field`
+- `f138ccb 2026-08-12 docs: seal V4 integrity audit`
 - `32bc86d 2026-08-12 docs: complete V4 Ferrari validation guide`
 - `32873f8 2026-08-12 docs: finalize V4 integrity record`
 - `613d929 2026-08-12 docs: correct V4 manual identity`
@@ -110,12 +110,21 @@
 - `9066183 2026-08-11 fix: harden V3.1 stereo EQ and reference processing`
 - `22bb3f1 2026-08-11 feat: add V3.1 cinematic engine mix`
 - `030708f 2026-08-11 docs: refresh project handoff`
-- `2f73f2b 2026-08-11 feat: stabilize EV and add dual BEAP pad`
-- `99b6895 2026-08-10 docs: refresh Manual keyboard handoff`
 
 ## Current Changes
 
 - `## codex/vehicle-sound-v4`
+- ` M .codex/REPO_GUIDE.md`
+- ` M README.md`
+- ` M gen/v10_powertrain.gendsp`
+- ` M gen/v12_powertrain.gendsp`
+- ` M main.maxpat`
+- ` M patchers/reference_texture~.maxpat`
+- ` M patchers/transient~.maxpat`
+- ` M presets/sound_dna.json`
+- ` M tests/test_project.py`
+- ` M tools/audio_metrics.py`
+- ` M tools/build_project.py`
 
 ## Related Repositories
 
@@ -160,18 +169,18 @@
 - `assets/raw/thelittlecrow_669623_engine_block_contact.wav`
 - `media/cabin_ir_l.wav`
 - `media/cabin_ir_r.wav`
-- `media/exhaust_crackle_01.wav`
-- `media/exhaust_crackle_02.wav`
-- `media/exhaust_crackle_03.wav`
-- `media/exhaust_pop.wav`
-- `media/exhaust_pop_01.wav`
-- `media/exhaust_pop_02.wav`
-- `media/exhaust_pop_03.wav`
-- `media/exhaust_pop_04.wav`
-- `media/intake_backfire_01.wav`
-- `media/intake_backfire_02.wav`
-- `media/intake_backfire_03.wav`
-- `media/mechanical_click.wav`
+- `media/engine_texture_065_a.wav`
+- `media/engine_texture_065_b.wav`
+- `media/engine_texture_110_a.wav`
+- `media/engine_texture_110_b.wav`
+- `media/engine_texture_180_a.wav`
+- `media/engine_texture_180_b.wav`
+- `media/engine_texture_260_a.wav`
+- `media/engine_texture_260_b.wav`
+- `media/engine_texture_380_a.wav`
+- `media/engine_texture_380_b.wav`
+- `media/engine_texture_520_a.wav`
+- `media/engine_texture_520_b.wav`
 
 ### video
 
@@ -180,6 +189,7 @@
 ### structured_data
 
 - `assets/asset_manifest.json`
+- `assets/engine_texture_bank.json`
 - `assets/ferrari_sf90_acoustic_target.json`
 - `presets/sound_dna.json`
 
@@ -192,6 +202,8 @@
 ## Agent Notes
 
 <!-- AGENT_NOTES_START -->
+- 2026-08-17 harshness repair: V12/V10 continuous combustion returned to the known-good V3.1 phase-locked two-bank model, with the discontinuous full-firing-rate stochastic reset removed and bank pulse level reduced slightly to preserve tonal body. Combustion texture defaults moved from -6 dB to -24 dB. Starter playback now uses a 3.5 kHz low-pass and 0.16 gain instead of the former unfiltered 0.26 path. `audio_metrics.py` now reports/enforces the 2-6 kHz `harsh_ratio`; README and repository guide define separate start and post-start gates.
+- Real Max 8.6.5 NonRealTime final renders passed the new post-start gates with zero clipping. V12 idle measured 2-6 kHz 0.02920, >6 kHz 0.000515, low-mid 0.86408, and rumble 0.81644. V10 idle measured 0.003405, 0.000114, 0.95623, and 0.93203 respectively. The installed NonRealTime driver again rendered at 44.1 kHz despite the requested 48 kHz, so sample-rate conformance remains a separate open validation issue. All 74 Python tests pass and `git diff --check` is clean.
 - 2026-08-14 V4 acoustic rebuild: V10/V12 now use event-by-event stochastic energy/timing variation instead of periodic cycle/cylinder AM, with only three bounded phase-stable harmonic orders. The former 0.25/0.5 s local texture and +12 dB high layer were removed from runtime.
 - Runtime V10/V12 texture is a tracked CC0 bank of twelve normalized 48 kHz stereo loops: six firing-rate anchors (65/110/180/260/380/520 Hz), two asynchronous >4 s variants per anchor, exactly -18 dBFS RMS, 250 ms cyclic seam closure, and playback clamped to 0.9-1.1x. Every loop now has approximately 0.10 full-band Side energy ratio / 0.80 L/R correlation, zero-sample wrap discontinuity, bounded slow-envelope cycling, and a mono-exact Mid reconstruction. The 520 Hz layer remains nonzero through the full firing-rate range. `/Users/saintpeter/Desktop/Ferrari.wav` is analysis-only and never loaded or distributed.
 - V10/V12 combustion uses separate left/right stochastic event gain and timing while retaining a coherent low-frequency center. The cabin renderer centers bass below 120 Hz and retains fold-safe upper-band Side/reflections. The final 48 kHz V12 3500 RPM render measured low/mid/high correlation 0.990/0.527/0.386, full-band mono-fold loss 1.15 dB, modulation peak ratio 0.126, envelope autocorrelation 0.164, and zero clipping.

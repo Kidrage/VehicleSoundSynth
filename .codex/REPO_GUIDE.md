@@ -36,7 +36,8 @@ python3 tools/build_project.py --output-root .
 python3 tools/process_assets.py --root .
 python3 tools/prepare_engine_texture.py assets/raw/biholao_370278_ferrari_acceleration.wav media --metadata assets/engine_texture_bank.json
 python3 -m unittest discover -s tests -v
-python3 tools/audio_metrics.py render.wav --max-peak-dbfs -1 --min-rms-dbfs -45 --min-rumble-ratio 0.55 --max-subsonic-ratio 0.05 --max-low-side-ratio 0.05 --min-low-band-correlation 0.95 --max-mono-fold-rms-loss-db 1.5 --max-high-ratio 0.10 --min-spectral-peaks 6 --max-dominant-peak-ratio 0.50
+python3 tools/audio_metrics.py steady_render.wav --max-harsh-ratio 0.03 --max-high-ratio 0.001 --min-low-mid-ratio 0.85 --min-rumble-ratio 0.80 --max-clipped-sample-ratio 0
+python3 tools/audio_metrics.py start_render.wav --max-harsh-ratio 0.35 --max-high-ratio 0.03 --max-clipped-sample-ratio 0
 ```
 
 Regenerate twice and compare hashes when generator determinism matters. Never

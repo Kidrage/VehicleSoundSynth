@@ -60,16 +60,16 @@ class VehicleSoundProjectTests(unittest.TestCase):
         )
 
     def test_v4_combustion_models_use_phase_stable_stereo_orders(self):
-        for name, events in (("v12_powertrain", 6), ("v10_powertrain", 5)):
+        for name, bank_events in (("v12_powertrain", "3"), ("v10_powertrain", "2.5")):
             patcher = self.load_json(f"gen/{name}.gendsp")["patcher"]
             code = "\n".join(item["box"].get("code", "") for item in patcher["boxes"])
-            self.assertIn(f"fire = clamp(crank * {events}", code)
-            self.assertIn("raw_phase = phasor(fire)", code)
-            self.assertIn("phase_offset", code)
-            self.assertIn("h1_l = sin(", code)
-            self.assertIn("h1_r = sin(wrap(", code)
-            self.assertIn("noise()", code)
-            self.assertNotIn("cycle_variation", code)
+            self.assertIn(f"bank_events = {bank_events};", code)
+            self.assertIn("bank_phase_l = phasor(bank_fire)", code)
+            self.assertIn("bank_phase_r = bank_phase_l + 0.5", code)
+            self.assertIn("fire = bank_fire * 2", code)
+            self.assertIn("h1 = cycle(fire)", code)
+            self.assertNotIn("raw_phase = phasor(fire)", code)
+            self.assertNotIn("noise()", code)
             self.assertNotIn("0.5015", code)
             self.assertNotIn("0.503", code)
 
@@ -78,36 +78,20 @@ class VehicleSoundProjectTests(unittest.TestCase):
         text = "\n".join(item["box"].get("text", "") for item in patcher["boxes"])
         self.assertGreaterEqual(text.count("cross~ 120"), 2)
 
-    def test_v4_combustion_banks_use_event_jitter_without_periodic_am(self):
+    def test_v4_combustion_banks_interleave_without_full_rate_hard_resets(self):
         for name in ("v10_powertrain.gendsp", "v12_powertrain.gendsp"):
             patcher = self.load_json(f"gen/{name}")["patcher"]
             code = "\n".join(item["box"].get("code", "") for item in patcher["boxes"])
-            self.assertIn("History event_gain_l", code)
-            self.assertIn("History event_gain_r", code)
-            self.assertIn("History timing_l", code)
-            self.assertIn("History timing_r", code)
-            self.assertIn("pulse_l =", code)
-            self.assertIn("pulse_r =", code)
-            self.assertIn("combustion_l =", code)
-            self.assertIn("combustion_r =", code)
-            self.assertIn("noise()", code)
-            self.assertIn("sin(", code)
-            self.assertNotIn("cycle_variation", code)
-            self.assertNotIn("cylinder =", code)
-            self.assertNotIn("bank_side_gain", code)
-            self.assertNotIn("sideband_", code)
-            self.assertNotIn("intake_fm", code)
-            self.assertNotRegex(code, r"order2[2378]")
-
-        v12 = self.load_json("gen/v12_powertrain.gendsp")["patcher"]
-        v12_code = "\n".join(item["box"].get("code", "") for item in v12["boxes"])
-        self.assertNotIn("fire * 6", v12_code)
-        self.assertNotIn("fire * 8", v12_code)
-
-        v10 = self.load_json("gen/v10_powertrain.gendsp")["patcher"]
-        v10_code = "\n".join(item["box"].get("code", "") for item in v10["boxes"])
-        self.assertNotIn("fire * 5", v10_code)
-        self.assertNotIn("fire * 7", v10_code)
+            self.assertIn("cycle_variation", code)
+            self.assertIn("cylinder =", code)
+            self.assertIn("pulse_l = exp(-bank_phase_l", code)
+            self.assertIn("pulse_r = exp(-bank_phase_r", code)
+            self.assertIn("bank_l =", code)
+            self.assertIn("bank_r =", code)
+            self.assertIn("resonance =", code)
+            self.assertNotIn("event_trigger", code)
+            self.assertNotIn("event_phase_l", code)
+            self.assertNotIn("event_phase_r", code)
 
     def test_v4_cabin_field_uses_rpm_adaptive_three_band_side_control(self):
         patcher = self.load_json("patchers/cabin_master~.maxpat")["patcher"]
@@ -332,15 +316,19 @@ class VehicleSoundProjectTests(unittest.TestCase):
 
             self.assertLess(projected_amplitude(61.5), projected_amplitude(347.0) * 0.10)
 
-    def test_v4_harmonic_lifts_are_bounded_to_three_stable_orders(self):
+    def test_v4_banked_harmonic_body_matches_the_known_good_v3_orders(self):
         expected = {
             "v12_powertrain": (
-                "0.040 + brightness * 0.040 + speedmix * 0.025",
-                "0.018 + texture * 0.025 + speedmix * 0.016",
+                "h1 = cycle(fire) * (0.16 + body * 0.08)",
+                "0.0945 + brightness * 0.108 + speedmix * 0.081",
+                "0.05625 + texture * 0.06875 + speedmix * 0.0625",
+                "0.48 + body * 0.16",
             ),
             "v10_powertrain": (
-                "0.045 + brightness * 0.042 + speedmix * 0.025",
-                "0.020 + texture * 0.028 + speedmix * 0.017",
+                "h1 = cycle(fire) * (0.17 + aggression * 0.08)",
+                "0.08775 + brightness * 0.0945 + speedmix * 0.07425",
+                "0.055 + texture * 0.075 + speedmix * 0.060",
+                "0.50 + body * 0.16",
             ),
         }
         for name, coefficients in expected.items():
@@ -546,19 +534,17 @@ class VehicleSoundProjectTests(unittest.TestCase):
         self.assertTrue((ROOT / "patchers" / "mix_master~.maxpat").is_file())
 
     def test_v2_fuel_generators_expose_running_and_shift_envelopes(self):
-        for name, events_per_revolution in (("v12_powertrain", 6), ("v10_powertrain", 5)):
+        for name, bank_events in (("v12_powertrain", "3"), ("v10_powertrain", "2.5")):
             patcher = self.load_json(f"gen/{name}.gendsp")["patcher"]
             code = "\n".join(item["box"].get("code", "") for item in patcher["boxes"])
             for parameter in ("engine_running", "combustion_gain", "shift_cut"):
                 self.assertIn(f"Param {parameter}", code)
-            self.assertIn(f"fire = clamp(crank * {events_per_revolution}", code)
-            self.assertIn("raw_phase = phasor(fire)", code)
-            self.assertIn("pulse_l = (exp(", code)
-            self.assertIn("pulse_r = (exp(", code)
-            self.assertIn("noise()", code)
+            self.assertIn(f"bank_events = {bank_events};", code)
+            self.assertIn("bank_phase_l = phasor(bank_fire)", code)
+            self.assertIn("pulse_l = exp(-bank_phase_l", code)
+            self.assertIn("pulse_r = exp(-bank_phase_r", code)
             self.assertIn("tanh(", code)
-            self.assertGreaterEqual(code.count("sin("), 6)
-            self.assertNotIn("sideband_", code)
+            self.assertGreaterEqual(code.count("cycle("), 12)
             self.assertIn("idle", code)
 
     def test_v2_internal_drive_model_exposes_seven_speed_dct_events(self):
@@ -643,6 +629,8 @@ class VehicleSoundProjectTests(unittest.TestCase):
             if line["patchline"]["source"][0] == starter_stop_id
         }
         self.assertEqual(starter_player_ids, stopped_players)
+        self.assertEqual(2, transient_text.count("svf~ 3500 0.7"))
+        self.assertEqual(2, transient_text.count("*~ 0.16"))
 
     def test_runnable_project_has_public_engine_interface(self):
         required = [
@@ -692,6 +680,8 @@ class VehicleSoundProjectTests(unittest.TestCase):
             self.assertTrue(all(0.0 <= value <= 1.0 for value in bounded.values()))
             self.assertTrue(-24.0 <= values["master_trim_db"] <= 0.0)
             self.assertTrue(all(-60.0 <= values[key] <= 6.0 for key in db_parameters - {"master_trim_db"}))
+        self.assertEqual(-24.0, presets["High-Rev V12"]["reference_texture_level_db"])
+        self.assertEqual(-24.0, presets["Aggressive V10"]["reference_texture_level_db"])
 
     def test_engine_accepts_the_documented_state_and_macro_messages(self):
         engine = self.load_json("patchers/vehicle_engine~.maxpat")
@@ -1387,6 +1377,8 @@ class VehicleSoundProjectTests(unittest.TestCase):
         patcher = self.load_json("patchers/reference_texture~.maxpat")["patcher"]
         text = "\n".join(item["box"].get("text", "") for item in patcher["boxes"])
         self.assertIn("abs(min($f1,650.)-520.)/170.", text)
+        self.assertIn("loadmess -24", text)
+        self.assertNotIn("loadmess -6", text)
 
     def test_runtime_buffers_resolve_media_through_project_search_path(self):
         transient = self.load_json("patchers/transient~.maxpat")["patcher"]
@@ -1417,6 +1409,7 @@ class VehicleSoundProjectTests(unittest.TestCase):
             "--max-mid-side-ratio", "--min-mid-band-correlation",
             "--max-mid-band-mono-fold-rms-loss-db", "--max-high-side-ratio",
             "--min-high-band-correlation", "--max-high-band-mono-fold-rms-loss-db",
+            "--max-harsh-ratio",
         ):
             self.assertIn(option, source)
 
@@ -1510,15 +1503,21 @@ class VehicleSoundProjectTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             low_path = Path(directory) / "low.wav"
             high_path = Path(directory) / "high.wav"
+            harsh_path = Path(directory) / "harsh.wav"
             write_tone(low_path, 120.0)
             write_tone(high_path, 8000.0)
+            write_tone(harsh_path, 3500.0)
             low = analyze(low_path)
             high = analyze(high_path)
+            harsh = analyze(harsh_path)
         self.assertGreater(low["low_mid_ratio"], 0.99)
         self.assertGreater(low["rumble_ratio"], 0.99)
         self.assertLess(low["subsonic_ratio"], 0.01)
         self.assertLess(low["high_ratio"], 0.01)
         self.assertGreater(high["high_ratio"], 0.99)
+        self.assertGreater(harsh["harsh_ratio"], 0.99)
+        self.assertLess(low["harsh_ratio"], 0.01)
+        self.assertLess(high["harsh_ratio"], 0.01)
 
     def test_audio_metrics_measure_low_frequency_stereo_side_energy(self):
         import math
