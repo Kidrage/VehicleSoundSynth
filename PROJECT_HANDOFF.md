@@ -9,12 +9,12 @@
 - Working root: `.`
 - Repository name: `VehicleSoundSynth-V4`
 - Git repository: `true`
-- Generated at: `2026-08-18T07:38:17.376264+00:00`
+- Generated at: `2026-08-18T07:38:37.842139+00:00`
 
 ## Current State
 
 - Branch: `codex/vehicle-sound-v4`
-- HEAD: `68af5db`
+- HEAD: `aff305f`
 - Indexed paths: 117
 - Inventory truncated: `false`
 - Inaccessible paths: 0
@@ -60,7 +60,7 @@
 
 - audio: 41 files, 103833150 bytes
 - code: 11 files, 537550 bytes
-- literature: 14 files, 580598 bytes
+- literature: 14 files, 580743 bytes
 - other: 47 files, 8465773 bytes
 - structured_data: 4 files, 24133 bytes
 
@@ -90,6 +90,7 @@
 
 ## Change History
 
+- `aff305f 2026-08-18 feat: split V4 runtimes and restore sample-led V10`
 - `68af5db 2026-08-18 fix: soften V10 V12 combustion with local Ferrari body`
 - `3a678eb 2026-08-17 docs: refresh V4 repair handoff`
 - `8cf0f1e 2026-08-17 fix: remove full-rate combustion reset harshness`
@@ -109,55 +110,10 @@
 - `6814cc4 2026-08-12 fix: expose Gen parameters to Max runtime`
 - `660866e 2026-08-12 docs: refresh V4 handoff`
 - `cb5ce78 2026-08-12 feat: create V4 acoustic repair archive`
-- `81e1345 2026-08-11 docs: refresh V3.1 handoff`
 
 ## Current Changes
 
 - `## codex/vehicle-sound-v4`
-- `M  .codex/REPO_GUIDE.md`
-- `M  .codex/repo_files.txt`
-- `M  .codex/source_index.txt`
-- `M  AGENTS.md`
-- `M  ASSET_LICENSES.md`
-- `M  PROJECT_HANDOFF.md`
-- `M  README.md`
-- `A  VehicleSoundSynth-EV.maxpat`
-- `A  VehicleSoundSynth-V10.maxpat`
-- `A  VehicleSoundSynth-V12.maxpat`
-- `M  VehicleSoundSynth-V4.maxproj`
-- `M  assets/asset_manifest.json`
-- `M  main.maxpat`
-- `A  patchers/drive_simulator_ev.maxpat`
-- `A  patchers/drive_simulator_v10.maxpat`
-- `A  patchers/drive_simulator_v12.maxpat`
-- `A  patchers/engine_controller_ev.maxpat`
-- `A  patchers/engine_controller_v10.maxpat`
-- `A  patchers/engine_controller_v12.maxpat`
-- `A  patchers/engine_start_beap~.maxpat`
-- `A  patchers/engine_start_voice.maxpat`
-- `A  patchers/ev_expressive_beap~.maxpat`
-- `A  patchers/ev_expressive_voice.maxpat`
-- `A  patchers/ev_powertrain~.maxpat`
-- `A  patchers/ev_relax_voice.maxpat`
-- `A  patchers/ev_soundscape_host~.maxpat`
-- `A  patchers/ev_sport_beap~.maxpat`
-- `A  patchers/ev_sport_voice.maxpat`
-- `M  patchers/reference_texture~.maxpat`
-- `A  patchers/transient_ev~.maxpat`
-- `A  patchers/transient_v10~.maxpat`
-- `A  patchers/transient_v12~.maxpat`
-- `A  patchers/v10_fallback_renderer~.maxpat`
-- `A  patchers/v10_powertrain~.maxpat`
-- `A  patchers/v10_state_renderer~.maxpat`
-- `A  patchers/v12_powertrain~.maxpat`
-- `A  patchers/v12_texture_renderer~.maxpat`
-- `A  patchers/vehicle_engine_ev~.maxpat`
-- `A  patchers/vehicle_engine_v10~.maxpat`
-- `A  patchers/vehicle_engine_v12~.maxpat`
-- `MM tests/test_project.py`
-- `M  tools/build_project.py`
-- `MM tools/build_runtime_probe.py`
-- `M  tools/prepare_local_reference.py`
 
 ## Related Repositories
 
