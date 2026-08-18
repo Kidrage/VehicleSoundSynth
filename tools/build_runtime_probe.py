@@ -264,6 +264,11 @@ def main() -> None:
         default=Path("/private/tmp/VehicleSoundSynthV4_probe_bundle"),
         help="Dedicated temporary bundle directory populated with runtime dependencies",
     )
+    parser.add_argument(
+        "--local-media-dir",
+        type=Path,
+        help="Optional local-only Ferrari media directory; defaults to media/local",
+    )
     parser.add_argument("--profile", choices=sorted(PROFILE_SETTINGS), default="v12")
     parser.add_argument("--scenario", choices=sorted(SCENARIOS))
     parser.add_argument("--tap", choices=("pre-cabin", "final"), default="final")
@@ -314,6 +319,20 @@ def main() -> None:
         # Some patchers use an explicit media/foo.wav argument while Max resolves
         # abstractions from the bundle root. Keep both layouts in the probe.
         shutil.copy2(source, bundle / source.name)
+    local_media_source = (
+        args.local_media_dir.resolve()
+        if args.local_media_dir is not None
+        else root / "media" / "local"
+    )
+    if local_media_source.is_dir():
+        local_media_destination = media / "local"
+        local_media_destination.mkdir(parents=True, exist_ok=True)
+        for source in local_media_source.glob("*.wav"):
+            shutil.copy2(source, local_media_destination / source.name)
+            # Runtime probes are opened directly, without first registering the
+            # generated project search path. Mirror local-only files at the
+            # bundle root so bare buffer names resolve exactly like CC0 media.
+            shutil.copy2(source, bundle / source.name)
     if args.sweep_to_rpm is not None:
         state = "sweep"
     elif args.rpm is not None:
@@ -353,8 +372,8 @@ def main() -> None:
         for path in sorted(bundle.glob("*.gendsp"))
     }
     media_contents = {
-        f"media/{path.name}": {"kind": "mediafile", "local": 1}
-        for path in sorted(media.glob("*.wav"))
+        path.relative_to(bundle).as_posix(): {"kind": "mediafile", "local": 1}
+        for path in sorted(media.rglob("*.wav"))
     }
     write_json(
         bundle / f"{project_name}.maxproj",

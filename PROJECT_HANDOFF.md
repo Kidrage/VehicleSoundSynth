@@ -14,7 +14,7 @@
 ## Current State
 
 - Branch: `codex/vehicle-sound-v4`
-- HEAD: `8cf0f1e`
+- HEAD before the current repair: `3a678eb`
 - Indexed paths: 88
 - Inventory truncated: `false`
 - Inaccessible paths: 0
@@ -191,6 +191,10 @@
 ## Agent Notes
 
 <!-- AGENT_NOTES_START -->
+- 2026-08-18 Ferrari-body repair: V12/V10 discontinuous exponential bank pulses were replaced by zero-wrap raised-cosine fourth-power pulses, idle saturation was reduced, and the fuel path now opens an MSP low-pass from roughly 3.0 kHz at idle toward 8.4 kHz at high RPM. Default V10/V12 reference texture moved to -18 dB. EV and the sibling V3 repository were not changed.
+- `tools/prepare_local_reference.py --bundle` now creates ignored 48 kHz stereo `ferrari_sf90_startup.wav` (0-1.2 s, -14 dBFS RMS, 3 kHz low-pass) and `ferrari_sf90_idle_body.wav` (2.5-5.5 s, -15.5 dBFS RMS, 4 kHz low-pass, 300 ms cyclic seam). Runtime uses the local startup at 0.35 gain with a 350 ms catch fade, retains a 0.08/1.6 kHz-filtered CC0 fallback, and equal-power fades the local idle body out from 100-180 Hz while retaining the CC0 bank.
+- Max buffer arguments use bare filenames so the real project can resolve ignored media through its recursive `media` search path. The standalone runtime probe also mirrors local-only media at its bundle root; this was verified after an initial diagnostic render correctly exposed `can't open` errors for the former abstraction-relative `media/local/...` arguments.
+- Final Max 8.6.5 start-to-idle renders were unclipped and were evaluated with five windows distributed across the whole file. V12 measured harmonic slope -7.063 dB/oct, upper-harmonic ratio 0.000366, 2-6 kHz ratio 0.000896, >6 kHz ratio 0.00000470, low-mid ratio 0.9666, centroid 93.5 Hz, and sample-edge ratio 0.1366. V10 measured -8.092, 0.000101, 0.000215, 0.00000131, 0.9786, 83.4 Hz, and 0.0678 respectively. The same generated high-RPM path measured sample-edge ratios 0.168 (V12 3500 RPM) and 0.213 (V10 4200 RPM), with zero clipping. Separate fresh-process 2.5 s probes produced different hashes for local-present and local-missing cases; both were non-silent, proving the `info~`-driven 20 ms local/fallback selection.
 - 2026-08-17 harshness repair: V12/V10 continuous combustion returned to the known-good V3.1 phase-locked two-bank model, with the discontinuous full-firing-rate stochastic reset removed and bank pulse level reduced slightly to preserve tonal body. Combustion texture defaults moved from -6 dB to -24 dB. Starter playback now uses a 3.5 kHz low-pass and 0.16 gain instead of the former unfiltered 0.26 path. `audio_metrics.py` now reports/enforces the 2-6 kHz `harsh_ratio`; README and repository guide define separate start and post-start gates.
 - Real Max 8.6.5 NonRealTime final renders passed the new post-start gates with zero clipping. V12 idle measured 2-6 kHz 0.02920, >6 kHz 0.000515, low-mid 0.86408, and rumble 0.81644. V10 idle measured 0.003405, 0.000114, 0.95623, and 0.93203 respectively. The installed NonRealTime driver again rendered at 44.1 kHz despite the requested 48 kHz, so sample-rate conformance remains a separate open validation issue. All 74 Python tests pass and `git diff --check` is clean.
 - 2026-08-14 V4 acoustic rebuild: V10/V12 now use event-by-event stochastic energy/timing variation instead of periodic cycle/cylinder AM, with only three bounded phase-stable harmonic orders. The former 0.25/0.5 s local texture and +12 dB high layer were removed from runtime.

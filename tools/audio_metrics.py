@@ -219,7 +219,11 @@ def envelope_modulation_metrics(
     }
 
 
-def analyze(path: Path, fft_size: int = 32768) -> dict[str, float | int | str]:
+def analyze(
+    path: Path,
+    fft_size: int = 32768,
+    expected_fundamental_hz: float | None = None,
+) -> dict[str, float | int | str]:
     sample_rate, samples, side_samples, level_samples = read_mid_side(path)
     if not samples:
         raise ValueError("WAV contains no samples")
@@ -253,27 +257,50 @@ def analyze(path: Path, fft_size: int = 32768) -> dict[str, float | int | str]:
     )
     clipped_ratio = sum(abs(value) >= 0.999 for value in level_samples) / len(level_samples)
     size = min(fft_size, 1 << (len(samples).bit_length() - 1))
-    windowed = [
-        complex(samples[index] * (0.5 - 0.5 * math.cos(2.0 * math.pi * index / (size - 1))))
-        for index in range(size)
-    ]
-    spectrum = fft(windowed)[: size // 2]
-    power = [abs(value) ** 2 for value in spectrum]
-    side_windowed = [
-        complex(side_samples[index] * (0.5 - 0.5 * math.cos(2.0 * math.pi * index / (size - 1))))
-        for index in range(size)
-    ]
-    side_power = [abs(value) ** 2 for value in fft(side_windowed)[: size // 2]]
     left_samples = [mid + side for mid, side in zip(samples, side_samples)]
     right_samples = [mid - side for mid, side in zip(samples, side_samples)]
-    left_spectrum = fft([
-        complex(left_samples[index] * (0.5 - 0.5 * math.cos(2.0 * math.pi * index / (size - 1))))
+    window_count = min(5, max(1, math.ceil(len(samples) / size)))
+    last_start = len(samples) - size
+    starts = (
+        [0]
+        if window_count == 1
+        else [round(index * last_start / (window_count - 1)) for index in range(window_count)]
+    )
+    hann = [
+        0.5 - 0.5 * math.cos(2.0 * math.pi * index / (size - 1))
         for index in range(size)
-    ])[: size // 2]
-    right_spectrum = fft([
-        complex(right_samples[index] * (0.5 - 0.5 * math.cos(2.0 * math.pi * index / (size - 1))))
-        for index in range(size)
-    ])[: size // 2]
+    ]
+
+    def window_spectrum(signal: list[float], start: int) -> list[complex]:
+        return fft([
+            complex(signal[start + index] * hann[index])
+            for index in range(size)
+        ])[: size // 2]
+
+    power = [0.0] * (size // 2)
+    side_power = [0.0] * (size // 2)
+    left_power = [0.0] * (size // 2)
+    right_power = [0.0] * (size // 2)
+    cross_power = [0.0] * (size // 2)
+    for start in starts:
+        mid_spectrum = window_spectrum(samples, start)
+        side_spectrum = window_spectrum(side_samples, start)
+        left_spectrum = window_spectrum(left_samples, start)
+        right_spectrum = window_spectrum(right_samples, start)
+        for index in range(size // 2):
+            power[index] += abs(mid_spectrum[index]) ** 2
+            side_power[index] += abs(side_spectrum[index]) ** 2
+            left_power[index] += abs(left_spectrum[index]) ** 2
+            right_power[index] += abs(right_spectrum[index]) ** 2
+            cross_power[index] += (
+                left_spectrum[index] * right_spectrum[index].conjugate()
+            ).real
+    scale = 1.0 / len(starts)
+    power = [value * scale for value in power]
+    side_power = [value * scale for value in side_power]
+    left_power = [value * scale for value in left_power]
+    right_power = [value * scale for value in right_power]
+    cross_power = [value * scale for value in cross_power]
 
     def band_energy(low: float, high: float) -> float:
         return sum(
@@ -297,15 +324,12 @@ def analyze(path: Path, fft_size: int = 32768) -> dict[str, float | int | str]:
     low_side_ratio = low_side_energy / max(low_mid_energy + low_side_energy, 1e-30)
     def stereo_band(low: float, high: float) -> tuple[float, float, float]:
         bins = [
-            index for index in range(len(left_spectrum))
+            index for index in range(len(left_power))
             if low <= index * sample_rate / size < high
         ]
-        left_energy = sum(abs(left_spectrum[index]) ** 2 for index in bins)
-        right_energy = sum(abs(right_spectrum[index]) ** 2 for index in bins)
-        cross = sum(
-            (left_spectrum[index] * right_spectrum[index].conjugate()).real
-            for index in bins
-        )
+        left_energy = sum(left_power[index] for index in bins)
+        right_energy = sum(right_power[index] for index in bins)
+        cross = sum(cross_power[index] for index in bins)
         mid_energy = sum(power[index] for index in bins)
         side_energy = sum(side_power[index] for index in bins)
         correlation = cross / max(math.sqrt(left_energy * right_energy), 1e-30)
@@ -346,6 +370,57 @@ def analyze(path: Path, fft_size: int = 32768) -> dict[str, float | int | str]:
         power[index]
         for index in range(max(0, dominant_index - 2), min(len(power), dominant_index + 3))
     )
+    spectral_limit = min(12000.0, sample_rate / 2.0)
+    spectral_bins = [
+        index for index in range(1, len(power))
+        if 20.0 <= index * sample_rate / size < spectral_limit
+    ]
+    spectral_total = max(sum(power[index] for index in spectral_bins), 1e-30)
+    spectral_centroid = sum(
+        index * sample_rate / size * power[index] for index in spectral_bins
+    ) / spectral_total
+    cumulative = 0.0
+    spectral_rolloff = 0.0
+    for index in spectral_bins:
+        cumulative += power[index]
+        if cumulative >= spectral_total * 0.95:
+            spectral_rolloff = index * sample_rate / size
+            break
+    sample_deltas = [samples[index] - samples[index - 1] for index in range(1, len(samples))]
+    sample_delta_peak = max((abs(value) for value in sample_deltas), default=0.0)
+
+    upper_harmonic_ratio = 0.0
+    harmonic_slope = 0.0
+    if expected_fundamental_hz is not None:
+        if expected_fundamental_hz <= 0.0:
+            raise ValueError("expected fundamental must be positive")
+        harmonic_energies: list[tuple[int, float]] = []
+        harmonic_count = min(96, int((spectral_limit - 1.0) / expected_fundamental_hz))
+        for harmonic in range(1, harmonic_count + 1):
+            center = round(harmonic * expected_fundamental_hz * size / sample_rate)
+            energy = sum(
+                power[index]
+                for index in range(max(0, center - 2), min(len(power), center + 3))
+            )
+            harmonic_energies.append((harmonic, energy))
+        harmonic_total = max(sum(energy for _, energy in harmonic_energies), 1e-30)
+        upper_harmonic_ratio = sum(
+            energy for harmonic, energy in harmonic_energies if harmonic >= 16
+        ) / harmonic_total
+        maximum_harmonic_energy = max(
+            (energy for _, energy in harmonic_energies), default=0.0
+        )
+        fit = [
+            (math.log2(harmonic), 10.0 * math.log10(max(energy, 1e-30)))
+            for harmonic, energy in harmonic_energies
+            if 2 <= harmonic <= 48 and energy > maximum_harmonic_energy * 1e-8
+        ]
+        if len(fit) >= 2:
+            mean_x = sum(x for x, _ in fit) / len(fit)
+            mean_y = sum(y for _, y in fit) / len(fit)
+            harmonic_slope = sum(
+                (x - mean_x) * (y - mean_y) for x, y in fit
+            ) / max(sum((x - mean_x) ** 2 for x, _ in fit), 1e-30)
     return {
         "file": str(path),
         "sample_rate": sample_rate,
@@ -374,6 +449,11 @@ def analyze(path: Path, fft_size: int = 32768) -> dict[str, float | int | str]:
         "high_ratio": high,
         "spectral_peak_count_80_6000": len(peak_bins),
         "dominant_peak_ratio_80_6000": dominant_neighborhood / band_total,
+        "spectral_centroid_hz": spectral_centroid,
+        "spectral_rolloff_95_hz": spectral_rolloff,
+        "sample_delta_peak_over_rms": sample_delta_peak / max(mono_rms, 1e-12),
+        "upper_harmonic_ratio": upper_harmonic_ratio,
+        "harmonic_slope_db_per_octave": harmonic_slope,
         **envelope_modulation_metrics(samples, sample_rate),
     }
 
@@ -410,8 +490,16 @@ def main() -> int:
     parser.add_argument("--max-envelope-spread-db", type=float)
     parser.add_argument("--max-clipped-sample-ratio", type=float)
     parser.add_argument("--require-sample-rate", type=int)
+    parser.add_argument("--expected-fundamental-hz", type=float)
+    parser.add_argument("--max-spectral-centroid-hz", type=float)
+    parser.add_argument("--max-rolloff-95-hz", type=float)
+    parser.add_argument("--max-sample-delta-peak-over-rms", type=float)
+    parser.add_argument("--max-upper-harmonic-ratio", type=float)
+    parser.add_argument("--max-harmonic-slope-db-per-octave", type=float)
     args = parser.parse_args()
-    metrics = analyze(args.wav)
+    metrics = analyze(
+        args.wav, expected_fundamental_hz=args.expected_fundamental_hz
+    )
     if args.compare_wav is not None:
         comparison = analyze(args.compare_wav)
         metrics["comparison_rms_delta_db"] = metrics["rms_dbfs"] - comparison["rms_dbfs"]
@@ -494,6 +582,36 @@ def main() -> int:
         failures.append("envelope_spread_db")
     if args.max_clipped_sample_ratio is not None and metrics["clipped_sample_ratio"] > args.max_clipped_sample_ratio:
         failures.append("clipped_sample_ratio")
+    if (
+        args.max_spectral_centroid_hz is not None
+        and metrics["spectral_centroid_hz"] > args.max_spectral_centroid_hz
+    ):
+        failures.append("spectral_centroid_hz")
+    if (
+        args.max_rolloff_95_hz is not None
+        and metrics["spectral_rolloff_95_hz"] > args.max_rolloff_95_hz
+    ):
+        failures.append("spectral_rolloff_95_hz")
+    if (
+        args.max_sample_delta_peak_over_rms is not None
+        and metrics["sample_delta_peak_over_rms"] > args.max_sample_delta_peak_over_rms
+    ):
+        failures.append("sample_delta_peak_over_rms")
+    if args.max_upper_harmonic_ratio is not None:
+        if args.expected_fundamental_hz is None:
+            parser.error("--max-upper-harmonic-ratio requires --expected-fundamental-hz")
+        if metrics["upper_harmonic_ratio"] > args.max_upper_harmonic_ratio:
+            failures.append("upper_harmonic_ratio")
+    if args.max_harmonic_slope_db_per_octave is not None:
+        if args.expected_fundamental_hz is None:
+            parser.error(
+                "--max-harmonic-slope-db-per-octave requires --expected-fundamental-hz"
+            )
+        if (
+            metrics["harmonic_slope_db_per_octave"]
+            > args.max_harmonic_slope_db_per_octave
+        ):
+            failures.append("harmonic_slope_db_per_octave")
     if failures:
         print("Acceptance failed: " + ", ".join(failures))
         return 1

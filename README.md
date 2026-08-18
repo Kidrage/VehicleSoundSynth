@@ -2,9 +2,9 @@
 
 Max/MSP 8.6.5 vehicle-acoustics project derived as an independent V4 archive from V3. V4 adds an EV profile plus lifecycle-gated
 V12 and V10 combustion profiles. V4 uses crank-related combustion events,
-bounded per-ignition timing/energy variation, three stable low/mid orders, and a
-normalized six-anchor stereo residual bank instead of periodic AM, a dominant
-pure sine, or a saw-like high-order stack. The EV low fundamental is
+bounded cycle variation, wrap-continuous raised-cosine cylinder pulses, RPM-adaptive
+fuel-path filtering, and a normalized six-anchor stereo residual bank instead of
+periodic AM, a dominant pure sine, or a saw-like high-order stack. The EV low fundamental is
 phase-coherent between channels and feeds
 an EV-only, dual-channel BEAP pad. Its in-cabin low-frequency system is excited by the real powertrain
 signal and adds engine half-order structure vibration, damped cabin/body modes,
@@ -152,10 +152,19 @@ upper-band Side microstructure, closes each loop with a 250 ms cyclic seam ease,
 and normalizes every output to -18 dBFS RMS. Runtime pitch ratios are clamped to 0.9–1.1 and adjacent anchors
 crossfade continuously. V10/V12 enable this bank; EV gates it off.
 
-The user-supplied `/Users/saintpeter/Desktop/Ferrari.wav` remains local-only and
-is used only as an acoustic comparison target. It is never loaded, committed,
-synced, or redistributed. Its measured non-audio targets are stored in
-`assets/ferrari_sf90_acoustic_target.json`.
+The user-supplied `/Users/saintpeter/Desktop/Ferrari.wav` can also supply an
+optional local startup and idle-body layer:
+
+```sh
+python3 tools/prepare_local_reference.py /Users/saintpeter/Desktop/Ferrari.wav media/local --bundle
+```
+
+This creates a 1.2 s stereo startup layer and a 3.0 s cyclic idle-body layer.
+The idle layer follows firing rate at low RPM and equal-power fades out by
+180 Hz; the distributable CC0 bank remains available through the full RPM
+range. If either local file is absent, the engine falls back to the filtered
+CC0 starter and texture bank. `media/local/` is ignored by Git and must never be
+committed, synced, or redistributed.
 
 ## Regeneration and validation
 
@@ -167,15 +176,17 @@ supported place for user Pad tuning.
 ```sh
 python3 tools/build_project.py --output-root .
 python3 -m unittest discover -s tests -v
-python3 tools/audio_metrics.py steady_render.wav --max-harsh-ratio 0.03 --max-high-ratio 0.001 --min-low-mid-ratio 0.85 --min-rumble-ratio 0.80 --max-clipped-sample-ratio 0
-python3 tools/audio_metrics.py start_render.wav --max-harsh-ratio 0.35 --max-high-ratio 0.03 --max-clipped-sample-ratio 0
+python3 tools/audio_metrics.py idle_v12.wav --expected-fundamental-hz 78 --max-harsh-ratio 0.001 --max-high-ratio 0.00001 --min-low-mid-ratio 0.96 --min-rumble-ratio 0.90 --max-spectral-centroid-hz 100 --max-rolloff-95-hz 160 --max-sample-delta-peak-over-rms 0.15 --max-upper-harmonic-ratio 0.001 --max-harmonic-slope-db-per-octave -7 --max-clipped-sample-ratio 0
+python3 tools/audio_metrics.py idle_v10.wav --expected-fundamental-hz 70.833333 --max-harsh-ratio 0.001 --max-high-ratio 0.00001 --min-low-mid-ratio 0.96 --min-rumble-ratio 0.90 --max-spectral-centroid-hz 100 --max-rolloff-95-hz 160 --max-sample-delta-peak-over-rms 0.15 --max-upper-harmonic-ratio 0.001 --max-harmonic-slope-db-per-octave -7 --max-clipped-sample-ratio 0
+python3 tools/audio_metrics.py high_rpm.wav --max-harsh-ratio 0.001 --max-high-ratio 0.00001 --max-sample-delta-peak-over-rms 0.25 --max-clipped-sample-ratio 0
 python3 tools/audio_metrics.py high_rpm.wav --compare-wav ferrari_window.wav --min-third-octave-similarity-left 0.85 --min-third-octave-similarity-right 0.85 --min-third-octave-similarity 0.87 --max-third-octave-similarity-lr-delta 0.05
 python3 tools/audio_metrics.py eq_cut.wav --compare-wav eq_flat.wav --expected-gain-db -12 --gain-tolerance-db 0.25
 ```
 
-For the steady-state gate, trim the first second so the starter transient is not
-measured as continuous combustion. The separate start gate keeps that transient
-audible while preventing it from becoming a high-frequency fault burst.
+For strict steady-state comparisons, trim the first second so the startup layer
+is not measured as continuous combustion. A full start-to-idle render should
+also pass the idle gate above; this catches both a harsh starter and a saw-like
+continuous cylinder pulse.
 
 The rumble layer is high-passed near 28 Hz. After the cabin IR, `cross~ 120`
 centers deep bass while asymmetric short all-pass/early-reflection paths widen

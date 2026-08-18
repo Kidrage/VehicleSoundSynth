@@ -1010,10 +1010,12 @@ def make_powertrain() -> dict[str, Any]:
         "body": (0.0, 1.0),
         "texture": (0.0, 1.0),
     }
+    tonal_controls: dict[str, str] = {}
     for index, name in enumerate(tonal_names):
         low, high = bounds[name]
         x = 35 + index * 160
         bounded = p.new(f"clip {low:g} {high:g}", x, 175, 90, numinlets=3, numoutlets=1)
+        tonal_controls[name] = bounded
         named = p.message(f"{name} $1", x, 220, 105)
         p.connect(router, bounded, index)
         p.connect(bounded, named)
@@ -1021,6 +1023,40 @@ def make_powertrain() -> dict[str, Any]:
             p.connect(named, gen)
         if name in {"rpm", "throttle"}:
             p.connect(named, ev_pad)
+
+    fuel_cutoff = p.new(
+        "expr 2600.+5200.*max(0.,min(1.,($f1-800.)/8200.))+600.*$f2",
+        430,
+        255,
+        390,
+        numinlets=2,
+        numoutlets=1,
+    )
+    fuel_cutoff_pack = p.new("pack 0. 80", 835, 255, 85, numinlets=2, numoutlets=1)
+    fuel_cutoff_line = p.new("line~", 935, 255, 50, numinlets=2, numoutlets=2)
+    fuel_cutoff_default = p.new("loadmess 3000", 1000, 255, 105, numinlets=1, numoutlets=1)
+    p.connect(tonal_controls["rpm"], fuel_cutoff, 0, 0)
+    p.connect(tonal_controls["brightness"], fuel_cutoff, 0, 1)
+    p.connect(fuel_cutoff, fuel_cutoff_pack)
+    p.connect(fuel_cutoff_pack, fuel_cutoff_line)
+    p.connect(fuel_cutoff_default, fuel_cutoff_pack)
+
+    fuel_filtered: dict[int, list[str]] = {}
+    for gen_index in (1, 2):
+        filtered_channels: list[str] = []
+        for channel in (0, 1):
+            fuel_filter = p.new(
+                "svf~ 3000 0.65",
+                465 + gen_index * 285 + channel * 100,
+                435,
+                105,
+                numinlets=3,
+                numoutlets=4,
+            )
+            p.connect(gens[gen_index], fuel_filter, channel, 0)
+            p.connect(fuel_cutoff_line, fuel_filter, 0, 1)
+            filtered_channels.append(fuel_filter)
+        fuel_filtered[gen_index] = filtered_channels
 
     for index, name in enumerate(fuel_names):
         x = 720 + index * 160
@@ -1082,8 +1118,8 @@ def make_powertrain() -> dict[str, Any]:
             p.connect(ev_sum_l, left_mult, 0, 0)
             p.connect(ev_sum_r, right_mult, 0, 0)
         else:
-            p.connect(gen, left_mult, 0, 0)
-            p.connect(gen, right_mult, 1, 0)
+            p.connect(fuel_filtered[index][0], left_mult, 0, 0)
+            p.connect(fuel_filtered[index][1], right_mult, 0, 0)
         p.connect(lines[index], left_mult, 0, 1)
         p.connect(lines[index], right_mult, 0, 1)
         left_mults.append(left_mult)
@@ -1123,7 +1159,7 @@ def make_powertrain() -> dict[str, Any]:
 
 
 def make_reference_texture() -> dict[str, Any]:
-    """Crossfade a normalized six-anchor stereo residual bank at near-unity speed."""
+    """Blend a local Ferrari idle body into the distributable residual bank."""
     p = Patcher(2300, 1080)
     p.comment("CC0 stereo engine residual bank — six firing-rate anchors, two asynchronous loops each", 25, 15, 1050)
     control = inlet(p, 35, 65)
@@ -1168,7 +1204,7 @@ def make_reference_texture() -> dict[str, Any]:
     p.connect(gate_product, gate_pack)
     p.connect(gate_pack, gate_line)
 
-    level = add_db_gain_control(p, router, 4, 1570, 155, -24.0)
+    level = add_db_gain_control(p, router, 4, 1570, 155, -18.0)
     mute_clip = p.new("clip 0 1", 1770, 155, 65, numinlets=3, numoutlets=1)
     mute_gain = p.new("expr 1-$i1", 1850, 155, 80, numinlets=1, numoutlets=1)
     mute_pack = p.new("pack 0. 40", 1945, 155, 85, numinlets=2, numoutlets=1)
@@ -1222,6 +1258,50 @@ def make_reference_texture() -> dict[str, Any]:
             p.connect(weight_line, anchor_gain, 0, 1)
             channel_layers[channel].append(anchor_gain)
 
+    local_buffer = p.new(
+        "buffer~ ferrari_idle_body ferrari_sf90_idle_body.wav",
+        35,
+        700,
+        390,
+        numinlets=2,
+        numoutlets=2,
+    )
+    local_speed = p.new(
+        "expr max(.85,min(2.93,$f1/61.5))",
+        445,
+        700,
+        225,
+        numinlets=1,
+        numoutlets=1,
+    )
+    local_speed_pack = p.new("pack 0. 120", 685, 700, 90, numinlets=2, numoutlets=1)
+    local_speed_line = p.new("line~", 790, 700, 50, numinlets=2, numoutlets=2)
+    local_groove = p.new(
+        "groove~ ferrari_idle_body 2 @loop 1",
+        855,
+        700,
+        245,
+        numinlets=3,
+        numoutlets=3,
+    )
+    local_weight = p.new(
+        "expr sqrt(max(0.,min(1.,(180.-$f1)/80.)))",
+        1120,
+        700,
+        280,
+        numinlets=1,
+        numoutlets=1,
+    )
+    local_weight_pack = p.new("pack 0. 120", 1415, 700, 90, numinlets=2, numoutlets=1)
+    local_weight_line = p.new("line~", 1520, 700, 50, numinlets=2, numoutlets=2)
+    p.connect(firing, local_speed)
+    p.connect(local_speed, local_speed_pack)
+    p.connect(local_speed_pack, local_speed_line)
+    p.connect(local_speed_line, local_groove)
+    p.connect(firing, local_weight)
+    p.connect(local_weight, local_weight_pack)
+    p.connect(local_weight_pack, local_weight_line)
+
     def sum_layers(signals: list[str], x: float) -> str:
         current = signals[0]
         for index, signal in enumerate(signals[1:]):
@@ -1235,12 +1315,20 @@ def make_reference_texture() -> dict[str, Any]:
     for channel, x in ((0, 550), (1, 900)):
         layer_sum = sum_layers(channel_layers[channel], x)
         bank_trim = p.new("*~ 0.55", x + 70, 840, 65, numinlets=2, numoutlets=1)
-        load_gain = p.new("*~", x + 150, 840, 40, numinlets=2, numoutlets=1)
-        life_gain = p.new("*~", x + 210, 840, 40, numinlets=2, numoutlets=1)
-        level_gain = p.new("*~", x + 270, 840, 40, numinlets=2, numoutlets=1)
-        mute_stage = p.new("*~", x + 330, 840, 40, numinlets=2, numoutlets=1)
+        local_gain = p.new("*~", x + 150, 805, 40, numinlets=2, numoutlets=1)
+        local_trim = p.new("*~ 1.4", x + 205, 805, 65, numinlets=2, numoutlets=1)
+        texture_sum = p.new("+~", x + 285, 840, 40, numinlets=2, numoutlets=1)
+        load_gain = p.new("*~", x + 340, 840, 40, numinlets=2, numoutlets=1)
+        life_gain = p.new("*~", x + 395, 840, 40, numinlets=2, numoutlets=1)
+        level_gain = p.new("*~", x + 450, 840, 40, numinlets=2, numoutlets=1)
+        mute_stage = p.new("*~", x + 505, 840, 40, numinlets=2, numoutlets=1)
         p.connect(layer_sum, bank_trim)
-        p.connect(bank_trim, load_gain, 0, 0)
+        p.connect(local_groove, local_gain, channel, 0)
+        p.connect(local_weight_line, local_gain, 0, 1)
+        p.connect(local_gain, local_trim)
+        p.connect(bank_trim, texture_sum, 0, 0)
+        p.connect(local_trim, texture_sum, 0, 1)
+        p.connect(texture_sum, load_gain, 0, 0)
         p.connect(load_line, load_gain, 0, 1)
         p.connect(load_gain, life_gain)
         p.connect(gate_line, life_gain, 0, 1)
@@ -1397,8 +1485,17 @@ def make_transient() -> dict[str, Any]:
     profile_gate = p.new("gate 2", 35, 195, 55, numinlets=2, numoutlets=2)
     p.connect(router, starter_sel, 0)
     p.connect(starter_sel, profile_gate, 0, 1)
-    starter_stop = p.message("stop", 240, 195, 45)
-    p.connect(starter_sel, starter_stop, 1)
+    starter_fade_in = p.message("1. 20", 240, 155, 55)
+    starter_fade_out = p.message("0. 350", 305, 155, 60)
+    starter_envelope = p.new("line~", 375, 155, 50, numinlets=2, numoutlets=2)
+    starter_stop_delay = p.new("delay 400", 240, 195, 70, numinlets=2, numoutlets=1)
+    starter_stop = p.message("stop", 325, 195, 45)
+    p.connect(starter_sel, starter_fade_in, 0)
+    p.connect(starter_sel, starter_fade_out, 1)
+    p.connect(starter_sel, starter_stop_delay, 1)
+    p.connect(starter_fade_in, starter_envelope)
+    p.connect(starter_fade_out, starter_envelope)
+    p.connect(starter_stop_delay, starter_stop)
     p.connect(router, profile_sel, 10)
     for outlet_index, value in ((0, 0), (1, 1), (2, 2)):
         message = p.message(str(value), 105 + outlet_index * 45, 195, 30)
@@ -1410,12 +1507,77 @@ def make_transient() -> dict[str, Any]:
         p.new(f"buffer~ {name} {name}.wav", x, 245, 210, numinlets=1, numoutlets=2)
         start = p.message("start", x, 285, 45)
         player = p.new(f"play~ {name} 1", x, 325, 145, numinlets=1, numoutlets=2)
-        gain = p.new("*~ 0.16", x, 365, 65, numinlets=2, numoutlets=1)
+        gain = p.new("*~ 0.08", x, 365, 65, numinlets=2, numoutlets=1)
         p.connect(profile_gate, start, gate_outlet)
         p.connect(start, player)
         p.connect(starter_stop, player)
         p.connect(player, gain)
         players.append(gain)
+
+    local_buffer = p.new(
+        "buffer~ ferrari_startup ferrari_sf90_startup.wav",
+        635,
+        245,
+        370,
+        numinlets=2,
+        numoutlets=2,
+    )
+    local_info = p.new(
+        "info~ ferrari_startup", 1020, 245, 155, numinlets=1, numoutlets=10
+    )
+    local_query_load = p.new("loadbang", 1020, 205, 70, numinlets=1, numoutlets=1)
+    local_query_delay = p.new("delay 250", 1100, 205, 70, numinlets=2, numoutlets=1)
+    local_available = p.new(
+        "expr $f1>1000.", 1020, 285, 115, numinlets=1, numoutlets=1
+    )
+    local_available_pack = p.new(
+        "pack 0. 20", 1020, 325, 85, numinlets=2, numoutlets=1
+    )
+    local_available_line = p.new(
+        "line~", 1020, 365, 50, numinlets=2, numoutlets=2
+    )
+    fallback_available = p.new(
+        "expr 1.-$f1", 1145, 285, 100, numinlets=1, numoutlets=1
+    )
+    fallback_available_pack = p.new(
+        "pack 0. 20", 1145, 325, 85, numinlets=2, numoutlets=1
+    )
+    fallback_available_line = p.new(
+        "line~", 1145, 365, 50, numinlets=2, numoutlets=2
+    )
+    fallback_default = p.new(
+        "loadmess 1.", 1235, 325, 85, numinlets=1, numoutlets=1
+    )
+    p.connect(local_buffer, local_info, 1)
+    p.connect(local_query_load, local_query_delay)
+    p.connect(local_query_delay, local_info)
+    p.connect(local_info, local_available, 6)
+    p.connect(local_available, local_available_pack)
+    p.connect(local_available_pack, local_available_line)
+    p.connect(local_available, fallback_available)
+    p.connect(fallback_available, fallback_available_pack)
+    p.connect(fallback_available_pack, fallback_available_line)
+    p.connect(fallback_default, fallback_available_pack)
+    local_start = p.message("start", 635, 285, 45)
+    local_player = p.new(
+        "play~ ferrari_startup 2", 635, 325, 175, numinlets=1, numoutlets=3
+    )
+    local_left_gain = p.new("*~ 0.35", 635, 365, 65, numinlets=2, numoutlets=1)
+    local_right_gain = p.new("*~ 0.35", 715, 365, 65, numinlets=2, numoutlets=1)
+    local_left_envelope = p.new("*~", 635, 400, 40, numinlets=2, numoutlets=1)
+    local_right_envelope = p.new("*~", 715, 400, 40, numinlets=2, numoutlets=1)
+    p.connect(profile_gate, local_start, 0)
+    p.connect(profile_gate, local_start, 1)
+    p.connect(local_start, local_player)
+    p.connect(starter_stop, local_player)
+    p.connect(local_player, local_left_gain, 0, 0)
+    p.connect(local_player, local_right_gain, 1, 0)
+    p.connect(local_available_line, local_left_gain, 0, 1)
+    p.connect(local_available_line, local_right_gain, 0, 1)
+    p.connect(local_left_gain, local_left_envelope, 0, 0)
+    p.connect(local_right_gain, local_right_envelope, 0, 0)
+    p.connect(starter_envelope, local_left_envelope, 0, 1)
+    p.connect(starter_envelope, local_right_envelope, 0, 1)
 
     shift_sel = p.new("sel 1", 650, 150, 45, numinlets=1, numoutlets=2)
     shift_direction = p.new("sel -1 1", 720, 150, 60, numinlets=1, numoutlets=3)
@@ -1523,11 +1685,23 @@ def make_transient() -> dict[str, Any]:
 
     for index in range(2):
         starter_lowpass = p.new(
-            "svf~ 3500 0.7", 35 + index * 300, 1040, 105,
+            "svf~ 1600 0.7", 35 + index * 300, 1040, 105,
             numinlets=3, numoutlets=4,
         )
+        starter_fade = p.new(
+            "*~", 155 + index * 300, 1040, 40,
+            numinlets=2, numoutlets=1,
+        )
+        fallback_select = p.new(
+            "*~", 205 + index * 300, 1040, 40,
+            numinlets=2, numoutlets=1,
+        )
         p.connect(players[index], starter_lowpass)
-        players[index] = starter_lowpass
+        p.connect(starter_lowpass, starter_fade)
+        p.connect(starter_envelope, starter_fade, 0, 1)
+        p.connect(starter_fade, fallback_select)
+        p.connect(fallback_available_line, fallback_select, 0, 1)
+        players[index] = fallback_select
 
     mixed = players[0]
     for index, player in enumerate(players[1:]):
@@ -1537,6 +1711,8 @@ def make_transient() -> dict[str, Any]:
         mixed = add
     master = p.new("*~", 920, 1220, 40, numinlets=2, numoutlets=1)
     texture_master = p.new("*~", 920, 1255, 40, numinlets=2, numoutlets=1)
+    left_source = p.new("+~", 820, 1255, 40, numinlets=2, numoutlets=1)
+    right_source = p.new("+~", 980, 1255, 40, numinlets=2, numoutlets=1)
     left_gain = p.new("*~ 0.94", 820, 1280, 65, numinlets=2, numoutlets=1)
     right_gain = p.new("*~ 0.88", 980, 1280, 65, numinlets=2, numoutlets=1)
     stem_level = add_db_gain_control(p, router, len(event_names) - 1, 1610, 105, -7.0)
@@ -1548,8 +1724,12 @@ def make_transient() -> dict[str, Any]:
     p.connect(aggression_line, master, 0, 1)
     p.connect(master, texture_master)
     p.connect(texture_line, texture_master, 0, 1)
-    p.connect(texture_master, left_gain)
-    p.connect(texture_master, right_gain)
+    p.connect(texture_master, left_source, 0, 0)
+    p.connect(local_left_envelope, left_source, 0, 1)
+    p.connect(texture_master, right_source, 0, 0)
+    p.connect(local_right_envelope, right_source, 0, 1)
+    p.connect(left_source, left_gain)
+    p.connect(right_source, right_gain)
     p.connect(left_gain, trim_l)
     p.connect(right_gain, trim_r)
     p.connect(stem_level, trim_l, 0, 1)
@@ -2267,8 +2447,8 @@ def make_main() -> dict[str, Any]:
     preset_select = p.new("sel 0 1 2", 680, 165, 80, numinlets=1, numoutlets=4)
     presets = [
         "engine_type ev, ev_weight 1., v12_weight 0., v10_weight 0., aggression 0.25, brightness 0.72, body 0.34, texture 0.20, cabin_width 0.90, cabin_rumble 0., exhaust_boom 0., structure_vibration 0., cabin_ir_mix 0.10, powertrain_level_db -2., transient_level_db -9., road_level_db -14., rumble_level_db -60., pad_level_db -3., pad_mute 0, pad_solo 0, reference_texture_level_db -20., reference_texture_mute 0, master_trim_db -8.",
-        "engine_type v12, ev_weight 0., v12_weight 1., v10_weight 0., aggression 0.62, brightness 0.78, body 0.72, texture 0.52, cabin_width 0.82, cabin_rumble 0.90, exhaust_boom 0.62, structure_vibration 0.58, cabin_ir_mix 0.20, powertrain_level_db -3., transient_level_db -7., road_level_db -16., rumble_level_db -5., pad_level_db -3., pad_mute 0, pad_solo 0, reference_texture_level_db -24., reference_texture_mute 0, master_trim_db -8.",
-        "engine_type v10, ev_weight 0., v12_weight 0., v10_weight 1., aggression 0.90, brightness 0.66, body 0.84, texture 0.86, cabin_width 0.78, cabin_rumble 0.92, exhaust_boom 0.74, structure_vibration 0.72, cabin_ir_mix 0.18, powertrain_level_db -3., transient_level_db -6., road_level_db -16., rumble_level_db -4., pad_level_db -3., pad_mute 0, pad_solo 0, reference_texture_level_db -24., reference_texture_mute 0, master_trim_db -8.",
+        "engine_type v12, ev_weight 0., v12_weight 1., v10_weight 0., aggression 0.62, brightness 0.78, body 0.72, texture 0.52, cabin_width 0.82, cabin_rumble 0.90, exhaust_boom 0.62, structure_vibration 0.58, cabin_ir_mix 0.20, powertrain_level_db -3., transient_level_db -7., road_level_db -16., rumble_level_db -5., pad_level_db -3., pad_mute 0, pad_solo 0, reference_texture_level_db -18., reference_texture_mute 0, master_trim_db -8.",
+        "engine_type v10, ev_weight 0., v12_weight 0., v10_weight 1., aggression 0.90, brightness 0.66, body 0.84, texture 0.86, cabin_width 0.78, cabin_rumble 0.92, exhaust_boom 0.74, structure_vibration 0.72, cabin_ir_mix 0.18, powertrain_level_db -3., transient_level_db -6., road_level_db -16., rumble_level_db -4., pad_level_db -3., pad_mute 0, pad_solo 0, reference_texture_level_db -18., reference_texture_mute 0, master_trim_db -8.",
     ]
     preset_messages: list[str] = []
     for index, value in enumerate(presets):
@@ -2314,7 +2494,7 @@ def make_main() -> dict[str, Any]:
         p, "EV Pad dB", "pad_level_db", -3.0, 730, 635, engine
     )
     ui_targets["reference_texture_level_db"] = add_labeled_db_number(
-        p, "Engine Texture dB", "reference_texture_level_db", -24.0, 930, 635, engine
+        p, "Engine Texture dB", "reference_texture_level_db", -18.0, 930, 635, engine
     )
     for index, (label, name) in enumerate(
         (("Pad Mute", "pad_mute"), ("Pad Solo", "pad_solo"), ("Texture Mute", "reference_texture_mute"))
@@ -2542,10 +2722,10 @@ fire = bank_fire * 2;
 bank_phase_l = phasor(bank_fire);
 bank_phase_r = bank_phase_l + 0.5;
 bank_phase_r = bank_phase_r - floor(bank_phase_r);
-sharpness = 8 + t * 7 + aggression * 3;
-pulse_mean = (1 - exp(-sharpness)) / sharpness;
-pulse_l = exp(-bank_phase_l * sharpness) - pulse_mean;
-pulse_r = exp(-bank_phase_r * sharpness) - pulse_mean;
+pulse_curve_l = pow(0.5 + 0.5 * cos(bank_phase_l * 6.283185307179586), 4);
+pulse_curve_r = pow(0.5 + 0.5 * cos(bank_phase_r * 6.283185307179586), 4);
+pulse_l = pulse_curve_l - 0.2734375;
+pulse_r = pulse_curve_r - 0.2734375;
 cylinder = 0.97 + cycle(crank * 0.5) * (0.020 + speedmix * 0.035) + cycle(crank * 1.5) * (0.010 + speedmix * 0.020);
 idle = 0.205 + body * 0.050;
 a = clamp(idle + t * 0.30 + l * 0.16, 0, 0.67) * run;
@@ -2570,8 +2750,9 @@ bank_r = (pulse_r * 0.88 + pulse_l * 0.12) * cylinder * (0.48 + body * 0.16) * (
 resonance = sub + h1 + sideband_low + sideband_high + h2 + order23 + order27 + h3 + h4 + h6 + h8 + intake;
 left_drive = (bank_l + resonance + residual_l) * a * (0.86 + aggression * 0.14);
 right_drive = (bank_r + resonance + residual_r) * a * (0.86 + aggression * 0.14);
-out1 = clamp(tanh(left_drive * 1.35) / 1.25, -0.86, 0.86);
-out2 = clamp(tanh(right_drive * 1.35) / 1.25, -0.86, 0.86);""",
+sat_drive = 1.08 + speedmix * 0.18 + t * 0.09;
+out1 = tanh(left_drive * sat_drive) / sat_drive;
+out2 = tanh(right_drive * sat_drive) / sat_drive;""",
     "v10_powertrain": """// Four-stroke V10: phase-locked five-cylinder banks with odd-order intake colour.
 Param rpm(850, min=0, max=10000);
 Param throttle(0, min=0, max=1);
@@ -2597,10 +2778,10 @@ fire = bank_fire * 2;
 bank_phase_l = phasor(bank_fire);
 bank_phase_r = bank_phase_l + 0.5;
 bank_phase_r = bank_phase_r - floor(bank_phase_r);
-sharpness = 7 + t * 9 + aggression * 4;
-pulse_mean = (1 - exp(-sharpness)) / sharpness;
-pulse_l = exp(-bank_phase_l * sharpness) - pulse_mean;
-pulse_r = exp(-bank_phase_r * sharpness) - pulse_mean;
+pulse_curve_l = pow(0.5 + 0.5 * cos(bank_phase_l * 6.283185307179586), 4);
+pulse_curve_r = pow(0.5 + 0.5 * cos(bank_phase_r * 6.283185307179586), 4);
+pulse_l = pulse_curve_l - 0.2734375;
+pulse_r = pulse_curve_r - 0.2734375;
 cylinder = 0.95 + cycle(crank * 0.5) * (0.030 + speedmix * 0.045) + cycle(crank * 2.5) * (0.016 + speedmix * 0.024);
 idle = 0.225 + body * 0.055;
 a = clamp(idle + t * 0.32 + l * 0.18, 0, 0.70) * run;
@@ -2627,8 +2808,9 @@ bank_r = (pulse_r * 0.86 + pulse_l * 0.14) * cylinder * (0.50 + body * 0.16) * (
 resonance = sub + h1 + sideband_low + sideband_high + h15 + h2 + order22 + h25 + order28 + h3 + h5 + h7 + intake;
 left_drive = (bank_l + resonance + residual_l) * a * (0.88 + aggression * 0.12);
 right_drive = (bank_r + resonance + residual_r) * a * (0.88 + aggression * 0.12);
-out1 = clamp(tanh(left_drive * 1.42) / 1.27, -0.88, 0.88);
-out2 = clamp(tanh(right_drive * 1.42) / 1.27, -0.88, 0.88);""",
+sat_drive = 1.10 + speedmix * 0.20 + t * 0.12;
+out1 = tanh(left_drive * sat_drive) / sat_drive;
+out2 = tanh(right_drive * sat_drive) / sat_drive;""",
 })
 # Cabin rumble is now a signal-driven MSP resonator bank fed by the same
 # combustion signal as the main powertrain; the former free-running Gen model
@@ -2712,7 +2894,7 @@ PRESETS = {
         "pad_level_db": -3.0,
         "pad_mute": 0.0,
         "pad_solo": 0.0,
-        "reference_texture_level_db": -24.0,
+        "reference_texture_level_db": -18.0,
         "reference_texture_mute": 0.0,
         "ev_weight": 0.0,
         "texture": 0.86,
@@ -2762,7 +2944,7 @@ PRESETS = {
         "pad_level_db": -3.0,
         "pad_mute": 0.0,
         "pad_solo": 0.0,
-        "reference_texture_level_db": -24.0,
+        "reference_texture_level_db": -18.0,
         "reference_texture_mute": 0.0,
         "ev_weight": 0.0,
         "texture": 0.52,

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Prepare normalized local-only Ferrari idle/high-RPM residuals for V4."""
+"""Prepare local-only Ferrari residual, startup, and idle-body layers for V4."""
 
 from __future__ import annotations
 
@@ -15,6 +15,9 @@ from pathlib import Path
 SAMPLE_RATE = 48000
 LOOP_FRAMES = 12000
 FADE_FRAMES = 960
+BODY_LOOP_FADE_FRAMES = 14400
+STARTUP_FRAMES = 57600
+IDLE_BODY_FRAMES = 144000
 
 
 def _read_pcm16_stereo(path: Path) -> list[list[float]]:
@@ -76,6 +79,118 @@ def _residual_filter(
             break
         output = _biquad(output, _rbj("notch", frequency, 18.0))
     return _biquad(output, _rbj("lowpass", lowpass_hz))
+
+
+def _body_filter(
+    samples: list[float], *, highpass_hz: float, lowpass_hz: float
+) -> list[float]:
+    """Keep the firing cadence while removing DC, subsonics, and brittle air."""
+    mean = sum(samples) / max(1, len(samples))
+    output = [sample - mean for sample in samples]
+    output = _biquad(output, _rbj("highpass", highpass_hz))
+    return _biquad(output, _rbj("lowpass", lowpass_hz))
+
+
+def _write_normalized_stereo(
+    channels: list[list[float]],
+    destination: Path,
+    *,
+    target_rms_dbfs: float,
+    peak_limit_dbfs: float = -3.0,
+) -> dict[str, float | str]:
+    flat = [sample for channel in channels for sample in channel]
+    rms = math.sqrt(sum(sample * sample for sample in flat) / max(1, len(flat)))
+    if rms <= 1e-12:
+        raise ValueError("reference window is silent after body filtering")
+    peak = max(abs(sample) for sample in flat)
+    target_rms = 10.0 ** (target_rms_dbfs / 20.0)
+    peak_limit = 10.0 ** (peak_limit_dbfs / 20.0)
+    gain = min(target_rms / rms, peak_limit / max(peak, 1e-12))
+    normalized = [
+        [max(-1.0, min(1.0, sample * gain)) for sample in channel]
+        for channel in channels
+    ]
+
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    frame_count = len(normalized[0])
+    payload = b"".join(
+        struct.pack(
+            "<hh",
+            round(normalized[0][index] * 32767.0),
+            round(normalized[1][index] * 32767.0),
+        )
+        for index in range(frame_count)
+    )
+    with wave.open(str(destination), "wb") as handle:
+        handle.setnchannels(2)
+        handle.setsampwidth(2)
+        handle.setframerate(SAMPLE_RATE)
+        handle.writeframes(payload)
+
+    flat = [sample for channel in normalized for sample in channel]
+    rms = math.sqrt(sum(sample * sample for sample in flat) / len(flat))
+    peak = max(abs(sample) for sample in flat)
+    return {
+        "destination": str(destination),
+        "duration_seconds": frame_count / SAMPLE_RATE,
+        "rms_dbfs": 20.0 * math.log10(max(rms, 1e-12)),
+        "peak_dbfs": 20.0 * math.log10(max(peak, 1e-12)),
+        "sha256": hashlib.sha256(destination.read_bytes()).hexdigest(),
+    }
+
+
+def prepare_body_reference(
+    source: Path,
+    destination: Path,
+    *,
+    start_seconds: float,
+    frame_count: int,
+    target_rms_dbfs: float,
+    highpass_hz: float,
+    lowpass_hz: float,
+    loop: bool,
+) -> dict[str, float | str]:
+    """Create a cadence-preserving startup one-shot or seamless idle body."""
+    channels = _read_pcm16_stereo(source)
+    start = round(start_seconds * SAMPLE_RATE)
+    tail_frames = BODY_LOOP_FADE_FRAMES if loop else 0
+    if start < 0 or start + frame_count + tail_frames > len(channels[0]):
+        raise ValueError("body reference window is outside the source WAV")
+
+    processed: list[list[float]] = []
+    for channel in channels:
+        preroll = min(start, SAMPLE_RATE * 2)
+        filtered_with_history = _body_filter(
+            channel[start - preroll : start + frame_count + tail_frames],
+            highpass_hz=highpass_hz,
+            lowpass_hz=lowpass_hz,
+        )
+        body = filtered_with_history[preroll : preroll + frame_count]
+        if loop:
+            continuation = filtered_with_history[
+                preroll + frame_count : preroll + frame_count + tail_frames
+            ]
+            for index in range(BODY_LOOP_FADE_FRAMES):
+                phase = index / (BODY_LOOP_FADE_FRAMES - 1) * math.pi / 2.0
+                body[index] = (
+                    continuation[index] * math.cos(phase)
+                    + body[index] * math.sin(phase)
+                )
+        else:
+            fade_in = round(0.005 * SAMPLE_RATE)
+            fade_out = round(0.080 * SAMPLE_RATE)
+            for index in range(fade_in):
+                body[index] *= math.sin(index / max(1, fade_in - 1) * math.pi / 2.0)
+            for index in range(fade_out):
+                body[-fade_out + index] *= math.cos(
+                    index / max(1, fade_out - 1) * math.pi / 2.0
+                )
+        processed.append(body)
+
+    result = _write_normalized_stereo(
+        processed, destination, target_rms_dbfs=target_rms_dbfs
+    )
+    return {"source": str(source), **result}
 
 
 def prepare_reference(
@@ -148,7 +263,7 @@ def prepare_reference(
 
 
 def prepare_reference_bundle(source: Path, destination_dir: Path) -> dict[str, dict[str, float | str]]:
-    """Create the two normalized local layers used by the V4 RPM crossfade."""
+    """Create compatible residuals plus cadence-preserving startup/idle layers."""
     return {
         "idle": prepare_reference(
             source, destination_dir / "ferrari_sf90_idle_residual.wav",
@@ -159,6 +274,26 @@ def prepare_reference_bundle(source: Path, destination_dir: Path) -> dict[str, d
             source, destination_dir / "ferrari_sf90_high_residual.wav",
             start_seconds=22.75, loop_frames=24000, cadence_hz=345.7,
             highpass_hz=180.0, lowpass_hz=12000.0,
+        ),
+        "startup": prepare_body_reference(
+            source,
+            destination_dir / "ferrari_sf90_startup.wav",
+            start_seconds=0.0,
+            frame_count=STARTUP_FRAMES,
+            target_rms_dbfs=-14.0,
+            highpass_hz=25.0,
+            lowpass_hz=3000.0,
+            loop=False,
+        ),
+        "idle_body": prepare_body_reference(
+            source,
+            destination_dir / "ferrari_sf90_idle_body.wav",
+            start_seconds=2.5,
+            frame_count=IDLE_BODY_FRAMES,
+            target_rms_dbfs=-15.5,
+            highpass_hz=25.0,
+            lowpass_hz=4000.0,
+            loop=True,
         ),
     }
 
