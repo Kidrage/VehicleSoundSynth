@@ -1,7 +1,7 @@
 # Source Index
 
 Repository: /Users/saintpeter/Downloads/VehicleSoundSynth-V4
-Tracked filtered files: 76
+Tracked filtered files: 77
 High-value indexed files: 21
 
 Read this file before broad repository exploration. Prefer focused `rg`

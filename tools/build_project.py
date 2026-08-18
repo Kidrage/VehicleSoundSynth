@@ -3477,6 +3477,81 @@ def make_launcher() -> dict[str, Any]:
     return p.document()
 
 
+def make_keyboard_drive_ws() -> dict[str, Any]:
+    """Build a focus-aware W/S throttle and brake controller for Manual mode."""
+    p = Patcher(720, 430)
+    p.comment(
+        "Runtime keyboard control — hold W for throttle, hold S for brake; releases return both pedals to zero",
+        20,
+        15,
+        650,
+    )
+    manual = inlet(p, 25, 55)
+    p.comment("Manual enabled (0/1)", 65, 58, 150)
+    key_down = p.new("key", 25, 105, 45, numinlets=0, numoutlets=1)
+    key_up = p.new("keyup", 85, 105, 55, numinlets=0, numoutlets=1)
+    down_select = p.new("sel 119 87 115 83", 25, 145, 125, numinlets=1, numoutlets=5)
+    up_select = p.new("sel 119 87 115 83", 165, 145, 125, numinlets=1, numoutlets=5)
+    w_gate = p.new("gate 1", 25, 220, 55, numinlets=2, numoutlets=1)
+    s_gate = p.new("gate 1", 165, 220, 55, numinlets=2, numoutlets=1)
+    w_pressed = p.message("1", 25, 185, 30)
+    w_released = p.message("0", 65, 185, 30)
+    s_pressed = p.message("1", 165, 185, 30)
+    s_released = p.message("0", 205, 185, 30)
+    manual_off = p.new("sel 0", 315, 105, 45, numinlets=1, numoutlets=2)
+    release_both = p.message("0", 375, 105, 30)
+    default_off = p.new("loadmess 0", 425, 105, 80, numinlets=1, numoutlets=1)
+    w_change = p.new("change", 25, 260, 55, numinlets=1, numoutlets=3)
+    s_change = p.new("change", 165, 260, 55, numinlets=1, numoutlets=3)
+    w_state = p.new("sel 1 0", 25, 300, 55, numinlets=1, numoutlets=3)
+    s_state = p.new("sel 1 0", 165, 300, 55, numinlets=1, numoutlets=3)
+    throttle_up = p.message("1. 1800", 25, 340, 65)
+    throttle_off = p.message("0. 900", 95, 340, 55)
+    brake_on = p.message("1. 120", 165, 340, 55)
+    brake_off = p.message("0. 200", 225, 340, 55)
+    throttle_line = p.new("line 0.", 320, 340, 60, numinlets=2, numoutlets=2)
+    brake_line = p.new("line 0.", 410, 340, 60, numinlets=2, numoutlets=2)
+    throttle_out = outlet(p, 320, 385)
+    brake_out = outlet(p, 410, 385)
+
+    p.connect(key_down, down_select)
+    p.connect(key_up, up_select)
+    for outlet_index in (0, 1):
+        p.connect(down_select, w_pressed, outlet_index)
+        p.connect(up_select, w_released, outlet_index)
+    for outlet_index in (2, 3):
+        p.connect(down_select, s_pressed, outlet_index)
+        p.connect(up_select, s_released, outlet_index)
+    p.connect(manual, w_gate, 0, 0)
+    p.connect(manual, s_gate, 0, 0)
+    p.connect(manual, manual_off)
+    p.connect(default_off, w_gate, 0, 0)
+    p.connect(default_off, s_gate, 0, 0)
+    p.connect(default_off, manual_off)
+    p.connect(w_pressed, w_gate, 0, 1)
+    p.connect(w_released, w_gate, 0, 1)
+    p.connect(s_pressed, s_gate, 0, 1)
+    p.connect(s_released, s_gate, 0, 1)
+    p.connect(manual_off, release_both, 0)
+    p.connect(release_both, w_change)
+    p.connect(release_both, s_change)
+    p.connect(w_gate, w_change)
+    p.connect(s_gate, s_change)
+    p.connect(w_change, w_state)
+    p.connect(s_change, s_state)
+    p.connect(w_state, throttle_up, 0)
+    p.connect(w_state, throttle_off, 1)
+    p.connect(s_state, brake_on, 0)
+    p.connect(s_state, brake_off, 1)
+    p.connect(throttle_up, throttle_line)
+    p.connect(throttle_off, throttle_line)
+    p.connect(brake_on, brake_line)
+    p.connect(brake_off, brake_line)
+    p.connect(throttle_line, throttle_out)
+    p.connect(brake_line, brake_out)
+    return p.document()
+
+
 def make_profile_main(profile: str) -> dict[str, Any]:
     """Build one self-contained, profile-fixed runnable patcher."""
     config = PROFILE_CONFIG[profile]
@@ -3530,13 +3605,16 @@ def make_profile_main(profile: str) -> dict[str, Any]:
     auto_select = p.new("== 1", 470, 170, 45, numinlets=2, numoutlets=1)
     auto_named = p.new("prepend auto", 525, 170, 95, numinlets=1, numoutlets=1)
     source_load = p.new("loadmess 0", 600, 135, 80, numinlets=1, numoutlets=1)
+    manual_select = p.new("== 0", 630, 170, 45, numinlets=2, numoutlets=1)
     p.connect(source_load, source_menu)
     p.connect(source_menu, source_select)
     p.connect(source_select, source, 0, 0)
     p.connect(source_menu, auto_select)
     p.connect(auto_select, auto_named)
     p.connect(auto_named, drive)
+    p.connect(source_menu, manual_select)
 
+    pedal_numbers: dict[str, str] = {}
     for index, (label, name, default) in enumerate(
         (("Throttle", "throttle", 0.0), ("Brake", "brake", 0.0))
     ):
@@ -3550,6 +3628,13 @@ def make_profile_main(profile: str) -> dict[str, Any]:
         p.connect(clip, named)
         p.connect(named, drive)
         p.connect(initial, number)
+        pedal_numbers[name] = number
+
+    keyboard = p.new("keyboard_drive_ws", 25, 345, 135, numinlets=1, numoutlets=2)
+    p.comment("Focus this window: hold W = throttle, hold S = brake (Internal Manual only)", 175, 347, 470)
+    p.connect(manual_select, keyboard)
+    p.connect(keyboard, pedal_numbers["throttle"], 0, 0)
+    p.connect(keyboard, pedal_numbers["brake"], 1, 0)
 
     if profile == "ev":
         p.comment("BEAP soundscape", 330, 205, 150)
@@ -3586,7 +3671,7 @@ def make_profile_main(profile: str) -> dict[str, Any]:
         p.connect(cinematic, engine)
         p.connect(realistic, engine)
 
-    p.comment("Output", 760, 105, 100)
+    p.comment("Audio + Output", 760, 105, 120)
     audio_toggle = p.add("toggle", None, 760, 135, 24, 24, numinlets=1, numoutlets=1)
     audio_off = p.new("loadmess 0", 795, 135, 80, numinlets=1, numoutlets=1)
     audio_pack = p.new("pack 0. 60", 760, 175, 85, numinlets=2, numoutlets=1)
@@ -3600,6 +3685,7 @@ def make_profile_main(profile: str) -> dict[str, Any]:
     spectrum_r = p.new("spectroscope~", 885, 560, 230, numinlets=2, numoutlets=0)
     p.connect(audio_off, audio_toggle)
     p.connect(audio_toggle, audio_pack)
+    p.connect(audio_toggle, dac)
     p.connect(audio_pack, audio_line)
     p.connect(engine, gain_l, 0, 0)
     p.connect(engine, gain_r, 1, 0)
@@ -4339,6 +4425,7 @@ def project_file() -> dict[str, Any]:
         "patchers/cabin_master~.maxpat",
         "patchers/mix_master~.maxpat",
         "patchers/drive_simulator.maxpat",
+        "patchers/keyboard_drive_ws.maxpat",
     ]
     for profile in ("ev", "v10", "v12"):
         patchers.extend(
@@ -4412,6 +4499,7 @@ def build_project(root: Path) -> None:
         "patchers/cabin_master~.maxpat": make_cabin_master(),
         "patchers/mix_master~.maxpat": make_mix_master(),
         "patchers/drive_simulator.maxpat": make_drive_simulator(),
+        "patchers/keyboard_drive_ws.maxpat": make_keyboard_drive_ws(),
         "presets/sound_dna.json": PRESETS,
         PROJECT_FILENAME: project_file(),
     }

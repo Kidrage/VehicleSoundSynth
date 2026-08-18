@@ -23,7 +23,10 @@ IR, and global master EQ, using built-in Max/MSP/Gen/BEAP objects.
 - `tools/prepare_local_reference.py` — builds ignored, non-distributable Ferrari startup/idle-body layers and the 18-loop V10 state atlas with hash manifest.
 - `assets/asset_manifest.json` / `ASSET_LICENSES.md` — runtime-audio provenance authority.
 - `main.maxpat` — DSP-free launcher; it must never instantiate an engine.
-- `VehicleSoundSynth-{EV,V10,V12}.maxpat` — independent runnable UIs; DSP starts muted.
+- `VehicleSoundSynth-{EV,V10,V12}.maxpat` — independent runnable UIs; the
+  single `Audio + Output` toggle enables both DSP and the output ramp.
+- `patchers/keyboard_drive_ws.maxpat` — focus-aware Manual-mode W/S throttle
+  and brake ramps with forced release when leaving Manual.
 - `patchers/vehicle_engine_{ev,v10,v12}~.maxpat` — fixed public seams.
 - `patchers/{ev,v10,v12}_powertrain~.maxpat` — exactly one Gen per profile.
 - `patchers/v10_state_renderer~.maxpat` — local atlas with mutually exclusive tracked fallback.
@@ -72,8 +75,9 @@ On macOS, Max writes load diagnostics to
   probe names and only one isolated probe instance at a time on macOS.
 - Open the project first and launcher second in the same Max instance. Launcher
   selection writes/closes the prior top-level runtime before opening one unique
-  replacement. Save user-tuned BEAP subpatchers, close every task-opened patcher,
-  and quit Max after a smoke test.
+  replacement. In Internal Manual, focus the runtime and hold W/S for
+  throttle/brake. Save user-tuned BEAP subpatchers, close every task-opened
+  patcher, and quit Max after a smoke test.
 
 ## Repository State
 

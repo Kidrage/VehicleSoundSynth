@@ -23,7 +23,9 @@ is the supported low-CPU workflow.
 5. Use Internal Manual for direct throttle/brake control, Internal Auto for the
    guarded drive cycle, or send messages to `vss.ev.input`, `vss.v10.input`, or
    `vss.v12.input` in External mode.
-6. Turn Audio on only after lowering the monitoring level.
+6. After lowering the monitoring level, enable the single `Audio + Output`
+   toggle. It opens the output ramp and Max DSP together; ignition/start alone
+   intentionally do not enable monitoring.
 7. Save intentional BEAP subpatcher edits. The launcher saves/closes the active
    top-level runtime when switching; when finished, close the runtime and Project
    windows and quit Max.
@@ -56,6 +58,11 @@ fixed drive/controller -> one profile powertrain + transient + road
                        -> powertrain-excited cabin/body
                        -> four-band stereo EQ -> limiter/clip -> output
 ```
+
+In `Internal Manual`, focus the runtime window and hold `W` to ramp throttle
+toward 1.0 or `S` to apply the brake. Releasing either key ramps that pedal back
+to zero. Keyboard pedals are disabled, and both are released, when leaving
+Manual mode.
 
 ## Engine start
 

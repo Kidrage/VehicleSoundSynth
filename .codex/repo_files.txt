@@ -45,6 +45,7 @@ patchers/ev_relax_voice.maxpat
 patchers/ev_soundscape_host~.maxpat
 patchers/ev_sport_beap~.maxpat
 patchers/ev_sport_voice.maxpat
+patchers/keyboard_drive_ws.maxpat
 patchers/mix_master~.maxpat
 patchers/powertrain~.maxpat
 patchers/reference_texture~.maxpat

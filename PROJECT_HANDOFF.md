@@ -9,13 +9,13 @@
 - Working root: `.`
 - Repository name: `VehicleSoundSynth-V4`
 - Git repository: `true`
-- Generated at: `2026-08-18T07:38:37.842139+00:00`
+- Generated at: `2026-08-18T08:11:35.113093+00:00`
 
 ## Current State
 
 - Branch: `codex/vehicle-sound-v4`
-- HEAD: `aff305f`
-- Indexed paths: 117
+- HEAD: `5024087`
+- Indexed paths: 118
 - Inventory truncated: `false`
 - Inaccessible paths: 0
 - Scan mode: complete path/metadata inventory; no bulk content read; no symlink traversal.
@@ -43,7 +43,7 @@
 
 | Route | Files |
 |---|---:|
-| `patchers` | 38 |
+| `patchers` | 39 |
 | `media` | 35 |
 | `.` | 16 |
 | `assets` | 10 |
@@ -59,14 +59,14 @@
 ### Categories
 
 - audio: 41 files, 103833150 bytes
-- code: 11 files, 537550 bytes
-- literature: 14 files, 580743 bytes
-- other: 47 files, 8465773 bytes
+- code: 11 files, 544512 bytes
+- literature: 14 files, 580770 bytes
+- other: 48 files, 8489997 bytes
 - structured_data: 4 files, 24133 bytes
 
 ### Common Extensions
 
-- `.maxpat`: 42
+- `.maxpat`: 43
 - `.wav`: 41
 - `.py`: 11
 - `.md`: 6
@@ -90,6 +90,7 @@
 
 ## Change History
 
+- `5024087 2026-08-18 docs: refresh V4 project handoff`
 - `aff305f 2026-08-18 feat: split V4 runtimes and restore sample-led V10`
 - `68af5db 2026-08-18 fix: soften V10 V12 combustion with local Ferrari body`
 - `3a678eb 2026-08-17 docs: refresh V4 repair handoff`
@@ -109,11 +110,22 @@
 - `cdcc641 2026-08-12 fix: harden V4 runtime probe setup`
 - `6814cc4 2026-08-12 fix: expose Gen parameters to Max runtime`
 - `660866e 2026-08-12 docs: refresh V4 handoff`
-- `cb5ce78 2026-08-12 feat: create V4 acoustic repair archive`
 
 ## Current Changes
 
 - `## codex/vehicle-sound-v4`
+- `M  .codex/REPO_GUIDE.md`
+- `M  .codex/repo_files.txt`
+- `M  .codex/source_index.txt`
+- ` M PROJECT_HANDOFF.md`
+- `M  README.md`
+- `M  VehicleSoundSynth-EV.maxpat`
+- `M  VehicleSoundSynth-V10.maxpat`
+- `M  VehicleSoundSynth-V12.maxpat`
+- `M  VehicleSoundSynth-V4.maxproj`
+- `A  patchers/keyboard_drive_ws.maxpat`
+- `M  tests/test_project.py`
+- `M  tools/build_project.py`
 
 ## Related Repositories
 
@@ -191,6 +203,7 @@
 ## Agent Notes
 
 <!-- AGENT_NOTES_START -->
+- 2026-08-18 top-level silence/W-S repair: the profile `Output` toggle had only driven a 60 ms gain ramp and never enabled `ezdac~`, while every runtime deliberately loaded both DSP and gain off; ignition/start therefore remained silent unless the small DAC object was separately clicked. Each profile now exposes one `Audio + Output` toggle wired to both DSP and the gain ramp. New generated `patchers/keyboard_drive_ws.maxpat` provides Manual-only W throttle and S brake ramps, handles upper/lowercase keycodes and key-up, collapses repeat events, and forces both pedals to zero when leaving Manual. The exact structural regression test failed before the fix and passes afterward; all 85 tests pass. Final Max 8.6.5 EV/V10/V12 loads resolved the keyboard abstraction with no missing-object, patchcord, outlet, or Gen errors. All task-opened Max instances and the pre-existing V4-only instance were closed; final Max process count was zero.
 - 2026-08-18 three-runtime rebuild: `main.maxpat` is now a DSP-free launcher for independent `VehicleSoundSynth-EV.maxpat`, `VehicleSoundSynth-V10.maxpat`, and `VehicleSoundSynth-V12.maxpat` runtimes. Each fixed profile owns one controller, drive model, one Gen powertrain, transient host, and public `vehicle_engine_<profile>~` seam; inactive profiles are absent rather than gain-muted. V10 catch settles 1050->740 RPM, V12 1100->780 RPM, and automatic throttle waits two seconds after start.
 - V10 is now sample-led by an ignored deterministic 18-loop Ferrari atlas (steady/accel/decel x six firing-rate anchors) with a source/processor/hash manifest, offline cadence alignment to the declared 65/110/180/260/380/520 Hz anchors, a 0.88-1.12 runtime playback clamp, state/RPM crossfades, and a -18 dB/500 Hz procedural underlay. V12 remains independent and uses tracked CC0 texture. All 18 V10 buffers must report loaded before local selection; any partial/missing atlas retains the tracked CC0 fallback through persistent `sig~` values.
 - Cadence warping renders an extra continuation and re-closes each loop after resampling. Across the final 18 local loops, the largest wrap step is 0.0413 FS and 0.653x its channel's 99.9th-percentile ordinary adjacent-sample step; the test suite enforces that every seam remains within 1.5x that baseline.

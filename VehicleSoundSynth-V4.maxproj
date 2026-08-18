@@ -273,6 +273,10 @@
         "kind": "patcher",
         "local": 1
       },
+      "patchers/keyboard_drive_ws.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
       "patchers/mix_master~.maxpat": {
         "kind": "patcher",
         "local": 1

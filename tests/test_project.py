@@ -1113,7 +1113,83 @@ class VehicleSoundProjectTests(unittest.TestCase):
             toggles = {box["id"] for box in boxes.values() if box["maxclass"] == "toggle"}
             loads = {box["id"] for box in boxes.values() if box.get("text") == "loadmess 0"}
             self.assertTrue(any((load, toggle) in cords for load in loads for toggle in toggles))
-            self.assertTrue(any(box.get("text") == "ezdac~" for box in boxes.values()))
+            self.assertTrue(
+                any(
+                    box.get("text") == "ezdac~" or box.get("maxclass") == "ezdac~"
+                    for box in boxes.values()
+                )
+            )
+
+    def test_profile_runtime_has_one_step_audio_enable_and_ws_keyboard_drive(self):
+        for name in ("EV", "V10", "V12"):
+            main = self.load_json(f"VehicleSoundSynth-{name}.maxpat")["patcher"]
+            boxes = {item["box"]["id"]: item["box"] for item in main["boxes"]}
+            lines = [item["patchline"] for item in main["lines"]]
+
+            dac_id = next(
+                box_id
+                for box_id, box in boxes.items()
+                if box.get("text") == "ezdac~" or box.get("maxclass") == "ezdac~"
+            )
+            audio_pack_id = next(
+                box_id
+                for box_id, box in boxes.items()
+                if box.get("text") == "pack 0. 60"
+            )
+            audio_toggle_id = next(
+                line["source"][0]
+                for line in lines
+                if line["destination"] == [audio_pack_id, 0]
+                and boxes[line["source"][0]].get("maxclass") == "toggle"
+            )
+            self.assertTrue(
+                any(
+                    line["source"][0] == audio_toggle_id
+                    and line["destination"] == [dac_id, 0]
+                    for line in lines
+                ),
+                f"{name} Audio toggle must enable both the output ramp and DSP",
+            )
+
+            keyboard_id = next(
+                box_id
+                for box_id, box in boxes.items()
+                if box.get("text") == "keyboard_drive_ws"
+            )
+            throttle_number_id = next(
+                box_id
+                for box_id, box in boxes.items()
+                if box.get("maxclass") == "flonum"
+                and box.get("patching_rect", [None])[0] == 25
+            )
+            brake_number_id = next(
+                box_id
+                for box_id, box in boxes.items()
+                if box.get("maxclass") == "flonum"
+                and box.get("patching_rect", [None])[0] == 175
+            )
+            self.assertTrue(
+                any(
+                    line["source"] == [keyboard_id, 0]
+                    and line["destination"] == [throttle_number_id, 0]
+                    for line in lines
+                )
+            )
+            self.assertTrue(
+                any(
+                    line["source"] == [keyboard_id, 1]
+                    and line["destination"] == [brake_number_id, 0]
+                    for line in lines
+                )
+            )
+
+        keyboard = self.load_json("patchers/keyboard_drive_ws.maxpat")["patcher"]
+        keyboard_text = "\n".join(
+            item["box"].get("text", "") for item in keyboard["boxes"]
+        )
+        self.assertIn("key", keyboard_text)
+        self.assertIn("keyup", keyboard_text)
+        self.assertEqual(2, keyboard_text.count("sel 119 87 115 83"))
 
     def test_generated_patchers_use_max_compatible_objects_and_syntax(self):
         patchers = list(ROOT.glob("*.maxpat")) + list((ROOT / "patchers").glob("*.maxpat"))
