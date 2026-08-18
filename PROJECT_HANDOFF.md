@@ -9,12 +9,12 @@
 - Working root: `.`
 - Repository name: `VehicleSoundSynth-V4`
 - Git repository: `true`
-- Generated at: `2026-08-18T08:11:35.113093+00:00`
+- Generated at: `2026-08-18T08:11:56.363641+00:00`
 
 ## Current State
 
 - Branch: `codex/vehicle-sound-v4`
-- HEAD: `5024087`
+- HEAD: `17c8e14`
 - Indexed paths: 118
 - Inventory truncated: `false`
 - Inaccessible paths: 0
@@ -60,7 +60,7 @@
 
 - audio: 41 files, 103833150 bytes
 - code: 11 files, 544512 bytes
-- literature: 14 files, 580770 bytes
+- literature: 14 files, 581137 bytes
 - other: 48 files, 8489997 bytes
 - structured_data: 4 files, 24133 bytes
 
@@ -90,6 +90,7 @@
 
 ## Change History
 
+- `17c8e14 2026-08-18 fix: enable runtime audio and restore W S driving`
 - `5024087 2026-08-18 docs: refresh V4 project handoff`
 - `aff305f 2026-08-18 feat: split V4 runtimes and restore sample-led V10`
 - `68af5db 2026-08-18 fix: soften V10 V12 combustion with local Ferrari body`
@@ -109,23 +110,10 @@
 - `a26e162 2026-08-12 fix: improve cabin mono compatibility`
 - `cdcc641 2026-08-12 fix: harden V4 runtime probe setup`
 - `6814cc4 2026-08-12 fix: expose Gen parameters to Max runtime`
-- `660866e 2026-08-12 docs: refresh V4 handoff`
 
 ## Current Changes
 
 - `## codex/vehicle-sound-v4`
-- `M  .codex/REPO_GUIDE.md`
-- `M  .codex/repo_files.txt`
-- `M  .codex/source_index.txt`
-- ` M PROJECT_HANDOFF.md`
-- `M  README.md`
-- `M  VehicleSoundSynth-EV.maxpat`
-- `M  VehicleSoundSynth-V10.maxpat`
-- `M  VehicleSoundSynth-V12.maxpat`
-- `M  VehicleSoundSynth-V4.maxproj`
-- `A  patchers/keyboard_drive_ws.maxpat`
-- `M  tests/test_project.py`
-- `M  tools/build_project.py`
 
 ## Related Repositories
 
