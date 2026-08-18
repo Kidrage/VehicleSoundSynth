@@ -24,7 +24,7 @@ PROFILE_SETTINGS = {
         "ir_mix": 0.20,
     },
     "v10": {
-        "rpm": 850.0,
+        "rpm": 740.0,
         "weights": (0.0, 0.0, 1.0),
         "rumble": (0.92, 0.74, 0.72),
         "ir_mix": 0.18,
@@ -35,9 +35,9 @@ DSP_SETTLE_MS = 6000
 
 SCENARIOS = {
     "idle-v12": {"profile": "v12", "rpm": 780.0},
-    "idle-v10": {"profile": "v10", "rpm": 850.0},
-    "high-v12-3500": {"profile": "v12", "rpm": 3500.0, "throttle": 0.72, "load": 0.65},
-    "high-v10-4200": {"profile": "v10", "rpm": 4200.0, "throttle": 0.78, "load": 0.70},
+    "idle-v10": {"profile": "v10", "rpm": 740.0},
+    "high-v12-3500": {"profile": "v12", "rpm": 3500.0, "throttle": 0.72, "load": 0.65, "lock_rpm": True},
+    "high-v10-4200": {"profile": "v10", "rpm": 4200.0, "throttle": 0.78, "load": 0.70, "lock_rpm": True},
     "ev-pad-on": {"profile": "ev", "rpm": 1800.0, "throttle": 0.35, "pad_level_db": -3.0},
     "ev-pad-off": {"profile": "ev", "rpm": 1800.0, "throttle": 0.35, "pad_mute": 1},
     "ev-pad-solo": {"profile": "ev", "rpm": 1800.0, "throttle": 0.35, "pad_solo": 1},
@@ -57,6 +57,7 @@ def make_probe(
     rpm: float | None = None,
     throttle: float = 0.0,
     load_value: float = 0.0,
+    lock_rpm: bool = False,
     sweep_to_rpm: float | None = None,
     render_ms: int = 4000,
     driver_mode: str = "nonrealtime",
@@ -67,7 +68,6 @@ def make_probe(
     event_message: str | None = None,
 ) -> dict:
     settings = PROFILE_SETTINGS[profile]
-    ev_weight, v12_weight, v10_weight = settings["weights"]
     rumble_values = settings["rumble"] if rumble_enabled else (0.0, 0.0, 0.0)
     cabin_rumble, exhaust_boom, structure_vibration = rumble_values
     initial_rpm = settings["rpm"] if rpm is None else rpm
@@ -75,15 +75,26 @@ def make_probe(
     state = "rumble" if rumble_enabled else "dry"
     p.comment(f"Automated {profile.upper()} idle {state} render; hardware monitor is multiplied by zero", 25, 15, 700)
     p.comment("Runtime acceptance requires the written WAV to report exactly 48000 Hz; any other rate is a hard failure", 25, 42, 820)
-    controller = p.new("engine_controller", 300, 290, 125, numinlets=1, numoutlets=1)
-    powertrain = p.new("powertrain~", 300, 330, 95, numinlets=1, numoutlets=2)
-    transient = p.new("transient~", 180, 330, 90, numinlets=1, numoutlets=2)
+    drive = p.new(f"drive_simulator_{profile}", 100, 290, 165, numinlets=1, numoutlets=1)
+    controller = p.new(f"engine_controller_{profile}", 300, 290, 165, numinlets=1, numoutlets=1)
+    drive_router = p.new("route rpm", 100, 320, 75, numinlets=1, numoutlets=2)
+    rpm_select = p.new("switch 2", 190, 290, 70, numinlets=3, numoutlets=1)
+    rpm_select_default = p.new("loadmess 1", 190, 260, 80, numinlets=1, numoutlets=1)
+    rpm_named = p.new("prepend rpm", 190, 320, 90, numinlets=1, numoutlets=1)
+    powertrain = p.new(f"{profile}_powertrain~", 300, 330, 135, numinlets=1, numoutlets=2)
+    transient = p.new(f"transient_{profile}~", 160, 330, 125, numinlets=1, numoutlets=2)
     road = p.new("road_air~", 70, 330, 85, numinlets=1, numoutlets=2)
     rumble = p.new("cabin_rumble~", 430, 330, 110, numinlets=3, numoutlets=2)
     add_l = p.new("+~", 300, 375, 40, numinlets=2, numoutlets=1)
     add_r = p.new("+~", 430, 375, 40, numinlets=2, numoutlets=1)
     cabin = p.new("cabin_master~", 300, 415, 110, numinlets=3, numoutlets=2)
     mix = p.new("mix_master~", 300, 455, 100, numinlets=3, numoutlets=2)
+    p.connect(drive, drive_router)
+    p.connect(drive_router, rpm_select, 0, 1)
+    p.connect(drive_router, controller, 1, 0)
+    p.connect(rpm_select_default, rpm_select, 0, 0)
+    p.connect(rpm_select, rpm_named)
+    p.connect(rpm_named, controller)
     for controlled in (powertrain, transient, road, rumble, cabin, mix):
         p.connect(controller, controlled, 0, 0)
     p.connect(powertrain, add_l, 0, 0)
@@ -109,14 +120,11 @@ def make_probe(
     p.connect(cabin, mix, 0, 1)
     p.connect(cabin, mix, 1, 2)
     default_messages = (
-            f"engine_type {profile}",
-            f"ev_weight {ev_weight:g}",
-            f"v12_weight {v12_weight:g}",
-            f"v10_weight {v10_weight:g}",
             f"ignition {int(ignition_enabled)}",
             f"rpm {initial_rpm:g}",
             f"throttle {throttle:g}",
             f"load {load_value:g}",
+            "accel 0",
             f"cabin_rumble {cabin_rumble:g}",
             f"exhaust_boom {exhaust_boom:g}",
             f"structure_vibration {structure_vibration:g}",
@@ -132,7 +140,7 @@ def make_probe(
     ) + extra_messages
     for index, message in enumerate(control_messages):
         initial = p.new(f"loadmess {message}", 25, 110 + index * 32, 245, numinlets=1, numoutlets=1)
-        p.connect(initial, controller)
+        p.connect(initial, drive)
 
     load = p.new("loadbang", 500, 110, 65, numinlets=1, numoutlets=1)
     start_delay = p.new("delay 100", 500, 150, 70, numinlets=2, numoutlets=1)
@@ -142,7 +150,7 @@ def make_probe(
     event = None
     if event_message is not None:
         event = p.message(event_message, 790, 190, 190)
-        p.connect(event, controller)
+        p.connect(event, drive)
         if driver_mode == "coreaudio":
             event_delay = p.new("delay 7800", 790, 150, 85, numinlets=2, numoutlets=1)
             p.connect(load, event_delay)
@@ -150,20 +158,23 @@ def make_probe(
     if start_enabled:
         start = p.message("start 1", 500, 190, 55)
         p.connect(start_delay, start)
-        p.connect(start, controller)
+        p.connect(start, drive)
 
     if sweep_to_rpm is not None:
         sweep_delay = p.new(f"delay {DSP_SETTLE_MS}", 500, 230, 85, numinlets=2, numoutlets=1)
+        sweep_order = p.new("t b b", 590, 230, 50, numinlets=1, numoutlets=2)
         sweep_message = p.message(
             f"{initial_rpm:g}, {sweep_to_rpm:g} {render_ms}", 500, 270, 185
         )
         sweep_line = p.new("line 0.", 500, 310, 60, numinlets=2, numoutlets=2)
-        sweep_named = p.new("prepend rpm", 500, 350, 90, numinlets=1, numoutlets=1)
+        sweep_select = p.message("2", 590, 310, 30)
         p.connect(load, sweep_delay)
-        p.connect(sweep_delay, sweep_message)
+        p.connect(sweep_delay, sweep_order)
+        p.connect(sweep_order, sweep_select, 1, 0)
+        p.connect(sweep_order, sweep_message, 0, 0)
         p.connect(sweep_message, sweep_line)
-        p.connect(sweep_line, sweep_named)
-        p.connect(sweep_named, controller)
+        p.connect(sweep_select, rpm_select, 0, 0)
+        p.connect(sweep_line, rpm_select, 0, 2)
 
     recorder = p.new("sfrecord~ 2", 300, 515, 90, numinlets=3, numoutlets=1)
     open_file = p.message(f"open {wav_output}", 500, 250, 380)
@@ -189,8 +200,17 @@ def make_probe(
         sample_rate_delay = p.new("delay 1000", 500, 600, 75, numinlets=2, numoutlets=1)
         sample_rate_value = p.message(";\rdsp sr 48000", 500, 630, 110)
         driver_ready = p.new("delay 2000", 630, 565, 75, numinlets=2, numoutlets=1)
-        start_trigger = p.new("t b b b b b", 630, 600, 90, numinlets=1, numoutlets=5)
+        start_trigger = p.new("t b b b b b b", 630, 600, 105, numinlets=1, numoutlets=6)
         dsp_start = p.message("1", 720, 600, 30)
+        replay_messages = list(control_messages)
+        if start_enabled and ignition_enabled:
+            # The load-time start occurs while DSP is stopped, so signal-rate
+            # line~ gates cannot advance. Reset the lifecycle lock and replay
+            # the complete state only after DSP is running.
+            replay_messages.extend(("ignition 0", "ignition 1", "start 1"))
+        elif start_enabled:
+            replay_messages.append("start 1")
+        runtime_replay = p.message(", ".join(replay_messages), 720, 565, 250)
         metro_start = p.message("1", 630, 635, 30)
         metro = p.new("metro 10", 670, 635, 65, numinlets=2, numoutlets=1)
         current_time = p.new("dsptime~", 745, 635, 70, numinlets=1, numoutlets=1)
@@ -200,6 +220,7 @@ def make_probe(
         stop_trigger = p.new("t b b b", 825, 600, 65, numinlets=1, numoutlets=3)
         metro_stop = p.message("0", 895, 565, 30)
         dsp_stop = p.message("0", 895, 600, 30)
+        record_begin = p.new("t b b b", 610, 700, 65, numinlets=1, numoutlets=3)
         p.connect(load, dsp_stop_at_load)
         p.connect(load, driver_delay)
         p.connect(driver_delay, driver_select)
@@ -207,11 +228,29 @@ def make_probe(
         p.connect(sample_rate_delay, sample_rate_value)
         p.connect(sample_rate_delay, driver_ready)
         p.connect(driver_ready, start_trigger)
-        p.connect(start_trigger, open_file, 4, 0)
-        p.connect(start_trigger, record_start, 3, 0)
-        p.connect(start_trigger, dsp_start, 2, 0)
-        p.connect(start_trigger, baseline_time, 1, 0)
-        p.connect(start_trigger, metro_start, 0, 0)
+        p.connect(start_trigger, open_file, 5, 0)
+        p.connect(start_trigger, dsp_start, 4, 0)
+        p.connect(start_trigger, runtime_replay, 3, 0)
+        p.connect(runtime_replay, drive)
+        if lock_rpm:
+            catch_complete = p.new("delay 1000", 540, 665, 75, numinlets=2, numoutlets=1)
+            lock_order = p.new("t b b b", 540, 700, 65, numinlets=1, numoutlets=3)
+            lock_value = p.message(f"{initial_rpm:g}", 520, 735, 55)
+            lock_select = p.message("2", 585, 735, 30)
+            record_after_lock = p.new("delay 20", 675, 735, 65, numinlets=2, numoutlets=1)
+            p.connect(start_trigger, catch_complete, 2, 0)
+            p.connect(catch_complete, lock_order)
+            p.connect(lock_order, lock_select, 2, 0)
+            p.connect(lock_select, rpm_select, 0, 0)
+            p.connect(lock_order, lock_value, 1, 0)
+            p.connect(lock_value, rpm_select, 0, 2)
+            p.connect(lock_order, record_after_lock, 0, 0)
+            p.connect(record_after_lock, record_begin)
+        else:
+            p.connect(start_trigger, record_begin, 2, 0)
+        p.connect(record_begin, record_start, 2, 0)
+        p.connect(record_begin, baseline_time, 1, 0)
+        p.connect(record_begin, metro_start, 0, 0)
         p.connect(dsp_start, dac)
         p.connect(metro_start, metro)
         p.connect(metro, current_time)
@@ -253,6 +292,20 @@ def make_probe(
         p.connect(driver_delay, dsp_delay)
         p.connect(dsp_delay, dsp_on)
         p.connect(dsp_on, dac)
+        if lock_rpm:
+            lock_delay = p.new(
+                f"delay {DSP_SETTLE_MS - 100}", 765, 545, 90,
+                numinlets=2, numoutlets=1,
+            )
+            lock_order = p.new("t b b", 865, 545, 50, numinlets=1, numoutlets=2)
+            lock_value = p.message(f"{initial_rpm:g}", 925, 530, 55)
+            lock_select = p.message("2", 925, 560, 30)
+            p.connect(load, lock_delay)
+            p.connect(lock_delay, lock_order)
+            p.connect(lock_order, lock_select, 1, 0)
+            p.connect(lock_select, rpm_select, 0, 0)
+            p.connect(lock_order, lock_value, 0, 0)
+            p.connect(lock_value, rpm_select, 0, 2)
     return p.document()
 
 
@@ -294,6 +347,7 @@ def main() -> None:
     rpm = scenario.get("rpm", args.rpm)
     throttle = scenario.get("throttle", args.throttle)
     load_value = scenario.get("load", args.load_value)
+    lock_rpm = bool(scenario.get("lock_rpm", False))
     extra_messages = list(args.eq_message)
     for name in ("pad_level_db", "pad_mute", "pad_solo"):
         if name in scenario:
@@ -333,6 +387,9 @@ def main() -> None:
             # generated project search path. Mirror local-only files at the
             # bundle root so bare buffer names resolve exactly like CC0 media.
             shutil.copy2(source, bundle / source.name)
+        for source in local_media_source.glob("*.json"):
+            shutil.copy2(source, local_media_destination / source.name)
+            shutil.copy2(source, bundle / source.name)
     if args.sweep_to_rpm is not None:
         state = "sweep"
     elif args.rpm is not None:
@@ -352,6 +409,7 @@ def main() -> None:
             rpm=rpm,
             throttle=throttle,
             load_value=load_value,
+            lock_rpm=lock_rpm,
             sweep_to_rpm=args.sweep_to_rpm,
             render_ms=args.render_ms,
             driver_mode=args.driver,

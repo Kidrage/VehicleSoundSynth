@@ -173,6 +173,18 @@
       }
     },
     "patchers": {
+      "VehicleSoundSynth-EV.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "VehicleSoundSynth-V10.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "VehicleSoundSynth-V12.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
       "main.maxpat": {
         "kind": "patcher",
         "local": 1
@@ -189,7 +201,47 @@
         "kind": "patcher",
         "local": 1
       },
+      "patchers/drive_simulator_ev.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/drive_simulator_v10.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/drive_simulator_v12.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
       "patchers/engine_controller.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/engine_controller_ev.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/engine_controller_v10.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/engine_controller_v12.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/engine_start_beap~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/engine_start_voice.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/ev_expressive_beap~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/ev_expressive_voice.maxpat": {
         "kind": "patcher",
         "local": 1
       },
@@ -198,6 +250,26 @@
         "local": 1
       },
       "patchers/ev_pad_driver~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/ev_powertrain~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/ev_relax_voice.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/ev_soundscape_host~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/ev_sport_beap~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/ev_sport_voice.maxpat": {
         "kind": "patcher",
         "local": 1
       },
@@ -217,7 +289,51 @@
         "kind": "patcher",
         "local": 1
       },
+      "patchers/transient_ev~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/transient_v10~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/transient_v12~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
       "patchers/transient~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/v10_fallback_renderer~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/v10_powertrain~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/v10_state_renderer~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/v12_powertrain~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/v12_texture_renderer~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/vehicle_engine_ev~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/vehicle_engine_v10~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/vehicle_engine_v12~.maxpat": {
         "kind": "patcher",
         "local": 1
       },

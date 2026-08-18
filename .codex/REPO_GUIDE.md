@@ -2,10 +2,11 @@
 
 ## Purpose
 
-Max 8.6.5 vehicle-sound V4 with isolated EV and combustion lifecycles, credible
-V12/V10 hybrid archetypes, a seven-speed DCT event model, a dedicated in-cabin rumble
-module, a six-anchor CC0 stereo engine-texture bank, optional local Ferrari startup/idle-body layers, licensed event assets, a short cabin IR, and a global
-master EQ. The project uses only built-in Max/MSP/Gen objects.
+Max 8.6.5 vehicle-sound V4 with three independent fixed-profile runtimes. V10 is
+sample-led by an optional local steady/accel/decel atlas, V12 uses an independent
+procedural/CC0 hybrid, and EV has three suspendable BEAP soundscapes. The project
+also contains a seven-speed DCT model, cabin rumble, licensed events, short cabin
+IR, and global master EQ, using built-in Max/MSP/Gen/BEAP objects.
 
 ## First Reads
 
@@ -19,13 +20,16 @@ master EQ. The project uses only built-in Max/MSP/Gen objects.
 - `tools/build_project.py` — sole writer for patchers, Gen DSP, presets, and fallback WAVs.
 - `tools/process_assets.py` — deterministic curated-audio crop, resample, DC removal, fade, normalization, and hashing.
 - `tools/prepare_engine_texture.py` — CC0 stereo residual filtering, envelope stabilization, Side decorrelation, cyclic seam closure, normalization, and hashing.
-- `tools/prepare_local_reference.py` — builds ignored, non-distributable Ferrari startup/idle-body runtime layers plus comparison residuals.
+- `tools/prepare_local_reference.py` — builds ignored, non-distributable Ferrari startup/idle-body layers and the 18-loop V10 state atlas with hash manifest.
 - `assets/asset_manifest.json` / `ASSET_LICENSES.md` — runtime-audio provenance authority.
-- `main.maxpat` — runnable demo UI; DSP must start muted.
-- `patchers/vehicle_engine~.maxpat` — public engine seam: one message inlet, two signal outlets.
-- `patchers/ev_pad_driver~.maxpat` — generated vehicle-message to BEAP-CV adapter and safety trim.
-- `patchers/ev_pad_beap~.maxpat` — embedded dual-channel BEAP pad; user tuning is preserved on rebuild.
-- `patchers/reference_texture~.maxpat` — V10/V12 six-anchor CC0 bank plus low-RPM local idle-body renderer.
+- `main.maxpat` — DSP-free launcher; it must never instantiate an engine.
+- `VehicleSoundSynth-{EV,V10,V12}.maxpat` — independent runnable UIs; DSP starts muted.
+- `patchers/vehicle_engine_{ev,v10,v12}~.maxpat` — fixed public seams.
+- `patchers/{ev,v10,v12}_powertrain~.maxpat` — exactly one Gen per profile.
+- `patchers/v10_state_renderer~.maxpat` — local atlas with mutually exclusive tracked fallback.
+- `patchers/v12_texture_renderer~.maxpat` — tracked CC0 only; no local Ferrari dependency.
+- `patchers/ev_soundscape_host~.maxpat` — 250 ms mode crossfade and inactive-voice suspension.
+- `patchers/engine_start_beap~.maxpat` and `patchers/ev_*beap~.maxpat` — seed-once, user-tunable BEAP graphs.
 - `patchers/`, `gen/`, `media/`, `presets/` — generated runtime resources.
 - `tests/` — deterministic structural and resource checks.
 
@@ -41,9 +45,9 @@ python3 tools/audio_metrics.py idle_v12.wav --expected-fundamental-hz 78 --max-h
 ```
 
 Regenerate twice and compare hashes when generator determinism matters. Never
-hand-edit generated `.maxpat`, `.gendsp`, or `.wav` files except the explicitly
-user-tunable `patchers/ev_pad_beap~.maxpat`. The project generator preserves that
-file after its first seed. The project generator
+hand-edit generated `.maxpat`, `.gendsp`, or `.wav` files except the four
+seed-once BEAP patchers named above. The project generator preserves those files
+after their first seed. The project generator
 never overwrites curated runtime WAVs already present in `media/`.
 
 Runtime smoke-check the generated project in Max 8.6.5 after structural tests.
@@ -55,20 +59,21 @@ On macOS, Max writes load diagnostics to
 ## Runtime Design
 
 - V4 is an independent full copy of V3 plus its saved documentation artifacts.
-- Intended flow: lifecycle/state controller → powertrain/transient/road/rumble
+- Intended flow: fixed lifecycle/state controller → one powertrain plus transient/road/rumble
   layers → RPM-adaptive three-band cabin field (120 Hz/2 kHz crossovers) →
   visible four-node master EQ → one final
   limiter/clip stage.
-- V10/V12 Gen pulses are wrap-continuous raised cosines. A dynamic low-pass
-  opens from roughly 3 kHz at idle toward 8.4 kHz at high RPM; saturation drive
-  is deliberately mild at idle. Local Ferrari idle texture follows firing rate
-  only below 180 Hz, and the local startup layer fades for 350 ms after catch.
+- V10 atlas playback is clamped to 0.88-1.12x and crossfades steady/accel/decel
+  states plus adjacent RPM anchors. Its procedural Gen is low-passed at 500 Hz
+  and trimmed -18 dB. V12 is a separate procedural/CC0 hybrid.
 - `tools/build_mix_probe.py` provides 48 kHz NonRealTime measured EQ/trim/bypass checks.
 - `tools/build_runtime_probe.py` builds a self-contained, monitor-muted Max
   recording bundle under `/private/tmp` for objective V12/V10 checks. Use unique
   probe names and only one isolated probe instance at a time on macOS.
-- Open the project first and main second in the same Max instance; opening both
-  files simultaneously can race project search-path registration.
+- Open the project first and launcher second in the same Max instance. Launcher
+  selection writes/closes the prior top-level runtime before opening one unique
+  replacement. Save user-tuned BEAP subpatchers, close every task-opened patcher,
+  and quit Max after a smoke test.
 
 ## Repository State
 

@@ -1,5 +1,6 @@
 import hashlib
 import json
+import math
 import struct
 import subprocess
 import sys
@@ -7,6 +8,8 @@ import tempfile
 import unittest
 import wave
 from pathlib import Path
+
+from tools.prepare_local_reference import prepare_v10_atlas
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -16,6 +19,256 @@ class VehicleSoundProjectTests(unittest.TestCase):
     def load_json(self, relative_path):
         with (ROOT / relative_path).open(encoding="utf-8") as handle:
             return json.load(handle)
+
+    def test_v4_has_three_independent_runtime_patchers_and_a_dsp_free_launcher(self):
+        project = self.load_json("VehicleSoundSynth-V4.maxproj")
+        declared = {
+            path for category in project["contents"].values() for path in category
+        }
+        runtime_names = (
+            "VehicleSoundSynth-EV.maxpat",
+            "VehicleSoundSynth-V10.maxpat",
+            "VehicleSoundSynth-V12.maxpat",
+        )
+        for name in runtime_names:
+            self.assertIn(name, declared)
+            patcher = self.load_json(name)["patcher"]
+            text = "\n".join(
+                item["box"].get("text", "") for item in patcher["boxes"]
+            )
+            self.assertNotIn("engine_type", text)
+
+        launcher = self.load_json("main.maxpat")["patcher"]
+        launcher_text = "\n".join(
+            item["box"].get("text", "") for item in launcher["boxes"]
+        )
+        for forbidden in ("dac~", "ezdac~", "gen~", "vehicle_engine~", "powertrain~"):
+            self.assertNotIn(forbidden, launcher_text)
+        for name in runtime_names:
+            self.assertIn(f"loadunique {name}", launcher_text)
+        self.assertIn("s vss.runtime.select", launcher_text)
+        for profile in ("ev", "v10", "v12"):
+            runtime_text = "\n".join(
+                item["box"].get("text", "")
+                for item in self.load_json(
+                    f"VehicleSoundSynth-{profile.upper()}.maxpat"
+                )["patcher"]["boxes"]
+            )
+            self.assertIn("r vss.runtime.select", runtime_text)
+            self.assertIn(f"sel {profile}", runtime_text)
+            self.assertIn("write", runtime_text)
+            self.assertIn("wclose", runtime_text)
+            self.assertIn("thispatcher", runtime_text)
+
+    def test_each_runtime_uses_only_its_own_powertrain_graph(self):
+        expected = {
+            "ev": "gen~ @gen ev_powertrain",
+            "v10": "gen~ @gen v10_powertrain",
+            "v12": "gen~ @gen v12_powertrain",
+        }
+        for profile, own_gen in expected.items():
+            patcher = self.load_json(
+                f"patchers/{profile}_powertrain~.maxpat"
+            )["patcher"]
+            text = "\n".join(
+                item["box"].get("text", "") for item in patcher["boxes"]
+            )
+            self.assertEqual(1, text.count("gen~ @gen"))
+            self.assertIn(own_gen, text)
+            self.assertNotIn("ev_weight", text)
+            self.assertNotIn("v10_weight", text)
+            self.assertNotIn("v12_weight", text)
+
+    def test_profile_runtimes_have_fixed_controllers_and_startup_rpm_flares(self):
+        expected = {
+            "ev": (650, 650),
+            "v10": (1050, 740),
+            "v12": (1100, 780),
+        }
+        for profile, (flare, idle) in expected.items():
+            for relative in (
+                f"patchers/vehicle_engine_{profile}~.maxpat",
+                f"patchers/engine_controller_{profile}.maxpat",
+                f"patchers/drive_simulator_{profile}.maxpat",
+            ):
+                self.assertTrue((ROOT / relative).is_file(), relative)
+                text = "\n".join(
+                    item["box"].get("text", "")
+                    for item in self.load_json(relative)["patcher"]["boxes"]
+                )
+                self.assertNotIn("engine_type", text)
+            drive_text = "\n".join(
+                item["box"].get("text", "")
+                for item in self.load_json(
+                    f"patchers/drive_simulator_{profile}.maxpat"
+                )["patcher"]["boxes"]
+            )
+            self.assertIn(f"{flare:.1f} 0, {idle:.1f} 850", drive_text)
+            self.assertIn("counter 0 399", drive_text)
+            self.assertIn("$i3>=40", drive_text)
+            self.assertIn("set 0", drive_text)
+
+    def test_ev_modes_are_user_editable_and_suspend_inactive_poly_voices(self):
+        expected = (
+            "patchers/ev_pad_beap~.maxpat",
+            "patchers/ev_expressive_beap~.maxpat",
+            "patchers/ev_sport_beap~.maxpat",
+        )
+        for relative in expected:
+            patcher = self.load_json(relative)["patcher"]
+            text = "\n".join(
+                item["box"].get("text", "") for item in patcher["boxes"]
+            )
+            self.assertIn("USER-TUNABLE", text)
+            self.assertGreaterEqual(
+                sum(item["box"]["maxclass"] == "bpatcher" for item in patcher["boxes"]),
+                10,
+            )
+
+        host = self.load_json("patchers/ev_soundscape_host~.maxpat")["patcher"]
+        text = "\n".join(
+            item["box"].get("text", "") for item in host["boxes"]
+        )
+        for mode in ("relax", "expressive", "sport"):
+            self.assertIn(mode, text)
+        self.assertEqual(3, text.count("poly~ ev_"))
+        self.assertIn("mute 1 1", text)
+        self.assertIn("mute 1 0", text)
+        self.assertIn("delay 260", text)
+        self.assertIn("pack 0. 250", text)
+
+    def test_ice_start_defaults_to_cinematic_beap_with_realistic_sample_option(self):
+        start_beap = self.load_json("patchers/engine_start_beap~.maxpat")["patcher"]
+        start_text = "\n".join(
+            item["box"].get("text", "") for item in start_beap["boxes"]
+        )
+        self.assertIn("USER-TUNABLE", start_text)
+        for profile in ("v10", "v12"):
+            transient = self.load_json(f"patchers/transient_{profile}~.maxpat")["patcher"]
+            text = "\n".join(
+                item["box"].get("text", "") for item in transient["boxes"]
+            )
+            self.assertIn("route starter start_style", text)
+            self.assertIn("sel cinematic realistic", text)
+            self.assertIn("loadmess cinematic", text)
+            self.assertIn("poly~ engine_start_voice 1", text)
+            self.assertIn("mute 1 0", text)
+            self.assertIn("mute 1 1", text)
+            self.assertIn("delay 1200", text)
+            self.assertIn("starter_", text)
+        ev_text = "\n".join(
+            item["box"].get("text", "")
+            for item in self.load_json("patchers/transient_ev~.maxpat")["patcher"]["boxes"]
+        )
+        self.assertIn("poly~ engine_start_voice 1", ev_text)
+        self.assertNotIn("play~ starter_", ev_text)
+
+    def test_local_reference_processor_builds_deterministic_v10_state_atlas(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            source = base / "reference.wav"
+            outputs = (base / "first", base / "second")
+            frames = 8 * 48000
+            with wave.open(str(source), "wb") as handle:
+                handle.setnchannels(2)
+                handle.setsampwidth(2)
+                handle.setframerate(48000)
+                payload = bytearray()
+                phase = 0.0
+                for index in range(frames):
+                    progress = index / max(1, frames - 1)
+                    cadence = 62.0 + 400.0 * abs(math.sin(progress * math.pi * 2.0))
+                    phase += 2.0 * math.pi * cadence / 48000.0
+                    amplitude = 0.18 + 0.10 * progress
+                    left = int(32767 * amplitude * math.sin(phase))
+                    right = int(32767 * amplitude * math.sin(phase + 0.03))
+                    payload.extend(struct.pack("<hh", left, right))
+                handle.writeframes(bytes(payload))
+            hashes = []
+            for output in outputs:
+                report = prepare_v10_atlas(source, output)
+                atlas_path = output / "ferrari_v10_atlas.json"
+                self.assertTrue(atlas_path.is_file())
+                atlas = json.loads(atlas_path.read_text(encoding="utf-8"))
+                self.assertEqual(hashlib.sha256(source.read_bytes()).hexdigest(), atlas["source_sha256"])
+                self.assertRegex(atlas["processor_sha256"], r"^[0-9a-f]{64}$")
+                self.assertIn("global_gain_db", atlas)
+                self.assertEqual({"steady", "accel", "decel"}, set(atlas["states"]))
+                self.assertEqual(18, sum(len(items) for items in atlas["states"].values()))
+                for items in atlas["states"].values():
+                    self.assertEqual(6, len({item["sha256"] for item in items}))
+                    for item in items:
+                        self.assertEqual(
+                            item["anchor_firing_hz"], item["rendered_cadence_hz"]
+                        )
+                        self.assertAlmostEqual(
+                            item["anchor_firing_hz"] / item["source_cadence_hz"],
+                            item["source_playback_ratio"],
+                        )
+                        with wave.open(str(output / item["file"]), "rb") as handle:
+                            channels = handle.getnchannels()
+                            values = struct.unpack(
+                                f"<{handle.getnframes() * channels}h",
+                                handle.readframes(handle.getnframes()),
+                            )
+                        for channel in range(channels):
+                            samples = values[channel::channels]
+                            seam_delta = abs(samples[0] - samples[-1]) / 32768.0
+                            adjacent = sorted(
+                                abs(samples[index] - samples[index - 1]) / 32768.0
+                                for index in range(1, len(samples))
+                            )
+                            adjacent_p999 = adjacent[round(0.999 * (len(adjacent) - 1))]
+                            self.assertLessEqual(
+                                seam_delta, max(0.005, adjacent_p999 * 1.5), item["file"]
+                            )
+                self.assertEqual(atlas_path.as_posix(), report["manifest"])
+                hashes.append(
+                    {
+                        path.name: hashlib.sha256(path.read_bytes()).hexdigest()
+                        for path in sorted(output.glob("ferrari_v10_*.wav"))
+                    }
+                )
+            self.assertEqual(hashes[0], hashes[1])
+
+    def test_v10_uses_state_atlas_while_v12_remains_independent(self):
+        v10 = self.load_json("patchers/v10_state_renderer~.maxpat")["patcher"]
+        text = "\n".join(item["box"].get("text", "") for item in v10["boxes"])
+        self.assertIn("buffer~ v10_steady_065 ferrari_v10_steady_065.wav", text)
+        self.assertEqual(18, text.count("info~ v10_"))
+        self.assertIn("zl sum", text)
+        self.assertIn("sel 18", text)
+        self.assertIn("counter 0 30", text)
+        self.assertIn("expr sqrt(max(0.,min(1.,1.-$f1)))", text)
+        self.assertIn("sig~ 1.", text)
+        self.assertIn("* 1.", text)
+        for state in ("steady", "accel", "decel"):
+            for anchor in (65, 110, 180, 260, 380, 520):
+                self.assertIn(f"ferrari_v10_{state}_{anchor:03d}.wav", text)
+        self.assertIn("max(.88,min(1.12", text)
+        self.assertIn("sqrt(max(0.,$f1))", text)
+        self.assertIn("sqrt(max(0.,-$f1))", text)
+        self.assertIn("v10_fallback_renderer~", text)
+
+        v12 = self.load_json("patchers/v12_texture_renderer~.maxpat")["patcher"]
+        v12_text = "\n".join(
+            item["box"].get("text", "") for item in v12["boxes"]
+        )
+        self.assertNotIn("ferrari", v12_text.lower())
+        for anchor in ("065", "110", "180", "260", "380", "520"):
+            self.assertIn(f"engine_texture_{anchor}_a.wav", v12_text)
+
+        v10_power = "\n".join(
+            item["box"].get("text", "")
+            for item in self.load_json("patchers/v10_powertrain~.maxpat")["patcher"]["boxes"]
+        )
+        self.assertIn("lores~ 500 0.55", v10_power)
+        self.assertIn("*~ 0.125893", v10_power)
+        v12_power = "\n".join(
+            item["box"].get("text", "")
+            for item in self.load_json("patchers/v12_powertrain~.maxpat")["patcher"]["boxes"]
+        )
+        self.assertNotIn("ferrari", v12_power.lower())
 
     def test_v31_public_contract_exposes_pad_and_reference_texture_controls(self):
         engine = self.load_json("patchers/vehicle_engine~.maxpat")
@@ -50,14 +303,14 @@ class VehicleSoundProjectTests(unittest.TestCase):
                 for box in engine_boxes
             )
         )
-        main = self.load_json("main.maxpat")["patcher"]
-        self.assertTrue(
-            any(
-                item["box"]["maxclass"] == "bpatcher"
-                and item["box"].get("name") == "vehicle_engine~.maxpat"
-                for item in main["boxes"]
+        for profile in ("ev", "v10", "v12"):
+            main = self.load_json(f"VehicleSoundSynth-{profile.upper()}.maxpat")["patcher"]
+            self.assertTrue(
+                any(
+                    item["box"].get("text") == f"vehicle_engine_{profile}~"
+                    for item in main["boxes"]
+                )
             )
-        )
 
     def test_v4_combustion_models_use_phase_stable_stereo_orders(self):
         for name, bank_events in (("v12_powertrain", "3"), ("v10_powertrain", "2.5")):
@@ -570,18 +823,11 @@ class VehicleSoundProjectTests(unittest.TestCase):
             )
             self.assertEqual(values, actual)
 
-        main = self.load_json("main.maxpat")
-        text = "\n".join(item["box"].get("text", "") for item in main["patcher"]["boxes"])
-        for token in (
-            "VehicleSoundSynth V4",
-            "Cabin Rumble",
-            "Exhaust Boom",
-            "Structure Vibration",
-            "prepend cabin_rumble",
-            "prepend exhaust_boom",
-            "prepend structure_vibration",
-        ):
-            self.assertIn(token, text)
+        for profile in ("ev", "v10", "v12"):
+            engine = self.load_json(f"patchers/vehicle_engine_{profile}~.maxpat")
+            text = "\n".join(item["box"].get("text", "") for item in engine["patcher"]["boxes"])
+            for token in ("cabin_rumble", "exhaust_boom", "structure_vibration"):
+                self.assertIn(token, text)
 
     def test_v2_engine_routes_through_lifecycle_and_final_mix_modules(self):
         engine = self.load_json("patchers/vehicle_engine~.maxpat")
@@ -855,20 +1101,19 @@ class VehicleSoundProjectTests(unittest.TestCase):
         )
 
     def test_demo_starts_muted(self):
-
-        main = self.load_json("main.maxpat")
-        main_boxes = {item["box"]["id"]: item["box"] for item in main["patcher"]["boxes"]}
-        main_text = "\n".join(box.get("text", "") for box in main_boxes.values())
-        self.assertIn("Audio starts OFF", main_text)
-        main_cords = {
-            (line["patchline"]["source"][0], line["patchline"]["destination"][0])
-            for line in main["patcher"]["lines"]
-        }
-        toggles = {box["id"] for box in main_boxes.values() if box["maxclass"] == "toggle"}
-        loads = {box["id"] for box in main_boxes.values() if box.get("text") == "loadmess 0"}
-        dacs = {box["id"] for box in main_boxes.values() if box["maxclass"] == "ezdac~"}
-        self.assertTrue(any((load, toggle) in main_cords for load in loads for toggle in toggles))
-        self.assertTrue(any((toggle, dac) in main_cords for toggle in toggles for dac in dacs))
+        for name in ("EV", "V10", "V12"):
+            main = self.load_json(f"VehicleSoundSynth-{name}.maxpat")
+            boxes = {item["box"]["id"]: item["box"] for item in main["patcher"]["boxes"]}
+            text = "\n".join(box.get("text", "") for box in boxes.values())
+            self.assertIn("Audio starts OFF", text)
+            cords = {
+                (line["patchline"]["source"][0], line["patchline"]["destination"][0])
+                for line in main["patcher"]["lines"]
+            }
+            toggles = {box["id"] for box in boxes.values() if box["maxclass"] == "toggle"}
+            loads = {box["id"] for box in boxes.values() if box.get("text") == "loadmess 0"}
+            self.assertTrue(any((load, toggle) in cords for load in loads for toggle in toggles))
+            self.assertTrue(any(box.get("text") == "ezdac~" for box in boxes.values()))
 
     def test_generated_patchers_use_max_compatible_objects_and_syntax(self):
         patchers = list(ROOT.glob("*.maxpat")) + list((ROOT / "patchers").glob("*.maxpat"))
@@ -1153,35 +1398,29 @@ class VehicleSoundProjectTests(unittest.TestCase):
             self.assertTrue((ROOT / relative_path).is_file(), relative_path)
 
     def test_demo_ui_and_engine_deep_modules_cover_the_mvp(self):
-        main = self.load_json("main.maxpat")
-        main_text = "\n".join(item["box"].get("text", "") for item in main["patcher"]["boxes"])
-        for text in (
-            "Internal Manual",
-            "Internal Auto",
-            "External vss.input",
-            "Future EV",
-            "High-Rev V12",
-            "Aggressive V10",
-            "Aggression",
-            "Brightness",
-            "Body",
-            "Texture",
-            "Cabin Width",
-        ):
-            self.assertIn(text, main_text)
-        main_boxes = [item["box"] for item in main["patcher"]["boxes"]]
-        self.assertEqual(2, sum(box["maxclass"] == "meter~" for box in main_boxes))
-        self.assertEqual(2, sum(box["maxclass"] == "spectroscope~" for box in main_boxes))
+        for profile, label in (("ev", "EV"), ("v10", "V10"), ("v12", "V12")):
+            main = self.load_json(f"VehicleSoundSynth-{label}.maxpat")
+            main_text = "\n".join(item["box"].get("text", "") for item in main["patcher"]["boxes"])
+            main_boxes = [item["box"] for item in main["patcher"]["boxes"]]
+            menu_items = [item for box in main_boxes for item in box.get("items", [])]
+            self.assertIn("Internal Manual", menu_items)
+            self.assertIn("Internal Auto", menu_items)
+            self.assertIn(f"External vss.{profile}.input", menu_items)
+            self.assertEqual(2, sum(box["maxclass"] == "meter~" for box in main_boxes))
+            self.assertEqual(2, sum(box.get("text") == "spectroscope~" for box in main_boxes))
 
-        engine = self.load_json("patchers/vehicle_engine~.maxpat")
-        engine_text = "\n".join(item["box"].get("text", "") for item in engine["patcher"]["boxes"])
-        for abstraction in ("engine_controller", "powertrain~", "transient~", "road_air~", "cabin_master~"):
-            self.assertIn(abstraction, engine_text)
-        self.assertTrue(any(
-            item["box"]["maxclass"] == "bpatcher"
-            and item["box"].get("name") == "mix_master~.maxpat"
-            for item in engine["patcher"]["boxes"]
-        ))
+            engine = self.load_json(f"patchers/vehicle_engine_{profile}~.maxpat")
+            engine_text = "\n".join(item["box"].get("text", "") for item in engine["patcher"]["boxes"])
+            for abstraction in (
+                f"engine_controller_{profile}", f"{profile}_powertrain~",
+                f"transient_{profile}~", "road_air~", "cabin_master~",
+            ):
+                self.assertIn(abstraction, engine_text)
+            self.assertTrue(any(
+                item["box"]["maxclass"] == "bpatcher"
+                and item["box"].get("name") == "mix_master~.maxpat"
+                for item in engine["patcher"]["boxes"]
+            ))
 
     def test_road_noise_is_subordinate_and_high_frequency_controlled(self):
         road = self.load_json("patchers/road_air~.maxpat")
@@ -1200,145 +1439,56 @@ class VehicleSoundProjectTests(unittest.TestCase):
         self.assertNotIn("pow($f1/300., 0.7) * 0.12", text)
 
     def test_demo_opens_with_visible_controls_and_internal_source_selected(self):
-        patcher = self.load_json("main.maxpat")["patcher"]
-        self.assertEqual(0, patcher["openinpresentation"])
-        boxes = {item["box"]["id"]: item["box"] for item in patcher["boxes"]}
-        mode = next(
-            box for box in boxes.values()
-            if box["maxclass"] == "umenu" and "Internal Manual" in box.get("items", [])
-        )
-        incoming = [
-            line["patchline"]["source"][0]
-            for line in patcher["lines"]
-            if line["patchline"]["destination"][0] == mode["id"]
-        ]
-        self.assertTrue(any(boxes[source].get("text") == "loadmess 0" for source in incoming))
+        for name in ("EV", "V10", "V12"):
+            patcher = self.load_json(f"VehicleSoundSynth-{name}.maxpat")["patcher"]
+            boxes = {item["box"]["id"]: item["box"] for item in patcher["boxes"]}
+            mode = next(
+                box for box in boxes.values()
+                if box["maxclass"] == "umenu" and "Internal Manual" in box.get("items", [])
+            )
+            incoming = [
+                line["patchline"]["source"][0]
+                for line in patcher["lines"]
+                if line["patchline"]["destination"][0] == mode["id"]
+            ]
+            self.assertTrue(any(boxes[source].get("text") == "loadmess 0" for source in incoming))
 
     def test_manual_mode_keyboard_has_linear_throttle_and_fast_brake_envelopes(self):
-        patcher = self.load_json("main.maxpat")["patcher"]
-        boxes = {item["box"]["id"]: item["box"] for item in patcher["boxes"]}
-        text_to_ids = {}
-        for box_id, box in boxes.items():
-            text_to_ids.setdefault(box.get("text", ""), set()).add(box_id)
-
-        for text in (
-            "key",
-            "keyup",
-            "sel 119 87 115 83",
-            "== 0",
-            "sel 1 0",
-            "1. 2500",
-            "0. 1400",
-            "1. 120",
-            "Manual keyboard: hold W = throttle up; release W = throttle down; hold S = fast brake; release S = brake off",
-        ):
-            self.assertIn(text, text_to_ids)
-
-        lines = [line["patchline"] for line in patcher["lines"]]
-        mode_id = next(
-            box_id for box_id, box in boxes.items()
-            if box["maxclass"] == "umenu" and "Internal Manual" in box.get("items", [])
-        )
-        manual_gate_id = next(iter(text_to_ids["== 0"]))
-        self.assertTrue(any(
-            line["source"][0] == mode_id and line["destination"][0] == manual_gate_id
-            for line in lines
-        ))
-
-        throttle_id = next(
-            box_id for box_id, box in boxes.items()
-            if box["maxclass"] == "flonum" and box.get("patching_rect", [None])[0] == 25.0
-            and box.get("patching_rect", [None, None])[1] == 270.0
-        )
-        brake_id = next(
-            box_id for box_id, box in boxes.items()
-            if box["maxclass"] == "flonum" and box.get("patching_rect", [None])[0] == 150.0
-            and box.get("patching_rect", [None, None])[1] == 270.0
-        )
-        line_ids = {
-            box_id for box_id, box in boxes.items() if box.get("text") == "line 0."
-        }
-        self.assertEqual(2, len(line_ids))
-        set_ids = {
-            box_id for box_id, box in boxes.items() if box.get("text") == "prepend set"
-        }
-        self.assertEqual(4, len(set_ids))
-        throttle_clip_id = next(
-            line["destination"][0] for line in lines
-            if line["source"][0] == throttle_id
-            and boxes[line["destination"][0]].get("text") == "clip 0. 1."
-        )
-        brake_clip_id = next(
-            line["destination"][0] for line in lines
-            if line["source"][0] == brake_id
-            and boxes[line["destination"][0]].get("text") == "clip 0. 1."
-        )
-        self.assertTrue(any(
-            line["source"][0] in line_ids and line["destination"][0] == throttle_clip_id
-            for line in lines
-        ))
-        self.assertTrue(any(
-            line["source"][0] in line_ids and line["destination"][0] == brake_clip_id
-            for line in lines
-        ))
-        self.assertTrue(any(
-            line["source"][0] == throttle_id and line["destination"][0] in set_ids
-            for line in lines
-        ))
-        self.assertTrue(any(
-            line["source"][0] == brake_id and line["destination"][0] in set_ids
-            for line in lines
-        ))
+        for profile in ("ev", "v10", "v12"):
+            patcher = self.load_json(f"patchers/drive_simulator_{profile}.maxpat")["patcher"]
+            text = "\n".join(item["box"].get("text", "") for item in patcher["boxes"])
+            self.assertIn("loadmess 0", text)
+            self.assertIn("route throttle brake auto ignition start", text)
+            self.assertIn("($i2==0)*$f1", text)
+            self.assertIn("($i3>=40)", text)
 
     def test_preset_messages_refresh_visible_macro_and_gain_controls(self):
-        main = self.load_json("main.maxpat")["patcher"]
-        boxes = {item["box"]["id"]: item["box"] for item in main["boxes"]}
-        text = "\n".join(box.get("text", "") for box in boxes.values())
-        self.assertIn("Preset/UI state synchronizer", text)
-        sync = next(
-            box_id for box_id, box in boxes.items()
-            if box.get("text", "").startswith("route ev_weight v12_weight v10_weight")
+        applicable = (
+            "aggression", "brightness", "body", "texture", "cabin_width",
+            "cabin_rumble", "exhaust_boom", "structure_vibration", "cabin_ir_mix",
+            "powertrain_level_db", "transient_level_db", "road_level_db",
+            "rumble_level_db", "master_trim_db",
         )
-        visible_parameters = (
-            "ev_weight", "v12_weight", "v10_weight", "aggression", "brightness",
-            "body", "texture", "cabin_width", "cabin_rumble", "exhaust_boom",
-            "structure_vibration", "cabin_ir_mix", "powertrain_level_db", "transient_level_db",
-            "road_level_db", "rumble_level_db", "master_trim_db",
-        )
-        self.assertTrue(all(parameter in boxes[sync]["text"] for parameter in visible_parameters))
-        destinations = {
-            line["patchline"]["destination"][0]
-            for line in main["lines"]
-            if line["patchline"]["source"][0] == sync
-        }
-        self.assertGreaterEqual(
-            sum(boxes[destination]["maxclass"] == "flonum" for destination in destinations),
-            len(visible_parameters),
-        )
+        for profile in ("ev", "v10", "v12"):
+            engine = self.load_json(f"patchers/vehicle_engine_{profile}~.maxpat")["patcher"]
+            text = "\n".join(item["box"].get("text", "") for item in engine["boxes"])
+            for parameter in applicable:
+                self.assertIn(parameter, text)
+            for removed in ("engine_type", "ev_weight", "v10_weight", "v12_weight"):
+                self.assertNotIn(removed, text)
 
     def test_v3_demo_exposes_lifecycle_dct_rumble_and_global_eq_controls(self):
-        main = self.load_json("main.maxpat")
-        text = "\n".join(item["box"].get("text", "") for item in main["patcher"]["boxes"])
-        for token in (
-            "VehicleSoundSynth V4",
-            "Ignition",
-            "Engine Start",
-            "prepend ignition",
-            "prepend start",
-            "7-speed DCT",
-            "Low Shelf",
-            "Low-Mid",
-            "High-Mid",
-            "High Shelf",
-            "EQ Bypass",
-            "Master Trim",
-            "prepend eq_low",
-            "prepend eq_lowmid",
-            "prepend eq_highmid",
-            "prepend eq_high",
-            "prepend master_trim_db",
-        ):
-            self.assertIn(token, text)
+        for profile in ("ev", "v10", "v12"):
+            engine = self.load_json(f"patchers/vehicle_engine_{profile}~.maxpat")["patcher"]
+            text = "\n".join(item["box"].get("text", "") for item in engine["boxes"])
+            for token in (
+                "ignition", "start", "cabin_rumble", "exhaust_boom",
+                "structure_vibration", "eq_low", "eq_lowmid", "eq_highmid",
+                "eq_high", "eq_bypass", "master_trim_db",
+            ):
+                self.assertIn(token, text)
+        mix = self.load_json("patchers/mix_master~.maxpat")["patcher"]
+        self.assertTrue(any(item["box"]["maxclass"] == "filtergraph~" for item in mix["boxes"]))
 
     def test_generator_is_deterministic(self):
         def build_and_hash(destination):
@@ -1423,6 +1573,11 @@ class VehicleSoundProjectTests(unittest.TestCase):
             with (bundle / "runtime_probe_v12_idle_on.maxpat").open(encoding="utf-8") as handle:
                 probe = json.load(handle)
             text = "\n".join(item["box"].get("text", "") for item in probe["patcher"]["boxes"])
+            self.assertIn("drive_simulator_v12", text)
+            self.assertIn("route rpm", text)
+            self.assertIn("switch 2", text)
+            self.assertNotIn("engine_running 1", text)
+            self.assertNotIn("combustion_gain 1", text)
             self.assertIn("cabin_rumble~", text)
             self.assertIn("cabin_rumble 0.9", text)
             self.assertIn(";\rdsp setdriver NonRealTime", text)
@@ -1461,6 +1616,53 @@ class VehicleSoundProjectTests(unittest.TestCase):
             )
             self.assertEqual(1, eq_text.count("loadmess eq_highmid"))
             self.assertIn("loadmess eq_highmid 3800. -15. 1.", eq_text)
+            self.assertIn("delay 1000", eq_text)
+            self.assertIn("3500", eq_text)
+
+            boxes = {
+                item["box"]["id"]: item["box"]
+                for item in eq_probe["patcher"]["boxes"]
+            }
+            lines = [
+                item["patchline"] for item in eq_probe["patcher"]["lines"]
+            ]
+            rpm_switch_id = next(
+                box_id
+                for box_id, box in boxes.items()
+                if box.get("text") == "switch 2"
+            )
+            lock_select_id = next(
+                line["source"][0]
+                for line in lines
+                if line["destination"] == [rpm_switch_id, 0]
+                and boxes[line["source"][0]].get("text") == "2"
+            )
+            lock_value_id = next(
+                line["source"][0]
+                for line in lines
+                if line["destination"] == [rpm_switch_id, 2]
+                and boxes[line["source"][0]].get("text") == "3500"
+            )
+            lock_order_id = next(
+                box_id
+                for box_id, box in boxes.items()
+                if box.get("text") == "t b b b"
+                and {line["destination"][0] for line in lines if line["source"][0] == box_id}
+                >= {lock_select_id, lock_value_id}
+            )
+            select_outlet = next(
+                line["source"][1]
+                for line in lines
+                if line["source"][0] == lock_order_id
+                and line["destination"][0] == lock_select_id
+            )
+            value_outlet = next(
+                line["source"][1]
+                for line in lines
+                if line["source"][0] == lock_order_id
+                and line["destination"][0] == lock_value_id
+            )
+            self.assertGreater(select_outlet, value_outlet)
 
             failed_rate = subprocess.run(
                 [
@@ -1558,8 +1760,10 @@ class VehicleSoundProjectTests(unittest.TestCase):
             self.assertTrue((bundle / "ev_pad_beap~.maxpat").is_file())
             patch = json.loads(probe_path.read_text(encoding="utf-8"))
             text = "\n".join(item["box"].get("text", "") for item in patch["patcher"]["boxes"])
-            self.assertIn("engine_type ev", text)
-            self.assertIn("ev_weight 1", text)
+            self.assertIn("engine_controller_ev", text)
+            self.assertIn("ev_powertrain~", text)
+            self.assertNotIn("engine_type", text)
+            self.assertNotIn("ev_weight", text)
             self.assertIn("ignition 0", text)
             self.assertNotIn("start 1", text)
 
@@ -1942,25 +2146,44 @@ class VehicleSoundProjectTests(unittest.TestCase):
         self.assertIn("fallback-only", manifest["fallback_media"]["policy"])
         self.assertTrue((ROOT / "ASSET_LICENSES.md").is_file())
 
-    def test_local_reference_is_hash_documented_but_never_distributed(self):
+    def test_local_reference_runtime_derivatives_are_hash_documented_but_never_distributed(self):
         manifest = self.load_json("assets/asset_manifest.json")
         references = manifest["local_only_references"]
         self.assertEqual(1, len(references))
         reference = references[0]
         self.assertIn("do not commit", reference["distribution"])
         self.assertRegex(reference["source_sha256"], r"^[0-9a-f]{64}$")
-        self.assertEqual({"idle_residual", "high_rpm_residual"}, {
+        self.assertEqual({
+            "idle_residual", "high_rpm_residual", "v10_startup", "v10_idle_body"
+        }, {
             output["role"] for output in reference["derived_outputs"]
         })
         for output in reference["derived_outputs"]:
             self.assertRegex(output["sha256"], r"^[0-9a-f]{64}$")
-        self.assertIn("analysis-only", reference["usage"])
-        self.assertEqual(["v12", "v10"], reference["comparison_profiles"])
+        self.assertIn("optional local-only V10", reference["usage"])
+        self.assertEqual(["v10"], reference["comparison_profiles"])
+        self.assertRegex(reference["processor_sha256"], r"^[0-9a-f]{64}$")
+        atlas_record = reference["v10_state_atlas"]
+        self.assertEqual(18, atlas_record["output_count"])
+        self.assertRegex(atlas_record["manifest_sha256"], r"^[0-9a-f]{64}$")
         self.assertIn("media/local/", (ROOT / ".gitignore").read_text(encoding="utf-8"))
         for output in reference["derived_outputs"]:
             derived = ROOT / output["path"]
             if derived.is_file():
                 self.assertEqual(output["sha256"], hashlib.sha256(derived.read_bytes()).hexdigest())
+        atlas_path = ROOT / atlas_record["manifest_path"]
+        if atlas_path.is_file():
+            self.assertEqual(
+                atlas_record["manifest_sha256"],
+                hashlib.sha256(atlas_path.read_bytes()).hexdigest(),
+            )
+            atlas = json.loads(atlas_path.read_text(encoding="utf-8"))
+            outputs = [item for items in atlas["states"].values() for item in items]
+            self.assertEqual(18, len(outputs))
+            for item in outputs:
+                path = atlas_path.parent / item["file"]
+                self.assertTrue(path.is_file())
+                self.assertEqual(item["sha256"], hashlib.sha256(path.read_bytes()).hexdigest())
 
     def test_all_runtime_foley_and_ir_are_processed_licensed_assets(self):
         manifest = self.load_json("assets/asset_manifest.json")

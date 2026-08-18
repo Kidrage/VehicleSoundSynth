@@ -371,7 +371,7 @@
     {
       "id": "user_sf90_nearfield",
       "distribution": "local-only; do not commit, sync, upload, or redistribute",
-      "usage": "analysis-only acoustic target; never loaded by the runtime patch",
+      "usage": "analysis target plus optional local-only V10 startup, idle-body, and state-atlas runtime layers; never used by V12 and never distributed",
       "source_path": "/Users/saintpeter/Desktop/Ferrari.wav",
       "source_sha256": "04d590aec4cbd3af615a195ef21e193c5da595875821fe82eb6789292f496111",
       "derived_outputs": [
@@ -388,11 +388,45 @@
           "sha256": "ebe4829aabdee3c967a2c3993e8c66fa4c838354fbb108a63b022588b36d620f",
           "duration_seconds": 0.5,
           "rms_dbfs": -18.0
+        },
+        {
+          "role": "v10_startup",
+          "path": "media/local/ferrari_sf90_startup.wav",
+          "sha256": "569a921fcb185b51b26cb62d4dc1cc54a4c59ee109c4f7295c090204647a76fe",
+          "duration_seconds": 1.2,
+          "rms_dbfs": -14.0
+        },
+        {
+          "role": "v10_idle_body",
+          "path": "media/local/ferrari_sf90_idle_body.wav",
+          "sha256": "c048878cf92c127b77b9b7f95245fa5cdcf6d14d9510da03f8af034797f7c4a5",
+          "duration_seconds": 3.0,
+          "rms_dbfs": -15.5
         }
       ],
       "processor": "tools/prepare_local_reference.py",
+      "processor_sha256": "1d6ef6251aea4a79a28d337dfa5d5e3b99aab90441b7bef243bfb8a6d9392329",
+      "v10_state_atlas": {
+        "role": "optional local-only V10 steady/accel/decel runtime body",
+        "manifest_path": "media/local/ferrari_v10_atlas.json",
+        "manifest_sha256": "7a00eb2b4bc7c3b29286329f8f16bfe33c4cca4bae53bfc5a5ef098d1b2d9dca",
+        "output_count": 18,
+        "states": [
+          "steady",
+          "accel",
+          "decel"
+        ],
+        "anchor_firing_hz": [
+          65,
+          110,
+          180,
+          260,
+          380,
+          520
+        ],
+        "fallback": "tracked CC0 V10 starter and engine texture bank when the complete local atlas is unavailable"
+      },
       "comparison_profiles": [
-        "v12",
         "v10"
       ]
     }

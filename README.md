@@ -1,77 +1,96 @@
 # VehicleSoundSynth V4
 
-Max/MSP 8.6.5 vehicle-acoustics project derived as an independent V4 archive from V3. V4 adds an EV profile plus lifecycle-gated
-V12 and V10 combustion profiles. V4 uses crank-related combustion events,
-bounded cycle variation, wrap-continuous raised-cosine cylinder pulses, RPM-adaptive
-fuel-path filtering, and a normalized six-anchor stereo residual bank instead of
-periodic AM, a dominant pure sine, or a saw-like high-order stack. The EV low fundamental is
-phase-coherent between channels and feeds
-an EV-only, dual-channel BEAP pad. Its in-cabin low-frequency system is excited by the real powertrain
-signal and adds engine half-order structure vibration, damped cabin/body modes,
-and load-dependent exhaust boom. The seven-speed DCT, licensed CC0 transients,
-short cabin IR, and final four-band stereo EQ complete the path.
+Max/MSP 8.6.5 vehicle-sound project with three independent runtimes:
 
-Open `VehicleSoundSynth-V4.maxproj` first, wait for its Project window to load,
-then open `main.maxpat` from that same Max instance. Audio starts muted.
+- `VehicleSoundSynth-EV.maxpat`
+- `VehicleSoundSynth-V10.maxpat`
+- `VehicleSoundSynth-V12.maxpat`
 
-完整中文操作说明见
-[`VehicleSoundSynthV4_完整使用手册.docx`](VehicleSoundSynthV4_完整使用手册.docx)。
-V4 目录保留旧手册作为参考，V3 原目录未被覆盖。
+`main.maxpat` is a DSP-free launcher. It does not contain the three engines and
+does not keep inactive profiles running. Selecting another profile first sends
+`write` and closes the active runtime, then opens one unique replacement; this
+is the supported low-CPU workflow.
 
 ## Quick start
 
-1. Lower monitoring level and open `VehicleSoundSynth-V4.maxproj`.
-2. Open `main.maxpat` from the loaded project.
-3. Select `High-Rev V12` or `Aggressive V10`.
-4. Enable `Ignition`, click `Engine Start`, and confirm idle reaches the meters.
-5. In `Internal Manual`, hold `W` to ramp throttle to 1 over 2.5 s; release it
-   to ramp throttle back to 0 over 1.4 s. Hold `S` for a fast 120 ms brake
-   application and release it to remove the brake immediately. Key repeat is
-   suppressed, and leaving Manual mode releases both controls.
-6. Enable `Audio`; use `Internal Auto` to audition the seven-speed DCT.
-7. Shape the cabin with `Cabin Rumble`, `Exhaust Boom`, and `Structure Vibration`.
-8. Drag the four nodes in the visible master EQ immediately before the meters/DAC.
+1. Open `VehicleSoundSynth-V4.maxproj` and wait for the Project window.
+2. Open `main.maxpat`, then click one profile. Audio starts off.
+3. In V10/V12, choose `Cinematic BEAP` or `Realistic Sample`, click
+   `ignition 1`, then `start 1`. Start catch settles to 740 RPM for V10 and
+   780 RPM for V12; it no longer enters a high-rev default after ignition.
+4. In EV, choose Relax, Expressive, or Sport, then enable ignition/start when
+   the selected BEAP layer should sound.
+5. Use Internal Manual for direct throttle/brake control, Internal Auto for the
+   guarded drive cycle, or send messages to `vss.ev.input`, `vss.v10.input`, or
+   `vss.v12.input` in External mode.
+6. Turn Audio on only after lowering the monitoring level.
+7. Save intentional BEAP subpatcher edits. The launcher saves/closes the active
+   top-level runtime when switching; when finished, close the runtime and Project
+   windows and quit Max.
 
-The preset also sets four independent stem trims. If a dB field seems inactive,
-confirm the matching stem is actually sounding: `Rumble Level` cannot change
-Future EV because that preset intentionally sets the rumble stem to -60 dB.
+## Runtime design
 
-Future EV's base motor does not require the combustion ignition/start lifecycle.
-Its BEAP pad is intentionally gated by Ignition, so enable Ignition when you
-want to hear the pad layer; Engine Start remains specific to V12/V10.
+Each public profile patcher has one message inlet and stereo signal outlets:
 
-## EV BEAP pad tuning
+- `patchers/vehicle_engine_ev~.maxpat`
+- `patchers/vehicle_engine_v10~.maxpat`
+- `patchers/vehicle_engine_v12~.maxpat`
 
-Open `patchers/ev_pad_beap~.maxpat` to edit the two independent signal chains.
-Each side contains two BEAP oscillators, an Audio Mixer, Ladder filter, ADSR,
-and VCA. RPM supplies common 1V/oct pitch CV, throttle opens the filters and
-raises the VCA control level, and Ignition supplies the gate. The
-default voices sit +12 and +19.0196 semitones above the EV fundamental. The
-second interval is an exact 3:2 fifth rather than an equal-tempered near match,
-and neither voice uses micro-detuning, so the former slow beating is not recreated.
+Each profile owns exactly one Gen powertrain. There are no runtime profile
+weights and no hidden V10/V12/EV generators muted behind gain objects.
 
-Save this patcher normally after adjusting it. Project regeneration deliberately
-preserves the file; all surrounding routing and level containment remain generated.
+V10 is sample-led. A local state atlas supplies steady, acceleration, and
+deceleration texture at six firing-rate anchors. Adjacent RPM anchors and the
+three load states crossfade continuously, while sample playback is limited to
+0.88-1.12x. A low-passed procedural V10 layer remains at -18 dB as timing/body
+support, rather than creating the former saw-like high-frequency identity.
 
-`EV Pad dB` is the Pad's independent stem level. `Pad Mute` silences only the
-Pad, while `Pad Solo` silences only the EV motor so the two Pad chains can be
-tuned in isolation. Below 120 Hz the two Pad outputs are folded to one centered
-Mid signal; above 120 Hz an 82/18 crossmix keeps useful stereo width without the
-previous near-antiphase mono loss.
+V12 stays independent of the Ferrari V10 reference. It uses its own procedural
+core plus the tracked CC0 residual bank. EV combines a procedural motor with one
+of three suspendable BEAP soundscapes.
 
-V4 uses RPM-adaptive three-band cabin stereo: below 120 Hz is strict mono,
-120–2000 Hz preserves a fold-safe Mid/Side field, and above 2 kHz keeps bounded
-mechanical space and short asymmetric reflections. High RPM no longer collapses
-the mid band toward mono.
+The signal path per runtime is:
 
-The V12/V10 profiles are hybrid sound-design archetypes built from four-stroke
-firing events, load envelopes, bounded harmonics, and real residual texture;
-they are not measurement-matched replicas of a specific production vehicle.
+```text
+fixed drive/controller -> one profile powertrain + transient + road
+                       -> powertrain-excited cabin/body
+                       -> four-band stereo EQ -> limiter/clip -> output
+```
+
+## Engine start
+
+V10/V12 expose:
+
+```text
+start_style cinematic
+start_style realistic
+```
+
+`cinematic` is the default and triggers the user-editable
+`patchers/engine_start_beap~.maxpat`. Its `poly~` voice is suspended 1.2 seconds
+after the event. `realistic` uses the tracked starter fallback; V10 selects the
+local processed Ferrari startup when available. Local and fallback starters are
+mutually exclusive, with a 20 ms selection ramp.
+
+## User-editable BEAP patchers
+
+These files are seeded only when absent and are not overwritten by project
+regeneration:
+
+- `patchers/engine_start_beap~.maxpat` — cinematic engine start
+- `patchers/ev_pad_beap~.maxpat` — EV Relax
+- `patchers/ev_expressive_beap~.maxpat` — EV Expressive
+- `patchers/ev_sport_beap~.maxpat` — EV Sport
+
+The EV host crossfades modes over 250 ms and then sends `mute 1 1` to inactive
+`poly~` voices, so only the selected BEAP graph remains on DSP.
 
 ## Public control messages
 
+All fixed runtimes accept the common controls below. Do not send `engine_type`
+or profile-weight messages to a fixed runtime.
+
 ```text
-engine_type ev|v12|v10
 ignition 0|1
 start 1
 speed_kph 0..300
@@ -95,16 +114,8 @@ powertrain_level_db -60..6
 transient_level_db -60..6
 road_level_db -60..6
 rumble_level_db -60..6
-pad_level_db -60..6
-pad_mute 0|1
-pad_solo 0|1
 reference_texture_level_db -60..6
 reference_texture_mute 0|1
-```
-
-Global EQ and output controls:
-
-```text
 eq_low <frequency_hz> <gain_db>
 eq_lowmid <frequency_hz> <gain_db> <q>
 eq_highmid <frequency_hz> <gain_db> <q>
@@ -113,86 +124,61 @@ eq_bypass 0|1
 master_trim_db -24..0
 ```
 
-EQ messages and graph edits control the same four-filter `filtergraph~`/
-stereo-`cascade~` system immediately before output trim and protection.
-Select node 0–3 beside the graph for synchronized frequency, gain, and Q/S
-editing. `eq_bypass 1` crossfades to the unprocessed signal;
-`master_trim_db` affects every stem. The filtergraph power-gain parameter is
-converted with `10^(dB/10)`, so a requested EQ change in dB matches the measured
-center-frequency change instead of producing half the requested amount.
+EV additionally accepts:
 
-## Audio sources and noise
-
-The EV motor remains procedural. V10/V12 are hybrid: phase-locked cylinder-bank synthesis
-supplies firing order and load response, while twelve normalized stereo residual
-loops from a CC0 Ferrari acceleration recording supply irregular intake,
-mechanical, and exhaust texture. Runtime events and the cabin IR are also
-processed CC0 field recordings, not generated Foley. See
-`ASSET_LICENSES.md` and `assets/asset_manifest.json` for provenance, crops,
-normalization targets, and hashes.
-
-Broadband noise is deliberately limited to a centered `pink~` tire bed
-(70-900 Hz) and a restrained stereo `noise~` wind layer (400-4000 Hz). The
-V10/V12 generators no longer inject white noise. Reduce remaining road/air noise
-with `Road Level`, `Brightness`, `Texture`, the High-Mid/High Shelf EQ, or by
-lowering `road_air~` in the mix; do not use the limiter as an EQ.
-
-## Engine texture bank and local Ferrari target
-
-Rebuild the distributable CC0 residual bank with:
-
-```sh
-python3 tools/prepare_engine_texture.py assets/raw/biholao_370278_ferrari_acceleration.wav media --metadata assets/engine_texture_bank.json
+```text
+ev_mode relax|expressive|sport
+ev_soundscape_level_db -60..6
+ev_soundscape_mute 0|1
 ```
 
-The bank contains six firing-frequency anchors (65–520 Hz), each with two
-asynchronous stereo loops longer than four seconds. The processor removes DC and
-dominant cadence, stabilizes slow source-level rides, adds mono-compatible
-upper-band Side microstructure, closes each loop with a 250 ms cyclic seam ease,
-and normalizes every output to -18 dBFS RMS. Runtime pitch ratios are clamped to 0.9–1.1 and adjacent anchors
-crossfade continuously. V10/V12 enable this bank; EV gates it off.
+V10/V12 additionally accept `start_style cinematic|realistic`.
 
-The user-supplied `/Users/saintpeter/Desktop/Ferrari.wav` can also supply an
-optional local startup and idle-body layer:
+## Local Ferrari V10 atlas
+
+`/Users/saintpeter/Desktop/Ferrari.wav` is a user-supplied V10 acoustic
+reference. Build the ignored local runtime bundle with:
 
 ```sh
 python3 tools/prepare_local_reference.py /Users/saintpeter/Desktop/Ferrari.wav media/local --bundle
 ```
 
-This creates a 1.2 s stereo startup layer and a 3.0 s cyclic idle-body layer.
-The idle layer follows firing rate at low RPM and equal-power fades out by
-180 Hz; the distributable CC0 bank remains available through the full RPM
-range. If either local file is absent, the engine falls back to the filtered
-CC0 starter and texture bank. `media/local/` is ignored by Git and must never be
-committed, synced, or redistributed.
+The deterministic processor creates:
+
+- a 1.2 s startup layer;
+- a cyclic idle-body layer;
+- 18 atlas loops: steady/accel/decel x six firing-rate anchors;
+- `ferrari_v10_atlas.json`, containing source and processor hashes, cadence/RPM
+  anchors, source ranges, loop metadata, levels, confidence, and derivative
+  hashes.
+
+A single global gain is applied to the atlas so the reference recording's
+relative state dynamics are preserved. `media/local/` is ignored by Git and
+must never be committed, synced, or redistributed. A clean checkout uses the
+tracked CC0 starter and texture fallback. V12 never loads these V10 files.
+
+Distributable audio provenance remains governed by `ASSET_LICENSES.md` and
+`assets/asset_manifest.json`.
 
 ## Regeneration and validation
 
-Generated `.maxpat`, `.gendsp`, preset, and media files are owned by
-`tools/build_project.py` and should not be hand-edited. The exception is
-`patchers/ev_pad_beap~.maxpat`, which is seeded only when absent and is the
-supported place for user Pad tuning.
+Generated `.maxpat`, `.gendsp`, preset, and fallback media are owned by
+`tools/build_project.py`. Only the four BEAP patchers listed above are
+user-owned.
 
 ```sh
 python3 tools/build_project.py --output-root .
 python3 -m unittest discover -s tests -v
-python3 tools/audio_metrics.py idle_v12.wav --expected-fundamental-hz 78 --max-harsh-ratio 0.001 --max-high-ratio 0.00001 --min-low-mid-ratio 0.96 --min-rumble-ratio 0.90 --max-spectral-centroid-hz 100 --max-rolloff-95-hz 160 --max-sample-delta-peak-over-rms 0.15 --max-upper-harmonic-ratio 0.001 --max-harmonic-slope-db-per-octave -7 --max-clipped-sample-ratio 0
-python3 tools/audio_metrics.py idle_v10.wav --expected-fundamental-hz 70.833333 --max-harsh-ratio 0.001 --max-high-ratio 0.00001 --min-low-mid-ratio 0.96 --min-rumble-ratio 0.90 --max-spectral-centroid-hz 100 --max-rolloff-95-hz 160 --max-sample-delta-peak-over-rms 0.15 --max-upper-harmonic-ratio 0.001 --max-harmonic-slope-db-per-octave -7 --max-clipped-sample-ratio 0
-python3 tools/audio_metrics.py high_rpm.wav --max-harsh-ratio 0.001 --max-high-ratio 0.00001 --max-sample-delta-peak-over-rms 0.25 --max-clipped-sample-ratio 0
-python3 tools/audio_metrics.py high_rpm.wav --compare-wav ferrari_window.wav --min-third-octave-similarity-left 0.85 --min-third-octave-similarity-right 0.85 --min-third-octave-similarity 0.87 --max-third-octave-similarity-lr-delta 0.05
-python3 tools/audio_metrics.py eq_cut.wav --compare-wav eq_flat.wav --expected-gain-db -12 --gain-tolerance-db 0.25
+git diff --check
 ```
 
-For strict steady-state comparisons, trim the first second so the startup layer
-is not measured as continuous combustion. A full start-to-idle render should
-also pass the idle gate above; this catches both a harsh starter and a saw-like
-continuous cylinder pulse.
+For objective WAV checks:
 
-The rumble layer is high-passed near 28 Hz. After the cabin IR, `cross~ 120`
-centers deep bass while asymmetric short all-pass/early-reflection paths widen
-only the upper body and mechanical detail. The mid band uses a 0.24 Side safety
-trim; the high band uses 0.26 plus 0.04 cross-reflections. This keeps the default
-fold-down near the target without removing stereo phase detail.
-The full signal then ends
-in `mix_master~`: one visible four-node graph driving stereo `cascade~`, click-safe dry/wet bypass,
-master trim, `omx.peaklim~`, and `clip~ -0.891 0.891`.
+```sh
+python3 tools/audio_metrics.py render.wav --require-sample-rate 48000 \
+  --max-clipped-sample-ratio 0 --max-harsh-ratio 0.001
+```
+
+The metrics tool averages up to five evenly spaced Hann windows. A harsh
+high-frequency defect appearing only after startup therefore cannot hide behind
+the first analysis window.

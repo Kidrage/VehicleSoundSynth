@@ -9,13 +9,13 @@
 - Working root: `.`
 - Repository name: `VehicleSoundSynth-V4`
 - Git repository: `true`
-- Generated at: `2026-08-17T06:27:58.363031+00:00`
+- Generated at: `2026-08-18T07:38:17.376264+00:00`
 
 ## Current State
 
 - Branch: `codex/vehicle-sound-v4`
-- HEAD before the current repair: `3a678eb`
-- Indexed paths: 88
+- HEAD: `68af5db`
+- Indexed paths: 117
 - Inventory truncated: `false`
 - Inaccessible paths: 0
 - Scan mode: complete path/metadata inventory; no bulk content read; no symlink traversal.
@@ -43,9 +43,9 @@
 
 | Route | Files |
 |---|---:|
+| `patchers` | 38 |
 | `media` | 35 |
-| `.` | 13 |
-| `patchers` | 12 |
+| `.` | 16 |
 | `assets` | 10 |
 | `tools` | 10 |
 | `assets/raw` | 7 |
@@ -59,15 +59,15 @@
 ### Categories
 
 - audio: 41 files, 103833150 bytes
-- code: 11 files, 420024 bytes
-- literature: 14 files, 574171 bytes
-- other: 18 files, 2450722 bytes
-- structured_data: 4 files, 22823 bytes
+- code: 11 files, 537550 bytes
+- literature: 14 files, 580598 bytes
+- other: 47 files, 8465773 bytes
+- structured_data: 4 files, 24133 bytes
 
 ### Common Extensions
 
+- `.maxpat`: 42
 - `.wav`: 41
-- `.maxpat`: 13
 - `.py`: 11
 - `.md`: 6
 - `.docx`: 5
@@ -90,6 +90,8 @@
 
 ## Change History
 
+- `68af5db 2026-08-18 fix: soften V10 V12 combustion with local Ferrari body`
+- `3a678eb 2026-08-17 docs: refresh V4 repair handoff`
 - `8cf0f1e 2026-08-17 fix: remove full-rate combustion reset harshness`
 - `745207c 2026-08-14 fix: rebuild V4 engine realism and stereo field`
 - `f138ccb 2026-08-12 docs: seal V4 integrity audit`
@@ -108,12 +110,54 @@
 - `660866e 2026-08-12 docs: refresh V4 handoff`
 - `cb5ce78 2026-08-12 feat: create V4 acoustic repair archive`
 - `81e1345 2026-08-11 docs: refresh V3.1 handoff`
-- `9066183 2026-08-11 fix: harden V3.1 stereo EQ and reference processing`
-- `22bb3f1 2026-08-11 feat: add V3.1 cinematic engine mix`
 
 ## Current Changes
 
 - `## codex/vehicle-sound-v4`
+- `M  .codex/REPO_GUIDE.md`
+- `M  .codex/repo_files.txt`
+- `M  .codex/source_index.txt`
+- `M  AGENTS.md`
+- `M  ASSET_LICENSES.md`
+- `M  PROJECT_HANDOFF.md`
+- `M  README.md`
+- `A  VehicleSoundSynth-EV.maxpat`
+- `A  VehicleSoundSynth-V10.maxpat`
+- `A  VehicleSoundSynth-V12.maxpat`
+- `M  VehicleSoundSynth-V4.maxproj`
+- `M  assets/asset_manifest.json`
+- `M  main.maxpat`
+- `A  patchers/drive_simulator_ev.maxpat`
+- `A  patchers/drive_simulator_v10.maxpat`
+- `A  patchers/drive_simulator_v12.maxpat`
+- `A  patchers/engine_controller_ev.maxpat`
+- `A  patchers/engine_controller_v10.maxpat`
+- `A  patchers/engine_controller_v12.maxpat`
+- `A  patchers/engine_start_beap~.maxpat`
+- `A  patchers/engine_start_voice.maxpat`
+- `A  patchers/ev_expressive_beap~.maxpat`
+- `A  patchers/ev_expressive_voice.maxpat`
+- `A  patchers/ev_powertrain~.maxpat`
+- `A  patchers/ev_relax_voice.maxpat`
+- `A  patchers/ev_soundscape_host~.maxpat`
+- `A  patchers/ev_sport_beap~.maxpat`
+- `A  patchers/ev_sport_voice.maxpat`
+- `M  patchers/reference_texture~.maxpat`
+- `A  patchers/transient_ev~.maxpat`
+- `A  patchers/transient_v10~.maxpat`
+- `A  patchers/transient_v12~.maxpat`
+- `A  patchers/v10_fallback_renderer~.maxpat`
+- `A  patchers/v10_powertrain~.maxpat`
+- `A  patchers/v10_state_renderer~.maxpat`
+- `A  patchers/v12_powertrain~.maxpat`
+- `A  patchers/v12_texture_renderer~.maxpat`
+- `A  patchers/vehicle_engine_ev~.maxpat`
+- `A  patchers/vehicle_engine_v10~.maxpat`
+- `A  patchers/vehicle_engine_v12~.maxpat`
+- `MM tests/test_project.py`
+- `M  tools/build_project.py`
+- `MM tools/build_runtime_probe.py`
+- `M  tools/prepare_local_reference.py`
 
 ## Related Repositories
 
@@ -191,6 +235,13 @@
 ## Agent Notes
 
 <!-- AGENT_NOTES_START -->
+- 2026-08-18 three-runtime rebuild: `main.maxpat` is now a DSP-free launcher for independent `VehicleSoundSynth-EV.maxpat`, `VehicleSoundSynth-V10.maxpat`, and `VehicleSoundSynth-V12.maxpat` runtimes. Each fixed profile owns one controller, drive model, one Gen powertrain, transient host, and public `vehicle_engine_<profile>~` seam; inactive profiles are absent rather than gain-muted. V10 catch settles 1050->740 RPM, V12 1100->780 RPM, and automatic throttle waits two seconds after start.
+- V10 is now sample-led by an ignored deterministic 18-loop Ferrari atlas (steady/accel/decel x six firing-rate anchors) with a source/processor/hash manifest, offline cadence alignment to the declared 65/110/180/260/380/520 Hz anchors, a 0.88-1.12 runtime playback clamp, state/RPM crossfades, and a -18 dB/500 Hz procedural underlay. V12 remains independent and uses tracked CC0 texture. All 18 V10 buffers must report loaded before local selection; any partial/missing atlas retains the tracked CC0 fallback through persistent `sig~` values.
+- Cadence warping renders an extra continuation and re-closes each loop after resampling. Across the final 18 local loops, the largest wrap step is 0.0413 FS and 0.653x its channel's 99.9th-percentile ordinary adjacent-sample step; the test suite enforces that every seam remains within 1.5x that baseline.
+- Critical Max fix: the three continuous texture lifecycle gates used integer `*`, truncating `1 * 0.72/0.74` to zero. They now use float `* 1.`, restoring the V10 atlas and both tracked fallbacks. A fresh Max 8.6.5 48 kHz V10 pre-cabin render changed from procedural-only -41.76 dBFS/79 Hz centroid/16 peaks to sample-led -31.32 dBFS/133 Hz centroid/62 peaks, with zero clipping. Experimental resonant post-atlas filters were rejected and removed because they increased the 2-6 kHz ratio.
+- Engine start defaults to the seed-once user-tunable `engine_start_beap~` cinematic voice, with realistic sample option for ICE and voice suspension after 1.2 s. EV adds seed-once Relax/Expressive/Sport BEAP graphs; a 250 ms host crossfade then suspends inactive `poly~` voices.
+- The DSP-free launcher now broadcasts a profile selection, lets the active top-level runtime execute `write`/`wclose`, and then uses `loadunique` for one replacement. This makes the one-profile CPU contract enforceable instead of relying only on operator discipline.
+- Validation: 84 Python tests pass; generator determinism, provenance hashes, full-atlas gating, and patchcord checks pass; `git diff --check` is clean; and no `media/local/` files are tracked. Runtime probes now pass all controls through the fixed drive simulator and controller, so start-to-idle checks exercise the 1050->740 / 1100->780 flare path without injecting `engine_running` or `combustion_gain`. High-RPM probes route drive RPM through a test switch, wait 1000 ms for catch, then lock the requested 3500/4200 RPM before recording so drive ticks cannot overwrite the spectral target. Final Max 8.6.5 EV/V10/V12 profile loads produced no object, Gen, patchcord, outlet, or missing-media errors after the clean 15:22 log baseline; each runtime received `write`/`wclose` before the next, and the final Max process count was zero.
 - 2026-08-18 Ferrari-body repair: V12/V10 discontinuous exponential bank pulses were replaced by zero-wrap raised-cosine fourth-power pulses, idle saturation was reduced, and the fuel path now opens an MSP low-pass from roughly 3.0 kHz at idle toward 8.4 kHz at high RPM. Default V10/V12 reference texture moved to -18 dB. EV and the sibling V3 repository were not changed.
 - `tools/prepare_local_reference.py --bundle` now creates ignored 48 kHz stereo `ferrari_sf90_startup.wav` (0-1.2 s, -14 dBFS RMS, 3 kHz low-pass) and `ferrari_sf90_idle_body.wav` (2.5-5.5 s, -15.5 dBFS RMS, 4 kHz low-pass, 300 ms cyclic seam). Runtime uses the local startup at 0.35 gain with a 350 ms catch fade, retains a 0.08/1.6 kHz-filtered CC0 fallback, and equal-power fades the local idle body out from 100-180 Hz while retaining the CC0 bank.
 - Max buffer arguments use bare filenames so the real project can resolve ignored media through its recursive `media` search path. The standalone runtime probe also mirrors local-only media at its bundle root; this was verified after an initial diagnostic render correctly exposed `can't open` errors for the former abstraction-relative `media/local/...` arguments.

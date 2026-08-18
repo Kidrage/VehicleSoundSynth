@@ -18,6 +18,10 @@ FADE_FRAMES = 960
 BODY_LOOP_FADE_FRAMES = 14400
 STARTUP_FRAMES = 57600
 IDLE_BODY_FRAMES = 144000
+ATLAS_ANCHORS_HZ = (65, 110, 180, 260, 380, 520)
+ATLAS_STATES = ("steady", "accel", "decel")
+ATLAS_LOOP_FRAMES = 48000
+ATLAS_FADE_FRAMES = 4800
 
 
 def _read_pcm16_stereo(path: Path) -> list[list[float]]:
@@ -136,6 +140,228 @@ def _write_normalized_stereo(
         "rms_dbfs": 20.0 * math.log10(max(rms, 1e-12)),
         "peak_dbfs": 20.0 * math.log10(max(peak, 1e-12)),
         "sha256": hashlib.sha256(destination.read_bytes()).hexdigest(),
+    }
+
+
+def _cadence_track(channels: list[list[float]]) -> list[dict[str, float | str]]:
+    """Estimate firing cadence and direction in deterministic half-second windows."""
+    mono = [(left + right) * 0.5 for left, right in zip(*channels)]
+    downsample = 12
+    analysis_rate = SAMPLE_RATE / downsample
+    window_frames = SAMPLE_RATE // 2
+    hop_frames = SAMPLE_RATE // 4
+    points: list[dict[str, float | str]] = []
+    for start in range(0, max(1, len(mono) - window_frames + 1), hop_frames):
+        source = mono[start : start + window_frames : downsample]
+        if len(source) < 100:
+            continue
+        mean = sum(source) / len(source)
+        values = [sample - mean for sample in source]
+        energy = sum(sample * sample for sample in values)
+        best_lag = 0
+        best_score = -1.0
+        min_lag = max(2, round(analysis_rate / 550.0))
+        max_lag = min(len(values) // 2, round(analysis_rate / 45.0))
+        for lag in range(min_lag, max_lag + 1):
+            correlation = sum(
+                values[index] * values[index - lag]
+                for index in range(lag, len(values))
+            )
+            overlap_energy = math.sqrt(
+                max(1e-20, energy * sum(sample * sample for sample in values[:-lag]))
+            )
+            score = correlation / overlap_energy
+            # Prefer the fundamental over an equally strong short-lag harmonic.
+            score *= 1.0 + 0.035 * lag / max_lag
+            if score > best_score:
+                best_score = score
+                best_lag = lag
+        cadence = analysis_rate / max(1, best_lag)
+        points.append(
+            {
+                "center_frame": float(start + window_frames // 2),
+                "cadence_hz": cadence,
+                "confidence": max(0.0, min(1.0, best_score)),
+            }
+        )
+
+    for index, point in enumerate(points):
+        previous = float(points[max(0, index - 1)]["cadence_hz"])
+        following = float(points[min(len(points) - 1, index + 1)]["cadence_hz"])
+        derivative = (following - previous) / 0.5
+        point["cadence_derivative_hz_s"] = derivative
+        point["state"] = "accel" if derivative > 18.0 else "decel" if derivative < -18.0 else "steady"
+    return points
+
+
+def _cyclic_body_window(
+    channels: list[list[float]], start: int, frame_count: int, fade_frames: int
+) -> list[list[float]]:
+    """Filter one full-band body window and close its loop seam without renormalizing it."""
+    processed: list[list[float]] = []
+    for channel in channels:
+        preroll = min(start, SAMPLE_RATE)
+        stop = min(len(channel), start + frame_count + fade_frames)
+        filtered = _body_filter(
+            channel[start - preroll : stop], highpass_hz=25.0, lowpass_hz=8500.0
+        )
+        filtered = filtered[preroll:]
+        if len(filtered) < frame_count + fade_frames:
+            filtered.extend([0.0] * (frame_count + fade_frames - len(filtered)))
+        loop = filtered[:frame_count]
+        continuation = filtered[frame_count : frame_count + fade_frames]
+        for index in range(fade_frames):
+            phase = index / max(1, fade_frames - 1) * math.pi / 2.0
+            loop[index] = continuation[index] * math.cos(phase) + loop[index] * math.sin(phase)
+        processed.append(loop)
+    return processed
+
+
+def _render_at_cadence(
+    channels: list[list[float]], playback_ratio: float, fade_frames: int
+) -> list[list[float]]:
+    """Render at the declared cadence, then close the new output loop seam."""
+    if playback_ratio <= 0.0:
+        raise ValueError("playback ratio must be positive")
+    frame_count = len(channels[0])
+    fade_frames = max(1, min(fade_frames, frame_count // 2))
+    rendered: list[list[float]] = []
+    for channel in channels:
+        output: list[float] = []
+        for index in range(frame_count + fade_frames):
+            position = (index * playback_ratio) % frame_count
+            lower = int(position)
+            fraction = position - lower
+            upper = (lower + 1) % frame_count
+            output.append(
+                channel[lower] * (1.0 - fraction) + channel[upper] * fraction
+            )
+        loop = output[:frame_count]
+        continuation = output[frame_count:]
+        for index in range(fade_frames):
+            phase = index / max(1, fade_frames - 1) * math.pi / 2.0
+            loop[index] = (
+                continuation[index] * math.cos(phase)
+                + loop[index] * math.sin(phase)
+            )
+        rendered.append(loop)
+    return rendered
+
+
+def _write_stereo_with_gain(
+    channels: list[list[float]], destination: Path, gain: float
+) -> dict[str, float | str]:
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    normalized = [
+        [max(-1.0, min(1.0, sample * gain)) for sample in channel]
+        for channel in channels
+    ]
+    payload = b"".join(
+        struct.pack(
+            "<hh",
+            round(normalized[0][index] * 32767.0),
+            round(normalized[1][index] * 32767.0),
+        )
+        for index in range(len(normalized[0]))
+    )
+    with wave.open(str(destination), "wb") as handle:
+        handle.setnchannels(2)
+        handle.setsampwidth(2)
+        handle.setframerate(SAMPLE_RATE)
+        handle.writeframes(payload)
+    flat = [sample for channel in normalized for sample in channel]
+    rms = math.sqrt(sum(sample * sample for sample in flat) / max(1, len(flat)))
+    peak = max(abs(sample) for sample in flat)
+    return {
+        "file": destination.name,
+        "duration_seconds": len(normalized[0]) / SAMPLE_RATE,
+        "rms_dbfs": 20.0 * math.log10(max(rms, 1e-12)),
+        "peak_dbfs": 20.0 * math.log10(max(peak, 1e-12)),
+        "sha256": hashlib.sha256(destination.read_bytes()).hexdigest(),
+    }
+
+
+def prepare_v10_atlas(source: Path, destination_dir: Path) -> dict[str, object]:
+    """Build 3x6 V10 state anchors with one shared gain and auditable metadata."""
+    channels = _read_pcm16_stereo(source)
+    track = _cadence_track(channels)
+    if not track:
+        raise ValueError("reference is too short to analyse")
+    prepared: list[dict[str, object]] = []
+    max_start = max(0, len(channels[0]) - ATLAS_LOOP_FRAMES - ATLAS_FADE_FRAMES)
+    for state in ATLAS_STATES:
+        for anchor in ATLAS_ANCHORS_HZ:
+            def score(point: dict[str, float | str]) -> float:
+                cadence = max(1.0, float(point["cadence_hz"]))
+                state_penalty = 0.0 if point["state"] == state else 1.25
+                confidence_penalty = (1.0 - float(point["confidence"])) * 0.25
+                return abs(math.log(cadence / anchor)) + state_penalty + confidence_penalty
+
+            point = min(track, key=score)
+            center = round(float(point["center_frame"]))
+            start = max(0, min(max_start, center - ATLAS_LOOP_FRAMES // 2))
+            audio = _cyclic_body_window(
+                channels, start, ATLAS_LOOP_FRAMES, ATLAS_FADE_FRAMES
+            )
+            source_cadence = float(point["cadence_hz"])
+            source_playback_ratio = anchor / max(1.0, source_cadence)
+            prepared.append(
+                {
+                    "state": state,
+                    "anchor_firing_hz": anchor,
+                    "estimated_rpm": anchor * 12,
+                    "source_start_frame": start,
+                    "source_end_frame": start + ATLAS_LOOP_FRAMES,
+                    "source_cadence_hz": source_cadence,
+                    "source_playback_ratio": source_playback_ratio,
+                    "rendered_cadence_hz": anchor,
+                    "cadence_derivative_hz_s": float(point["cadence_derivative_hz_s"]),
+                    "confidence": float(point["confidence"]),
+                    "loop_start_frame": 0,
+                    "loop_end_frame": ATLAS_LOOP_FRAMES,
+                    "audio": _render_at_cadence(
+                        audio, source_playback_ratio, ATLAS_FADE_FRAMES
+                    ),
+                }
+            )
+
+    flat = [
+        sample
+        for entry in prepared
+        for channel in entry["audio"]  # type: ignore[index]
+        for sample in channel
+    ]
+    rms = math.sqrt(sum(sample * sample for sample in flat) / max(1, len(flat)))
+    peak = max(abs(sample) for sample in flat)
+    target_rms = 10.0 ** (-16.0 / 20.0)
+    peak_limit = 10.0 ** (-2.5 / 20.0)
+    gain = min(target_rms / max(rms, 1e-12), peak_limit / max(peak, 1e-12))
+    states: dict[str, list[dict[str, object]]] = {state: [] for state in ATLAS_STATES}
+    for entry in prepared:
+        state = str(entry["state"])
+        anchor = int(entry["anchor_firing_hz"])
+        destination = destination_dir / f"ferrari_v10_{state}_{anchor:03d}.wav"
+        written = _write_stereo_with_gain(entry.pop("audio"), destination, gain)  # type: ignore[arg-type]
+        states[state].append({**entry, **written})
+
+    destination_dir.mkdir(parents=True, exist_ok=True)
+    manifest_path = destination_dir / "ferrari_v10_atlas.json"
+    manifest = {
+        "schema_version": 1,
+        "source_file": source.name,
+        "source_sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
+        "processor_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+        "sample_rate": SAMPLE_RATE,
+        "channels": 2,
+        "global_gain_db": 20.0 * math.log10(max(gain, 1e-12)),
+        "playback_ratio_bounds": [0.88, 1.12],
+        "states": states,
+    }
+    manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return {
+        "manifest": str(manifest_path),
+        "manifest_sha256": hashlib.sha256(manifest_path.read_bytes()).hexdigest(),
+        "files": sum(len(items) for items in states.values()),
     }
 
 
@@ -262,9 +488,9 @@ def prepare_reference(
     }
 
 
-def prepare_reference_bundle(source: Path, destination_dir: Path) -> dict[str, dict[str, float | str]]:
+def prepare_reference_bundle(source: Path, destination_dir: Path) -> dict[str, object]:
     """Create compatible residuals plus cadence-preserving startup/idle layers."""
-    return {
+    result: dict[str, object] = {
         "idle": prepare_reference(
             source, destination_dir / "ferrari_sf90_idle_residual.wav",
             start_seconds=1.0, loop_frames=12000, cadence_hz=61.5,
@@ -296,6 +522,8 @@ def prepare_reference_bundle(source: Path, destination_dir: Path) -> dict[str, d
             loop=True,
         ),
     }
+    result["v10_atlas"] = prepare_v10_atlas(source, destination_dir)
+    return result
 
 
 def main() -> int:
