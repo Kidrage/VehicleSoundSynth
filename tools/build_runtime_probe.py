@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import shutil
 from pathlib import Path
 
@@ -365,7 +366,16 @@ def main() -> None:
     media = bundle / "media"
     media.mkdir(parents=True, exist_ok=True)
     for source in (root / "patchers").glob("*.maxpat"):
-        shutil.copy2(source, bundle / source.name)
+        document = json.loads(source.read_text(encoding="utf-8"))
+        for item in document["patcher"]["boxes"]:
+            text = item["box"].get("text")
+            if text:
+                item["box"]["text"] = (
+                    text.replace("../gen/", "")
+                    .replace("../media/local/", "")
+                    .replace("../media/", "")
+                )
+        write_json(bundle / source.name, document)
     for source in (root / "gen").glob("*.gendsp"):
         shutil.copy2(source, bundle / source.name)
     for source in (root / "media").glob("*.wav"):

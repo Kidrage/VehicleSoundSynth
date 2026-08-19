@@ -517,10 +517,10 @@
           "patching_rect": [
             660.0,
             250.0,
-            225.0,
+            255.0,
             22.0
           ],
-          "text": "buffer~ starter_v10 starter_v10.wav"
+          "text": "buffer~ starter_v10 ../media/starter_v10.wav"
         }
       },
       {
@@ -800,10 +800,10 @@
           "patching_rect": [
             900.0,
             250.0,
-            355.0,
+            410.0,
             22.0
           ],
-          "text": "buffer~ ferrari_startup ferrari_sf90_startup.wav"
+          "text": "buffer~ ferrari_startup ../media/local/ferrari_sf90_startup.wav"
         }
       },
       {

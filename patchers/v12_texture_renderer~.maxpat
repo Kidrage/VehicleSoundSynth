@@ -131,10 +131,10 @@
           "patching_rect": [
             35.0,
             235.0,
-            315.0,
+            350.0,
             22.0
           ],
-          "text": "buffer~ cc0_v12_065 engine_texture_065_a.wav"
+          "text": "buffer~ cc0_v12_065 ../media/engine_texture_065_a.wav"
         }
       },
       {
@@ -316,10 +316,10 @@
           "patching_rect": [
             505.0,
             235.0,
-            315.0,
+            350.0,
             22.0
           ],
-          "text": "buffer~ cc0_v12_110 engine_texture_110_a.wav"
+          "text": "buffer~ cc0_v12_110 ../media/engine_texture_110_a.wav"
         }
       },
       {
@@ -501,10 +501,10 @@
           "patching_rect": [
             975.0,
             235.0,
-            315.0,
+            350.0,
             22.0
           ],
-          "text": "buffer~ cc0_v12_180 engine_texture_180_a.wav"
+          "text": "buffer~ cc0_v12_180 ../media/engine_texture_180_a.wav"
         }
       },
       {
@@ -686,10 +686,10 @@
           "patching_rect": [
             35.0,
             455.0,
-            315.0,
+            350.0,
             22.0
           ],
-          "text": "buffer~ cc0_v12_260 engine_texture_260_a.wav"
+          "text": "buffer~ cc0_v12_260 ../media/engine_texture_260_a.wav"
         }
       },
       {
@@ -871,10 +871,10 @@
           "patching_rect": [
             505.0,
             455.0,
-            315.0,
+            350.0,
             22.0
           ],
-          "text": "buffer~ cc0_v12_380 engine_texture_380_a.wav"
+          "text": "buffer~ cc0_v12_380 ../media/engine_texture_380_a.wav"
         }
       },
       {
@@ -1056,10 +1056,10 @@
           "patching_rect": [
             975.0,
             455.0,
-            315.0,
+            350.0,
             22.0
           ],
-          "text": "buffer~ cc0_v12_520 engine_texture_520_a.wav"
+          "text": "buffer~ cc0_v12_520 ../media/engine_texture_520_a.wav"
         }
       },
       {

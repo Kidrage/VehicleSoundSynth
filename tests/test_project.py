@@ -37,6 +37,10 @@ class VehicleSoundProjectTests(unittest.TestCase):
                 item["box"].get("text", "") for item in patcher["boxes"]
             )
             self.assertNotIn("engine_type", text)
+            profile = name.removeprefix("VehicleSoundSynth-").removesuffix(".maxpat").lower()
+            self.assertIn(f"drive_simulator_{profile}", text)
+            self.assertIn(f"vehicle_engine_{profile}~", text)
+            self.assertIn("keyboard_drive_ws", text)
 
         launcher = self.load_json("main.maxpat")["patcher"]
         launcher_text = "\n".join(
@@ -62,9 +66,9 @@ class VehicleSoundProjectTests(unittest.TestCase):
 
     def test_each_runtime_uses_only_its_own_powertrain_graph(self):
         expected = {
-            "ev": "gen~ @gen ev_powertrain",
-            "v10": "gen~ @gen v10_powertrain",
-            "v12": "gen~ @gen v12_powertrain",
+            "ev": "gen~ @gen ../gen/ev_powertrain",
+            "v10": "gen~ @gen ../gen/v10_powertrain",
+            "v12": "gen~ @gen ../gen/v12_powertrain",
         }
         for profile, own_gen in expected.items():
             patcher = self.load_json(
@@ -78,6 +82,35 @@ class VehicleSoundProjectTests(unittest.TestCase):
             self.assertNotIn("ev_weight", text)
             self.assertNotIn("v10_weight", text)
             self.assertNotIn("v12_weight", text)
+
+    def test_nested_runtime_assets_use_explicit_relative_paths(self):
+        for profile in ("ev", "v10", "v12"):
+            text = "\n".join(
+                item["box"].get("text", "")
+                for item in self.load_json(
+                    f"patchers/{profile}_powertrain~.maxpat"
+                )["patcher"]["boxes"]
+            )
+            self.assertIn(f"gen~ @gen ../gen/{profile}_powertrain", text)
+
+        for relative in (
+            "patchers/v10_fallback_renderer~.maxpat",
+            "patchers/v12_texture_renderer~.maxpat",
+            "patchers/reference_texture~.maxpat",
+            "patchers/transient~.maxpat",
+            "patchers/cabin_master~.maxpat",
+        ):
+            text = "\n".join(
+                item["box"].get("text", "")
+                for item in self.load_json(relative)["patcher"]["boxes"]
+            )
+            self.assertIn("../media/", text, relative)
+
+        local_text = "\n".join(
+            item["box"].get("text", "")
+            for item in self.load_json("patchers/v10_state_renderer~.maxpat")["patcher"]["boxes"]
+        )
+        self.assertIn("../media/local/ferrari_v10_accel_065.wav", local_text)
 
     def test_profile_runtimes_have_fixed_controllers_and_startup_rpm_flares(self):
         expected = {
@@ -108,6 +141,58 @@ class VehicleSoundProjectTests(unittest.TestCase):
             self.assertIn("$i3>=40", drive_text)
             self.assertIn("set 0", drive_text)
 
+    def test_profile_drive_throttle_runs_hot_and_ice_shifts_are_smoothed(self):
+        for profile in ("ev", "v10", "v12"):
+            drive = self.load_json(
+                f"patchers/drive_simulator_{profile}.maxpat"
+            )["patcher"]
+            boxes = {item["box"]["id"]: item["box"] for item in drive["boxes"]}
+            lines = [item["patchline"] for item in drive["lines"]]
+            running_id = next(
+                box_id
+                for box_id, box in boxes.items()
+                if box.get("text") == "int 0"
+            )
+            running_inputs = {
+                line["destination"][1]
+                for line in lines
+                if line["destination"][0] == running_id
+                and boxes[line["source"][0]].get("text") in {"0", "1"}
+            }
+            self.assertEqual(
+                {0},
+                running_inputs,
+                f"{profile} running state must emit into effective_throttle",
+            )
+
+            text = "\n".join(box.get("text", "") for box in boxes.values())
+            self.assertIn("pack 0. 120", text)
+            self.assertIn("line 0.", text)
+            if profile == "ev":
+                self.assertNotIn("shift_dir -1", text)
+                self.assertNotIn("shift_dir 1", text)
+            else:
+                self.assertIn("speedlim 350", text)
+                self.assertIn("shift_dir -1", text)
+                self.assertIn("shift_dir 1", text)
+
+        for profile in ("v10", "v12"):
+            controller_text = "\n".join(
+                item["box"].get("text", "")
+                for item in self.load_json(
+                    f"patchers/engine_controller_{profile}.maxpat"
+                )["patcher"]["boxes"]
+            )
+            self.assertIn("shift_cut 0.72", controller_text)
+            self.assertNotIn("shift_cut 0.22", controller_text)
+
+        transient_text = "\n".join(
+            item["box"].get("text", "")
+            for item in self.load_json("patchers/transient~.maxpat")["patcher"]["boxes"]
+        )
+        self.assertEqual(3, transient_text.count("*~ 0.21"))
+        self.assertEqual(3, transient_text.count("*~ 0.24"))
+
     def test_ev_modes_are_user_editable_and_suspend_inactive_poly_voices(self):
         expected = (
             "patchers/ev_pad_beap~.maxpat",
@@ -136,6 +221,21 @@ class VehicleSoundProjectTests(unittest.TestCase):
         self.assertIn("mute 1 0", text)
         self.assertIn("delay 260", text)
         self.assertIn("pack 0. 250", text)
+        self.assertIn("prepend ev_soundscape_level_db", text)
+        self.assertIn("prepend ev_soundscape_mute", text)
+        self.assertEqual(2, text.count("svf~ 320 0.7"))
+        self.assertIn("loadmess -9", text)
+        self.assertIn("pak 0. 650.", text)
+        self.assertIn("$f2/8500.", text)
+        self.assertIn("80.+$f1*.02", text)
+
+        powertrain_text = "\n".join(
+            item["box"].get("text", "")
+            for item in self.load_json("patchers/ev_powertrain~.maxpat")["patcher"]["boxes"]
+        )
+        self.assertIn("pad_solo", powertrain_text)
+        self.assertIn("expr 1-$i1", powertrain_text)
+
 
     def test_ice_start_defaults_to_cinematic_beap_with_realistic_sample_option(self):
         start_beap = self.load_json("patchers/engine_start_beap~.maxpat")["patcher"]
@@ -234,7 +334,10 @@ class VehicleSoundProjectTests(unittest.TestCase):
     def test_v10_uses_state_atlas_while_v12_remains_independent(self):
         v10 = self.load_json("patchers/v10_state_renderer~.maxpat")["patcher"]
         text = "\n".join(item["box"].get("text", "") for item in v10["boxes"])
-        self.assertIn("buffer~ v10_steady_065 ferrari_v10_steady_065.wav", text)
+        self.assertIn(
+            "buffer~ v10_steady_065 ../media/local/ferrari_v10_steady_065.wav",
+            text,
+        )
         self.assertEqual(18, text.count("info~ v10_"))
         self.assertIn("zl sum", text)
         self.assertIn("sel 18", text)
@@ -429,7 +532,7 @@ class VehicleSoundProjectTests(unittest.TestCase):
         self.assertIn("($f1/60.)*(5.+$f2)", text)
         self.assertIn("*~ 0.55", text)
         self.assertIn(
-            "buffer~ ferrari_idle_body ferrari_sf90_idle_body.wav",
+            "buffer~ ferrari_idle_body ../media/local/ferrari_sf90_idle_body.wav",
             text,
         )
         self.assertIn("groove~ ferrari_idle_body 2 @loop 1", text)
@@ -728,8 +831,8 @@ class VehicleSoundProjectTests(unittest.TestCase):
         cabin = self.load_json("patchers/cabin_master~.maxpat")["patcher"]
         text = "\n".join(item["box"].get("text", "") for item in cabin["boxes"])
         for token in (
-            "cabin_ir_mix", "buffer~ cabin_ir_l cabin_ir_l.wav",
-            "buffer~ cabin_ir_r cabin_ir_r.wav", "buffir~ cabin_ir_l 0 4096",
+            "cabin_ir_mix", "buffer~ cabin_ir_l ../media/cabin_ir_l.wav",
+            "buffer~ cabin_ir_r ../media/cabin_ir_r.wav", "buffir~ cabin_ir_l 0 4096",
             "buffir~ cabin_ir_r 0 4096", "expr sqrt(1.-$f1)", "expr sqrt($f1)",
         ):
             self.assertIn(token, text)
@@ -946,7 +1049,7 @@ class VehicleSoundProjectTests(unittest.TestCase):
         }
         self.assertEqual(starter_player_ids, stopped_players)
         self.assertIn(
-            "buffer~ ferrari_startup ferrari_sf90_startup.wav",
+            "buffer~ ferrari_startup ../media/local/ferrari_sf90_startup.wav",
             transient_text,
         )
         self.assertIn("play~ ferrari_startup 2", transient_text)
@@ -1483,7 +1586,7 @@ class VehicleSoundProjectTests(unittest.TestCase):
             self.assertIn("Internal Auto", menu_items)
             self.assertIn(f"External vss.{profile}.input", menu_items)
             self.assertEqual(2, sum(box["maxclass"] == "meter~" for box in main_boxes))
-            self.assertEqual(2, sum(box.get("text") == "spectroscope~" for box in main_boxes))
+            self.assertEqual(2, sum(box["maxclass"] == "spectroscope~" for box in main_boxes))
 
             engine = self.load_json(f"patchers/vehicle_engine_{profile}~.maxpat")
             engine_text = "\n".join(item["box"].get("text", "") for item in engine["patcher"]["boxes"])
@@ -1771,12 +1874,12 @@ class VehicleSoundProjectTests(unittest.TestCase):
         bundled_buffers = [text for text in buffer_texts if "ferrari_" not in text]
         self.assertEqual(
             {
-                "buffer~ ferrari_startup ferrari_sf90_startup.wav",
-                "buffer~ ferrari_idle_body ferrari_sf90_idle_body.wav",
+                "buffer~ ferrari_startup ../media/local/ferrari_sf90_startup.wav",
+                "buffer~ ferrari_idle_body ../media/local/ferrari_sf90_idle_body.wav",
             },
             set(local_buffers),
         )
-        self.assertTrue(all(" media/" not in text for text in buffer_texts))
+        self.assertTrue(all(" ../media/" in text for text in buffer_texts))
 
     def test_v4_runtime_probe_exposes_full_acoustic_matrix_and_dual_taps(self):
         source = (ROOT / "tools" / "build_runtime_probe.py").read_text(encoding="utf-8")

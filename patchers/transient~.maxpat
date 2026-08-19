@@ -289,10 +289,10 @@
           "patching_rect": [
             35.0,
             245.0,
-            210.0,
+            235.0,
             22.0
           ],
-          "text": "buffer~ starter_v12 starter_v12.wav"
+          "text": "buffer~ starter_v12 ../media/starter_v12.wav"
         }
       },
       {
@@ -363,10 +363,10 @@
           "patching_rect": [
             335.0,
             245.0,
-            210.0,
+            235.0,
             22.0
           ],
-          "text": "buffer~ starter_v10 starter_v10.wav"
+          "text": "buffer~ starter_v10 ../media/starter_v10.wav"
         }
       },
       {
@@ -440,7 +440,7 @@
             370.0,
             22.0
           ],
-          "text": "buffer~ ferrari_startup ferrari_sf90_startup.wav"
+          "text": "buffer~ ferrari_startup ../media/local/ferrari_sf90_startup.wav"
         }
       },
       {
@@ -1131,10 +1131,10 @@
           "patching_rect": [
             35.0,
             522.0,
-            165.0,
+            210.0,
             22.0
           ],
-          "text": "buffer~ shift_up_01 shift_up_01.wav"
+          "text": "buffer~ shift_up_01 ../media/shift_up_01.wav"
         }
       },
       {
@@ -1189,7 +1189,7 @@
             65.0,
             22.0
           ],
-          "text": "*~ 0.32"
+          "text": "*~ 0.21"
         }
       },
       {
@@ -1205,10 +1205,10 @@
           "patching_rect": [
             225.0,
             522.0,
-            165.0,
+            210.0,
             22.0
           ],
-          "text": "buffer~ shift_up_02 shift_up_02.wav"
+          "text": "buffer~ shift_up_02 ../media/shift_up_02.wav"
         }
       },
       {
@@ -1263,7 +1263,7 @@
             65.0,
             22.0
           ],
-          "text": "*~ 0.32"
+          "text": "*~ 0.21"
         }
       },
       {
@@ -1279,10 +1279,10 @@
           "patching_rect": [
             415.0,
             522.0,
-            165.0,
+            210.0,
             22.0
           ],
-          "text": "buffer~ shift_up_03 shift_up_03.wav"
+          "text": "buffer~ shift_up_03 ../media/shift_up_03.wav"
         }
       },
       {
@@ -1337,7 +1337,7 @@
             65.0,
             22.0
           ],
-          "text": "*~ 0.32"
+          "text": "*~ 0.21"
         }
       },
       {
@@ -1395,10 +1395,10 @@
           "patching_rect": [
             650.0,
             522.0,
-            165.0,
+            210.0,
             22.0
           ],
-          "text": "buffer~ shift_down_01 shift_down_01.wav"
+          "text": "buffer~ shift_down_01 ../media/shift_down_01.wav"
         }
       },
       {
@@ -1453,7 +1453,7 @@
             65.0,
             22.0
           ],
-          "text": "*~ 0.38"
+          "text": "*~ 0.24"
         }
       },
       {
@@ -1469,10 +1469,10 @@
           "patching_rect": [
             840.0,
             522.0,
-            165.0,
+            210.0,
             22.0
           ],
-          "text": "buffer~ shift_down_02 shift_down_02.wav"
+          "text": "buffer~ shift_down_02 ../media/shift_down_02.wav"
         }
       },
       {
@@ -1527,7 +1527,7 @@
             65.0,
             22.0
           ],
-          "text": "*~ 0.38"
+          "text": "*~ 0.24"
         }
       },
       {
@@ -1543,10 +1543,10 @@
           "patching_rect": [
             1030.0,
             522.0,
-            165.0,
+            210.0,
             22.0
           ],
-          "text": "buffer~ shift_down_03 shift_down_03.wav"
+          "text": "buffer~ shift_down_03 ../media/shift_down_03.wav"
         }
       },
       {
@@ -1601,7 +1601,7 @@
             65.0,
             22.0
           ],
-          "text": "*~ 0.38"
+          "text": "*~ 0.24"
         }
       },
       {
@@ -1659,10 +1659,10 @@
           "patching_rect": [
             1265.0,
             522.0,
-            165.0,
+            210.0,
             22.0
           ],
-          "text": "buffer~ intake_backfire_01 intake_backfire_01.wav"
+          "text": "buffer~ intake_backfire_01 ../media/intake_backfire_01.wav"
         }
       },
       {
@@ -1733,10 +1733,10 @@
           "patching_rect": [
             1455.0,
             522.0,
-            165.0,
+            210.0,
             22.0
           ],
-          "text": "buffer~ intake_backfire_02 intake_backfire_02.wav"
+          "text": "buffer~ intake_backfire_02 ../media/intake_backfire_02.wav"
         }
       },
       {
@@ -1807,10 +1807,10 @@
           "patching_rect": [
             1645.0,
             522.0,
-            165.0,
+            210.0,
             22.0
           ],
-          "text": "buffer~ intake_backfire_03 intake_backfire_03.wav"
+          "text": "buffer~ intake_backfire_03 ../media/intake_backfire_03.wav"
         }
       },
       {
@@ -1924,10 +1924,10 @@
           "patching_rect": [
             35.0,
             822.0,
-            165.0,
+            210.0,
             22.0
           ],
-          "text": "buffer~ exhaust_pop_01 exhaust_pop_01.wav"
+          "text": "buffer~ exhaust_pop_01 ../media/exhaust_pop_01.wav"
         }
       },
       {
@@ -1998,10 +1998,10 @@
           "patching_rect": [
             225.0,
             822.0,
-            165.0,
+            210.0,
             22.0
           ],
-          "text": "buffer~ exhaust_pop_02 exhaust_pop_02.wav"
+          "text": "buffer~ exhaust_pop_02 ../media/exhaust_pop_02.wav"
         }
       },
       {
@@ -2072,10 +2072,10 @@
           "patching_rect": [
             415.0,
             822.0,
-            165.0,
+            210.0,
             22.0
           ],
-          "text": "buffer~ exhaust_pop_03 exhaust_pop_03.wav"
+          "text": "buffer~ exhaust_pop_03 ../media/exhaust_pop_03.wav"
         }
       },
       {
@@ -2146,10 +2146,10 @@
           "patching_rect": [
             605.0,
             822.0,
-            165.0,
+            210.0,
             22.0
           ],
-          "text": "buffer~ exhaust_pop_04 exhaust_pop_04.wav"
+          "text": "buffer~ exhaust_pop_04 ../media/exhaust_pop_04.wav"
         }
       },
       {
@@ -2262,10 +2262,10 @@
           "patching_rect": [
             830.0,
             822.0,
-            165.0,
+            210.0,
             22.0
           ],
-          "text": "buffer~ exhaust_crackle_01 exhaust_crackle_01.wav"
+          "text": "buffer~ exhaust_crackle_01 ../media/exhaust_crackle_01.wav"
         }
       },
       {
@@ -2336,10 +2336,10 @@
           "patching_rect": [
             1020.0,
             822.0,
-            165.0,
+            210.0,
             22.0
           ],
-          "text": "buffer~ exhaust_crackle_02 exhaust_crackle_02.wav"
+          "text": "buffer~ exhaust_crackle_02 ../media/exhaust_crackle_02.wav"
         }
       },
       {
@@ -2410,10 +2410,10 @@
           "patching_rect": [
             1210.0,
             822.0,
-            165.0,
+            210.0,
             22.0
           ],
-          "text": "buffer~ exhaust_crackle_03 exhaust_crackle_03.wav"
+          "text": "buffer~ exhaust_crackle_03 ../media/exhaust_crackle_03.wav"
         }
       },
       {
@@ -2484,10 +2484,10 @@
           "patching_rect": [
             1445.0,
             740.0,
-            220.0,
+            255.0,
             22.0
           ],
-          "text": "buffer~ mechanical_click mechanical_click.wav"
+          "text": "buffer~ mechanical_click ../media/mechanical_click.wav"
         }
       },
       {

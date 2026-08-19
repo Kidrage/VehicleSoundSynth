@@ -517,10 +517,10 @@
           "patching_rect": [
             660.0,
             250.0,
-            225.0,
+            255.0,
             22.0
           ],
-          "text": "buffer~ starter_v12 starter_v12.wav"
+          "text": "buffer~ starter_v12 ../media/starter_v12.wav"
         }
       },
       {

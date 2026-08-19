@@ -13,8 +13,11 @@ is the supported low-CPU workflow.
 
 ## Quick start
 
-1. Open `VehicleSoundSynth-V4.maxproj` and wait for the Project window.
-2. Open `main.maxpat`, then click one profile. Audio starts off.
+1. Open `VehicleSoundSynth-V4.maxproj` and wait for the Project window. Do not
+   open a runtime `.maxpat` directly from Finder: that bypasses the Project search
+   path and its abstractions will not load.
+2. Open `main.maxpat` from the Project window, then click one profile. Audio
+   starts off.
 3. In V10/V12, choose `Cinematic BEAP` or `Realistic Sample`, click
    `ignition 1`, then `start 1`. Start catch settles to 740 RPM for V10 and
    780 RPM for V12; it no longer enters a high-rev default after ignition.
@@ -49,7 +52,10 @@ support, rather than creating the former saw-like high-frequency identity.
 
 V12 stays independent of the Ferrari V10 reference. It uses its own procedural
 core plus the tracked CC0 residual bank. EV combines a procedural motor with one
-of three suspendable BEAP soundscapes.
+of three suspendable BEAP soundscapes. The motor remains the speed-tracking
+fundamental; the BEAP layer uses a compressed pitch trajectory and is high-passed
+at 320 Hz, so it behaves as a cinematic layer instead of cancelling or replacing
+the motor body. Its default level is -9 dB.
 
 The signal path per runtime is:
 
@@ -62,7 +68,10 @@ fixed drive/controller -> one profile powertrain + transient + road
 In `Internal Manual`, focus the runtime window and hold `W` to ramp throttle
 toward 1.0 or `S` to apply the brake. Releasing either key ramps that pedal back
 to zero. Keyboard pedals are disabled, and both are released, when leaving
-Manual mode.
+Manual mode. Throttle enters the running-state speed integrator and produces
+continuous RPM output. EV is single-speed. V10/V12 use a seven-speed fixed-profile
+DCT with 350 ms shift lockout and a 120 ms RPM transition; a shift makes one
+modest gain dip and one quieter transient, rather than retriggering a hard mute.
 
 ## Engine start
 
@@ -90,7 +99,9 @@ regeneration:
 - `patchers/ev_sport_beap~.maxpat` — EV Sport
 
 The EV host crossfades modes over 250 ms and then sends `mute 1 1` to inactive
-`poly~` voices, so only the selected BEAP graph remains on DSP.
+`poly~` voices, so only the selected BEAP graph remains on DSP. Legacy
+`pad_level_db` and `pad_mute` controls map to the same host controls, while
+`pad_solo 1` really mutes the procedural motor core for BEAP-only editing.
 
 ## Public control messages
 
@@ -137,6 +148,9 @@ EV additionally accepts:
 ev_mode relax|expressive|sport
 ev_soundscape_level_db -60..6
 ev_soundscape_mute 0|1
+pad_level_db -60..6
+pad_mute 0|1
+pad_solo 0|1
 ```
 
 V10/V12 additionally accept `start_style cinematic|realistic`.

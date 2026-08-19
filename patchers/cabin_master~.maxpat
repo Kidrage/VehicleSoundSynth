@@ -1004,10 +1004,10 @@
           "patching_rect": [
             25.0,
             740.0,
-            235.0,
+            265.0,
             22.0
           ],
-          "text": "buffer~ cabin_ir_l cabin_ir_l.wav"
+          "text": "buffer~ cabin_ir_l ../media/cabin_ir_l.wav"
         }
       },
       {
@@ -1023,10 +1023,10 @@
           "patching_rect": [
             25.0,
             780.0,
-            235.0,
+            265.0,
             22.0
           ],
-          "text": "buffer~ cabin_ir_r cabin_ir_r.wav"
+          "text": "buffer~ cabin_ir_r ../media/cabin_ir_r.wav"
         }
       },
       {

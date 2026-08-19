@@ -85,10 +85,10 @@
           "patching_rect": [
             300.0,
             330.0,
-            190.0,
+            235.0,
             22.0
           ],
-          "text": "gen~ @gen v12_powertrain"
+          "text": "gen~ @gen ../gen/v12_powertrain"
         }
       },
       {

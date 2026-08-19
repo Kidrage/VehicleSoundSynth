@@ -542,13 +542,26 @@ def make_ev_soundscape_host() -> dict[str, Any]:
     )
     router = route(p, names, 35, 105, 810)
     p.connect(control, router)
+    level_alias = p.new("prepend ev_soundscape_level_db", 900, 105, 205, numinlets=1, numoutlets=1)
+    mute_alias = p.new("prepend ev_soundscape_mute", 1115, 105, 175, numinlets=1, numoutlets=1)
+    p.connect(router, level_alias, 7)
+    p.connect(level_alias, router)
+    p.connect(router, mute_alias, 8)
+    p.connect(mute_alias, router)
 
     rpm_clip = p.new("clip 0. 10000.", 35, 160, 105, numinlets=3, numoutlets=1)
-    pitch_map = p.new("expr log(max(55.,min(760.,55.+$f1*.052))/261.625565)/log(2.)", 35, 200, 390, numinlets=1, numoutlets=1)
+    pitch_map = p.new(
+        "expr log(max(70.,min(280.,80.+$f1*.02))/261.625565)/log(2.)",
+        35, 200, 390, numinlets=1, numoutlets=1,
+    )
     pitch_pack = p.new("pack 0. 60", 35, 240, 85, numinlets=2, numoutlets=1)
     pitch_line = p.new("line~", 35, 280, 50, numinlets=2, numoutlets=2)
     throttle_clip = p.new("clip 0. 1.", 455, 160, 75, numinlets=3, numoutlets=1)
-    throttle_map = p.new("expr 0.75+3.*$f1", 455, 200, 125, numinlets=1, numoutlets=1)
+    throttle_state = p.new("pak 0. 650.", 455, 200, 85, numinlets=2, numoutlets=1)
+    throttle_map = p.new(
+        "expr min(4.5,0.9+2.2*$f1+2.4*min(1.,$f2/8500.)*(0.35+0.65*$f1))",
+        550, 200, 430, numinlets=2, numoutlets=1,
+    )
     throttle_pack = p.new("pack 0. 120", 455, 240, 95, numinlets=2, numoutlets=1)
     throttle_line = p.new("line~", 455, 280, 50, numinlets=2, numoutlets=2)
     ignition = p.new("clip 0. 1.", 625, 160, 75, numinlets=3, numoutlets=1)
@@ -564,7 +577,9 @@ def make_ev_soundscape_host() -> dict[str, Any]:
     p.connect(pitch_map, pitch_pack)
     p.connect(pitch_pack, pitch_line)
     p.connect(router, throttle_clip, 1)
-    p.connect(throttle_clip, throttle_map)
+    p.connect(throttle_clip, throttle_state, 0, 0)
+    p.connect(rpm_clip, throttle_state, 0, 1)
+    p.connect(throttle_state, throttle_map)
     p.connect(throttle_map, throttle_pack)
     p.connect(throttle_pack, throttle_line)
     p.connect(router, ignition, 2)
@@ -624,6 +639,8 @@ def make_ev_soundscape_host() -> dict[str, Any]:
     left_sum_2 = p.new("+~", 475, 590, 40, numinlets=2, numoutlets=1)
     right_sum_1 = p.new("+~", 650, 555, 40, numinlets=2, numoutlets=1)
     right_sum_2 = p.new("+~", 850, 590, 40, numinlets=2, numoutlets=1)
+    highpass_l = p.new("svf~ 320 0.7", 475, 620, 100, numinlets=3, numoutlets=4)
+    highpass_r = p.new("svf~ 320 0.7", 850, 620, 100, numinlets=3, numoutlets=4)
     p.connect(channel_gains[0][0], left_sum_1, 0, 0)
     p.connect(channel_gains[1][0], left_sum_1, 0, 1)
     p.connect(left_sum_1, left_sum_2, 0, 0)
@@ -632,8 +649,10 @@ def make_ev_soundscape_host() -> dict[str, Any]:
     p.connect(channel_gains[1][1], right_sum_1, 0, 1)
     p.connect(right_sum_1, right_sum_2, 0, 0)
     p.connect(channel_gains[2][1], right_sum_2, 0, 1)
+    p.connect(left_sum_2, highpass_l)
+    p.connect(right_sum_2, highpass_r)
 
-    level = add_db_gain_control(p, router, 5, 960, 555, -6.0)
+    level = add_db_gain_control(p, router, 5, 960, 555, -9.0)
     mute = p.new("clip 0 1", 960, 700, 65, numinlets=3, numoutlets=1)
     mute_gain = p.new("expr 1-$i1", 1035, 700, 80, numinlets=1, numoutlets=1)
     mute_pack = p.new("pack 0. 30", 1125, 700, 85, numinlets=2, numoutlets=1)
@@ -650,8 +669,8 @@ def make_ev_soundscape_host() -> dict[str, Any]:
     out_r_mute = p.new("*~", 850, 700, 40, numinlets=2, numoutlets=1)
     left = outlet(p, 475, 750, signal=True)
     right = outlet(p, 850, 750, signal=True)
-    p.connect(left_sum_2, out_l_gain)
-    p.connect(right_sum_2, out_r_gain)
+    p.connect(highpass_l, out_l_gain, 1, 0)
+    p.connect(highpass_r, out_r_gain, 1, 0)
     p.connect(level, out_l_gain, 0, 1)
     p.connect(level, out_r_gain, 0, 1)
     p.connect(out_l_gain, out_l_mute)
@@ -862,17 +881,12 @@ def make_profile_controller(profile: str) -> dict[str, Any]:
     p.connect(stop_trigger, combustion_off, 0)
 
     shift = p.new("sel 1", 35, 435, 45, numinlets=1, numoutlets=2)
-    shift_dir = p.new("sel -1 1", 95, 435, 60, numinlets=1, numoutlets=3)
-    cut = p.message("shift_cut 0.22", 35, 475, 95)
-    recover_delay = p.new("delay 90", 145, 475, 65, numinlets=2, numoutlets=1)
+    cut = p.message("shift_cut 0.72", 35, 475, 95)
+    recover_delay = p.new("delay 120", 145, 475, 70, numinlets=2, numoutlets=1)
     recover = p.message("shift_cut 1", 225, 475, 75)
     p.connect(router, shift, 2)
-    p.connect(router, shift_dir, 3)
     p.connect(shift, cut, 0)
     p.connect(shift, recover_delay, 0)
-    for outlet_index in (0, 1):
-        p.connect(shift_dir, cut, outlet_index)
-        p.connect(shift_dir, recover_delay, outlet_index)
     p.connect(recover_delay, recover)
     p.connect(cut, output)
     p.connect(recover, output)
@@ -1338,14 +1352,14 @@ def make_profile_powertrain(profile: str) -> dict[str, Any]:
     tonal_names = ("rpm", "throttle", "load", "aggression", "brightness", "body", "texture")
     fuel_names = ("engine_running", "combustion_gain", "shift_cut") if profile != "ev" else ()
     profile_names = (
-        ("ev_mode", "ev_soundscape_level_db", "ev_soundscape_mute", "ignition", "start")
+        ("ev_mode", "ev_soundscape_level_db", "ev_soundscape_mute", "ignition", "start", "pad_solo")
         if profile == "ev"
         else ("reference_texture_level_db", "reference_texture_mute")
     )
     names = tonal_names + fuel_names + profile_names + ("powertrain_level_db",)
     router = route(p, names, 35, 105, 860)
     p.connect(control, router)
-    gen = p.new(f"gen~ @gen {profile}_powertrain", 300, 330, 190, numinlets=1, numoutlets=2)
+    gen = p.new(f"gen~ @gen ../gen/{profile}_powertrain", 300, 330, 235, numinlets=1, numoutlets=2)
 
     bounds = {
         "rpm": (0.0, 10000.0),
@@ -1376,10 +1390,27 @@ def make_profile_powertrain(profile: str) -> dict[str, Any]:
     if profile == "ev":
         texture = p.new("ev_soundscape_host~", 35, 330, 160, numinlets=1, numoutlets=2)
         p.connect(control, texture)
-        core_l = gen
-        core_r = gen
+        solo_clip = p.new("clip 0 1", 515, 330, 65, numinlets=3, numoutlets=1)
+        solo_gain = p.new("expr 1-$i1", 590, 330, 80, numinlets=1, numoutlets=1)
+        solo_pack = p.new("pack 0. 30", 680, 330, 85, numinlets=2, numoutlets=1)
+        solo_line = p.new("line~", 775, 330, 50, numinlets=2, numoutlets=2)
+        solo_default = p.new("loadmess 0", 515, 365, 80, numinlets=1, numoutlets=1)
+        core_gain_l = p.new("*~", 300, 425, 40, numinlets=2, numoutlets=1)
+        core_gain_r = p.new("*~", 455, 425, 40, numinlets=2, numoutlets=1)
+        solo_route_index = len(tonal_names) + profile_names.index("pad_solo")
+        p.connect(router, solo_clip, solo_route_index)
+        p.connect(solo_default, solo_clip)
+        p.connect(solo_clip, solo_gain)
+        p.connect(solo_gain, solo_pack)
+        p.connect(solo_pack, solo_line)
+        p.connect(gen, core_gain_l, 0, 0)
+        p.connect(gen, core_gain_r, 1, 0)
+        p.connect(solo_line, core_gain_l, 0, 1)
+        p.connect(solo_line, core_gain_r, 0, 1)
+        core_l = core_gain_l
+        core_r = core_gain_r
         core_l_out = 0
-        core_r_out = 1
+        core_r_out = 0
     else:
         renderer_name = "v10_state_renderer~" if profile == "v10" else "v12_texture_renderer~"
         texture = p.new(renderer_name, 35, 330, 170, numinlets=1, numoutlets=2)
@@ -1433,9 +1464,9 @@ def make_powertrain() -> dict[str, Any]:
     names = tonal_names + fuel_names + weight_names + pad_names + ("powertrain_level_db",)
     router = route(p, names, 35, 105, 760)
     gens = [
-        p.new("gen~ @gen ev_powertrain", 220, 395, 165, numinlets=1, numoutlets=2),
-        p.new("gen~ @gen v12_powertrain", 510, 395, 175, numinlets=1, numoutlets=2),
-        p.new("gen~ @gen v10_powertrain", 800, 395, 175, numinlets=1, numoutlets=2),
+        p.new("gen~ @gen ../gen/ev_powertrain", 220, 395, 210, numinlets=1, numoutlets=2),
+        p.new("gen~ @gen ../gen/v12_powertrain", 510, 395, 220, numinlets=1, numoutlets=2),
+        p.new("gen~ @gen ../gen/v10_powertrain", 800, 395, 220, numinlets=1, numoutlets=2),
     ]
     ev_pad = p.new("ev_pad_driver~", 35, 395, 120, numinlets=1, numoutlets=2)
     reference = p.new("reference_texture~", 1005, 395, 135, numinlets=1, numoutlets=2)
@@ -1647,7 +1678,7 @@ def make_tracked_texture_renderer(profile: str) -> dict[str, Any]:
     for index, (name, anchor, width) in enumerate(anchors):
         x = 35 + (index % 3) * 470
         y = 235 + (index // 3) * 220
-        buffer = p.new(f"buffer~ cc0_{profile}_{name} engine_texture_{name}_a.wav", x, y, 315, numinlets=2, numoutlets=2)
+        buffer = p.new(f"buffer~ cc0_{profile}_{name} ../media/engine_texture_{name}_a.wav", x, y, 350, numinlets=2, numoutlets=2)
         speed = p.new(f"expr max(.9,min(1.1,$f1/{anchor:g}.))", x, y + 35, 220, numinlets=1, numoutlets=1)
         speed_pack = p.new("pack 0. 100", x, y + 70, 90, numinlets=2, numoutlets=1)
         speed_line = p.new("line~", x + 105, y + 70, 50, numinlets=2, numoutlets=2)
@@ -1798,7 +1829,7 @@ def make_v10_state_renderer() -> dict[str, Any]:
             x = 35 + anchor_index * 380
             y = 270 + state_index * 260
             buffer_name = f"v10_{state}_{anchor:03d}"
-            filename = f"ferrari_v10_{state}_{anchor:03d}.wav"
+            filename = f"../media/local/ferrari_v10_{state}_{anchor:03d}.wav"
             p.new(f"buffer~ {buffer_name} {filename}", x, y, 355, numinlets=2, numoutlets=2)
             speed = p.new(f"expr max(.88,min(1.12,$f1/{anchor:g}.))", x, y + 40, 235, numinlets=1, numoutlets=1)
             speed_pack = p.new("pack 0. 100", x, y + 75, 90, numinlets=2, numoutlets=1)
@@ -1962,8 +1993,8 @@ def make_reference_texture() -> dict[str, Any]:
     channel_layers: list[list[str]] = [[], []]
     for index, (name, anchor, width) in enumerate(anchors):
         x = 35 + index * 360
-        buffer_a = p.new(f"buffer~ tex_{name}_a engine_texture_{name}_a.wav", x, 245, 285, numinlets=2, numoutlets=2)
-        buffer_b = p.new(f"buffer~ tex_{name}_b engine_texture_{name}_b.wav", x, 280, 285, numinlets=2, numoutlets=2)
+        buffer_a = p.new(f"buffer~ tex_{name}_a ../media/engine_texture_{name}_a.wav", x, 245, 330, numinlets=2, numoutlets=2)
+        buffer_b = p.new(f"buffer~ tex_{name}_b ../media/engine_texture_{name}_b.wav", x, 280, 330, numinlets=2, numoutlets=2)
         speed_map = p.new(f"expr max(.9,min(1.1,$f1/{anchor:g}.))", x, 320, 210, numinlets=1, numoutlets=1)
         speed_pack = p.new("pack 0. 120", x, 355, 90, numinlets=2, numoutlets=1)
         speed_line = p.new("line~", x + 105, 355, 50, numinlets=2, numoutlets=2)
@@ -2000,7 +2031,7 @@ def make_reference_texture() -> dict[str, Any]:
             channel_layers[channel].append(anchor_gain)
 
     local_buffer = p.new(
-        "buffer~ ferrari_idle_body ferrari_sf90_idle_body.wav",
+        "buffer~ ferrari_idle_body ../media/local/ferrari_sf90_idle_body.wav",
         35,
         700,
         390,
@@ -2304,7 +2335,7 @@ def make_profile_transient(profile: str) -> dict[str, Any]:
     sample_r = p.new("sig~ 0.", 755, 465, 55, numinlets=1, numoutlets=1)
     if profile != "ev":
         fallback_name = f"starter_{profile}"
-        p.new(f"buffer~ {fallback_name} {fallback_name}.wav", 660, 250, 225, numinlets=1, numoutlets=2)
+        p.new(f"buffer~ {fallback_name} ../media/{fallback_name}.wav", 660, 250, 255, numinlets=1, numoutlets=2)
         fallback_start = p.message("start", 660, 290, 45)
         fallback_player = p.new(f"play~ {fallback_name} 1", 660, 330, 165, numinlets=1, numoutlets=2)
         fallback_filter = p.new("lores~ 1800 0.65", 660, 370, 115, numinlets=3, numoutlets=1)
@@ -2336,7 +2367,7 @@ def make_profile_transient(profile: str) -> dict[str, Any]:
             p.connect(fallback_available_pack, fallback_available_line)
             p.connect(fallback_gain, fallback_selected)
             p.connect(fallback_available_line, fallback_selected, 0, 1)
-            local_buffer = p.new("buffer~ ferrari_startup ferrari_sf90_startup.wav", 900, 250, 355, numinlets=2, numoutlets=2)
+            local_buffer = p.new("buffer~ ferrari_startup ../media/local/ferrari_sf90_startup.wav", 900, 250, 410, numinlets=2, numoutlets=2)
             p.connect(local_buffer, startup_info, 1)
             local_start = p.message("start", 900, 290, 45)
             local_player = p.new("play~ ferrari_startup 2", 900, 330, 175, numinlets=1, numoutlets=3)
@@ -2429,7 +2460,7 @@ def make_transient() -> dict[str, Any]:
 
     for index, (name, gate_outlet) in enumerate((("starter_v12", 0), ("starter_v10", 1))):
         x = 35 + index * 300
-        p.new(f"buffer~ {name} {name}.wav", x, 245, 210, numinlets=1, numoutlets=2)
+        p.new(f"buffer~ {name} ../media/{name}.wav", x, 245, 235, numinlets=1, numoutlets=2)
         start = p.message("start", x, 285, 45)
         player = p.new(f"play~ {name} 1", x, 325, 145, numinlets=1, numoutlets=2)
         gain = p.new("*~ 0.08", x, 365, 65, numinlets=2, numoutlets=1)
@@ -2440,7 +2471,7 @@ def make_transient() -> dict[str, Any]:
         players.append(gain)
 
     local_buffer = p.new(
-        "buffer~ ferrari_startup ferrari_sf90_startup.wav",
+        "buffer~ ferrari_startup ../media/local/ferrari_sf90_startup.wav",
         635,
         245,
         370,
@@ -2562,7 +2593,7 @@ def make_transient() -> dict[str, Any]:
             p.connect(source, counter, source_outlet)
         for index, name in enumerate(names):
             px = x + index * 190
-            p.new(f"buffer~ {name} {name}.wav", px, y + 82, 165, numinlets=1, numoutlets=2)
+            p.new(f"buffer~ {name} ../media/{name}.wav", px, y + 82, 210, numinlets=1, numoutlets=2)
             start = p.message("start", px, y + 122, 45)
             player = p.new(f"play~ {name} 1", px, y + 162, 155, numinlets=1, numoutlets=2)
             gain = p.new(f"*~ {gain_value:.2f}", px, y + 202, 65, numinlets=2, numoutlets=1)
@@ -2571,13 +2602,13 @@ def make_transient() -> dict[str, Any]:
             p.connect(player, gain)
             players.append(gain)
 
-    add_family(tuple(f"shift_up_{index:02d}" for index in range(1, 4)), 0.32, 35, 440, ((shift_up_gate, 0),))
-    add_family(tuple(f"shift_down_{index:02d}" for index in range(1, 4)), 0.38, 650, 440, ((shift_down_gate, 0),))
+    add_family(tuple(f"shift_up_{index:02d}" for index in range(1, 4)), 0.21, 35, 440, ((shift_up_gate, 0),))
+    add_family(tuple(f"shift_down_{index:02d}" for index in range(1, 4)), 0.24, 650, 440, ((shift_down_gate, 0),))
     add_family(tuple(f"intake_backfire_{index:02d}" for index in range(1, 4)), 0.34, 1265, 440, ((intake_gate, 0),))
     add_family(tuple(f"exhaust_pop_{index:02d}" for index in range(1, 5)), 0.30, 35, 740, ((exhaust_gate, 0),))
     add_family(tuple(f"exhaust_crackle_{index:02d}" for index in range(1, 4)), 0.18, 830, 740, ((crackle_gate, 0),))
 
-    p.new("buffer~ mechanical_click mechanical_click.wav", 1445, 740, 220, numinlets=1, numoutlets=2)
+    p.new("buffer~ mechanical_click ../media/mechanical_click.wav", 1445, 740, 255, numinlets=1, numoutlets=2)
     click_start = p.message("start", 1445, 780, 45)
     click_player = p.new("play~ mechanical_click 1", 1445, 820, 155, numinlets=1, numoutlets=2)
     click_gain = p.new("*~ 0.18", 1445, 860, 65, numinlets=2, numoutlets=1)
@@ -2852,8 +2883,8 @@ def make_cabin_master() -> dict[str, Any]:
         p.connect(texture_gain, master_gain, 0, 0)
         p.connect(controls["aggression"], master_gain, 0, 1)
         masters.append(master_gain)
-    p.new("buffer~ cabin_ir_l cabin_ir_l.wav", 25, 740, 235, numinlets=2, numoutlets=2)
-    p.new("buffer~ cabin_ir_r cabin_ir_r.wav", 25, 780, 235, numinlets=2, numoutlets=2)
+    p.new("buffer~ cabin_ir_l ../media/cabin_ir_l.wav", 25, 740, 265, numinlets=2, numoutlets=2)
+    p.new("buffer~ cabin_ir_r ../media/cabin_ir_r.wav", 25, 780, 265, numinlets=2, numoutlets=2)
     ir_l = p.new("buffir~ cabin_ir_l 0 4096", 300, 740, 180, numinlets=3, numoutlets=1)
     ir_r = p.new("buffir~ cabin_ir_r 0 4096", 650, 740, 180, numinlets=3, numoutlets=1)
     dry_l = p.new("*~", 300, 785, 40, numinlets=2, numoutlets=1)
@@ -3016,11 +3047,11 @@ def make_profile_drive_simulator(profile: str) -> dict[str, Any]:
 
     tick = p.new("qmetro 50", 520, 105, 75, numinlets=2, numoutlets=1)
     tick_on = p.new("loadmess 1", 520, 65, 80, numinlets=1, numoutlets=1)
-    tick_order = p.new("t b b", 520, 145, 55, numinlets=1, numoutlets=2)
+    tick_order = p.new("t b b b", 520, 145, 70, numinlets=1, numoutlets=3)
     counter = p.new("counter 0 399", 520, 185, 95, numinlets=5, numoutlets=4)
     p.connect(tick_on, tick)
     p.connect(tick, tick_order)
-    p.connect(tick_order, counter, 1)
+    p.connect(tick_order, counter, 2)
 
     running = p.new("int 0", 650, 165, 50, numinlets=2, numoutlets=1)
     start_edge = p.new("sel 1", 375, 245, 45, numinlets=1, numoutlets=2)
@@ -3034,7 +3065,7 @@ def make_profile_drive_simulator(profile: str) -> dict[str, Any]:
     p.connect(start, start_edge)
     p.connect(start_edge, start_trigger, 0)
     p.connect(start_trigger, running_on, 4)
-    p.connect(running_on, running, 0, 1)
+    p.connect(running_on, running, 0, 0)
     p.connect(start_trigger, counter_reset, 3)
     p.connect(counter_reset, counter)
     p.connect(start_trigger, speed_reset, 2)
@@ -3042,7 +3073,7 @@ def make_profile_drive_simulator(profile: str) -> dict[str, Any]:
     p.connect(gear_reset, output)
     p.connect(ignition, ignition_off)
     p.connect(ignition_off, running_off, 0)
-    p.connect(running_off, running, 0, 1)
+    p.connect(running_off, running, 0, 0)
 
     throttle_state = p.new("pak 0. 0 0 0", 35, 335, 110, numinlets=4, numoutlets=1)
     effective_throttle = p.new(
@@ -3071,7 +3102,11 @@ def make_profile_drive_simulator(profile: str) -> dict[str, Any]:
     p.connect(speed_split, speed_store, 2, 1)
     p.connect(speed_reset, speed_store, 0, 1)
 
-    gear = p.new("expr 1+($f1>=48.)+($f1>=82.)+($f1>=120.)+($f1>=160.)+($f1>=205.)+($f1>=250.)", 690, 495, 510, numinlets=1, numoutlets=1)
+    gear_store = p.new("int 1", 690, 495, 50, numinlets=2, numoutlets=1)
+    gear_default = p.new("loadmess 1", 750, 495, 80, numinlets=1, numoutlets=1)
+    gear_restart = p.message("1", 840, 495, 30)
+    gear_change = p.new("change", 690, 535, 55, numinlets=1, numoutlets=1)
+    gear_named = p.new("prepend gear", 755, 535, 90, numinlets=1, numoutlets=1)
     rpm_state = p.new("pak 0. 0. 1", 520, 495, 100, numinlets=3, numoutlets=1)
     if profile == "ev":
         rpm_expr = f"expr min(10000.,{idle:g}+$f1*31.+$f2*1400.)"
@@ -3083,19 +3118,68 @@ def make_profile_drive_simulator(profile: str) -> dict[str, Any]:
         )
         rpm_expr = f"expr max({idle:g},$f1*({ratios})+$f2*520.)"
     normal_rpm = p.new(rpm_expr, 520, 535, 620, numinlets=3, numoutlets=1)
-    p.connect(speed_split, gear, 1)
+    normal_rpm_pack = p.new("pack 0. 120", 520, 570, 90, numinlets=2, numoutlets=1)
+    normal_rpm_line = p.new("line 0.", 625, 570, 60, numinlets=2, numoutlets=2)
+    p.connect(tick_order, gear_store, 1)
+    p.connect(gear_default, gear_store, 0, 0)
+    p.connect(start_trigger, gear_restart, 1)
+    p.connect(gear_restart, gear_store, 0, 0)
+    p.connect(gear_store, gear_change)
+    p.connect(gear_change, gear_named)
+    p.connect(gear_named, output)
     p.connect(speed_split, rpm_state, 1, 0)
     p.connect(effective_throttle, rpm_state, 0, 1)
-    p.connect(gear, rpm_state, 0, 2)
+    p.connect(gear_store, rpm_state, 0, 2)
     p.connect(rpm_state, normal_rpm)
+    p.connect(normal_rpm, normal_rpm_pack)
+    p.connect(normal_rpm_pack, normal_rpm_line)
 
-    rpm_switch = p.new("switch 2", 520, 590, 75, numinlets=3, numoutlets=1)
+    if profile != "ev":
+        shift_state = p.new("pak 0. 1 0.", 875, 495, 95, numinlets=3, numoutlets=1)
+        if profile == "v12":
+            shift_expr = "expr (($f1>6200.+2600.*$f3)*($i2<7))-(($f1<2200.+1600.*$f3)*($i2>1))"
+        else:
+            shift_expr = "expr (($f1>5800.+2500.*$f3)*($i2<7))-(($f1<2100.+1500.*$f3)*($i2>1))"
+        shift_decision = p.new(shift_expr, 875, 535, 375, numinlets=3, numoutlets=1)
+        shift_nonzero = p.new("sel 0", 875, 575, 45, numinlets=1, numoutlets=2)
+        shift_lockout = p.new("speedlim 350", 930, 575, 85, numinlets=2, numoutlets=1)
+        shift_direction = p.new("sel -1 1", 1025, 575, 60, numinlets=1, numoutlets=3)
+        down_value = p.message("-1", 875, 615, 30)
+        up_value = p.message("1", 915, 615, 30)
+        down_event = p.message("shift_dir -1, shift 1", 955, 615, 145)
+        up_event = p.message("shift_dir 1, shift 1", 1110, 615, 140)
+        gear_state = p.new("pak 0 1", 875, 655, 70, numinlets=2, numoutlets=1)
+        gear_next = p.new("expr $i1+$i2", 955, 655, 95, numinlets=2, numoutlets=1)
+        gear_clip = p.new("clip 1 7", 1060, 655, 65, numinlets=3, numoutlets=1)
+        gear_update = p.new("t i i", 1135, 655, 55, numinlets=1, numoutlets=2)
+        p.connect(normal_rpm, shift_state, 0, 0)
+        p.connect(gear_store, shift_state, 0, 1)
+        p.connect(effective_throttle, shift_state, 0, 2)
+        p.connect(shift_state, shift_decision)
+        p.connect(shift_decision, shift_nonzero)
+        p.connect(shift_nonzero, shift_lockout, 1)
+        p.connect(shift_lockout, shift_direction)
+        p.connect(shift_direction, down_value, 0)
+        p.connect(shift_direction, down_event, 0)
+        p.connect(shift_direction, up_value, 1)
+        p.connect(shift_direction, up_event, 1)
+        p.connect(gear_store, gear_state, 0, 1)
+        p.connect(down_value, gear_state, 0, 0)
+        p.connect(up_value, gear_state, 0, 0)
+        p.connect(gear_state, gear_next)
+        p.connect(gear_next, gear_clip)
+        p.connect(gear_clip, gear_update)
+        p.connect(gear_update, gear_store, 1, 1)
+        p.connect(down_event, output)
+        p.connect(up_event, output)
+
+    rpm_switch = p.new("switch 2", 520, 610, 75, numinlets=3, numoutlets=1)
     normal_select = p.message("1", 455, 590, 30)
     flare_select = p.message("2", 415, 325, 30)
     flare_line = p.new("line 0. 10", 375, 365, 75, numinlets=3, numoutlets=2)
     flare_message = p.message(f"{flare:.1f} 0, {idle:.1f} 850", 375, 405, 155)
     flare_done = p.new("delay 900", 375, 445, 70, numinlets=2, numoutlets=1)
-    p.connect(normal_rpm, rpm_switch, 0, 1)
+    p.connect(normal_rpm_line, rpm_switch, 0, 1)
     p.connect(normal_select, rpm_switch, 0, 0)
     p.connect(start_trigger, flare_select, 0)
     p.connect(flare_select, rpm_switch, 0, 0)
@@ -3111,7 +3195,6 @@ def make_profile_drive_simulator(profile: str) -> dict[str, Any]:
         (effective_throttle, 0, "prepend throttle"),
         (brake, 0, "prepend brake"),
         (effective_throttle, 0, "prepend load"),
-        (gear, 0, "prepend gear"),
     )
     for index, (source_box, source_outlet, text_value) in enumerate(named_sources):
         named = p.new(text_value, 35 + (index % 3) * 170, 515 + (index // 3) * 45, 130, numinlets=1, numoutlets=1)
@@ -3774,7 +3857,7 @@ def make_legacy_main() -> dict[str, Any]:
     )
     preset_select = p.new("sel 0 1 2", 680, 165, 80, numinlets=1, numoutlets=4)
     presets = [
-        "engine_type ev, ev_weight 1., v12_weight 0., v10_weight 0., aggression 0.25, brightness 0.72, body 0.34, texture 0.20, cabin_width 0.90, cabin_rumble 0., exhaust_boom 0., structure_vibration 0., cabin_ir_mix 0.10, powertrain_level_db -2., transient_level_db -9., road_level_db -14., rumble_level_db -60., pad_level_db -3., pad_mute 0, pad_solo 0, reference_texture_level_db -20., reference_texture_mute 0, master_trim_db -8.",
+        "engine_type ev, ev_weight 1., v12_weight 0., v10_weight 0., aggression 0.25, brightness 0.72, body 0.34, texture 0.20, cabin_width 0.90, cabin_rumble 0., exhaust_boom 0., structure_vibration 0., cabin_ir_mix 0.10, powertrain_level_db -2., transient_level_db -9., road_level_db -14., rumble_level_db -60., pad_level_db -9., pad_mute 0, pad_solo 0, reference_texture_level_db -20., reference_texture_mute 0, master_trim_db -8.",
         "engine_type v12, ev_weight 0., v12_weight 1., v10_weight 0., aggression 0.62, brightness 0.78, body 0.72, texture 0.52, cabin_width 0.82, cabin_rumble 0.90, exhaust_boom 0.62, structure_vibration 0.58, cabin_ir_mix 0.20, powertrain_level_db -3., transient_level_db -7., road_level_db -16., rumble_level_db -5., pad_level_db -3., pad_mute 0, pad_solo 0, reference_texture_level_db -18., reference_texture_mute 0, master_trim_db -8.",
         "engine_type v10, ev_weight 0., v12_weight 0., v10_weight 1., aggression 0.90, brightness 0.66, body 0.84, texture 0.86, cabin_width 0.78, cabin_rumble 0.92, exhaust_boom 0.74, structure_vibration 0.72, cabin_ir_mix 0.18, powertrain_level_db -3., transient_level_db -6., road_level_db -16., rumble_level_db -4., pad_level_db -3., pad_mute 0, pad_solo 0, reference_texture_level_db -18., reference_texture_mute 0, master_trim_db -8.",
     ]
@@ -3819,7 +3902,7 @@ def make_legacy_main() -> dict[str, Any]:
         )
 
     ui_targets["pad_level_db"] = add_labeled_db_number(
-        p, "EV Pad dB", "pad_level_db", -3.0, 730, 635, engine
+        p, "EV Pad dB", "pad_level_db", -9.0, 730, 635, engine
     )
     ui_targets["reference_texture_level_db"] = add_labeled_db_number(
         p, "Engine Texture dB", "reference_texture_level_db", -18.0, 930, 635, engine
@@ -4244,7 +4327,7 @@ PRESETS = {
         "transient_level_db": -9.0,
         "road_level_db": -14.0,
         "rumble_level_db": -60.0,
-        "pad_level_db": -3.0,
+        "pad_level_db": -9.0,
         "pad_mute": 0.0,
         "pad_solo": 0.0,
         "reference_texture_level_db": -20.0,
