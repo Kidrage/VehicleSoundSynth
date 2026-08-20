@@ -5,17 +5,17 @@
 
 ## Repository Identity
 
-- Repository ID: `VehicleSoundSynth-V5`
+- Repository ID: `VehicleSoundSynth-V5-3a2562ed44aa`
 - Working root: `.`
 - Repository name: `VehicleSoundSynth-V5`
 - Git repository: `true`
-- Updated at: `2026-08-20` (Asia/Shanghai)
+- Generated at: `2026-08-20T12:38:54.937282+00:00`
 
 ## Current State
 
 - Branch: `codex/vehicle-sound-v5`
-- Base: frozen V4 tag `v4.0.0` at `6aa49d0`
-- Indexed paths: 123
+- HEAD: `4a3d892`
+- Indexed paths: 137
 - Inventory truncated: `false`
 - Inaccessible paths: 0
 - Scan mode: complete path/metadata inventory; no bulk content read; no symlink traversal.
@@ -43,16 +43,17 @@
 
 | Route | Files |
 |---|---:|
-| `patchers` | 39 |
+| `patchers` | 49 |
 | `media` | 35 |
 | `.` | 16 |
 | `tools` | 13 |
 | `assets` | 11 |
 | `assets/raw` | 7 |
-| `.codex` | 3 |
+| `.codex` | 4 |
 | `gen` | 3 |
-| `code` | 1 |
-| `presets` | 1 |
+| `presets` | 3 |
+| `code` | 2 |
+| `presets/local` | 1 |
 | `tests` | 1 |
 
 ## Data and File Structure
@@ -60,25 +61,25 @@
 ### Categories
 
 - audio: 41 files, 103833150 bytes
-- code: 15 files, 617343 bytes
-- literature: 14 files, 584641 bytes
-- other: 48 files, 8457683 bytes
-- structured_data: 5 files, 32469 bytes
+- code: 16 files, 653837 bytes
+- literature: 15 files, 591447 bytes
+- other: 59 files, 12925606 bytes
+- structured_data: 6 files, 33194 bytes
 
 ### Common Extensions
 
-- `.maxpat`: 43
+- `.maxpat`: 53
 - `.wav`: 41
 - `.py`: 14
-- `.md`: 6
+- `.md`: 7
+- `.json`: 6
 - `.docx`: 5
-- `.json`: 5
 - `.gendsp`: 3
 - `.txt`: 2
-- `[no extension]`: 1
+- `[no extension]`: 2
+- `.js`: 2
 - `.maxproj`: 1
 - `.pdf`: 1
-- `.js`: 1
 
 ### Schema / Model / Interface Candidates
 
@@ -92,6 +93,10 @@
 
 ## Change History
 
+- `4a3d892 2026-08-20 fix: gate backfire by engine state`
+- `4580cb7 2026-08-20 fix: close V5 review gaps`
+- `6ecfd6a 2026-08-20 feat: start VehicleSoundSynth V5 realism pass`
+- `6aa49d0 2026-08-20 Refresh repository handoff`
 - `aaf3508 2026-08-20 Rebuild procedural vehicle lifecycle runtimes`
 - `dc8d175 2026-08-19 fix: restore profile throttle and stabilize runtime audio`
 - `2970e9d 2026-08-18 docs: refresh V4 silence-fix handoff`
@@ -108,20 +113,18 @@
 - `613d929 2026-08-12 docs: correct V4 manual identity`
 - `c36ebb0 2026-08-12 docs: refresh V4 integrity handoff`
 - `e6ac257 2026-08-12 docs: align V4 acoustic guidance`
-- `2d654bf 2026-08-12 docs: refresh V4 repository handoff`
-- `6b4ddd7 2026-08-12 docs: record final V4 acoustic evidence`
-- `0637838 2026-08-12 fix: resolve transient media from project path`
-- `72ba1d3 2026-08-12 test: enforce upper-band stereo safety`
 
 ## Current Changes
 
-- V5 implementation is in progress; inspect `git status --short` for the exact generated/source set.
+- `## codex/vehicle-sound-v5`
+- ` M PROJECT_HANDOFF.md`
 
 ## Related Repositories
 
 ### Remotes
 
-- Local clone origin initially points at the frozen V4 repository; replace it with the private GitHub origin before V5 publication.
+- `origin https://github.com/Kidrage/VehicleSoundSynth.git (fetch)`
+- `origin https://github.com/Kidrage/VehicleSoundSynth.git (push)`
 
 ### Submodules
 
@@ -131,6 +134,7 @@
 
 ### literature
 
+- `.codex/MAINLINE.md`
 - `.codex/REPO_GUIDE.md`
 - `.codex/repo_files.txt`
 - `.codex/source_index.txt`
@@ -184,6 +188,7 @@
 - `assets/ferrari_sf90_acoustic_target.json`
 - `assets/ferrari_v10_lifecycle_targets.json`
 - `presets/sound_dna.json`
+- `presets/vehicle_bus_eq_default.json`
 
 ## Validation and Risks
 
