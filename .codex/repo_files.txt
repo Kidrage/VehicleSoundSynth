@@ -77,6 +77,7 @@ patchers/vehicle_engine_ev~.maxpat
 patchers/vehicle_engine_v10~.maxpat
 patchers/vehicle_engine_v12~.maxpat
 patchers/vehicle_engine~.maxpat
+presets/local/.gitkeep
 presets/sound_dna.json
 presets/vehicle_bus_eq_default.json
 tests/test_project.py

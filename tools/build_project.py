@@ -760,10 +760,27 @@ def make_ice_backfire_host(profile: str) -> dict[str, Any]:
 
     enable = p.new("clip 0 1", 780, 160, 65, numinlets=3, numoutlets=1)
     enable_default = p.new("loadmess 1", 855, 160, 80, numinlets=1, numoutlets=1)
+    ignition = p.new("clip 0 1", 780, 200, 65, numinlets=3, numoutlets=1)
+    running = p.new("clip 0 1", 855, 200, 65, numinlets=3, numoutlets=1)
+    physical_state = p.new("pak 1 0 0", 930, 200, 85, numinlets=3, numoutlets=1)
+    physical_gate = p.new(
+        "expr ($i1 != 0) && ($i2 != 0) && ($i3 != 0)",
+        930,
+        240,
+        265,
+        numinlets=3,
+        numoutlets=1,
+    )
     event_gate = p.new("gate 1", 780, 245, 55, numinlets=2, numoutlets=1)
     p.connect(router, enable, 10)
+    p.connect(router, ignition, 8)
+    p.connect(router, running, 9)
     p.connect(enable_default, enable)
-    p.connect(enable, event_gate, 0, 0)
+    p.connect(enable, physical_state, 0, 0)
+    p.connect(ignition, physical_state, 0, 1)
+    p.connect(running, physical_state, 0, 2)
+    p.connect(physical_state, physical_gate)
+    p.connect(physical_gate, event_gate, 0, 0)
     p.connect(overrun_edge, event_gate, 0, 1)
     for index in (3, 5, 6, 7):
         edge = p.new("sel 1", 650 + (index - 3) * 70, 205, 45, numinlets=1, numoutlets=2)

@@ -4,4 +4,5 @@ __pycache__/
 *.pyc
 .venv/
 media/local/
-presets/local/
+presets/local/*
+!presets/local/.gitkeep

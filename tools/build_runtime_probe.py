@@ -71,6 +71,22 @@ SCENARIOS = {
         "profile": "v12", "rpm": 3300.0, "lock_rpm": True,
         "event": "exhaust_pop 1",
     },
+    "v10-backfire-running": {
+        "profile": "v10", "rpm": 3600.0, "lock_rpm": True,
+        "event": "exhaust_pop 1",
+    },
+    "v10-backfire-ignition-off": {
+        "profile": "v10", "rpm": 3600.0, "lock_rpm": True,
+        "event": "exhaust_pop 1", "ignition_enabled": False,
+    },
+    "v12-backfire-running": {
+        "profile": "v12", "rpm": 3300.0, "lock_rpm": True,
+        "event": "exhaust_pop 1",
+    },
+    "v12-backfire-ignition-off": {
+        "profile": "v12", "rpm": 3300.0, "lock_rpm": True,
+        "event": "exhaust_pop 1", "ignition_enabled": False,
+    },
     "v10-lifecycle-idle": {
         "profile": "v10", "rpm": 740.0, "throttle": 0.08, "load": 0.15,
         "lock_rpm": True, "lifecycle_role": "idle", "extra_messages": ("accel 0",),
@@ -598,7 +614,7 @@ def main() -> None:
             render_ms=args.render_ms,
             driver_mode=args.driver,
             start_enabled=args.start == "on",
-            ignition_enabled=args.ignition == "on",
+            ignition_enabled=bool(scenario.get("ignition_enabled", args.ignition == "on")),
             tap=args.tap,
             extra_messages=tuple(extra_messages),
             event_message=scenario.get("event"),

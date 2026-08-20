@@ -122,9 +122,11 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
             for control in (
                 "rpm", "throttle", "accel", "shift", "shift_dir",
                 "intake_backfire", "exhaust_pop", "pop",
-                "backfire_enable", "backfire_intensity",
+                "ignition", "engine_running", "backfire_enable", "backfire_intensity",
             ):
                 self.assertIn(control, host_text)
+            self.assertIn("pak 1 0 0", host_text)
+            self.assertIn("($i1 != 0) && ($i2 != 0) && ($i3 != 0)", host_text)
             self.assertIn(f"{profile}_backfire_beap~", host_text)
         v10 = json.dumps(self.load_json("patchers/v10_backfire_beap~.maxpat"), sort_keys=True)
         v12 = json.dumps(self.load_json("patchers/v12_backfire_beap~.maxpat"), sort_keys=True)
@@ -151,6 +153,10 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
             self.assertIn("Backfire", runtime_text)
 
     def test_v5_vehicle_bus_eq_has_one_shared_persistent_local_state(self):
+        self.assertTrue((ROOT / "presets" / "local" / ".gitkeep").is_file())
+        ignore_rules = (ROOT / ".gitignore").read_text(encoding="utf-8")
+        self.assertIn("presets/local/*", ignore_rules)
+        self.assertIn("!presets/local/.gitkeep", ignore_rules)
         mix = self.load_json("patchers/mix_master~.maxpat")["patcher"]
         text = "\n".join(item["box"].get("text", "") for item in mix["boxes"])
         self.assertIn("autopattr", text)
@@ -2388,6 +2394,8 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
             "idle-v12", "idle-v10", "high-v12-3500", "high-v10-4200",
             "ev-pad-on", "ev-pad-off", "ev-pad-solo", "ev-pad-mute",
             "shift-up", "shift-down", "intake-backfire", "exhaust-pop",
+            "v10-backfire-running", "v10-backfire-ignition-off",
+            "v12-backfire-running", "v12-backfire-ignition-off",
         ):
             self.assertIn(f'"{scenario}"', source)
         self.assertIn('choices=("pre-cabin", "final")', source)
@@ -2446,6 +2454,30 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
             self.assertNotIn("ev_weight", text)
             self.assertIn("ignition 0", text)
             self.assertNotIn("start 1", text)
+
+    def test_runtime_probe_can_exercise_backfire_running_state_gate(self):
+        for profile in ("v10", "v12"):
+            with tempfile.TemporaryDirectory() as directory:
+                subprocess.run(
+                    [
+                        sys.executable,
+                        str(ROOT / "tools" / "build_runtime_probe.py"),
+                        "--bundle-root", directory,
+                        "--scenario", f"{profile}-backfire-ignition-off",
+                        "--render-ms", "1000",
+                    ],
+                    check=True,
+                    cwd=ROOT,
+                    capture_output=True,
+                    text=True,
+                )
+                probe_path = Path(directory) / (
+                    f"runtime_probe_{profile}_{profile}-backfire-ignition-off_on.maxpat"
+                )
+                probe = json.loads(probe_path.read_text(encoding="utf-8"))["patcher"]
+                text = "\n".join(item["box"].get("text", "") for item in probe["boxes"])
+                self.assertIn("ignition 0", text)
+                self.assertIn("exhaust_pop 1", text)
 
     def test_runtime_probe_can_render_ice_pad_on_without_enabling_it_in_other_scenarios(self):
         for profile, level in (("v10", -8), ("v12", -9)):
