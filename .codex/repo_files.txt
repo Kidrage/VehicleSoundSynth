@@ -23,6 +23,7 @@ assets/ferrari_sf90_acoustic_target.json
 assets/ferrari_v10_lifecycle_targets.json
 assets/raw/README.md
 code/drive_model.js
+code/eq_state_path.js
 gen/ev_powertrain.gendsp
 gen/v10_powertrain.gendsp
 gen/v12_powertrain.gendsp

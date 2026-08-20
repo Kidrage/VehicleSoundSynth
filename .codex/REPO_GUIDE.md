@@ -50,8 +50,9 @@ python3 tools/validate_v10_lifecycle.py --drive-lifecycle-wav v10_v10-lifecycle-
 ```
 
 Regenerate twice and compare hashes when generator determinism matters. Never
-hand-edit generated `.maxpat`, `.gendsp`, or `.wav` files except the four
-seed-once BEAP patchers named above. The project generator preserves those files
+hand-edit generated `.maxpat`, `.gendsp`, or `.wav` files except the eight
+seed-once BEAP patchers named above (engine start, three EV voices, two ICE
+pads, and two ICE backfires). The project generator preserves those files
 after their first seed. The project generator
 never overwrites curated runtime WAVs already present in `media/`.
 

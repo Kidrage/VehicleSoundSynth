@@ -275,7 +275,7 @@ Distributable audio provenance remains governed by `ASSET_LICENSES.md` and
 ## Regeneration and validation
 
 Generated `.maxpat`, `.gendsp`, preset, and fallback media are owned by
-`tools/build_project.py`. Only the four BEAP patchers listed above are
+`tools/build_project.py`. Only the eight BEAP patchers listed above are
 user-owned.
 
 ```sh

@@ -1492,37 +1492,31 @@ def make_mix_master() -> dict[str, Any]:
         "pattrstorage vehicle_bus_eq @savemode 3 @changemode 1 @autorestore 0",
         925, 5, 245, numinlets=1, numoutlets=4,
     )
-    default_dict = p.new(
-        "dict vehicle_bus_eq_defaults @embed 0",
-        760, 335, 250, numinlets=2, numoutlets=4,
+    p.comment(
+        "Tracked fallback definition: Patcher:/presets/vehicle_bus_eq_default.json",
+        760, 335, 390,
     )
     state_load = p.new("loadbang", 1095, 370, 60, numinlets=1, numoutlets=1)
-    default_read = p.message("read Patcher:/presets/vehicle_bus_eq_default.json", 760, 370, 300)
     state_delay = p.new("delay 120", 1095, 405, 70, numinlets=2, numoutlets=1)
-    local_read = p.message("read Patcher:/presets/local/vehicle_bus_eq.json", 760, 405, 300)
-    local_write = p.message("write Patcher:/presets/local/vehicle_bus_eq.json", 760, 440, 310)
+    state_path = p.new("js Patcher:/code/eq_state_path.js", 760, 405, 220, numinlets=1, numoutlets=1)
+    local_read = p.message("restore", 990, 405, 55)
     close_save = p.new("closebang", 1095, 475, 65, numinlets=0, numoutlets=1)
     restore_trigger = p.new("t b b", 1095, 510, 50, numinlets=1, numoutlets=2)
     restore_delay = p.new("delay 30", 1035, 545, 65, numinlets=2, numoutlets=1)
     recall_slot = p.message("1", 1110, 545, 30)
-    save_trigger = p.new("t b b", 925, 510, 50, numinlets=1, numoutlets=2)
-    store_slot = p.message("store 1", 925, 545, 55)
-    write_delay = p.new("delay 20", 990, 545, 65, numinlets=2, numoutlets=1)
-    p.connect(state_load, default_read)
-    p.connect(default_read, default_dict)
+    save_now = p.message("save", 850, 510, 45)
+    external_save = p.new("r vehicle_bus_eq.save", 760, 475, 135, numinlets=0, numoutlets=1)
     p.connect(state_load, state_delay)
     p.connect(state_delay, restore_trigger)
     p.connect(restore_trigger, local_read, 1)
     p.connect(restore_trigger, restore_delay, 0)
     p.connect(restore_delay, recall_slot)
     p.connect(recall_slot, storage)
-    p.connect(local_read, storage)
-    p.connect(close_save, save_trigger)
-    p.connect(save_trigger, store_slot, 1)
-    p.connect(save_trigger, write_delay, 0)
-    p.connect(store_slot, storage)
-    p.connect(write_delay, local_write)
-    p.connect(local_write, storage)
+    p.connect(local_read, state_path)
+    p.connect(state_path, storage)
+    p.connect(close_save, save_now)
+    p.connect(external_save, save_now)
+    p.connect(save_now, state_path)
 
     band_specs = (
         ("lowshelf", 6, 90.0, 30.0, 400.0, 0.7),
@@ -1660,7 +1654,7 @@ def make_mix_master() -> dict[str, Any]:
         "message", "Reload EQ", 840, 65, 80, numinlets=2, numoutlets=1,
         presentation=1, presentation_rect=[1040.0, 255.0, 85.0, 22.0],
     )
-    p.connect(save_eq, save_trigger)
+    p.connect(save_eq, save_now)
     p.connect(reload_eq, restore_trigger)
 
     bypass_ui = p.add(
@@ -4142,6 +4136,8 @@ def make_profile_main(profile: str, root: Path | None = None) -> dict[str, Any]:
     close_delay = p.new("delay 20", 990, 105, 65, numinlets=2, numoutlets=1)
     close_message = p.message("wclose", 1070, 105, 55)
     patcher_control = p.new("thispatcher", 1070, 140, 85, numinlets=1, numoutlets=2)
+    close_save = p.new("closebang", 850, 140, 65, numinlets=0, numoutlets=1)
+    eq_save = p.new("s vehicle_bus_eq.save", 925, 140, 145, numinlets=1, numoutlets=0)
     p.connect(active_profile, active_match)
     p.connect(active_match, save_then_close, 1)
     p.connect(save_then_close, save_message, 1)
@@ -4149,6 +4145,7 @@ def make_profile_main(profile: str, root: Path | None = None) -> dict[str, Any]:
     p.connect(save_then_close, close_delay, 0)
     p.connect(close_delay, close_message)
     p.connect(close_message, patcher_control)
+    p.connect(close_save, eq_save)
 
     drive = p.add(
         "bpatcher", None, 35, 390, 210, 55, numinlets=1, numoutlets=1,
@@ -4673,8 +4670,9 @@ inverter = cycle(clamp(f * (2.8 + brightness), 150, 4200)) * (0.10 + texture * 0
 sheen_l = cycle(clamp(f * (5.2 + brightness * 0.4), 300, 6200)) * aggression * 0.025;
 sheen_r = cycle(clamp(f * (6.2 + brightness * 0.4), 360, 7200)) * aggression * 0.025;
 base = (coherent_low + torque_ripple + h2 + h3 + gear_mesh + inverter) * electrical_motion;
+right_base = (coherent_low + torque_ripple * 0.995 + h2 * 0.99 + h3 * 1.02 + gear_mesh * 1.015 + inverter * 0.98) * electrical_motion;
 left_drive = (base + sheen_l) * a;
-right_drive = (coherent_low + h2 * 0.99 + h3 * 1.02 + inverter * 0.98 + sheen_r) * a;
+right_drive = (right_base + sheen_r) * a;
 out1 = tanh(left_drive * 1.2) / 1.2;
 out2 = tanh(right_drive * 1.2) / 1.2;""",
     "v12_powertrain": """// Four-stroke V12: two phase-locked six-cylinder banks and load-shaped combustion residual.
@@ -5129,6 +5127,7 @@ def project_file() -> dict[str, Any]:
     for name in GEN_CODE:
         contents["code"][f"gen/{name}.gendsp"] = {"kind": "gendsp", "local": 1}
     contents["code"]["code/drive_model.js"] = {"kind": "javascript", "local": 1}
+    contents["code"]["code/eq_state_path.js"] = {"kind": "javascript", "local": 1}
     for name in MEDIA_FRAMES:
         if name.startswith(("cabin_ir_", "starter_")):
             contents["media"][f"media/{name}.wav"] = {"kind": "mediafile", "local": 1}

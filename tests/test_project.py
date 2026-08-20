@@ -156,9 +156,11 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
         self.assertIn("autopattr", text)
         self.assertIn("pattrstorage vehicle_bus_eq", text)
         self.assertIn("Patcher:/presets/vehicle_bus_eq_default.json", text)
-        self.assertIn("Patcher:/presets/local/vehicle_bus_eq.json", text)
-        self.assertIn("store 1", text)
-        self.assertIn("delay 20", text)
+        self.assertIn("js Patcher:/code/eq_state_path.js", text)
+        self.assertIn("save", text)
+        self.assertIn("r vehicle_bus_eq.save", text)
+        self.assertNotIn("dict vehicle_bus_eq_defaults", text)
+        self.assertNotIn("delay 20", text)
         self.assertIn("delay 30", text)
         for label in ("Save EQ", "Reload EQ", "Reset EQ"):
             self.assertIn(label, text)
@@ -168,6 +170,15 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
             {"eq_low", "eq_lowmid", "eq_highmid", "eq_high", "eq_bypass"},
             set(default["bands"]),
         )
+        for profile in ("EV", "V10", "V12"):
+            runtime = self.load_json(f"VehicleSoundSynth-{profile}.maxpat")["patcher"]
+            runtime_text = "\n".join(item["box"].get("text", "") for item in runtime["boxes"])
+            self.assertIn("closebang", runtime_text)
+            self.assertIn("s vehicle_bus_eq.save", runtime_text)
+        path_helper = (ROOT / "code" / "eq_state_path.js").read_text(encoding="utf-8")
+        self.assertIn("this.patcher.filepath", path_helper)
+        self.assertIn("/presets/local/vehicle_bus_eq.json", path_helper)
+        self.assertIn('outlet(0, "store", 1)', path_helper)
 
     def test_v5_generator_preserves_all_user_tuned_ice_beap_patchers(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -204,6 +215,10 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
             ).lower()
             for token in tokens:
                 self.assertIn(token, code)
+            if profile == "ev":
+                right_base = code.split("right_base =", 1)[1].split(";", 1)[0]
+                for token in tokens:
+                    self.assertIn(token, right_base)
             for forbidden in ("saw", "square", "rect~"):
                 self.assertNotIn(forbidden, code)
 
@@ -2433,26 +2448,27 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
             self.assertNotIn("start 1", text)
 
     def test_runtime_probe_can_render_ice_pad_on_without_enabling_it_in_other_scenarios(self):
-        with tempfile.TemporaryDirectory() as directory:
-            subprocess.run(
-                [
-                    sys.executable,
-                    str(ROOT / "tools" / "build_runtime_probe.py"),
-                    "--bundle-root", directory,
-                    "--scenario", "v10-pad-on",
-                    "--render-ms", "1000",
-                ],
-                check=True,
-                cwd=ROOT,
-                capture_output=True,
-                text=True,
-            )
-            probe_path = Path(directory) / "runtime_probe_v10_v10-pad-on_on.maxpat"
-            probe = json.loads(probe_path.read_text(encoding="utf-8"))["patcher"]
-            text = "\n".join(item["box"].get("text", "") for item in probe["boxes"])
-            self.assertIn("v10_pad_host~", text)
-            self.assertIn("pad_level_db -8", text)
-            self.assertIn("pad_mute 0", text)
+        for profile, level in (("v10", -8), ("v12", -9)):
+            with tempfile.TemporaryDirectory() as directory:
+                subprocess.run(
+                    [
+                        sys.executable,
+                        str(ROOT / "tools" / "build_runtime_probe.py"),
+                        "--bundle-root", directory,
+                        "--scenario", f"{profile}-pad-on",
+                        "--render-ms", "1000",
+                    ],
+                    check=True,
+                    cwd=ROOT,
+                    capture_output=True,
+                    text=True,
+                )
+                probe_path = Path(directory) / f"runtime_probe_{profile}_{profile}-pad-on_on.maxpat"
+                probe = json.loads(probe_path.read_text(encoding="utf-8"))["patcher"]
+                text = "\n".join(item["box"].get("text", "") for item in probe["boxes"])
+                self.assertIn(f"{profile}_pad_host~", text)
+                self.assertIn(f"pad_level_db {level}", text)
+                self.assertIn("pad_mute 0", text)
 
     def test_mix_runtime_probe_builder_exposes_eq_trim_and_bypass_scenarios(self):
         with tempfile.TemporaryDirectory() as directory:

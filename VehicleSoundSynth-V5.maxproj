@@ -7,6 +7,10 @@
         "kind": "javascript",
         "local": 1
       },
+      "code/eq_state_path.js": {
+        "kind": "javascript",
+        "local": 1
+      },
       "gen/ev_powertrain.gendsp": {
         "kind": "gendsp",
         "local": 1

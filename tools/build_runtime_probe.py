@@ -57,6 +57,10 @@ SCENARIOS = {
         "profile": "v12", "rpm": 1800.0, "throttle": 0.35, "lock_rpm": True,
         "pad_level_db": -9.0, "pad_mute": 0,
     },
+    "v12-pad-off": {
+        "profile": "v12", "rpm": 1800.0, "throttle": 0.35, "lock_rpm": True,
+        "pad_mute": 1,
+    },
     "shift-up": {"profile": "v12", "rpm": 3200.0, "event": "shift_dir 1, shift 1"},
     "shift-down": {"profile": "v10", "rpm": 2800.0, "event": "shift_dir -1, shift 1"},
     "intake-backfire": {
@@ -350,6 +354,7 @@ def make_probe(
         close_delay = p.new("delay 1000", 895, 635, 75, numinlets=2, numoutlets=1)
         close_message = p.message("wclose", 895, 670, 55)
         patcher_control = p.new("thispatcher", 895, 705, 85, numinlets=1, numoutlets=2)
+        eq_save = p.new("s vehicle_bus_eq.save", 805, 740, 145, numinlets=1, numoutlets=0)
         record_begin = p.new("t b b b", 610, 700, 65, numinlets=1, numoutlets=3)
         p.connect(load, dsp_stop_at_load)
         p.connect(load, driver_delay)
@@ -401,6 +406,7 @@ def make_probe(
         p.connect(stop_trigger, metro_stop, 2, 0)
         p.connect(stop_trigger, dsp_stop, 1, 0)
         p.connect(stop_trigger, close_delay, 0, 0)
+        p.connect(stop_trigger, eq_save, 0, 0)
         p.connect(close_delay, close_message)
         p.connect(close_message, patcher_control)
         p.connect(dsp_stop, dac)
