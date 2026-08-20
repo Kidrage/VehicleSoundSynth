@@ -11,6 +11,7 @@
     {
       "id": "real_starter",
       "purpose": "starter_v12 and starter_v10",
+      "runtime_usage": "tracked realistic-start fallback only",
       "status": "processed",
       "raw_path": "assets/raw/grasopt_479351_car_starter.wav",
       "raw_sha256": "acd3141ec95e6dd3e8d15b6720db2f0eae5e20efa7b1ca517dd30c4248b105ad",
@@ -49,6 +50,7 @@
     {
       "id": "engine_contact_shifts",
       "purpose": "shift_up and shift_down transient families",
+      "runtime_usage": "archived processed comparison material; not declared or loaded by V5 runtime",
       "status": "processed",
       "raw_path": "assets/raw/thelittlecrow_669623_engine_block_contact.wav",
       "raw_sha256": "75eeebcef4ae6cc9ecfb92903e216e268fb8ec1cb48315642da0a9e71aa84068",
@@ -131,6 +133,7 @@
     {
       "id": "sports_car_revs_pops",
       "purpose": "intake backfire, exhaust pop, and crackle families",
+      "runtime_usage": "archived processed comparison material; V5 runtime uses BEAP synthesis",
       "status": "processed",
       "raw_path": "assets/raw/richwise_478756_sports_car_revs_pops.wav",
       "raw_sha256": "2b67aed7ec0dc3fe74b3d110865574ca591455a5300417281a29dfd7f4483cd1",
@@ -268,6 +271,7 @@
     {
       "id": "mechanical_shift",
       "purpose": "mechanical click and DCT selector detail",
+      "runtime_usage": "archived processed comparison material; not declared or loaded by V5 runtime",
       "status": "processed",
       "raw_path": "assets/raw/microman502_818294_mechanical_gear_shift.wav",
       "raw_sha256": "55631e1605172acaf748c46996d1a2421f72a4c58e08e2353108a2da1ae1758d",
@@ -306,6 +310,7 @@
     {
       "id": "mini_cabin_ir",
       "purpose": "stereo short cabin convolution IR",
+      "runtime_usage": "tracked cabin convolution runtime input",
       "status": "processed",
       "raw_path": "assets/raw/jamespeacock4616_555787_mini_car_ir.wav",
       "raw_sha256": "5c0197184134cadaf92e4f576375ffcc6c1babe2a5897fa2cfe52c73f01fa406",

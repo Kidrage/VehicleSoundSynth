@@ -55,6 +55,158 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
         )
         return json.loads(result.stdout)
 
+    def test_v5_identity_and_frozen_v4_lineage(self):
+        project = self.load_json("VehicleSoundSynth-V5.maxproj")
+        self.assertEqual("VehicleSoundSynth-V5", project["name"])
+        self.assertTrue((ROOT / ".codex" / "MAINLINE.md").is_file())
+        self.assertIn("v4.0.0", (ROOT / ".codex" / "MAINLINE.md").read_text())
+
+    def test_v5_runtime_events_are_procedural_and_never_play_shift_pop_samples(self):
+        project = self.load_json("VehicleSoundSynth-V5.maxproj")
+        declared_media = set(project["contents"]["media"])
+        self.assertEqual(
+            {
+                "media/cabin_ir_l.wav",
+                "media/cabin_ir_r.wav",
+                "media/starter_v10.wav",
+                "media/starter_v12.wav",
+            },
+            declared_media,
+        )
+        self.assertNotIn(
+            "patchers/reference_texture~.maxpat",
+            project["contents"]["patchers"],
+        )
+        forbidden_media = (
+            "shift_up_", "shift_down_", "shift_thump", "exhaust_pop",
+            "exhaust_crackle", "intake_backfire", "mechanical_click",
+        )
+        for path in declared_media:
+            self.assertFalse(any(token in path for token in forbidden_media), path)
+        for relative in (
+            "patchers/transient~.maxpat",
+            "patchers/transient_v10~.maxpat",
+            "patchers/transient_v12~.maxpat",
+        ):
+            patcher = self.load_json(relative)["patcher"]
+            text = "\n".join(
+                item["box"].get("text", "") + " " + item["box"].get("name", "")
+                for item in patcher["boxes"]
+            ).lower()
+            for token in forbidden_media:
+                self.assertNotIn(f"buffer~ {token}", text)
+                self.assertNotIn(f"play~ {token}", text)
+                self.assertNotIn(f"groove~ {token}", text)
+
+    def test_v5_ice_backfire_is_editable_beap_and_profile_tuned(self):
+        project = self.load_json("VehicleSoundSynth-V5.maxproj")
+        declared = set(project["contents"]["patchers"])
+        for profile in ("v10", "v12"):
+            beap_path = f"patchers/{profile}_backfire_beap~.maxpat"
+            host_path = f"patchers/{profile}_backfire_host~.maxpat"
+            self.assertIn(beap_path, declared)
+            self.assertIn(host_path, declared)
+            beap = self.load_json(beap_path)["patcher"]
+            beap_text = "\n".join(
+                item["box"].get("text", "") + " "
+                + item["box"].get("name", "") + " "
+                + item["box"].get("varname", "")
+                for item in beap["boxes"]
+            )
+            for module in ("Noise", "Osc", "AD", "MMF", "VCA"):
+                self.assertIn(module, beap_text)
+            self.assertIn("*~ 0.06", beap_text)
+            self.assertIn("+~", beap_text)
+            host = self.load_json(host_path)["patcher"]
+            host_text = "\n".join(item["box"].get("text", "") for item in host["boxes"])
+            for control in (
+                "rpm", "throttle", "accel", "shift", "shift_dir",
+                "intake_backfire", "exhaust_pop", "pop",
+                "backfire_enable", "backfire_intensity",
+            ):
+                self.assertIn(control, host_text)
+            self.assertIn(f"{profile}_backfire_beap~", host_text)
+        v10 = json.dumps(self.load_json("patchers/v10_backfire_beap~.maxpat"), sort_keys=True)
+        v12 = json.dumps(self.load_json("patchers/v12_backfire_beap~.maxpat"), sort_keys=True)
+        self.assertNotEqual(v10, v12)
+
+    def test_v5_v10_v12_have_editable_cinematic_pad_stems_and_top_level_controls(self):
+        project = self.load_json("VehicleSoundSynth-V5.maxproj")
+        declared = set(project["contents"]["patchers"])
+        for profile in ("v10", "v12"):
+            beap_path = f"patchers/{profile}_pad_beap~.maxpat"
+            host_path = f"patchers/{profile}_pad_host~.maxpat"
+            self.assertIn(beap_path, declared)
+            self.assertIn(host_path, declared)
+            host = self.load_json(host_path)["patcher"]
+            host_text = "\n".join(item["box"].get("text", "") for item in host["boxes"])
+            for control in ("rpm", "throttle", "ignition", "pad_level_db", "pad_mute"):
+                self.assertIn(control, host_text)
+            self.assertIn("poly~", host_text)
+            self.assertIn("mute 1 1", host_text)
+            runtime = self.load_json(f"VehicleSoundSynth-{profile.upper()}.maxpat")["patcher"]
+            runtime_text = "\n".join(item["box"].get("text", "") for item in runtime["boxes"])
+            self.assertIn("Cinematic Pad dB", runtime_text)
+            self.assertIn("Pad Mute", runtime_text)
+            self.assertIn("Backfire", runtime_text)
+
+    def test_v5_vehicle_bus_eq_has_one_shared_persistent_local_state(self):
+        mix = self.load_json("patchers/mix_master~.maxpat")["patcher"]
+        text = "\n".join(item["box"].get("text", "") for item in mix["boxes"])
+        self.assertIn("autopattr", text)
+        self.assertIn("pattrstorage vehicle_bus_eq", text)
+        self.assertIn("Patcher:/presets/vehicle_bus_eq_default.json", text)
+        self.assertIn("Patcher:/presets/local/vehicle_bus_eq.json", text)
+        self.assertIn("store 1", text)
+        self.assertIn("delay 20", text)
+        self.assertIn("delay 30", text)
+        for label in ("Save EQ", "Reload EQ", "Reset EQ"):
+            self.assertIn(label, text)
+        default = self.load_json("presets/vehicle_bus_eq_default.json")
+        self.assertEqual(1, default["schema_version"])
+        self.assertEqual(
+            {"eq_low", "eq_lowmid", "eq_highmid", "eq_high", "eq_bypass"},
+            set(default["bands"]),
+        )
+
+    def test_v5_generator_preserves_all_user_tuned_ice_beap_patchers(self):
+        with tempfile.TemporaryDirectory() as directory:
+            destination = Path(directory)
+            command = [
+                sys.executable,
+                str(ROOT / "tools" / "build_project.py"),
+                "--output-root",
+                str(destination),
+            ]
+            subprocess.run(command, check=True, cwd=ROOT, capture_output=True, text=True)
+            for profile in ("v10", "v12"):
+                for role in ("pad", "backfire"):
+                    path = destination / "patchers" / f"{profile}_{role}_beap~.maxpat"
+                    payload = self.load_json(path.relative_to(ROOT)) if False else json.loads(path.read_text())
+                    payload["patcher"]["description"] = f"{profile}-{role}-user-tuning"
+                    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
+                    before = path.read_bytes()
+                    subprocess.run(command, check=True, cwd=ROOT, capture_output=True, text=True)
+                    self.assertEqual(before, path.read_bytes())
+
+    def test_v5_continuous_models_add_load_and_idle_acoustic_identity_without_sawtooth(self):
+        expected = {
+            "ev": ("torque_ripple", "gear_mesh", "electrical_motion"),
+            "v10": ("idle_weight", "crankcase_body", "manifold"),
+            "v12": ("idle_weight", "crankcase_body", "manifold"),
+        }
+        for profile, tokens in expected.items():
+            patcher = self.load_json(f"gen/{profile}_powertrain.gendsp")["patcher"]
+            code = "\n".join(
+                item["box"].get("code", "")
+                for item in patcher["boxes"]
+                if item["box"].get("maxclass") == "codebox"
+            ).lower()
+            for token in tokens:
+                self.assertIn(token, code)
+            for forbidden in ("saw", "square", "rect~"):
+                self.assertNotIn(forbidden, code)
+
     def test_ice_continuous_powertrains_are_procedural_not_loop_players(self):
         """Idle/accel/decel must remain synthesized; samples are transient-only."""
         for profile in ("v10", "v12"):
@@ -79,7 +231,7 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
             ):
                 self.assertNotIn(forbidden, text.lower(), (profile, forbidden))
 
-        project = self.load_json("VehicleSoundSynth-V4.maxproj")
+        project = self.load_json("VehicleSoundSynth-V5.maxproj")
         declared = {
             path for category in project["contents"].values() for path in category
         }
@@ -105,7 +257,7 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
         )
 
     def test_profile_drive_patchers_use_one_control_clock(self):
-        project = self.load_json("VehicleSoundSynth-V4.maxproj")
+        project = self.load_json("VehicleSoundSynth-V5.maxproj")
         self.assertIn("code/drive_model.js", project["contents"]["code"])
         for profile in ("ev", "v10", "v12"):
             patcher = self.load_json(
@@ -244,7 +396,7 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
             self.assertLessEqual(node["harsh_ratio_2000_6000"], 1.0)
             self.assertGreater(node["spectral_rolloff_95_hz"], 0.0)
 
-        project_text = json.dumps(self.load_json("VehicleSoundSynth-V4.maxproj"))
+        project_text = json.dumps(self.load_json("VehicleSoundSynth-V5.maxproj"))
         self.assertIn("assets/ferrari_v10_lifecycle_targets.json", project_text)
         self.assertNotIn("media/local/ferrari_v10_", project_text)
 
@@ -380,7 +532,7 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
         )
 
     def test_v4_has_three_independent_runtime_patchers_and_a_dsp_free_launcher(self):
-        project = self.load_json("VehicleSoundSynth-V4.maxproj")
+        project = self.load_json("VehicleSoundSynth-V5.maxproj")
         declared = {
             path for category in project["contents"].values() for path in category
         }
@@ -460,7 +612,6 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
 
         for relative in (
             "patchers/reference_texture~.maxpat",
-            "patchers/transient~.maxpat",
             "patchers/cabin_master~.maxpat",
         ):
             text = "\n".join(
@@ -531,12 +682,15 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
             self.assertNotIn("shift_cut 0.72", controller_text)
             self.assertNotIn("shift_cut 0.22", controller_text)
 
-        transient_text = "\n".join(
-            item["box"].get("text", "")
-            for item in self.load_json("patchers/transient~.maxpat")["patcher"]["boxes"]
-        )
-        self.assertEqual(3, transient_text.count("*~ 0.21"))
-        self.assertEqual(3, transient_text.count("*~ 0.24"))
+        for profile in ("v10", "v12"):
+            transient_text = "\n".join(
+                item["box"].get("text", "")
+                for item in self.load_json(
+                    f"patchers/transient_{profile}~.maxpat"
+                )["patcher"]["boxes"]
+            )
+            self.assertIn(f"{profile}_backfire_host~", transient_text)
+            self.assertNotIn("play~ shift_", transient_text)
 
     def test_ev_modes_are_user_editable_and_suspend_inactive_poly_voices(self):
         expected = (
@@ -707,7 +861,7 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
             self.assertEqual(hashes[0], hashes[1])
 
     def test_v10_uses_lifecycle_targets_while_v12_remains_independent(self):
-        project = json.dumps(self.load_json("VehicleSoundSynth-V4.maxproj"))
+        project = json.dumps(self.load_json("VehicleSoundSynth-V5.maxproj"))
         self.assertIn("ferrari_v10_lifecycle_targets.json", project)
         self.assertNotIn("v10_state_renderer", project)
         self.assertNotIn("v12_texture_renderer", project)
@@ -871,50 +1025,25 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
         self.assertIn("pad_solo", power_text)
         self.assertIn("reference_texture~", power_text)
 
-    def test_v4_reference_texture_routes_runtime_controls_to_anchor_bank(self):
-        project = self.load_json("VehicleSoundSynth-V4.maxproj")
+    def test_v4_reference_texture_is_retained_only_as_an_undeclared_offline_archive(self):
+        project = self.load_json("VehicleSoundSynth-V5.maxproj")
         declared = {
             path for category in project["contents"].values() for path in category
         }
-        self.assertIn("patchers/reference_texture~.maxpat", declared)
+        self.assertNotIn("patchers/reference_texture~.maxpat", declared)
         patcher = self.load_json("patchers/reference_texture~.maxpat")["patcher"]
         text = "\n".join(item["box"].get("text", "") for item in patcher["boxes"])
-        self.assertIn("reference_texture_level_db", text)
-        self.assertIn("reference_texture_mute", text)
-        self.assertIn("($f1/60.)*(5.+$f2)", text)
-        self.assertIn("*~ 0.55", text)
-        self.assertIn(
-            "buffer~ ferrari_idle_body Patcher:/media/local/ferrari_sf90_idle_body.wav",
-            text,
-        )
-        self.assertIn("groove~ ferrari_idle_body 2 @loop 1", text)
-        self.assertIn("expr max(.85,min(2.93,$f1/61.5))", text)
-        self.assertIn("expr sqrt(max(0.,min(1.,(180.-$f1)/80.)))", text)
-        self.assertIn("*~ 1.4", text)
-        self.assertIn("loadmess -18", text)
-        self.assertIn("reference_texture_mute rpm", text)
-        patcher = self.load_json("patchers/reference_texture~.maxpat")["patcher"]
-        boxes = {item["box"]["id"]: item["box"] for item in patcher["boxes"]}
-        router = next(
-            box_id for box_id, box in boxes.items()
-            if box.get("text", "").startswith("route throttle engine_running")
-        )
-        rpm_targets = {
-            line["patchline"]["destination"][0]
-            for line in patcher["lines"]
-            if line["patchline"]["source"] == [router, 6]
-        }
-        self.assertGreaterEqual(len(rpm_targets), 1)
+        self.assertIn("offline", text.lower())
 
     def test_v4_reference_texture_uses_normalized_multi_anchor_stereo_bank(self):
-        project = self.load_json("VehicleSoundSynth-V4.maxproj")
+        project = self.load_json("VehicleSoundSynth-V5.maxproj")
         declared = {path for category in project["contents"].values() for path in category}
         patcher = self.load_json("patchers/reference_texture~.maxpat")["patcher"]
         text = "\n".join(item["box"].get("text", "") for item in patcher["boxes"])
         for anchor in ("065", "110", "180", "260", "380", "520"):
             for variant in ("a", "b"):
                 filename = f"engine_texture_{anchor}_{variant}.wav"
-                self.assertIn(f"media/{filename}", declared)
+                self.assertNotIn(f"media/{filename}", declared)
                 self.assertIn(filename, text)
         self.assertIn("expr max(.9,min(1.1", text)
         self.assertNotIn("max(.25,min(4.", text)
@@ -1108,10 +1237,10 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
             self.assertNotIn("clamp(tanh", code)
 
     def test_v3_project_identity_and_public_entrypoint(self):
-        project_path = ROOT / "VehicleSoundSynth-V4.maxproj"
+        project_path = ROOT / "VehicleSoundSynth-V5.maxproj"
         self.assertTrue(project_path.is_file())
-        project = self.load_json("VehicleSoundSynth-V4.maxproj")
-        self.assertEqual("VehicleSoundSynth-V4", project["name"])
+        project = self.load_json("VehicleSoundSynth-V5.maxproj")
+        self.assertEqual("VehicleSoundSynth-V5", project["name"])
         self.assertTrue((ROOT / "main.maxpat").is_file())
 
     def test_v2_public_engine_contract_covers_lifecycle_events_and_master_eq(self):
@@ -1142,7 +1271,6 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
     def test_v3_exposes_independent_db_trim_for_every_audio_stem(self):
         stem_contract = {
             "patchers/powertrain~.maxpat": "powertrain_level_db",
-            "patchers/transient~.maxpat": "transient_level_db",
             "patchers/road_air~.maxpat": "road_level_db",
             "patchers/cabin_rumble~.maxpat": "rumble_level_db",
         }
@@ -1161,9 +1289,9 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
 
         presets = self.load_json("presets/sound_dna.json")
         expected = {
-            "Future EV": (-2.0, -9.0, -14.0, -60.0),
-            "High-Rev V12": (-3.0, -7.0, -16.0, -5.0),
-            "Aggressive V10": (-3.0, -6.0, -16.0, -4.0),
+            "Future EV": (-2.0, -14.0, -60.0),
+            "High-Rev V12": (-3.0, -16.0, -5.0),
+            "Aggressive V10": (-3.0, -16.0, -4.0),
         }
         for name, levels in expected.items():
             self.assertEqual(
@@ -1204,7 +1332,7 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
             self.assertEqual(value, presets[name]["cabin_ir_mix"])
 
     def test_v3_cabin_rumble_module_is_declared_and_runnable(self):
-        project = self.load_json("VehicleSoundSynth-V4.maxproj")
+        project = self.load_json("VehicleSoundSynth-V5.maxproj")
         declared = {
             relative_path
             for category in project["contents"].values()
@@ -1378,50 +1506,17 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
         ]
         self.assertEqual(1, len(exhaust_on_inputs), "public pop/exhaust requests must not be duplicated")
 
-        transient = self.load_json("patchers/transient~.maxpat")
+        transient = self.load_json("patchers/v10_backfire_host~.maxpat")
         transient_text = "\n".join(item["box"].get("text", "") for item in transient["patcher"]["boxes"])
-        self.assertGreaterEqual(transient_text.count("gate 1"), 5)
+        self.assertIn("gate 1", transient_text)
         self.assertIn("engine_running", transient_text)
-        self.assertIn("expr $i1*$i2", transient_text)
-        transient_boxes = {item["box"]["id"]: item["box"] for item in transient["patcher"]["boxes"]}
-        starter_stop_id = next(
-            box_id for box_id, box in transient_boxes.items()
-            if box.get("maxclass") == "message" and box.get("text") == "stop"
-        )
-        starter_player_ids = {
-            box_id for box_id, box in transient_boxes.items()
-            if box.get("text") in {
-                "play~ starter_v12 1",
-                "play~ starter_v10 1",
-                "play~ ferrari_startup 2",
-            }
-        }
-        stopped_players = {
-            line["patchline"]["destination"][0]
-            for line in transient["patcher"]["lines"]
-            if line["patchline"]["source"][0] == starter_stop_id
-        }
-        self.assertEqual(starter_player_ids, stopped_players)
-        self.assertIn(
-            "buffer~ ferrari_startup Patcher:/media/local/ferrari_sf90_startup.wav",
-            transient_text,
-        )
-        self.assertIn("play~ ferrari_startup 2", transient_text)
-        self.assertIn("info~ ferrari_startup", transient_text)
-        self.assertIn("delay 250", transient_text)
-        self.assertIn("expr $f1>1000.", transient_text)
-        self.assertIn("expr 1.-$f1", transient_text)
-        self.assertEqual(2, transient_text.count("pack 0. 20"))
-        self.assertIn("1. 20", transient_text)
-        self.assertIn("0. 350", transient_text)
-        self.assertIn("delay 400", transient_text)
-        self.assertEqual(2, transient_text.count("svf~ 1600 0.7"))
-        self.assertEqual(2, transient_text.count("*~ 0.08"))
-        self.assertEqual(2, transient_text.count("*~ 0.35"))
+        self.assertIn("($f1 < -0.18) && ($f2 > 1400.)", transient_text)
+        self.assertIn("backfire_intensity", transient_text)
+        self.assertNotIn("play~", transient_text)
 
     def test_runnable_project_has_public_engine_interface(self):
         required = [
-            "VehicleSoundSynth-V4.maxproj",
+            "VehicleSoundSynth-V5.maxproj",
             "main.maxpat",
             "patchers/vehicle_engine~.maxpat",
         ]
@@ -1706,7 +1801,6 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
                 "rpm", "throttle", "load", "aggression", "brightness", "body",
                 "texture", "ev_weight", "v12_weight", "v10_weight", "powertrain_level_db",
             ),
-            "patchers/transient~.maxpat": ("aggression", "texture", "transient_level_db"),
             "patchers/road_air~.maxpat": (
                 "speed_kph", "brightness", "texture", "cabin_width", "road_level_db",
             ),
@@ -1821,7 +1915,7 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
             self.assertTrue(output_ids.issubset(destinations), path.name)
 
     def test_ev_profile_exposes_two_complete_user_tunable_beap_pad_chains(self):
-        project = self.load_json("VehicleSoundSynth-V4.maxproj")
+        project = self.load_json("VehicleSoundSynth-V5.maxproj")
         declared = {
             relative_path
             for category in project["contents"].values()
@@ -1907,7 +2001,7 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
         self.assertIn("loadmess -3", driver_text)
 
     def test_project_search_path_schema_and_runtime_resources_are_declared(self):
-        project = self.load_json("VehicleSoundSynth-V4.maxproj")
+        project = self.load_json("VehicleSoundSynth-V5.maxproj")
         # Max 8.6.x expects a dictionary here and can crash while opening a
         # project whose searchpath is encoded as an array. Explicit relative
         # paths avoid collisions with Max's own patchers/gen/media folders.
@@ -1926,22 +2020,21 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
         }
         required = {
             "main.maxpat",
-            "patchers/vehicle_engine~.maxpat",
-            "patchers/engine_controller.maxpat",
-            "patchers/powertrain~.maxpat",
-            "patchers/reference_texture~.maxpat",
             "patchers/transient~.maxpat",
             "patchers/road_air~.maxpat",
             "patchers/cabin_master~.maxpat",
             "patchers/mix_master~.maxpat",
-            "patchers/drive_simulator.maxpat",
+            "patchers/vehicle_engine_ev~.maxpat",
+            "patchers/vehicle_engine_v10~.maxpat",
+            "patchers/vehicle_engine_v12~.maxpat",
+            "patchers/drive_simulator_ev.maxpat",
+            "patchers/drive_simulator_v10.maxpat",
+            "patchers/drive_simulator_v12.maxpat",
             "gen/ev_powertrain.gendsp",
             "gen/v12_powertrain.gendsp",
             "gen/v10_powertrain.gendsp",
-            "media/shift_thump.wav",
-            "media/exhaust_pop.wav",
-            "media/mechanical_click.wav",
             "presets/sound_dna.json",
+            "presets/vehicle_bus_eq_default.json",
         }
         self.assertTrue(required.issubset(declared))
         for relative_path in declared:
@@ -2113,21 +2206,19 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
             for relative_path in (
                 "runtime_probe_v12_idle_on.maxpat",
                 f"{bundle.name}.maxproj",
-                "vehicle_engine~.maxpat",
-                "engine_controller.maxpat",
+                "engine_controller_v12.maxpat",
+                "v12_powertrain~.maxpat",
                 "cabin_rumble~.maxpat",
                 "v12_powertrain.gendsp",
                 "drive_model.js",
                 "media/starter_v12.wav",
-                "reference_texture~.maxpat",
-                "media/engine_texture_065_a.wav",
-                "media/engine_texture_520_b.wav",
+                "presets/vehicle_bus_eq_default.json",
                 "media/local/ferrari_sf90_startup.wav",
-                "media/local/ferrari_sf90_idle_body.wav",
                 "ferrari_sf90_startup.wav",
-                "ferrari_sf90_idle_body.wav",
             ):
                 self.assertTrue((bundle / relative_path).is_file(), relative_path)
+            self.assertFalse((bundle / "media/local/ferrari_sf90_idle_body.wav").exists())
+            self.assertFalse((bundle / "media/engine_texture_065_a.wav").exists())
             with (bundle / "runtime_probe_v12_idle_on.maxpat").open(encoding="utf-8") as handle:
                 probe = json.load(handle)
             text = "\n".join(item["box"].get("text", "") for item in probe["patcher"]["boxes"])
@@ -2144,7 +2235,9 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
             self.assertIn("dsptime~", text)
             self.assertIn("past 4000", text)
             project = json.loads((bundle / f"{bundle.name}.maxproj").read_text(encoding="utf-8"))
-            self.assertIn("vehicle_engine~.maxpat", project["contents"]["patchers"])
+            self.assertIn("v12_powertrain~.maxpat", project["contents"]["patchers"])
+            self.assertNotIn("vehicle_engine~.maxpat", project["contents"]["patchers"])
+            self.assertNotIn("reference_texture~.maxpat", project["contents"]["patchers"])
             self.assertIn("v12_powertrain.gendsp", project["contents"]["code"])
             self.assertIn("drive_model.js", project["contents"]["code"])
             self.assertIn("media/starter_v12.wav", project["contents"]["media"])
@@ -2251,11 +2344,14 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
         self.assertNotIn("loadmess -6", text)
 
     def test_runtime_buffers_resolve_media_through_project_search_path(self):
-        transient = self.load_json("patchers/transient~.maxpat")["patcher"]
+        transients = [
+            self.load_json(f"patchers/transient_{profile}~.maxpat")["patcher"]
+            for profile in ("v10", "v12")
+        ]
         reference = self.load_json("patchers/reference_texture~.maxpat")["patcher"]
         buffer_texts = [
             item["box"].get("text", "")
-            for patcher in (transient, reference)
+            for patcher in (*transients, reference)
             for item in patcher["boxes"]
             if item["box"].get("text", "").startswith("buffer~ ")
         ]
@@ -2335,6 +2431,28 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
             self.assertNotIn("ev_weight", text)
             self.assertIn("ignition 0", text)
             self.assertNotIn("start 1", text)
+
+    def test_runtime_probe_can_render_ice_pad_on_without_enabling_it_in_other_scenarios(self):
+        with tempfile.TemporaryDirectory() as directory:
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / "tools" / "build_runtime_probe.py"),
+                    "--bundle-root", directory,
+                    "--scenario", "v10-pad-on",
+                    "--render-ms", "1000",
+                ],
+                check=True,
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+            )
+            probe_path = Path(directory) / "runtime_probe_v10_v10-pad-on_on.maxpat"
+            probe = json.loads(probe_path.read_text(encoding="utf-8"))["patcher"]
+            text = "\n".join(item["box"].get("text", "") for item in probe["boxes"])
+            self.assertIn("v10_pad_host~", text)
+            self.assertIn("pad_level_db -8", text)
+            self.assertIn("pad_mute 0", text)
 
     def test_mix_runtime_probe_builder_exposes_eq_trim_and_bypass_scenarios(self):
         with tempfile.TemporaryDirectory() as directory:

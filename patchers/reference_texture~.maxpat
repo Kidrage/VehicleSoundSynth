@@ -21,7 +21,7 @@
             1050.0,
             22.0
           ],
-          "text": "CC0 stereo engine residual bank \u2014 six firing-rate anchors, two asynchronous loops each"
+          "text": "OFFLINE V4 ARCHIVE \u2014 never declared or loaded by a V5 runtime"
         }
       },
       {

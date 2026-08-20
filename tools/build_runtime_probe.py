@@ -45,10 +45,28 @@ SCENARIOS = {
     "ev-pad-off": {"profile": "ev", "rpm": 1800.0, "throttle": 0.35, "pad_mute": 1},
     "ev-pad-solo": {"profile": "ev", "rpm": 1800.0, "throttle": 0.35, "pad_solo": 1},
     "ev-pad-mute": {"profile": "ev", "rpm": 1800.0, "pad_mute": 1},
+    "v10-pad-on": {
+        "profile": "v10", "rpm": 1800.0, "throttle": 0.35, "lock_rpm": True,
+        "pad_level_db": -8.0, "pad_mute": 0,
+    },
+    "v10-pad-off": {
+        "profile": "v10", "rpm": 1800.0, "throttle": 0.35, "lock_rpm": True,
+        "pad_mute": 1,
+    },
+    "v12-pad-on": {
+        "profile": "v12", "rpm": 1800.0, "throttle": 0.35, "lock_rpm": True,
+        "pad_level_db": -9.0, "pad_mute": 0,
+    },
     "shift-up": {"profile": "v12", "rpm": 3200.0, "event": "shift_dir 1, shift 1"},
     "shift-down": {"profile": "v10", "rpm": 2800.0, "event": "shift_dir -1, shift 1"},
-    "intake-backfire": {"profile": "v10", "rpm": 3600.0, "event": "intake_backfire 1"},
-    "exhaust-pop": {"profile": "v12", "rpm": 3300.0, "event": "exhaust_pop 1"},
+    "intake-backfire": {
+        "profile": "v10", "rpm": 3600.0, "lock_rpm": True,
+        "event": "intake_backfire 1",
+    },
+    "exhaust-pop": {
+        "profile": "v12", "rpm": 3300.0, "lock_rpm": True,
+        "event": "exhaust_pop 1",
+    },
     "v10-lifecycle-idle": {
         "profile": "v10", "rpm": 740.0, "throttle": 0.08, "load": 0.15,
         "lock_rpm": True, "lifecycle_role": "idle", "extra_messages": ("accel 0",),
@@ -155,6 +173,11 @@ def make_probe(
     rpm_select_default = p.new("loadmess 1", 190, 260, 80, numinlets=1, numoutlets=1)
     rpm_named = p.new("prepend rpm", 190, 320, 90, numinlets=1, numoutlets=1)
     powertrain = p.new(f"{profile}_powertrain~", 300, 330, 135, numinlets=1, numoutlets=2)
+    pad = (
+        p.new(f"{profile}_pad_host~", 445, 330, 135, numinlets=1, numoutlets=2)
+        if profile in ("v10", "v12")
+        else None
+    )
     transient = p.new(f"transient_{profile}~", 160, 330, 125, numinlets=1, numoutlets=2)
     road = p.new("road_air~", 70, 330, 85, numinlets=1, numoutlets=2)
     rumble = p.new("cabin_rumble~", 430, 330, 110, numinlets=3, numoutlets=2)
@@ -170,12 +193,20 @@ def make_probe(
     p.connect(rpm_named, controller)
     for controlled in (powertrain, transient, road, rumble, cabin, mix):
         p.connect(controller, controlled, 0, 0)
+    if pad is not None:
+        p.connect(controller, pad, 0, 0)
     p.connect(powertrain, add_l, 0, 0)
     p.connect(transient, add_l, 0, 1)
     p.connect(powertrain, rumble, 0, 1)
     road_l = p.new("+~", 250, 395, 40, numinlets=2, numoutlets=1)
     sum_l = p.new("+~", 300, 420, 40, numinlets=2, numoutlets=1)
-    p.connect(add_l, road_l, 0, 0)
+    engine_l = add_l
+    if pad is not None:
+        pad_sum_l = p.new("+~", 205, 375, 40, numinlets=2, numoutlets=1)
+        p.connect(add_l, pad_sum_l, 0, 0)
+        p.connect(pad, pad_sum_l, 0, 1)
+        engine_l = pad_sum_l
+    p.connect(engine_l, road_l, 0, 0)
     p.connect(road, road_l, 0, 1)
     p.connect(road_l, sum_l, 0, 0)
     p.connect(rumble, sum_l, 0, 1)
@@ -184,7 +215,13 @@ def make_probe(
     p.connect(powertrain, rumble, 1, 2)
     road_r = p.new("+~", 480, 395, 40, numinlets=2, numoutlets=1)
     sum_r = p.new("+~", 430, 420, 40, numinlets=2, numoutlets=1)
-    p.connect(add_r, road_r, 0, 0)
+    engine_r = add_r
+    if pad is not None:
+        pad_sum_r = p.new("+~", 525, 375, 40, numinlets=2, numoutlets=1)
+        p.connect(add_r, pad_sum_r, 0, 0)
+        p.connect(pad, pad_sum_r, 1, 1)
+        engine_r = pad_sum_r
+    p.connect(engine_r, road_r, 0, 0)
     p.connect(road, road_r, 1, 1)
     p.connect(road_r, sum_r, 0, 0)
     p.connect(rumble, sum_r, 1, 1)
@@ -204,8 +241,10 @@ def make_probe(
             f"cabin_ir_mix {settings['ir_mix']:g}",
             "eq_highmid 3800. -3. 1.",
             "eq_high 9000. -4.",
-            "master_trim_db -8.",
+        "master_trim_db -8.",
     )
+    if profile in ("v10", "v12"):
+        default_messages += ("pad_mute 1",)
     if drive_lifecycle:
         default_messages = (
             "ignition 0", "auto 1",
@@ -469,7 +508,13 @@ def main() -> None:
     root = Path(__file__).resolve().parents[1]
     bundle = args.bundle_root.resolve()
     media = bundle / "media"
+    presets = bundle / "presets"
     media.mkdir(parents=True, exist_ok=True)
+    (presets / "local").mkdir(parents=True, exist_ok=True)
+    shutil.copy2(
+        root / "presets" / "vehicle_bus_eq_default.json",
+        presets / "vehicle_bus_eq_default.json",
+    )
     for source in (root / "patchers").glob("*.maxpat"):
         document = json.loads(source.read_text(encoding="utf-8"))
         for item in document["patcher"]["boxes"]:
@@ -498,7 +543,12 @@ def main() -> None:
         shutil.copy2(source, bundle / source.name)
     for source in (root / "code").glob("*.js"):
         shutil.copy2(source, bundle / source.name)
+    runtime_media_names = {
+        "cabin_ir_l.wav", "cabin_ir_r.wav", "starter_v10.wav", "starter_v12.wav",
+    }
     for source in (root / "media").glob("*.wav"):
+        if source.name not in runtime_media_names:
+            continue
         shutil.copy2(source, media / source.name)
         # Some patchers use an explicit media/foo.wav argument while Max resolves
         # abstractions from the bundle root. Keep both layouts in the probe.
@@ -511,14 +561,11 @@ def main() -> None:
     if local_media_source.is_dir():
         local_media_destination = media / "local"
         local_media_destination.mkdir(parents=True, exist_ok=True)
-        for source in local_media_source.glob("*.wav"):
+        for source in local_media_source.glob("ferrari_sf90_startup.wav"):
             shutil.copy2(source, local_media_destination / source.name)
             # Runtime probes are opened directly, without first registering the
             # generated project search path. Mirror local-only files at the
             # bundle root so bare buffer names resolve exactly like CC0 media.
-            shutil.copy2(source, bundle / source.name)
-        for source in local_media_source.glob("*.json"):
-            shutil.copy2(source, local_media_destination / source.name)
             shutil.copy2(source, bundle / source.name)
     sweep_to_rpm = scenario.get("sweep_to_rpm", args.sweep_to_rpm)
     if sweep_to_rpm is not None:
@@ -585,9 +632,38 @@ def main() -> None:
             trace,
         )
     project_name = bundle.name
+    required_patchers = {
+        patch.name,
+        f"drive_simulator_{profile}.maxpat",
+        f"engine_controller_{profile}.maxpat",
+        f"{profile}_powertrain~.maxpat",
+        f"transient_{profile}~.maxpat",
+        "transient~.maxpat",
+        "road_air~.maxpat",
+        "cabin_rumble~.maxpat",
+        "cabin_master~.maxpat",
+        "mix_master~.maxpat",
+        "engine_start_voice.maxpat",
+        "engine_start_beap~.maxpat",
+    }
+    if profile == "ev":
+        required_patchers.update({
+            "ev_soundscape_host~.maxpat",
+            "ev_relax_voice.maxpat", "ev_expressive_voice.maxpat", "ev_sport_voice.maxpat",
+            "ev_pad_beap~.maxpat", "ev_expressive_beap~.maxpat", "ev_sport_beap~.maxpat",
+        })
+    else:
+        required_patchers.update({
+            f"{profile}_backfire_host~.maxpat",
+            f"{profile}_backfire_beap~.maxpat",
+            f"{profile}_pad_host~.maxpat",
+            f"{profile}_pad_voice.maxpat",
+            f"{profile}_pad_beap~.maxpat",
+        })
     patcher_contents = {
         path.name: {"kind": "patcher", "local": 1}
         for path in sorted(bundle.glob("*.maxpat"))
+        if path.name in required_patchers
     }
     code_contents = {
         path.name: {"kind": "gendsp", "local": 1}
@@ -601,6 +677,9 @@ def main() -> None:
         path.relative_to(bundle).as_posix(): {"kind": "mediafile", "local": 1}
         for path in sorted(media.rglob("*.wav"))
     }
+    data_contents = {
+        "presets/vehicle_bus_eq_default.json": {"kind": "data", "local": 1},
+    }
     write_json(
         bundle / f"{project_name}.maxproj",
         {
@@ -612,6 +691,7 @@ def main() -> None:
                 "patchers": patcher_contents,
                 "code": code_contents,
                 "media": media_contents,
+                "data": data_contents,
             },
             "searchpath": {
                 "bundle": {"path": ".", "recursive": 1},

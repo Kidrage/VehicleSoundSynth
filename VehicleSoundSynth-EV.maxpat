@@ -21,7 +21,7 @@
             720.0,
             22.0
           ],
-          "text": "VehicleSoundSynth V4 \u2014 Future EV independent runtime"
+          "text": "VehicleSoundSynth V5 \u2014 Future EV independent runtime"
         }
       },
       {

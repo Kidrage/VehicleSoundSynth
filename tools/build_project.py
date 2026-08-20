@@ -23,8 +23,18 @@ APP_VERSION = {
     "architecture": "x64",
     "modernui": 1,
 }
-PROJECT_NAME = "VehicleSoundSynth-V4"
+PROJECT_NAME = "VehicleSoundSynth-V5"
 PROJECT_FILENAME = f"{PROJECT_NAME}.maxproj"
+VEHICLE_BUS_EQ_DEFAULT = {
+    "schema_version": 1,
+    "bands": {
+        "eq_low": [90.0, 0.0],
+        "eq_lowmid": [250.0, 0.0, 0.8],
+        "eq_highmid": [3800.0, 0.0, 1.0],
+        "eq_high": [9000.0, 0.0],
+        "eq_bypass": [0],
+    },
+}
 BEAP_CLIPPING_ROOT = Path(
     "/Applications/Max.app/Contents/Resources/C74/packages/BEAP/clippings/BEAP"
 )
@@ -34,6 +44,9 @@ BEAP_CLIPPING_SHA256 = {
     "Filter/bp.Ladder.maxpat": "1292c18863374400f4f1924939c3321fb66c0f04dae357184a373f819be3c380",
     "Envelope/bp.ADSR.maxpat": "86e9594b9aa21a6794eb544f3ecb9730d2154e60acefdbc903f06c30fe4231dd",
     "Level/bp.VCA.maxpat": "aa62bb0c452f34fb7f326b7a9ca74db9f5c85f7dfde5898d13e1ba96255b74ed",
+    "Random/bp.Noise.maxpat": "29f0644ed93cf63fbbfa24e5a7d61489d55bcff038885c6fbab72afc6e69de47",
+    "Envelope/bp.AD.maxpat": "1b57cd17e4033d60c401d66991044e90e9cd97a950aa772d3a5a3adb74758d47",
+    "Filter/bp.MMF.maxpat": "ad0be37d9cffafeef1f7b736527149fba1b63c36d45be82199b33bddf98d11b1",
 }
 
 STATE_NAMES = (
@@ -74,6 +87,8 @@ MACRO_NAMES = (
     "pad_level_db",
     "pad_mute",
     "pad_solo",
+    "backfire_enable",
+    "backfire_intensity",
     "reference_texture_level_db",
     "reference_texture_mute",
     "eq_low",
@@ -517,6 +532,290 @@ def make_ev_mode_beap(mode: str) -> dict[str, Any]:
     return document
 
 
+def make_ice_pad_beap(profile: str) -> dict[str, Any]:
+    """Seed a slow, user-owned cinematic ICE pad without saw oscillators."""
+    document = make_ev_pad_beap()
+    patcher = document["patcher"]
+    patcher["boxes"][0]["box"]["text"] = (
+        f"USER-TUNABLE {profile.upper()} CINEMATIC PAD — preserved on rebuild"
+    )
+    settings = {
+        "v10": {
+            "Mixer": {"in1": -14, "in2": -19},
+            "Ladder": {"Freq": 980, "Res": 7},
+            "ADSR": {"Attack": 720, "Decay": 1450, "Sustain": 76, "Release": 2400},
+        },
+        "v12": {
+            "Mixer": {"in1": -16, "in2": -17},
+            "Ladder": {"Freq": 1250, "Res": 6},
+            "ADSR": {"Attack": 980, "Decay": 1800, "Sustain": 72, "Release": 3000},
+        },
+    }[profile]
+    for item in patcher["boxes"]:
+        box = item["box"]
+        varname = box.get("varname", "")
+        for module, values in settings.items():
+            if module in varname:
+                for parameter, value in values.items():
+                    _set_beap_initial(box, parameter, value)
+    return document
+
+
+def make_ice_pad_voice(profile: str) -> dict[str, Any]:
+    p = Patcher(620, 360)
+    p.comment(f"{profile.upper()} cinematic pad poly voice", 20, 15, 420)
+    pitch = p.new("in~ 1", 35, 65, 45, numinlets=0, numoutlets=1)
+    gate = p.new("in~ 2", 125, 65, 45, numinlets=0, numoutlets=1)
+    motion = p.new("in~ 3", 215, 65, 45, numinlets=0, numoutlets=1)
+    beap = p.new(f"{profile}_pad_beap~", 120, 135, 150, numinlets=3, numoutlets=2)
+    p.new("thispoly~", 390, 135, 70, numinlets=2, numoutlets=3)
+    left = p.new("out~ 1", 90, 265, 50, numinlets=1, numoutlets=0)
+    right = p.new("out~ 2", 260, 265, 50, numinlets=1, numoutlets=0)
+    p.connect(pitch, beap, 0, 0)
+    p.connect(gate, beap, 0, 1)
+    p.connect(motion, beap, 0, 2)
+    p.connect(beap, left, 0, 0)
+    p.connect(beap, right, 1, 0)
+    return p.document()
+
+
+def make_ice_pad_host(profile: str) -> dict[str, Any]:
+    """Map continuous vehicle state to a suspendable cinematic BEAP pad."""
+    p = Patcher(980, 650)
+    p.comment(f"{profile.upper()} PAD HOST — continuous RPM/throttle CV, independent level and mute", 25, 15, 800)
+    control = inlet(p, 35, 65)
+    names = ("rpm", "throttle", "ignition", "start", "pad_level_db", "pad_mute")
+    router = route(p, names, 35, 105, 520)
+    p.connect(control, router)
+
+    rpm = p.new("clip 0. 10000.", 35, 155, 105, numinlets=3, numoutlets=1)
+    pitch = p.new(
+        "expr log(max(24.,36.7+0.014*$f1)/261.625565)/log(2.)",
+        35, 195, 360, numinlets=1, numoutlets=1,
+    )
+    pitch_pack = p.new("pack 0. 90", 35, 235, 85, numinlets=2, numoutlets=1)
+    pitch_line = p.new("line~", 35, 275, 50, numinlets=2, numoutlets=2)
+    throttle = p.new("clip 0. 1.", 420, 155, 75, numinlets=3, numoutlets=1)
+    motion = p.new(f"expr {1.0 if profile == 'v10' else 0.8:g}+2.4*$f1", 420, 195, 170, numinlets=1, numoutlets=1)
+    motion_pack = p.new("pack 0. 140", 420, 235, 95, numinlets=2, numoutlets=1)
+    motion_line = p.new("line~", 420, 275, 50, numinlets=2, numoutlets=2)
+    ignition = p.new("clip 0 1", 620, 155, 65, numinlets=3, numoutlets=1)
+    active_state = p.new("pak 0 0", 700, 155, 75, numinlets=2, numoutlets=1)
+    pad_active = p.new("expr $i1 && !$i2", 785, 155, 120, numinlets=2, numoutlets=1)
+    gate_cv = p.new("expr $f1*5.", 620, 195, 90, numinlets=1, numoutlets=1)
+    gate_pack = p.new("pack 0. 80", 620, 235, 85, numinlets=2, numoutlets=1)
+    gate_line = p.new("line~", 620, 275, 50, numinlets=2, numoutlets=2)
+    p.connect(router, rpm, 0)
+    p.connect(rpm, pitch)
+    p.connect(pitch, pitch_pack)
+    p.connect(pitch_pack, pitch_line)
+    p.connect(router, throttle, 1)
+    p.connect(throttle, motion)
+    p.connect(motion, motion_pack)
+    p.connect(motion_pack, motion_line)
+    p.connect(router, ignition, 2)
+    p.connect(ignition, active_state, 0, 0)
+    p.connect(active_state, pad_active)
+    p.connect(pad_active, gate_cv)
+    p.connect(gate_cv, gate_pack)
+    p.connect(gate_pack, gate_line)
+
+    voice = p.new(f"poly~ {profile}_pad_voice 1", 245, 335, 175, numinlets=3, numoutlets=2)
+    unmute = p.message("mute 1 0", 640, 335, 65)
+    initial_suspend = p.new("loadmess mute 1 1", 715, 335, 125, numinlets=1, numoutlets=1)
+    ignition_edges = p.new("sel 1 0", 620, 305, 55, numinlets=1, numoutlets=3)
+    off_reschedule = p.new("t b b", 620, 375, 50, numinlets=1, numoutlets=2)
+    cancel = p.message("stop", 680, 375, 40)
+    suspend_delay = p.new("delay 3100", 730, 375, 80, numinlets=2, numoutlets=1)
+    suspend = p.message("mute 1 1", 820, 375, 65)
+    p.connect(pitch_line, voice, 0, 0)
+    p.connect(gate_line, voice, 0, 1)
+    p.connect(motion_line, voice, 0, 2)
+    p.connect(pad_active, ignition_edges)
+    p.connect(ignition_edges, cancel, 0)
+    p.connect(cancel, suspend_delay)
+    p.connect(ignition_edges, unmute, 0)
+    p.connect(unmute, voice)
+    p.connect(initial_suspend, voice)
+    p.connect(ignition_edges, off_reschedule, 1)
+    p.connect(off_reschedule, cancel, 1)
+    p.connect(off_reschedule, suspend_delay, 0)
+    p.connect(suspend_delay, suspend)
+    p.connect(suspend, voice)
+
+    level = add_db_gain_control(p, router, 4, 35, 405, -18.0 if profile == "v10" else -20.0)
+    mute = p.new("clip 0 1", 35, 455, 65, numinlets=3, numoutlets=1)
+    mute_gain = p.new("expr 1-$i1", 110, 455, 80, numinlets=1, numoutlets=1)
+    mute_pack = p.new("pack 0. 40", 200, 455, 85, numinlets=2, numoutlets=1)
+    mute_line = p.new("line~", 295, 455, 50, numinlets=2, numoutlets=2)
+    mute_default = p.new("loadmess 0", 110, 490, 80, numinlets=1, numoutlets=1)
+    p.connect(router, mute, 5)
+    p.connect(mute_default, mute)
+    p.connect(mute, mute_gain)
+    p.connect(mute, active_state, 0, 1)
+    p.connect(mute_gain, mute_pack)
+    p.connect(mute_pack, mute_line)
+    outputs = []
+    for channel, x in ((0, 245), (1, 455)):
+        level_gain = p.new("*~", x, 520, 40, numinlets=2, numoutlets=1)
+        mute_stage = p.new("*~", x, 560, 40, numinlets=2, numoutlets=1)
+        out = outlet(p, x, 610, signal=True)
+        p.connect(voice, level_gain, channel, 0)
+        p.connect(level, level_gain, 0, 1)
+        p.connect(level_gain, mute_stage)
+        p.connect(mute_line, mute_stage, 0, 1)
+        p.connect(mute_stage, out)
+        outputs.append(out)
+    return p.document()
+
+
+def make_ice_backfire_beap(profile: str) -> dict[str, Any]:
+    """Seed a user-owned pressure-release voice built from BEAP modules."""
+    p = Patcher(1540, 560)
+    p.comment(f"USER-TUNABLE {profile.upper()} PHYSICAL BACKFIRE — preserved on rebuild", 25, 15, 760)
+    pitch = inlet(p, 45, 65, signal=True)
+    gate = inlet(p, 145, 65, signal=True)
+    intensity = inlet(p, 245, 65, signal=True)
+    noise = add_beap_module(p, "Random/bp.Noise.maxpat", 25, 135, "Noise")
+    osc = add_beap_module(p, "Oscillator/bp.Oscillator.maxpat", 300, 135, "Osc", initial={"Waveform": 0})
+    mixer = add_beap_module(
+        p, "Mixers/bp.Audio Mixer.maxpat", 625, 135, "Mixer",
+        initial={"in1": -10 if profile == "v10" else -14, "in2": -15 if profile == "v10" else -12},
+    )
+    mmf = add_beap_module(
+        p, "Filter/bp.MMF.maxpat", 845, 135, "MMF",
+        initial={"Freq": 520 if profile == "v10" else 420, "Res": 18 if profile == "v10" else 12, "FilterType": 0},
+    )
+    envelope = add_beap_module(
+        p, "Envelope/bp.AD.maxpat", 1120, 135, "AD",
+        initial={"Attack": 3 if profile == "v10" else 6, "Decay": 125 if profile == "v10" else 190},
+    )
+    vca = add_beap_module(p, "Level/bp.VCA.maxpat", 1320, 135, "VCA")
+    env_amount = p.new("*~ 0.72", 1140, 350, 65, numinlets=2, numoutlets=1)
+    # Some installed BEAP AD/VCA revisions ignore a very short external gate
+    # edge. Keep their editable path, but parallel it with a bounded pressure
+    # envelope made from the same BEAP-filtered signal so every trigger is
+    # physically audible and deterministic across Max 8.6.x installations.
+    gate_trim = p.new("*~ 0.06", 1220, 390, 65, numinlets=2, numoutlets=1)
+    pressure_vca = p.new("*~", 1300, 390, 40, numinlets=2, numoutlets=1)
+    pressure_sum = p.new("+~", 1355, 390, 40, numinlets=2, numoutlets=1)
+    left = outlet(p, 1320, 455, signal=True)
+    right_tone = p.new("lores~ 620 0.55", 1400, 400, 115, numinlets=3, numoutlets=1)
+    right = outlet(p, 1450, 455, signal=True)
+    p.connect(noise, mixer, 0, 0)
+    p.connect(pitch, osc, 0, 0)
+    p.connect(osc, mixer, 0, 1)
+    p.connect(mixer, mmf, 0, 0)
+    p.connect(intensity, mmf, 0, 1)
+    p.connect(gate, envelope, 0, 0)
+    p.connect(envelope, env_amount)
+    p.connect(intensity, env_amount, 0, 1)
+    p.connect(mmf, vca, 0, 0)
+    p.connect(env_amount, vca, 0, 1)
+    p.connect(gate, gate_trim)
+    p.connect(mmf, pressure_vca, 0, 0)
+    p.connect(gate_trim, pressure_vca, 0, 1)
+    p.connect(vca, pressure_sum, 0, 0)
+    p.connect(pressure_vca, pressure_sum, 0, 1)
+    p.connect(pressure_sum, left)
+    p.connect(pressure_sum, right_tone)
+    p.connect(right_tone, right)
+    return p.document()
+
+
+def make_ice_backfire_host(profile: str) -> dict[str, Any]:
+    """Trigger backfire from real overrun/shift state and explicit events."""
+    p = Patcher(1080, 700)
+    p.comment(f"{profile.upper()} BACKFIRE HOST — overrun/shift pressure release; no sample playback", 25, 15, 820)
+    control = inlet(p, 35, 65)
+    names = (
+        "rpm", "throttle", "accel", "shift", "shift_dir", "intake_backfire",
+        "exhaust_pop", "pop", "ignition", "engine_running", "backfire_enable",
+        "backfire_intensity", "transient_level_db",
+    )
+    router = route(p, names, 35, 105, 960)
+    p.connect(control, router)
+    rpm = p.new("clip 0. 10000.", 35, 160, 105, numinlets=3, numoutlets=1)
+    rpm_store = p.new("f 1800.", 150, 160, 65, numinlets=2, numoutlets=1)
+    pitch_map = p.new("expr log(max(35.,48.+0.018*$f1)/261.625565)/log(2.)", 35, 205, 370, numinlets=1, numoutlets=1)
+    pitch_pack = p.new("pack 0. 18", 35, 245, 85, numinlets=2, numoutlets=1)
+    pitch_line = p.new("line~", 35, 285, 50, numinlets=2, numoutlets=2)
+    p.connect(router, rpm, 0)
+    p.connect(rpm, rpm_store, 0, 1)
+    p.connect(rpm_store, pitch_map)
+    p.connect(pitch_map, pitch_pack)
+    p.connect(pitch_pack, pitch_line)
+
+    throttle = p.new("clip 0. 1.", 430, 160, 75, numinlets=3, numoutlets=1)
+    accel_rpm = p.new("pak 0. 1800.", 520, 160, 95, numinlets=2, numoutlets=1)
+    overrun = p.new("expr ($f1 < -0.18) && ($f2 > 1400.)", 520, 205, 235, numinlets=2, numoutlets=1)
+    overrun_change = p.new("change", 520, 245, 55, numinlets=1, numoutlets=1)
+    overrun_edge = p.new("sel 1", 585, 245, 45, numinlets=1, numoutlets=2)
+    p.connect(router, throttle, 1)
+    p.connect(router, accel_rpm, 2, 0)
+    p.connect(rpm, accel_rpm, 0, 1)
+    p.connect(accel_rpm, overrun)
+    p.connect(overrun, overrun_change)
+    p.connect(overrun_change, overrun_edge)
+
+    enable = p.new("clip 0 1", 780, 160, 65, numinlets=3, numoutlets=1)
+    enable_default = p.new("loadmess 1", 855, 160, 80, numinlets=1, numoutlets=1)
+    event_gate = p.new("gate 1", 780, 245, 55, numinlets=2, numoutlets=1)
+    p.connect(router, enable, 10)
+    p.connect(enable_default, enable)
+    p.connect(enable, event_gate, 0, 0)
+    p.connect(overrun_edge, event_gate, 0, 1)
+    for index in (3, 5, 6, 7):
+        edge = p.new("sel 1", 650 + (index - 3) * 70, 205, 45, numinlets=1, numoutlets=2)
+        p.connect(router, edge, index)
+        p.connect(edge, event_gate, 0, 1)
+
+    intensity_default_value = 0.82 if profile == "v10" else 0.55
+    intensity = p.new("clip 0. 1.", 35, 345, 75, numinlets=3, numoutlets=1)
+    intensity_default = p.new(f"loadmess {intensity_default_value:g}", 120, 345, 105, numinlets=1, numoutlets=1)
+    intensity_state = p.new("pak 0.7 0.", 235, 345, 95, numinlets=2, numoutlets=1)
+    intensity_map = p.new("expr 0.8+3.2*$f1+0.6*(1.-$f2)", 345, 345, 245, numinlets=2, numoutlets=1)
+    intensity_pack = p.new("pack 0. 25", 600, 345, 85, numinlets=2, numoutlets=1)
+    intensity_line = p.new("line~", 695, 345, 50, numinlets=2, numoutlets=2)
+    p.connect(router, intensity, 11)
+    p.connect(intensity_default, intensity)
+    p.connect(intensity, intensity_state, 0, 0)
+    p.connect(throttle, intensity_state, 0, 1)
+    p.connect(intensity_state, intensity_map)
+    p.connect(intensity_map, intensity_pack)
+    p.connect(intensity_pack, intensity_line)
+
+    gate_message = p.message("5. 0, 0. 130", 780, 285, 105)
+    gate_line = p.new("line~", 805, 345, 50, numinlets=2, numoutlets=2)
+    p.connect(event_gate, rpm_store)
+    p.connect(event_gate, gate_message)
+    p.connect(gate_message, gate_line)
+    beap = p.new(f"{profile}_backfire_beap~", 330, 445, 190, numinlets=3, numoutlets=2)
+    p.connect(pitch_line, beap, 0, 0)
+    p.connect(gate_line, beap, 0, 1)
+    p.connect(intensity_line, beap, 0, 2)
+    left_filter = p.new("svf~ 35 0.7", 310, 530, 95, numinlets=3, numoutlets=4)
+    right_filter = p.new("svf~ 35 0.7", 530, 530, 95, numinlets=3, numoutlets=4)
+    left_gain = p.new("*~ 0.16", 310, 575, 65, numinlets=2, numoutlets=1)
+    right_gain = p.new("*~ 0.16", 530, 575, 65, numinlets=2, numoutlets=1)
+    stem_level = add_db_gain_control(p, router, 12, 780, 530, -6.0)
+    left_trim = p.new("*~", 310, 615, 40, numinlets=2, numoutlets=1)
+    right_trim = p.new("*~", 530, 615, 40, numinlets=2, numoutlets=1)
+    left = outlet(p, 330, 665, signal=True)
+    right = outlet(p, 550, 665, signal=True)
+    p.connect(beap, left_filter, 0, 0)
+    p.connect(beap, right_filter, 1, 0)
+    p.connect(left_filter, left_gain, 1, 0)
+    p.connect(right_filter, right_gain, 1, 0)
+    p.connect(left_gain, left_trim)
+    p.connect(right_gain, right_trim)
+    p.connect(stem_level, left_trim, 0, 1)
+    p.connect(stem_level, right_trim, 0, 1)
+    p.connect(left_trim, left)
+    p.connect(right_trim, right)
+    return p.document()
+
+
 def make_ev_mode_voice(mode: str) -> dict[str, Any]:
     """Wrap a user BEAP patcher as a suspendable poly~ voice."""
     p = Patcher(620, 360)
@@ -915,6 +1214,10 @@ def make_profile_engine(profile: str) -> dict[str, Any]:
     contract_names.extend(("start_style",) if profile != "ev" else ("ev_mode", "ev_soundscape_level_db", "ev_soundscape_mute"))
     contract = route(p, tuple(contract_names), 190, 150, 990)
     power = p.new(f"{profile}_powertrain~", 95, 260, 135, numinlets=1, numoutlets=2)
+    pad = (
+        p.new(f"{profile}_pad_host~", 95, 305, 135, numinlets=1, numoutlets=2)
+        if profile != "ev" else None
+    )
     transient = p.new(f"transient_{profile}~", 285, 260, 120, numinlets=1, numoutlets=2)
     road = p.new("road_air~", 465, 260, 85, numinlets=1, numoutlets=2)
     rumble = p.new("cabin_rumble~", 625, 260, 110, numinlets=3, numoutlets=2)
@@ -936,18 +1239,35 @@ def make_profile_engine(profile: str) -> dict[str, Any]:
     p.connect(controller, fan)
     p.connect(fan, contract, 6)
     p.connect(fan, power, 5)
+    if pad is not None:
+        p.connect(fan, pad, 5)
     p.connect(fan, transient, 4)
     p.connect(fan, road, 3)
     p.connect(fan, rumble, 2)
     p.connect(fan, cabin, 1, 0)
     p.connect(fan, mix, 0, 0)
-    p.connect(power, add_l1, 0, 0)
+    power_l: str = power
+    power_r: str = power
+    power_l_out = 0
+    power_r_out = 1
+    if pad is not None:
+        pad_sum_l = p.new("+~", 95, 315, 35, numinlets=2, numoutlets=1)
+        pad_sum_r = p.new("+~", 390, 315, 35, numinlets=2, numoutlets=1)
+        p.connect(power, pad_sum_l, 0, 0)
+        p.connect(pad, pad_sum_l, 0, 1)
+        p.connect(power, pad_sum_r, 1, 0)
+        p.connect(pad, pad_sum_r, 1, 1)
+        power_l = pad_sum_l
+        power_r = pad_sum_r
+        power_l_out = 0
+        power_r_out = 0
+    p.connect(power_l, add_l1, power_l_out, 0)
     p.connect(transient, add_l1, 0, 1)
     p.connect(add_l1, add_l2, 0, 0)
     p.connect(road, add_l2, 0, 1)
     p.connect(add_l2, add_l3, 0, 0)
     p.connect(rumble, add_l3, 0, 1)
-    p.connect(power, add_r1, 1, 0)
+    p.connect(power_r, add_r1, power_r_out, 0)
     p.connect(transient, add_r1, 1, 1)
     p.connect(add_r1, add_r2, 0, 0)
     p.connect(road, add_r2, 1, 1)
@@ -1167,6 +1487,42 @@ def make_mix_master() -> dict[str, Any]:
     )
     router = route(p, master_controls, 35, 105, 1080)
     p.connect(control, router)
+    p.new("autopattr @autorestore 0", 760, 5, 155, numinlets=1, numoutlets=4)
+    storage = p.new(
+        "pattrstorage vehicle_bus_eq @savemode 3 @changemode 1 @autorestore 0",
+        925, 5, 245, numinlets=1, numoutlets=4,
+    )
+    default_dict = p.new(
+        "dict vehicle_bus_eq_defaults @embed 0",
+        760, 335, 250, numinlets=2, numoutlets=4,
+    )
+    state_load = p.new("loadbang", 1095, 370, 60, numinlets=1, numoutlets=1)
+    default_read = p.message("read Patcher:/presets/vehicle_bus_eq_default.json", 760, 370, 300)
+    state_delay = p.new("delay 120", 1095, 405, 70, numinlets=2, numoutlets=1)
+    local_read = p.message("read Patcher:/presets/local/vehicle_bus_eq.json", 760, 405, 300)
+    local_write = p.message("write Patcher:/presets/local/vehicle_bus_eq.json", 760, 440, 310)
+    close_save = p.new("closebang", 1095, 475, 65, numinlets=0, numoutlets=1)
+    restore_trigger = p.new("t b b", 1095, 510, 50, numinlets=1, numoutlets=2)
+    restore_delay = p.new("delay 30", 1035, 545, 65, numinlets=2, numoutlets=1)
+    recall_slot = p.message("1", 1110, 545, 30)
+    save_trigger = p.new("t b b", 925, 510, 50, numinlets=1, numoutlets=2)
+    store_slot = p.message("store 1", 925, 545, 55)
+    write_delay = p.new("delay 20", 990, 545, 65, numinlets=2, numoutlets=1)
+    p.connect(state_load, default_read)
+    p.connect(default_read, default_dict)
+    p.connect(state_load, state_delay)
+    p.connect(state_delay, restore_trigger)
+    p.connect(restore_trigger, local_read, 1)
+    p.connect(restore_trigger, restore_delay, 0)
+    p.connect(restore_delay, recall_slot)
+    p.connect(recall_slot, storage)
+    p.connect(local_read, storage)
+    p.connect(close_save, save_trigger)
+    p.connect(save_trigger, store_slot, 1)
+    p.connect(save_trigger, write_delay, 0)
+    p.connect(store_slot, storage)
+    p.connect(write_delay, local_write)
+    p.connect(local_write, storage)
 
     band_specs = (
         ("lowshelf", 6, 90.0, 30.0, 400.0, 0.7),
@@ -1182,6 +1538,7 @@ def make_mix_master() -> dict[str, Any]:
         numinlets=8, numoutlets=7, nfilters=4, autoout=1,
         setfilter=saved_filters, presentation=1,
         presentation_rect=[15.0, 35.0, 720.0, 250.0],
+        varname="vehicle_bus_eq_graph",
     )
 
     selected = p.add(
@@ -1295,7 +1652,22 @@ def make_mix_master() -> dict[str, Any]:
     p.connect(reset, reset_values)
     p.connect(reset_values, graph)
 
-    bypass_ui = p.add("toggle", None, 760, 85, 22, 22, numinlets=1, numoutlets=1, presentation=1, presentation_rect=[870.0, 295.0, 22.0, 22.0])
+    save_eq = p.add(
+        "message", "Save EQ", 760, 65, 70, numinlets=2, numoutlets=1,
+        presentation=1, presentation_rect=[955.0, 255.0, 75.0, 22.0],
+    )
+    reload_eq = p.add(
+        "message", "Reload EQ", 840, 65, 80, numinlets=2, numoutlets=1,
+        presentation=1, presentation_rect=[1040.0, 255.0, 85.0, 22.0],
+    )
+    p.connect(save_eq, save_trigger)
+    p.connect(reload_eq, restore_trigger)
+
+    bypass_ui = p.add(
+        "toggle", None, 760, 85, 22, 22, numinlets=1, numoutlets=1,
+        presentation=1, presentation_rect=[870.0, 295.0, 22.0, 22.0],
+        varname="vehicle_bus_eq_bypass",
+    )
     p.comment("Bypass", 790, 85, 60)
     bypass_clip = p.new("clip 0 1", 790, 125, 65, numinlets=3, numoutlets=1)
     bypass_split = p.new("t f f", 865, 125, 55, numinlets=1, numoutlets=2)
@@ -2003,9 +2375,9 @@ def make_v10_state_renderer() -> dict[str, Any]:
 
 
 def make_reference_texture() -> dict[str, Any]:
-    """Blend a local Ferrari idle body into the distributable residual bank."""
+    """Build the superseded V4 reference renderer for offline comparison only."""
     p = Patcher(2300, 1080)
-    p.comment("CC0 stereo engine residual bank — six firing-rate anchors, two asynchronous loops each", 25, 15, 1050)
+    p.comment("OFFLINE V4 ARCHIVE — never declared or loaded by a V5 runtime", 25, 15, 1050)
     control = inlet(p, 35, 65)
     names = (
         "throttle", "engine_running", "v12_weight", "v10_weight",
@@ -2345,16 +2717,17 @@ def make_engine_start_voice() -> dict[str, Any]:
 
 
 def make_profile_transient(profile: str) -> dict[str, Any]:
-    """Choose cinematic BEAP or realistic sample start, then reuse shared event families."""
+    """Choose cinematic/realistic start and procedural profile event synthesis."""
     p = Patcher(1320, 760)
     p.comment(f"{profile.upper()} transient host — cinematic BEAP default; realistic starter option for ICE", 25, 15, 820)
     control = inlet(p, 35, 65)
     router = route(p, ("starter", "start_style"), 35, 105, 245)
-    legacy = p.new("transient~", 35, 555, 90, numinlets=1, numoutlets=2)
-    fixed_profile = p.new(f"loadmess engine_type {profile}", 140, 555, 175, numinlets=1, numoutlets=1)
+    event_renderer = p.new(
+        "transient~" if profile == "ev" else f"{profile}_backfire_host~",
+        35, 555, 180 if profile != "ev" else 90, numinlets=1, numoutlets=2,
+    )
     p.connect(control, router)
-    p.connect(router, legacy, 2)
-    p.connect(fixed_profile, legacy)
+    p.connect(router, event_renderer, 2)
 
     starter = p.new("sel 1 0", 35, 155, 55, numinlets=1, numoutlets=3)
     style_select = p.new("sel cinematic realistic", 120, 155, 170, numinlets=1, numoutlets=3)
@@ -2477,16 +2850,16 @@ def make_profile_transient(profile: str) -> dict[str, Any]:
     sum_r = p.new("+~", 540, 610, 40, numinlets=2, numoutlets=1)
     left = outlet(p, 390, 680, signal=True)
     right = outlet(p, 540, 680, signal=True)
-    p.connect(legacy, sum_l, 0, 0)
+    p.connect(event_renderer, sum_l, 0, 0)
     p.connect(sum_start_l, sum_l, 0, 1)
-    p.connect(legacy, sum_r, 1, 0)
+    p.connect(event_renderer, sum_r, 1, 0)
     p.connect(sum_start_r, sum_r, 0, 1)
     p.connect(sum_l, left)
     p.connect(sum_r, right)
     return p.document()
 
 
-def make_transient() -> dict[str, Any]:
+def make_legacy_transient() -> dict[str, Any]:
     p = Patcher(1900, 1500)
     p.comment("Profile-aware, round-robin transient families; missing buffers never stop continuous layers", 25, 15, 760)
     control = inlet(p, 35, 60)
@@ -2765,6 +3138,27 @@ def make_transient() -> dict[str, Any]:
     p.connect(trim_l, left)
     p.connect(trim_r, right)
     p.connect(control, router)
+    return p.document()
+
+
+def make_transient() -> dict[str, Any]:
+    """Compatibility seam for EV: shift/decel motion now stays in continuous DSP."""
+    p = Patcher(620, 300)
+    p.comment("V5 procedural event seam — no runtime shift/pop/crackle sample players", 25, 15, 560)
+    control = inlet(p, 35, 65)
+    names = (
+        "starter", "shift", "shift_dir", "pop", "intake_backfire",
+        "exhaust_pop", "crackle", "click", "aggression", "texture",
+        "engine_type", "engine_running", "transient_level_db",
+    )
+    router = route(p, names, 35, 105, 540)
+    silence_l = p.new("sig~ 0.", 180, 190, 55, numinlets=1, numoutlets=1)
+    silence_r = p.new("sig~ 0.", 330, 190, 55, numinlets=1, numoutlets=1)
+    left = outlet(p, 180, 255, signal=True)
+    right = outlet(p, 330, 255, signal=True)
+    p.connect(control, router)
+    p.connect(silence_l, left)
+    p.connect(silence_r, right)
     return p.document()
 
 
@@ -3627,7 +4021,7 @@ def add_eq_band(
 def make_launcher() -> dict[str, Any]:
     """Build a DSP-free project switchboard for the three independent demos."""
     p = Patcher(720, 390)
-    p.comment("VehicleSoundSynth V4 — choose one independent runtime", 30, 25, 520)
+    p.comment("VehicleSoundSynth V5 — choose one independent runtime", 30, 25, 520)
     p.comment(
         "The launcher owns no audio objects. Selecting a profile closes the previous runtime before opening one instance.",
         30,
@@ -3739,7 +4133,7 @@ def make_profile_main(profile: str, root: Path | None = None) -> dict[str, Any]:
     """Build one self-contained, profile-fixed runnable patcher."""
     config = PROFILE_CONFIG[profile]
     p = Patcher(1180, 850)
-    p.comment(f"VehicleSoundSynth V4 — {config['title']} independent runtime", 25, 18, 720)
+    p.comment(f"VehicleSoundSynth V5 — {config['title']} independent runtime", 25, 18, 720)
     p.comment("Audio starts OFF. This patch contains only this profile's DSP graph.", 25, 48, 620)
     active_profile = p.new("r vss.runtime.select", 850, 25, 145, numinlets=0, numoutlets=1)
     active_match = p.new(f"sel {profile}", 850, 60, 65, numinlets=1, numoutlets=2)
@@ -3862,6 +4256,44 @@ def make_profile_main(profile: str, root: Path | None = None) -> dict[str, Any]:
         p.connect(style_selector, realistic, 1)
         p.connect(cinematic, engine)
         p.connect(realistic, engine)
+
+        p.comment("Cinematic Pad dB", 330, 315, 130)
+        pad_level = p.add("flonum", None, 330, 340, 70, numinlets=1, numoutlets=2)
+        pad_level_clip = p.new("clip -60. 6.", 410, 340, 85, numinlets=3, numoutlets=1)
+        pad_level_named = p.new("prepend pad_level_db", 505, 340, 145, numinlets=1, numoutlets=1)
+        pad_level_default = p.new(
+            f"loadmess {-18.0 if profile == 'v10' else -20.0:g}",
+            660, 340, 105, numinlets=1, numoutlets=1,
+        )
+        p.connect(pad_level, pad_level_clip)
+        p.connect(pad_level_clip, pad_level_named)
+        p.connect(pad_level_named, engine)
+        p.connect(pad_level_default, pad_level)
+        p.comment("Pad Mute", 775, 315, 80)
+        pad_mute = p.add("toggle", None, 775, 340, 24, 24, numinlets=1, numoutlets=1)
+        pad_mute_named = p.new("prepend pad_mute", 810, 340, 115, numinlets=1, numoutlets=1)
+        pad_mute_default = p.new("loadmess 0", 935, 340, 80, numinlets=1, numoutlets=1)
+        p.connect(pad_mute, pad_mute_named)
+        p.connect(pad_mute_named, engine)
+        p.connect(pad_mute_default, pad_mute)
+        p.comment("Backfire Enable / Intensity", 25, 315, 185)
+        backfire_enable = p.add("toggle", None, 25, 340, 24, 24, numinlets=1, numoutlets=1)
+        backfire_enable_named = p.new("prepend backfire_enable", 60, 340, 155, numinlets=1, numoutlets=1)
+        backfire_enable_default = p.new("loadmess 1", 225, 340, 80, numinlets=1, numoutlets=1)
+        backfire_intensity = p.add("flonum", None, 25, 375, 70, numinlets=1, numoutlets=2)
+        backfire_intensity_clip = p.new("clip 0. 1.", 105, 375, 75, numinlets=3, numoutlets=1)
+        backfire_intensity_named = p.new("prepend backfire_intensity", 190, 375, 175, numinlets=1, numoutlets=1)
+        backfire_intensity_default = p.new(
+            f"loadmess {0.82 if profile == 'v10' else 0.55:g}",
+            375, 375, 100, numinlets=1, numoutlets=1,
+        )
+        p.connect(backfire_enable, backfire_enable_named)
+        p.connect(backfire_enable_named, engine)
+        p.connect(backfire_enable_default, backfire_enable)
+        p.connect(backfire_intensity, backfire_intensity_clip)
+        p.connect(backfire_intensity_clip, backfire_intensity_named)
+        p.connect(backfire_intensity_named, engine)
+        p.connect(backfire_intensity_default, backfire_intensity)
 
     p.comment("Audio + Output", 760, 105, 120)
     audio_toggle = p.add("toggle", None, 760, 135, 24, 24, numinlets=1, numoutlets=1)
@@ -4231,13 +4663,16 @@ t = slide(clamp(throttle, 0, 1), 700, 1400);
 l = abs(clamp(load, -1, 1));
 f = clamp(55 + r * 0.052, 55, 760);
 a = clamp(0.03 + t * 0.20 + l * 0.05, 0, 0.28);
+electrical_motion = 0.97 + cycle(clamp(r / 240, 0.35, 30)) * (0.012 + t * 0.018);
+torque_ripple = cycle(clamp(f * 0.5, 27.5, 380)) * (0.035 + l * 0.035) * (1 - clamp(r / 8500, 0, 1) * 0.55);
+gear_mesh = cycle(clamp(f * 1.5, 82.5, 1140)) * (0.026 + t * 0.028) + cycle(clamp(f * 2.25, 124, 1710)) * 0.018;
 coherent_low = cycle(f) * (0.58 + body * 0.18);
 h2 = cycle(clamp(f * 2, 110, 1520)) * (0.08 + body * 0.05);
 h3 = cycle(clamp(f * 3, 165, 2280)) * (0.035 + texture * 0.055);
 inverter = cycle(clamp(f * (2.8 + brightness), 150, 4200)) * (0.10 + texture * 0.14);
 sheen_l = cycle(clamp(f * (5.2 + brightness * 0.4), 300, 6200)) * aggression * 0.025;
 sheen_r = cycle(clamp(f * (6.2 + brightness * 0.4), 360, 7200)) * aggression * 0.025;
-base = coherent_low + h2 + h3 + inverter;
+base = (coherent_low + torque_ripple + h2 + h3 + gear_mesh + inverter) * electrical_motion;
 left_drive = (base + sheen_l) * a;
 right_drive = (coherent_low + h2 * 0.99 + h3 * 1.02 + inverter * 0.98 + sheen_r) * a;
 out1 = tanh(left_drive * 1.2) / 1.2;
@@ -4262,6 +4697,7 @@ accel_drive = max(motion, 0);
 decel_drive = max(-motion, 0);
 run = slide(clamp(engine_running * combustion_gain * shift_cut, 0, 1), 480, 1900);
 speedmix = clamp((r - 780) / 8220, 0, 1);
+idle_weight = 1 - clamp((r - 780) / 1800, 0, 1);
 events = 6;
 crank = clamp(r / 60, 6, 170);
 bank_events = 3;
@@ -4291,13 +4727,15 @@ order23 = cycle(clamp(fire * 2.33, 60, 4100)) * speedmix * 0.045;
 order27 = cycle(clamp(fire * 2.67, 70, 4700)) * speedmix * 0.040;
 intake = cycle(clamp(fire * 1.5, 45, 2200)) * t * (0.020 + texture * 0.034 + accel_drive * 0.030);
 overrun = cycle(clamp(fire * 0.75, 32, 1050)) * decel_drive * (0.030 + body * 0.020) * (1-speedmix*0.35);
+crankcase_body = (cycle(clamp(crank * 2.6, 28, 260)) * 0.040 + cycle(clamp(crank * 3.8, 38, 420)) * 0.024) * body * idle_weight;
+manifold = cycle(clamp(fire * 0.42, 32, 950)) * (0.018 + t * 0.032 + l * 0.020) * (0.65 + idle_weight * 0.35);
 residual_gate_l = clamp(abs(pulse_l) * 1.7, 0, 1);
 residual_gate_r = clamp(abs(pulse_r) * 1.7, 0, 1);
 residual_l = (cycle(clamp(fire * 1.33, 40, 2200)) * 0.040 + cycle(clamp(fire * 2.17, 65, 4200)) * 0.024) * residual_gate_l * (0.35 + texture * 0.65);
 residual_r = (cycle(clamp(fire * 1.33, 40, 2200)) * 0.040 + cycle(clamp(fire * 2.17, 65, 4200)) * 0.024) * residual_gate_r * (0.35 + texture * 0.65);
 bank_l = (pulse_l * 0.88 + pulse_r * 0.12) * cylinder * (0.48 + body * 0.16) * (1 - speedmix * 0.30);
 bank_r = (pulse_r * 0.88 + pulse_l * 0.12) * cylinder * (0.48 + body * 0.16) * (1 - speedmix * 0.30);
-resonance = sub + h1 + sideband_low + sideband_high + h2 + order23 + order27 + h3 + h4 + h6 + h8 + intake + overrun;
+resonance = sub + crankcase_body + manifold + h1 + sideband_low + sideband_high + h2 + order23 + order27 + h3 + h4 + h6 + h8 + intake + overrun;
 left_drive = (bank_l + resonance + residual_l) * a * (0.86 + aggression * 0.14);
 right_drive = (bank_r + resonance + residual_r) * a * (0.86 + aggression * 0.14);
 sat_drive = 1.08 + speedmix * 0.18 + t * 0.09;
@@ -4323,6 +4761,7 @@ accel_drive = max(motion, 0);
 decel_drive = max(-motion, 0);
 run = slide(clamp(engine_running * combustion_gain * shift_cut, 0, 1), 420, 1650);
 speedmix = clamp((r - 740) / 7560, 0, 1);
+idle_weight = 1 - clamp((r - 740) / 1650, 0, 1);
 events = 5;
 crank = clamp(r / 60, 6, 170);
 bank_events = 2.5;
@@ -4355,13 +4794,15 @@ intake_fm = fire * 1.25 * (1 + cycle(crank) * 0.008);
 intake = cycle(clamp(intake_fm, 45, 2600)) * t * (0.030 + texture * 0.048 + accel_drive * 0.042);
 exhaust_load = cycle(clamp(fire * 0.67, 32, 1500)) * accel_drive * (0.035 + body * 0.030) * (1-speedmix*0.25);
 overrun = cycle(clamp(fire * 0.75, 32, 1250)) * decel_drive * (0.040 + body * 0.025) * (1-speedmix*0.30);
+crankcase_body = (cycle(clamp(crank * 2.55, 28, 260)) * 0.052 + cycle(clamp(crank * 3.65, 38, 430)) * 0.030) * body * idle_weight;
+manifold = cycle(clamp(fire * 0.38, 32, 980)) * (0.024 + t * 0.040 + l * 0.026) * (0.68 + idle_weight * 0.32);
 residual_gate_l = clamp(abs(pulse_l) * 1.8, 0, 1);
 residual_gate_r = clamp(abs(pulse_r) * 1.8, 0, 1);
 residual_l = (cycle(clamp(fire * 1.37, 40, 2300)) * 0.045 + cycle(clamp(fire * 2.23, 65, 4300)) * 0.028) * residual_gate_l * (0.30 + texture * 0.70);
 residual_r = (cycle(clamp(fire * 1.37, 40, 2300)) * 0.045 + cycle(clamp(fire * 2.23, 65, 4300)) * 0.028) * residual_gate_r * (0.30 + texture * 0.70);
 bank_l = (pulse_l * 0.86 + pulse_r * 0.14) * cylinder * (0.50 + body * 0.16) * (1 - speedmix * 0.32);
 bank_r = (pulse_r * 0.86 + pulse_l * 0.14) * cylinder * (0.50 + body * 0.16) * (1 - speedmix * 0.32);
-resonance = sub + h1 + sideband_low + sideband_high + h15 + h2 + order22 + h25 + order28 + h3 + h5 + h7 + intake + exhaust_load + overrun;
+resonance = sub + crankcase_body + manifold + h1 + sideband_low + sideband_high + h15 + h2 + order22 + h25 + order28 + h3 + h5 + h7 + intake + exhaust_load + overrun;
 left_drive = (bank_l + resonance + residual_l) * a * (0.88 + aggression * 0.12);
 right_drive = (bank_r + resonance + residual_r) * a * (0.88 + aggression * 0.12);
 sat_drive = 1.10 + speedmix * 0.20 + t * 0.12;
@@ -4642,9 +5083,6 @@ def project_file() -> dict[str, Any]:
         "VehicleSoundSynth-EV.maxpat",
         "VehicleSoundSynth-V10.maxpat",
         "VehicleSoundSynth-V12.maxpat",
-        "patchers/vehicle_engine~.maxpat",
-        "patchers/engine_controller.maxpat",
-        "patchers/powertrain~.maxpat",
         "patchers/ev_powertrain~.maxpat",
         "patchers/v10_powertrain~.maxpat",
         "patchers/v12_powertrain~.maxpat",
@@ -4656,7 +5094,6 @@ def project_file() -> dict[str, Any]:
         "patchers/ev_relax_voice.maxpat",
         "patchers/ev_expressive_voice.maxpat",
         "patchers/ev_sport_voice.maxpat",
-        "patchers/reference_texture~.maxpat",
         "patchers/cabin_rumble~.maxpat",
         "patchers/transient~.maxpat",
         "patchers/transient_ev~.maxpat",
@@ -4667,7 +5104,6 @@ def project_file() -> dict[str, Any]:
         "patchers/road_air~.maxpat",
         "patchers/cabin_master~.maxpat",
         "patchers/mix_master~.maxpat",
-        "patchers/drive_simulator.maxpat",
         "patchers/keyboard_drive_ws.maxpat",
     ]
     for profile in ("ev", "v10", "v12"):
@@ -4678,19 +5114,28 @@ def project_file() -> dict[str, Any]:
                 f"patchers/drive_simulator_{profile}.maxpat",
             )
         )
+    for profile in ("v10", "v12"):
+        patchers.extend(
+            (
+                f"patchers/{profile}_pad_beap~.maxpat",
+                f"patchers/{profile}_pad_voice.maxpat",
+                f"patchers/{profile}_pad_host~.maxpat",
+                f"patchers/{profile}_backfire_beap~.maxpat",
+                f"patchers/{profile}_backfire_host~.maxpat",
+            )
+        )
     for name in patchers:
         contents["patchers"][name] = {"kind": "patcher", "local": 1}
     for name in GEN_CODE:
         contents["code"][f"gen/{name}.gendsp"] = {"kind": "gendsp", "local": 1}
     contents["code"]["code/drive_model.js"] = {"kind": "javascript", "local": 1}
     for name in MEDIA_FRAMES:
-        contents["media"][f"media/{name}.wav"] = {"kind": "mediafile", "local": 1}
-    for name in ENGINE_TEXTURE_FILES:
-        contents["media"][f"media/{name}"] = {"kind": "mediafile", "local": 1}
+        if name.startswith(("cabin_ir_", "starter_")):
+            contents["media"][f"media/{name}.wav"] = {"kind": "mediafile", "local": 1}
     contents["data"]["presets/sound_dna.json"] = {"kind": "data", "local": 1}
+    contents["data"]["presets/vehicle_bus_eq_default.json"] = {"kind": "data", "local": 1}
     contents["data"]["assets/ferrari_sf90_acoustic_target.json"] = {"kind": "data", "local": 1}
     contents["data"]["assets/ferrari_v10_lifecycle_targets.json"] = {"kind": "data", "local": 1}
-    contents["data"]["assets/engine_texture_bank.json"] = {"kind": "data", "local": 1}
     return {
         "autolocalize": 0,
         "autoorganize": 0,
@@ -4712,6 +5157,7 @@ def project_file() -> dict[str, Any]:
 
 def build_project(root: Path) -> None:
     root = root.resolve()
+    (root / "presets" / "local").mkdir(parents=True, exist_ok=True)
     stale_signal_independent_rumble = root / "gen" / "cabin_rumble.gendsp"
     if stale_signal_independent_rumble.is_file():
         stale_signal_independent_rumble.unlink()
@@ -4744,8 +5190,13 @@ def build_project(root: Path) -> None:
         "patchers/drive_simulator.maxpat": make_drive_simulator(),
         "patchers/keyboard_drive_ws.maxpat": make_keyboard_drive_ws(),
         "presets/sound_dna.json": PRESETS,
+        "presets/vehicle_bus_eq_default.json": VEHICLE_BUS_EQ_DEFAULT,
         PROJECT_FILENAME: project_file(),
     }
+    for profile in ("v10", "v12"):
+        outputs[f"patchers/{profile}_pad_voice.maxpat"] = make_ice_pad_voice(profile)
+        outputs[f"patchers/{profile}_pad_host~.maxpat"] = make_ice_pad_host(profile)
+        outputs[f"patchers/{profile}_backfire_host~.maxpat"] = make_ice_backfire_host(profile)
     for profile in ("ev", "v10", "v12"):
         outputs[f"patchers/vehicle_engine_{profile}~.maxpat"] = make_profile_engine(profile)
         outputs[f"patchers/engine_controller_{profile}.maxpat"] = make_profile_controller(profile)
@@ -4775,6 +5226,13 @@ def build_project(root: Path) -> None:
     user_start = root / "patchers" / "engine_start_beap~.maxpat"
     if not user_start.exists():
         write_json(user_start, make_engine_start_beap())
+    for profile in ("v10", "v12"):
+        user_pad = root / "patchers" / f"{profile}_pad_beap~.maxpat"
+        if not user_pad.exists():
+            write_json(user_pad, make_ice_pad_beap(profile))
+        user_backfire = root / "patchers" / f"{profile}_backfire_beap~.maxpat"
+        if not user_backfire.exists():
+            write_json(user_backfire, make_ice_backfire_beap(profile))
     for name, code in GEN_CODE.items():
         write_json(root / "gen" / f"{name}.gendsp", make_gen(code))
     for name, frames in MEDIA_FRAMES.items():

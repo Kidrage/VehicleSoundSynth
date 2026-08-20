@@ -1,6 +1,6 @@
 # Asset licenses and provenance
 
-VehicleSoundSynth V4 distributes only CC0 and attribution-compatible CC BY
+VehicleSoundSynth V5 distributes only CC0 and attribution-compatible CC BY
 source audio. NC, SA, and unknown-license material is excluded from the
 repository and release. The machine-readable
 record is `assets/asset_manifest.json`; its hashes and processing fields are the
@@ -18,9 +18,10 @@ release authority.
 | Engine residual bank/reference | [Ferrari acceleration](https://freesound.org/people/biholao/sounds/370278/) | biholao | CC0 1.0 |
 
 All six source files are installed under `assets/raw/` and are marked
-`processed` in the manifest. The runtime starter, shift, intake backfire,
-exhaust pop/crackle, mechanical click, shift thump, stereo cabin IR, and the
-six-anchor/twelve-loop engine residual bank are processed from these recordings.
+`processed` in the manifest. V5 runtime audio uses only the processed starter
+and stereo cabin IR. The processed shift, intake-backfire, exhaust-pop/crackle,
+mechanical-click, shift-thump, and six-anchor residual files remain licensed
+archive/offline-analysis artifacts and are not declared or loaded by a V5 runtime.
 Every residual loop is 48 kHz stereo and normalized to -18 dBFS RMS; hashes are
 recorded in `assets/engine_texture_bank.json`.
 
@@ -37,7 +38,7 @@ the tracked CC0 starter. The source and every local audio derivative are ignored
 by Git and must never be committed, synced, uploaded, or released; the manifest
 records the relevant source, processor, target-table, and derivative hashes.
 
-`tools/process_assets.py` converts sources to PCM16, resamples runtime material
+`tools/process_assets.py` converts sources to PCM16, resamples processed material
 to 48 kHz, removes DC, applies short edge fades, and peak-normalizes every
 output. Targets are -3 dBFS for starters/IR, -5 dBFS for exhaust pops, -6 dBFS
 for shifts/backfires/mechanical details, and -8 dBFS for crackles. Exact source

@@ -1,8 +1,8 @@
-# VehicleSoundSynth V4 Repository Guide
+# VehicleSoundSynth V5 Repository Guide
 
 ## Purpose
 
-Max 8.6.5 vehicle-sound V4 with three independent fixed-profile runtimes. V10
+Max 8.6.5 vehicle-sound V5, forked from stable V4 tag `v4.0.0`, with three independent fixed-profile runtimes. V10
 and V12 continuous audio are procedural; Ferrari.wav is a V10 lifecycle-analysis
 target and may supply only the optional ignored realistic-start one-shot. EV has
 three suspendable, user-editable BEAP soundscapes. The project also contains a
@@ -33,7 +33,7 @@ events, short cabin IR, adjustable stereo compression, EQ, and peak protection.
 - `patchers/vehicle_engine_{ev,v10,v12}~.maxpat` — fixed public seams.
 - `patchers/{ev,v10,v12}_powertrain~.maxpat` — exactly one Gen per profile.
 - `patchers/ev_soundscape_host~.maxpat` — mode crossfade plus cancellable inactive-voice suspension.
-- `patchers/engine_start_beap~.maxpat` and `patchers/ev_*beap~.maxpat` — seed-once, user-tunable BEAP graphs.
+- `patchers/engine_start_beap~.maxpat`, `patchers/ev_*beap~.maxpat`, and V5's `patchers/{v10,v12}_{pad,backfire}_beap~.maxpat` — seed-once, user-tunable BEAP graphs.
 - `patchers/`, `gen/`, `media/`, `presets/` — generated runtime resources.
 - `tests/` — deterministic structural and resource checks.
 
@@ -82,11 +82,20 @@ On macOS, Max writes load diagnostics to
   throttle/brake. Save user-tuned BEAP subpatchers, close every task-opened
   patcher, and quit Max after a smoke test.
 
+## V5 Mainline
+
+- Remove runtime shift/pop/crackle sample playback; keep only licensed starter one-shots.
+- Deepen EV/V10/V12 idle and acceleration realism without discontinuous pitch or plastic high-frequency oscillators.
+- Add physically triggered, seed-once BEAP backfire voices for V10/V12.
+- Add independent, top-level-controlled, seed-once cinematic BEAP pads for V10/V12.
+- Persist one shared vehicle-bus four-band EQ across all three runtimes with safe default fallback.
+- Keep `main.maxpat` DSP-free and maintain one-runtime-at-a-time CPU behavior.
+
 ## Repository State
 
-- Branch: `codex/vehicle-sound-v4`; current procedural-lifecycle commit is `aaf3508`.
-- Remote: none.
+- Branch: `codex/vehicle-sound-v5`; base is V4 stable tag `v4.0.0` at `6aa49d0`.
+- Remote initially points to the local V4 clone and must be replaced by the private GitHub origin after publication.
 - `media/local/` is ignored and must never be committed or mirrored; missing
   Ferrari layers intentionally fall back to the tracked CC0 paths.
 - Avoid cache files such as `tests/__pycache__/`.
-- Never edit sibling V1, V2, or V3 repositories while implementing V4.
+- Never edit sibling V1, V2, V3, or frozen V4 while implementing V5.

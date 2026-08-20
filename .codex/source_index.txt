@@ -1,70 +1,51 @@
-.codex/REPO_GUIDE.md
-.codex/repo_files.txt
-.codex/source_index.txt
-AGENTS.md
-ASSET_LICENSES.md
-PROJECT_HANDOFF.md
-README.md
-VehicleSoundSynth-V4.maxproj
-assets/asset_manifest.json
-assets/engine_texture_bank.json
-assets/ferrari_sf90_acoustic_target.json
-assets/ferrari_v10_lifecycle_targets.json
-code/drive_model.js
-gen/ev_powertrain.gendsp
-gen/v10_powertrain.gendsp
-gen/v12_powertrain.gendsp
-patchers/cabin_master~.maxpat
-patchers/cabin_rumble~.maxpat
-patchers/drive_simulator.maxpat
-patchers/drive_simulator_ev.maxpat
-patchers/drive_simulator_v10.maxpat
-patchers/drive_simulator_v12.maxpat
-patchers/engine_controller.maxpat
-patchers/engine_controller_ev.maxpat
-patchers/engine_controller_v10.maxpat
-patchers/engine_controller_v12.maxpat
-patchers/engine_start_beap~.maxpat
-patchers/engine_start_voice.maxpat
-patchers/ev_expressive_beap~.maxpat
-patchers/ev_expressive_voice.maxpat
-patchers/ev_pad_beap~.maxpat
-patchers/ev_pad_driver~.maxpat
-patchers/ev_powertrain~.maxpat
-patchers/ev_relax_voice.maxpat
-patchers/ev_soundscape_host~.maxpat
-patchers/ev_sport_beap~.maxpat
-patchers/ev_sport_voice.maxpat
-patchers/keyboard_drive_ws.maxpat
-patchers/mix_master~.maxpat
-patchers/powertrain~.maxpat
-patchers/reference_texture~.maxpat
-patchers/road_air~.maxpat
-patchers/transient_ev~.maxpat
-patchers/transient_v10~.maxpat
-patchers/transient_v12~.maxpat
-patchers/transient~.maxpat
-patchers/v10_fallback_renderer~.maxpat
-patchers/v10_powertrain~.maxpat
-patchers/v10_state_renderer~.maxpat
-patchers/v12_powertrain~.maxpat
-patchers/v12_texture_renderer~.maxpat
-patchers/vehicle_engine_ev~.maxpat
-patchers/vehicle_engine_v10~.maxpat
-patchers/vehicle_engine_v12~.maxpat
-patchers/vehicle_engine~.maxpat
-presets/sound_dna.json
-tests/test_project.py
-tools/analyze_reference_lifecycle.py
-tools/audio_metrics.py
-tools/bind_drive_render.py
-tools/build_mix_probe.py
-tools/build_project.py
-tools/build_rtpc_dsp_spec.py
-tools/build_runtime_probe.py
-tools/build_user_manual.py
-tools/prepare_engine_texture.py
-tools/prepare_local_reference.py
-tools/process_assets.py
-tools/render_rtpc_spec_pdf.py
-tools/validate_v10_lifecycle.py
+# Source Index
+
+Repository: /Users/saintpeter/Downloads/VehicleSoundSynth-V5
+Tracked filtered files: 94
+High-value indexed files: 28
+
+Read this file before broad repository exploration. Prefer focused `rg`
+or `git grep` against the listed areas before opening source files.
+
+## first-read
+
+- AGENTS.md
+- README.md
+- assets/raw/README.md
+
+## source
+
+- code/drive_model.js
+- tools/analyze_reference_lifecycle.py
+- tools/audio_metrics.py
+- tools/bind_drive_render.py
+- tools/build_mix_probe.py
+- tools/build_project.py
+- tools/build_rtpc_dsp_spec.py
+- tools/build_runtime_probe.py
+- tools/build_user_manual.py
+- tools/prepare_engine_texture.py
+- tools/prepare_local_reference.py
+- tools/process_assets.py
+- tools/render_rtpc_spec_pdf.py
+- tools/validate_v10_lifecycle.py
+
+## tests
+
+- tests/test_project.py
+
+## config
+
+- assets/asset_manifest.json
+- assets/engine_texture_bank.json
+- assets/ferrari_sf90_acoustic_target.json
+- assets/ferrari_v10_lifecycle_targets.json
+- presets/sound_dna.json
+- presets/vehicle_bus_eq_default.json
+
+## docs
+
+- .codex/MAINLINE.md
+- .codex/REPO_GUIDE.md
+- ASSET_LICENSES.md
+- PROJECT_HANDOFF.md
