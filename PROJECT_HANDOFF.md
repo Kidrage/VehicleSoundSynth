@@ -9,13 +9,13 @@
 - Working root: `.`
 - Repository name: `VehicleSoundSynth-V4`
 - Git repository: `true`
-- Generated at: `2026-08-19T07:14:43.376325+00:00`
+- Generated at: `2026-08-20T03:22:16.008195+00:00`
 
 ## Current State
 
 - Branch: `codex/vehicle-sound-v4`
-- HEAD: `dc8d175`
-- Indexed paths: 118
+- HEAD: `aaf3508`
+- Indexed paths: 123
 - Inventory truncated: `false`
 - Inaccessible paths: 0
 - Scan mode: complete path/metadata inventory; no bulk content read; no symlink traversal.
@@ -46,11 +46,12 @@
 | `patchers` | 39 |
 | `media` | 35 |
 | `.` | 16 |
-| `assets` | 10 |
-| `tools` | 10 |
+| `tools` | 13 |
+| `assets` | 11 |
 | `assets/raw` | 7 |
 | `.codex` | 3 |
 | `gen` | 3 |
+| `code` | 1 |
 | `presets` | 1 |
 | `tests` | 1 |
 
@@ -59,28 +60,29 @@
 ### Categories
 
 - audio: 41 files, 103833150 bytes
-- code: 11 files, 554030 bytes
-- literature: 14 files, 581702 bytes
-- other: 48 files, 8604818 bytes
-- structured_data: 4 files, 24133 bytes
+- code: 15 files, 617343 bytes
+- literature: 14 files, 584641 bytes
+- other: 48 files, 8457683 bytes
+- structured_data: 5 files, 32469 bytes
 
 ### Common Extensions
 
 - `.maxpat`: 43
 - `.wav`: 41
-- `.py`: 11
+- `.py`: 14
 - `.md`: 6
 - `.docx`: 5
-- `.json`: 4
+- `.json`: 5
 - `.gendsp`: 3
 - `.txt`: 2
 - `[no extension]`: 1
 - `.maxproj`: 1
 - `.pdf`: 1
+- `.js`: 1
 
 ### Schema / Model / Interface Candidates
 
-- None detected.
+- `code/drive_model.js`
 
 ## Key Entrypoints and Guides
 
@@ -90,6 +92,7 @@
 
 ## Change History
 
+- `aaf3508 2026-08-20 Rebuild procedural vehicle lifecycle runtimes`
 - `dc8d175 2026-08-19 fix: restore profile throttle and stabilize runtime audio`
 - `2970e9d 2026-08-18 docs: refresh V4 silence-fix handoff`
 - `17c8e14 2026-08-18 fix: enable runtime audio and restore W S driving`
@@ -109,7 +112,6 @@
 - `6b4ddd7 2026-08-12 docs: record final V4 acoustic evidence`
 - `0637838 2026-08-12 fix: resolve transient media from project path`
 - `72ba1d3 2026-08-12 test: enforce upper-band stereo safety`
-- `a26e162 2026-08-12 fix: improve cabin mono compatibility`
 
 ## Current Changes
 
@@ -180,6 +182,7 @@
 - `assets/asset_manifest.json`
 - `assets/engine_texture_bank.json`
 - `assets/ferrari_sf90_acoustic_target.json`
+- `assets/ferrari_v10_lifecycle_targets.json`
 - `presets/sound_dna.json`
 
 ## Validation and Risks
