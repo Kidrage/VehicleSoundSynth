@@ -4,8 +4,10 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import shutil
+import subprocess
 from pathlib import Path
 
 from build_project import Patcher, write_json
@@ -47,7 +49,76 @@ SCENARIOS = {
     "shift-down": {"profile": "v10", "rpm": 2800.0, "event": "shift_dir -1, shift 1"},
     "intake-backfire": {"profile": "v10", "rpm": 3600.0, "event": "intake_backfire 1"},
     "exhaust-pop": {"profile": "v12", "rpm": 3300.0, "event": "exhaust_pop 1"},
+    "v10-lifecycle-idle": {
+        "profile": "v10", "rpm": 740.0, "throttle": 0.08, "load": 0.15,
+        "lock_rpm": True, "lifecycle_role": "idle", "extra_messages": ("accel 0",),
+    },
+    "v10-lifecycle-acceleration": {
+        "profile": "v10", "rpm": 740.0, "sweep_to_rpm": 3420.0,
+        "throttle": 0.82, "load": 0.76, "lifecycle_role": "acceleration",
+        "extra_messages": ("accel 0.82",),
+    },
+    "v10-lifecycle-loaded-hold": {
+        "profile": "v10", "rpm": 3420.0, "throttle": 0.68, "load": 0.84,
+        "lock_rpm": True, "lifecycle_role": "loaded_hold", "extra_messages": ("accel 0",),
+    },
+    "v10-lifecycle-shift-recovery": {
+        "profile": "v10", "rpm": 2000.0, "sweep_to_rpm": 1260.0,
+        "throttle": 0.42, "load": 0.52, "lifecycle_role": "shift_recovery",
+        "extra_messages": ("accel -0.58",), "event": "shift_dir -1, shift 1",
+    },
+    "v10-lifecycle-deceleration": {
+        "profile": "v10", "rpm": 2000.0, "sweep_to_rpm": 1260.0,
+        "throttle": 0.10, "load": 0.18, "lifecycle_role": "deceleration",
+        "extra_messages": ("accel -0.82",),
+    },
+    "v10-lifecycle-drive": {
+        "profile": "v10", "drive_lifecycle": True,
+        "extra_messages": ("auto 1",),
+    },
 }
+
+
+def actual_drive_trace(model_path: Path, profile: str, render_ms: int) -> dict:
+    """Run the exact JS drivetrain used by Max and return its emitted state trace."""
+    script = r"""
+const fs = require("fs");
+const modelPath = process.argv[1];
+const profile = process.argv[2];
+const renderMs = Number(process.argv[3]);
+const {DriveModel} = require(modelPath);
+const model = new DriveModel(profile);
+const commands = [["ignition", 1], ["start", 1], ["auto", 1]];
+const commandEvents = [];
+for (const [name, value] of commands) {
+  for (const event of model.handle(name, [value])) commandEvents.push({time: model.time, message: event});
+}
+const snapshots = [];
+const events = commandEvents.slice();
+for (let index = 0; index < Math.round(renderMs / 20); index += 1) {
+  const emitted = model.tick(0.02);
+  for (const message of emitted) {
+    if (message[0] === "shift" || message[0] === "shift_dir" || message[0] === "gear") {
+      events.push({time: model.time, message});
+    }
+  }
+  snapshots.push(model.snapshot());
+}
+process.stdout.write(JSON.stringify({profile, render_ms: renderMs, step_ms: 20, commands, events, snapshots}));
+"""
+    result = subprocess.run(
+        ["node", "-e", script, str(model_path), profile, str(render_ms)],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    trace = json.loads(result.stdout)
+    trace.update({
+        "schema_version": 1,
+        "drive_model_path": "code/drive_model.js",
+        "drive_model_sha256": hashlib.sha256(model_path.read_bytes()).hexdigest(),
+    })
+    return trace
 
 
 def make_probe(
@@ -67,6 +138,7 @@ def make_probe(
     tap: str = "final",
     extra_messages: tuple[str, ...] = (),
     event_message: str | None = None,
+    drive_lifecycle: bool = False,
 ) -> dict:
     settings = PROFILE_SETTINGS[profile]
     rumble_values = settings["rumble"] if rumble_enabled else (0.0, 0.0, 0.0)
@@ -134,6 +206,16 @@ def make_probe(
             "eq_high 9000. -4.",
             "master_trim_db -8.",
     )
+    if drive_lifecycle:
+        default_messages = (
+            "ignition 0", "auto 1",
+            f"cabin_rumble {cabin_rumble:g}",
+            f"exhaust_boom {exhaust_boom:g}",
+            f"structure_vibration {structure_vibration:g}",
+            f"cabin_ir_mix {settings['ir_mix']:g}",
+            "eq_highmid 3800. -3. 1.", "eq_high 9000. -4.",
+            "master_trim_db -8.",
+        )
     overridden = {message.split(maxsplit=1)[0] for message in extra_messages}
     control_messages = tuple(
         message for message in default_messages
@@ -156,11 +238,12 @@ def make_probe(
             event_delay = p.new("delay 7800", 790, 150, 85, numinlets=2, numoutlets=1)
             p.connect(load, event_delay)
             p.connect(event_delay, event)
-    if start_enabled:
+    if start_enabled and not drive_lifecycle:
         start = p.message("start 1", 500, 190, 55)
         p.connect(start_delay, start)
         p.connect(start, drive)
 
+    sweep_order = None
     if sweep_to_rpm is not None:
         sweep_delay = p.new(f"delay {DSP_SETTLE_MS}", 500, 230, 85, numinlets=2, numoutlets=1)
         sweep_order = p.new("t b b", 590, 230, 50, numinlets=1, numoutlets=2)
@@ -169,7 +252,8 @@ def make_probe(
         )
         sweep_line = p.new("line 0.", 500, 310, 60, numinlets=2, numoutlets=2)
         sweep_select = p.message("2", 590, 310, 30)
-        p.connect(load, sweep_delay)
+        if driver_mode == "coreaudio":
+            p.connect(load, sweep_delay)
         p.connect(sweep_delay, sweep_order)
         p.connect(sweep_order, sweep_select, 1, 0)
         p.connect(sweep_order, sweep_message, 0, 0)
@@ -200,6 +284,9 @@ def make_probe(
         driver_select = p.message(";\rdsp setdriver NonRealTime", 500, 565, 165)
         sample_rate_delay = p.new("delay 1000", 500, 600, 75, numinlets=2, numoutlets=1)
         sample_rate_value = p.message(";\rdsp sr 48000", 500, 630, 110)
+        sample_rate_number = p.message("48000", 500, 665, 55)
+        sample_rate_status = p.new("adstatus sr", 500, 700, 75, numinlets=2, numoutlets=2)
+        sample_rate_override = p.new("loadmess override 1", 500, 735, 125, numinlets=1, numoutlets=1)
         driver_ready = p.new("delay 2000", 630, 565, 75, numinlets=2, numoutlets=1)
         start_trigger = p.new("t b b b b b b", 630, 600, 105, numinlets=1, numoutlets=6)
         dsp_start = p.message("1", 720, 600, 30)
@@ -218,15 +305,21 @@ def make_probe(
         baseline_time = p.new("dsptime~", 745, 665, 70, numinlets=1, numoutlets=1)
         elapsed = p.new("- 0.", 825, 665, 55, numinlets=2, numoutlets=1)
         rendered = p.new(f"past {render_ms}", 825, 635, 85, numinlets=1, numoutlets=1)
-        stop_trigger = p.new("t b b b", 825, 600, 65, numinlets=1, numoutlets=3)
+        stop_trigger = p.new("t b b b b", 825, 600, 75, numinlets=1, numoutlets=4)
         metro_stop = p.message("0", 895, 565, 30)
         dsp_stop = p.message("0", 895, 600, 30)
+        close_delay = p.new("delay 1000", 895, 635, 75, numinlets=2, numoutlets=1)
+        close_message = p.message("wclose", 895, 670, 55)
+        patcher_control = p.new("thispatcher", 895, 705, 85, numinlets=1, numoutlets=2)
         record_begin = p.new("t b b b", 610, 700, 65, numinlets=1, numoutlets=3)
         p.connect(load, dsp_stop_at_load)
         p.connect(load, driver_delay)
         p.connect(driver_delay, driver_select)
         p.connect(driver_delay, sample_rate_delay)
         p.connect(sample_rate_delay, sample_rate_value)
+        p.connect(sample_rate_delay, sample_rate_number)
+        p.connect(sample_rate_number, sample_rate_status, 0, 1)
+        p.connect(sample_rate_override, sample_rate_status)
         p.connect(sample_rate_delay, driver_ready)
         p.connect(driver_ready, start_trigger)
         p.connect(start_trigger, open_file, 5, 0)
@@ -252,6 +345,8 @@ def make_probe(
         p.connect(record_begin, record_start, 2, 0)
         p.connect(record_begin, baseline_time, 1, 0)
         p.connect(record_begin, metro_start, 0, 0)
+        if sweep_order is not None:
+            p.connect(record_begin, sweep_order, 0, 0)
         p.connect(dsp_start, dac)
         p.connect(metro_start, metro)
         p.connect(metro, current_time)
@@ -263,9 +358,12 @@ def make_probe(
             p.connect(elapsed, event_at)
             p.connect(event_at, event)
         p.connect(rendered, stop_trigger)
-        p.connect(stop_trigger, record_stop, 2, 0)
-        p.connect(stop_trigger, metro_stop, 1, 0)
-        p.connect(stop_trigger, dsp_stop, 0, 0)
+        p.connect(stop_trigger, record_stop, 3, 0)
+        p.connect(stop_trigger, metro_stop, 2, 0)
+        p.connect(stop_trigger, dsp_stop, 1, 0)
+        p.connect(stop_trigger, close_delay, 0, 0)
+        p.connect(close_delay, close_message)
+        p.connect(close_message, patcher_control)
         p.connect(dsp_stop, dac)
         p.connect(metro_stop, metro)
     else:
@@ -293,6 +391,15 @@ def make_probe(
         p.connect(driver_delay, dsp_delay)
         p.connect(dsp_delay, dsp_on)
         p.connect(dsp_on, dac)
+        if drive_lifecycle:
+            lifecycle_start = p.message("ignition 1, start 1, auto 1", 725, 500, 175)
+            lifecycle_start_delay = p.new(
+                f"delay {DSP_SETTLE_MS}", 625, 500, 85,
+                numinlets=2, numoutlets=1,
+            )
+            p.connect(load, lifecycle_start_delay)
+            p.connect(lifecycle_start_delay, lifecycle_start)
+            p.connect(lifecycle_start, drive)
         if lock_rpm:
             lock_delay = p.new(
                 f"delay {DSP_SETTLE_MS - 100}", 765, 545, 90,
@@ -349,7 +456,7 @@ def main() -> None:
     throttle = scenario.get("throttle", args.throttle)
     load_value = scenario.get("load", args.load_value)
     lock_rpm = bool(scenario.get("lock_rpm", False))
-    extra_messages = list(args.eq_message)
+    extra_messages = list(scenario.get("extra_messages", ())) + list(args.eq_message)
     for name in ("pad_level_db", "pad_mute", "pad_solo"):
         if name in scenario:
             extra_messages.append(f"{name} {scenario[name]:g}")
@@ -359,8 +466,6 @@ def main() -> None:
         extra_messages.append(f"eq_bypass {args.eq_bypass}")
     if args.master_trim_db is not None:
         extra_messages.append(f"master_trim_db {args.master_trim_db:g}")
-    if args.driver == "nonrealtime" and args.sweep_to_rpm is not None:
-        parser.error("sweep renders currently require --driver coreaudio")
     root = Path(__file__).resolve().parents[1]
     bundle = args.bundle_root.resolve()
     media = bundle / "media"
@@ -371,12 +476,27 @@ def main() -> None:
             text = item["box"].get("text")
             if text:
                 item["box"]["text"] = (
-                    text.replace("../gen/", "")
+                    text.replace((root / "media" / "local").as_posix() + "/", "")
+                    .replace((root / "media").as_posix() + "/", "")
+                    .replace((root / "gen").as_posix() + "/", "")
+                    .replace((root / "code").as_posix() + "/", "")
+                    .replace("Patcher:/media/local/", "")
+                    .replace("Patcher:/media/", "")
+                    .replace("Patcher:/gen/", "")
+                    .replace("Patcher:/code/", "")
+                    .replace("../gen/", "")
+                    .replace("../code/", "")
                     .replace("../media/local/", "")
                     .replace("../media/", "")
+                    .replace("gen/", "")
+                    .replace("code/", "")
+                    .replace("media/local/", "")
+                    .replace("media/", "")
                 )
         write_json(bundle / source.name, document)
     for source in (root / "gen").glob("*.gendsp"):
+        shutil.copy2(source, bundle / source.name)
+    for source in (root / "code").glob("*.js"):
         shutil.copy2(source, bundle / source.name)
     for source in (root / "media").glob("*.wav"):
         shutil.copy2(source, media / source.name)
@@ -400,7 +520,8 @@ def main() -> None:
         for source in local_media_source.glob("*.json"):
             shutil.copy2(source, local_media_destination / source.name)
             shutil.copy2(source, bundle / source.name)
-    if args.sweep_to_rpm is not None:
+    sweep_to_rpm = scenario.get("sweep_to_rpm", args.sweep_to_rpm)
+    if sweep_to_rpm is not None:
         state = "sweep"
     elif args.rpm is not None:
         state = f"rpm{args.rpm:g}"
@@ -420,7 +541,7 @@ def main() -> None:
             throttle=throttle,
             load_value=load_value,
             lock_rpm=lock_rpm,
-            sweep_to_rpm=args.sweep_to_rpm,
+            sweep_to_rpm=sweep_to_rpm,
             render_ms=args.render_ms,
             driver_mode=args.driver,
             start_enabled=args.start == "on",
@@ -428,8 +549,41 @@ def main() -> None:
             tap=args.tap,
             extra_messages=tuple(extra_messages),
             event_message=scenario.get("event"),
+            drive_lifecycle=bool(scenario.get("drive_lifecycle", False)),
         ),
     )
+    if "lifecycle_role" in scenario:
+        initial_rpm = rpm if rpm is not None else PROFILE_SETTINGS[profile]["rpm"]
+        end_rpm = initial_rpm
+        if sweep_to_rpm is not None:
+            end_rpm = sweep_to_rpm
+        write_json(
+            wav.with_suffix(".lifecycle.json"),
+            {
+                "schema_version": 1,
+                "role": scenario["lifecycle_role"],
+                "render_ms": args.render_ms,
+                "start_rpm": initial_rpm,
+                "end_rpm": end_rpm,
+                "start_firing_hz": initial_rpm / 12.0,
+                "end_firing_hz": end_rpm / 12.0,
+                "cadence_derivative_hz_s": (
+                    (end_rpm - initial_rpm) / 12.0 / max(args.render_ms / 1000.0, 1e-9)
+                ),
+                "event": scenario.get("event"),
+            },
+        )
+    if scenario.get("drive_lifecycle"):
+        trace = actual_drive_trace(root / "code" / "drive_model.js", profile, args.render_ms)
+        trace.update({
+            "probe_file": patch.name,
+            "probe_sha256": hashlib.sha256(patch.read_bytes()).hexdigest(),
+            "wav_file": wav.name,
+        })
+        write_json(
+            wav.with_suffix(".drive.json"),
+            trace,
+        )
     project_name = bundle.name
     patcher_contents = {
         path.name: {"kind": "patcher", "local": 1}
@@ -439,6 +593,10 @@ def main() -> None:
         path.name: {"kind": "gendsp", "local": 1}
         for path in sorted(bundle.glob("*.gendsp"))
     }
+    code_contents.update({
+        path.name: {"kind": "javascript", "local": 1}
+        for path in sorted(bundle.glob("*.js"))
+    })
     media_contents = {
         path.relative_to(bundle).as_posix(): {"kind": "mediafile", "local": 1}
         for path in sorted(media.rglob("*.wav"))

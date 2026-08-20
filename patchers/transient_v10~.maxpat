@@ -520,7 +520,7 @@
             255.0,
             22.0
           ],
-          "text": "buffer~ starter_v10 ../media/starter_v10.wav"
+          "text": "buffer~ starter_v10 Patcher:/media/starter_v10.wav"
         }
       },
       {
@@ -803,7 +803,7 @@
             410.0,
             22.0
           ],
-          "text": "buffer~ ferrari_startup ../media/local/ferrari_sf90_startup.wav"
+          "text": "buffer~ ferrari_startup Patcher:/media/local/ferrari_sf90_startup.wav"
         }
       },
       {

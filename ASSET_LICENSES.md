@@ -27,15 +27,15 @@ recorded in `assets/engine_texture_bank.json`.
 ## User-supplied local-only reference
 
 `/Users/saintpeter/Desktop/Ferrari.wav` is a user-supplied SF90 near-field
-reference. No redistribution permission is asserted. In addition to analysis,
-`tools/prepare_local_reference.py` may deterministically derive the optional
-local-only V10 startup, idle body, and steady/accel/decel six-anchor state atlas
-used on this machine. V12 never loads these files. A clean checkout instead uses
-the tracked CC0 starter and texture bank. Both source and every local derivative
-are ignored by Git and must never be committed, synced, uploaded, or released.
-The source/processor hashes, direct derivative hashes, and the hash of
-`media/local/ferrari_v10_atlas.json` (which records all 18 loop hashes and source
-ranges) are authoritative under `local_only_references` in the manifest.
+reference. No redistribution permission is asserted. Its tracked output is a
+non-audio lifecycle measurement table used to tune and validate the procedural
+V10 model. `tools/prepare_local_reference.py` may also derive an optional
+local-only V10 realistic-start one-shot. Idle-body, residual, and atlas outputs
+are offline comparison artifacts only and are never loaded for continuous
+runtime sound. V12 never loads any Ferrari-derived file. A clean checkout uses
+the tracked CC0 starter. The source and every local audio derivative are ignored
+by Git and must never be committed, synced, uploaded, or released; the manifest
+records the relevant source, processor, target-table, and derivative hashes.
 
 `tools/process_assets.py` converts sources to PCM16, resamples runtime material
 to 48 kHz, removes DC, applies short edge fades, and peak-normalizes every

@@ -88,8 +88,14 @@
           "id": "obj-5",
           "maxclass": "newobj",
           "numinlets": 1,
-          "numoutlets": 41,
+          "numoutlets": 47,
           "outlettype": [
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
             "",
             "",
             "",
@@ -138,7 +144,7 @@
             990.0,
             22.0
           ],
-          "text": "route ignition start speed_kph rpm throttle brake load accel gear shift shift_dir pop intake_backfire exhaust_pop click aggression brightness body texture cabin_width cabin_rumble exhaust_boom structure_vibration cabin_ir_mix powertrain_level_db transient_level_db road_level_db rumble_level_db pad_level_db pad_mute pad_solo reference_texture_level_db reference_texture_mute eq_low eq_lowmid eq_highmid eq_high eq_bypass master_trim_db start_style"
+          "text": "route ignition start speed_kph rpm throttle brake load accel gear shift shift_dir pop intake_backfire exhaust_pop click aggression brightness body texture cabin_width cabin_rumble exhaust_boom structure_vibration cabin_ir_mix powertrain_level_db transient_level_db road_level_db rumble_level_db pad_level_db pad_mute pad_solo reference_texture_level_db reference_texture_mute eq_low eq_lowmid eq_highmid eq_high eq_bypass master_trim_db compressor_threshold_db compressor_ratio compressor_attack_rate compressor_release_rate compressor_makeup_db compressor_bypass start_style"
         }
       },
       {

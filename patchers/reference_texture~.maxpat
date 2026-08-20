@@ -518,7 +518,7 @@
             330.0,
             22.0
           ],
-          "text": "buffer~ tex_065_a ../media/engine_texture_065_a.wav"
+          "text": "buffer~ tex_065_a Patcher:/media/engine_texture_065_a.wav"
         }
       },
       {
@@ -537,7 +537,7 @@
             330.0,
             22.0
           ],
-          "text": "buffer~ tex_065_b ../media/engine_texture_065_b.wav"
+          "text": "buffer~ tex_065_b Patcher:/media/engine_texture_065_b.wav"
         }
       },
       {
@@ -814,7 +814,7 @@
             330.0,
             22.0
           ],
-          "text": "buffer~ tex_110_a ../media/engine_texture_110_a.wav"
+          "text": "buffer~ tex_110_a Patcher:/media/engine_texture_110_a.wav"
         }
       },
       {
@@ -833,7 +833,7 @@
             330.0,
             22.0
           ],
-          "text": "buffer~ tex_110_b ../media/engine_texture_110_b.wav"
+          "text": "buffer~ tex_110_b Patcher:/media/engine_texture_110_b.wav"
         }
       },
       {
@@ -1110,7 +1110,7 @@
             330.0,
             22.0
           ],
-          "text": "buffer~ tex_180_a ../media/engine_texture_180_a.wav"
+          "text": "buffer~ tex_180_a Patcher:/media/engine_texture_180_a.wav"
         }
       },
       {
@@ -1129,7 +1129,7 @@
             330.0,
             22.0
           ],
-          "text": "buffer~ tex_180_b ../media/engine_texture_180_b.wav"
+          "text": "buffer~ tex_180_b Patcher:/media/engine_texture_180_b.wav"
         }
       },
       {
@@ -1406,7 +1406,7 @@
             330.0,
             22.0
           ],
-          "text": "buffer~ tex_260_a ../media/engine_texture_260_a.wav"
+          "text": "buffer~ tex_260_a Patcher:/media/engine_texture_260_a.wav"
         }
       },
       {
@@ -1425,7 +1425,7 @@
             330.0,
             22.0
           ],
-          "text": "buffer~ tex_260_b ../media/engine_texture_260_b.wav"
+          "text": "buffer~ tex_260_b Patcher:/media/engine_texture_260_b.wav"
         }
       },
       {
@@ -1702,7 +1702,7 @@
             330.0,
             22.0
           ],
-          "text": "buffer~ tex_380_a ../media/engine_texture_380_a.wav"
+          "text": "buffer~ tex_380_a Patcher:/media/engine_texture_380_a.wav"
         }
       },
       {
@@ -1721,7 +1721,7 @@
             330.0,
             22.0
           ],
-          "text": "buffer~ tex_380_b ../media/engine_texture_380_b.wav"
+          "text": "buffer~ tex_380_b Patcher:/media/engine_texture_380_b.wav"
         }
       },
       {
@@ -1998,7 +1998,7 @@
             330.0,
             22.0
           ],
-          "text": "buffer~ tex_520_a ../media/engine_texture_520_a.wav"
+          "text": "buffer~ tex_520_a Patcher:/media/engine_texture_520_a.wav"
         }
       },
       {
@@ -2017,7 +2017,7 @@
             330.0,
             22.0
           ],
-          "text": "buffer~ tex_520_b ../media/engine_texture_520_b.wav"
+          "text": "buffer~ tex_520_b Patcher:/media/engine_texture_520_b.wav"
         }
       },
       {
@@ -2294,7 +2294,7 @@
             390.0,
             22.0
           ],
-          "text": "buffer~ ferrari_idle_body ../media/local/ferrari_sf90_idle_body.wav"
+          "text": "buffer~ ferrari_idle_body Patcher:/media/local/ferrari_sf90_idle_body.wav"
         }
       },
       {

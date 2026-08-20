@@ -21,7 +21,7 @@
             760.0,
             22.0
           ],
-          "text": "EV dedicated powertrain \u2014 one generator and one profile texture renderer"
+          "text": "EV dedicated powertrain \u2014 procedural continuous synthesis"
         }
       },
       {
@@ -86,10 +86,10 @@
           "patching_rect": [
             300.0,
             330.0,
-            235.0,
+            270.0,
             22.0
           ],
-          "text": "gen~ @gen ../gen/ev_powertrain"
+          "text": "gen~ @gen Patcher:/gen/ev_powertrain.gendsp"
         }
       },
       {

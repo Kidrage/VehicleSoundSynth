@@ -1007,7 +1007,7 @@
             265.0,
             22.0
           ],
-          "text": "buffer~ cabin_ir_l ../media/cabin_ir_l.wav"
+          "text": "buffer~ cabin_ir_l Patcher:/media/cabin_ir_l.wav"
         }
       },
       {
@@ -1026,7 +1026,7 @@
             265.0,
             22.0
           ],
-          "text": "buffer~ cabin_ir_r ../media/cabin_ir_r.wav"
+          "text": "buffer~ cabin_ir_r Patcher:/media/cabin_ir_r.wav"
         }
       },
       {

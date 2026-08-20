@@ -520,7 +520,7 @@
             255.0,
             22.0
           ],
-          "text": "buffer~ starter_v12 ../media/starter_v12.wav"
+          "text": "buffer~ starter_v12 Patcher:/media/starter_v12.wav"
         }
       },
       {

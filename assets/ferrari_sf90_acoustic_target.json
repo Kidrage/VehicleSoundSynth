@@ -37,26 +37,5 @@
     "low_band_correlation_min": 0.95,
     "mono_fold_rms_loss_db_max": 1.5
   },
-  "local_residual_recipe": {
-    "source_window_start_seconds": 1.0,
-    "dc_remove": true,
-    "highpass_hz": 90.0,
-    "cadence_notch_fundamental_hz": 61.5,
-    "cadence_notch_q": 18.0,
-    "lowpass_hz": 4000.0,
-    "loop_duration_ms": 250.0,
-    "equal_power_crossfade_ms": 20.0,
-    "target_rms_dbfs": -18.0,
-    "peak_ceiling_dbfs": -3.0,
-    "v4_high_layer": {
-      "source_window_start_seconds": 22.75,
-      "cadence_notch_fundamental_hz": 345.7,
-      "highpass_hz": 180.0,
-      "lowpass_hz": 12000.0,
-      "loop_duration_ms": 500.0,
-      "playback_speed_equation": "((rpm/60)*(5+v12_weight))/345.7",
-      "equal_power_crossfade_rpm": [1800.0, 3000.0],
-      "texture_lift_db": 12.0
-    }
-  }
+  "runtime_usage": "analysis-only; continuous V10/V12 sound is synthesized and no Ferrari audio or derivative is loaded"
 }

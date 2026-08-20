@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Prepare local-only Ferrari residual, startup, and idle-body layers for V4."""
+"""Prepare a local V10 startup one-shot and offline comparison artifacts.
+
+Only the startup one-shot is reachable from V4. Residual, idle-body, and atlas
+outputs are retained for analysis compatibility and must not be wired to a
+continuous runtime signal path.
+"""
 
 from __future__ import annotations
 
@@ -489,7 +494,7 @@ def prepare_reference(
 
 
 def prepare_reference_bundle(source: Path, destination_dir: Path) -> dict[str, object]:
-    """Create compatible residuals plus cadence-preserving startup/idle layers."""
+    """Create one runtime startup plus legacy offline comparison artifacts."""
     result: dict[str, object] = {
         "idle": prepare_reference(
             source, destination_dir / "ferrari_sf90_idle_residual.wav",

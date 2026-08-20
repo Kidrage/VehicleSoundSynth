@@ -3,6 +3,10 @@
   "autoorganize": 0,
   "contents": {
     "code": {
+      "code/drive_model.js": {
+        "kind": "javascript",
+        "local": 1
+      },
       "gen/ev_powertrain.gendsp": {
         "kind": "gendsp",
         "local": 1
@@ -22,6 +26,10 @@
         "local": 1
       },
       "assets/ferrari_sf90_acoustic_target.json": {
+        "kind": "data",
+        "local": 1
+      },
+      "assets/ferrari_v10_lifecycle_targets.json": {
         "kind": "data",
         "local": 1
       },
@@ -309,23 +317,11 @@
         "kind": "patcher",
         "local": 1
       },
-      "patchers/v10_fallback_renderer~.maxpat": {
-        "kind": "patcher",
-        "local": 1
-      },
       "patchers/v10_powertrain~.maxpat": {
         "kind": "patcher",
         "local": 1
       },
-      "patchers/v10_state_renderer~.maxpat": {
-        "kind": "patcher",
-        "local": 1
-      },
       "patchers/v12_powertrain~.maxpat": {
-        "kind": "patcher",
-        "local": 1
-      },
-      "patchers/v12_texture_renderer~.maxpat": {
         "kind": "patcher",
         "local": 1
       },

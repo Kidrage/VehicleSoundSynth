@@ -18,10 +18,10 @@
           "patching_rect": [
             25.0,
             15.0,
-            690.0,
+            760.0,
             22.0
           ],
-          "text": "EV fixed lifecycle controller \u2014 start lock, catch and shift envelopes"
+          "text": "EV fixed lifecycle controller \u2014 start lock and catch; drivetrain owns shift envelope"
         }
       },
       {
@@ -473,79 +473,6 @@
           "id": "obj-26",
           "maxclass": "newobj",
           "numinlets": 1,
-          "numoutlets": 2,
-          "outlettype": [
-            "",
-            ""
-          ],
-          "patching_rect": [
-            35.0,
-            435.0,
-            45.0,
-            22.0
-          ],
-          "text": "sel 1"
-        }
-      },
-      {
-        "box": {
-          "id": "obj-27",
-          "maxclass": "message",
-          "numinlets": 2,
-          "numoutlets": 1,
-          "outlettype": [
-            ""
-          ],
-          "patching_rect": [
-            35.0,
-            475.0,
-            95.0,
-            22.0
-          ],
-          "text": "shift_cut 0.72"
-        }
-      },
-      {
-        "box": {
-          "id": "obj-28",
-          "maxclass": "newobj",
-          "numinlets": 2,
-          "numoutlets": 1,
-          "outlettype": [
-            ""
-          ],
-          "patching_rect": [
-            145.0,
-            475.0,
-            70.0,
-            22.0
-          ],
-          "text": "delay 120"
-        }
-      },
-      {
-        "box": {
-          "id": "obj-29",
-          "maxclass": "message",
-          "numinlets": 2,
-          "numoutlets": 1,
-          "outlettype": [
-            ""
-          ],
-          "patching_rect": [
-            225.0,
-            475.0,
-            75.0,
-            22.0
-          ],
-          "text": "shift_cut 1"
-        }
-      },
-      {
-        "box": {
-          "id": "obj-30",
-          "maxclass": "newobj",
-          "numinlets": 1,
           "numoutlets": 1,
           "outlettype": [
             ""
@@ -561,7 +488,7 @@
       },
       {
         "box": {
-          "id": "obj-31",
+          "id": "obj-27",
           "maxclass": "newobj",
           "numinlets": 1,
           "numoutlets": 1,
@@ -579,7 +506,7 @@
       },
       {
         "box": {
-          "id": "obj-32",
+          "id": "obj-28",
           "maxclass": "newobj",
           "numinlets": 1,
           "numoutlets": 1,
@@ -597,7 +524,7 @@
       },
       {
         "box": {
-          "id": "obj-33",
+          "id": "obj-29",
           "maxclass": "newobj",
           "numinlets": 1,
           "numoutlets": 1,
@@ -1063,47 +990,11 @@
       {
         "patchline": {
           "destination": [
-            "obj-26",
-            0
-          ],
-          "source": [
-            "obj-4",
-            2
-          ]
-        }
-      },
-      {
-        "patchline": {
-          "destination": [
-            "obj-27",
+            "obj-5",
             0
           ],
           "source": [
             "obj-26",
-            0
-          ]
-        }
-      },
-      {
-        "patchline": {
-          "destination": [
-            "obj-28",
-            0
-          ],
-          "source": [
-            "obj-26",
-            0
-          ]
-        }
-      },
-      {
-        "patchline": {
-          "destination": [
-            "obj-29",
-            0
-          ],
-          "source": [
-            "obj-28",
             0
           ]
         }
@@ -1127,55 +1018,19 @@
             0
           ],
           "source": [
+            "obj-28",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-5",
+            0
+          ],
+          "source": [
             "obj-29",
-            0
-          ]
-        }
-      },
-      {
-        "patchline": {
-          "destination": [
-            "obj-5",
-            0
-          ],
-          "source": [
-            "obj-30",
-            0
-          ]
-        }
-      },
-      {
-        "patchline": {
-          "destination": [
-            "obj-5",
-            0
-          ],
-          "source": [
-            "obj-31",
-            0
-          ]
-        }
-      },
-      {
-        "patchline": {
-          "destination": [
-            "obj-5",
-            0
-          ],
-          "source": [
-            "obj-32",
-            0
-          ]
-        }
-      },
-      {
-        "patchline": {
-          "destination": [
-            "obj-5",
-            0
-          ],
-          "source": [
-            "obj-33",
             0
           ]
         }

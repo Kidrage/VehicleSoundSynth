@@ -93,10 +93,10 @@
           "patching_rect": [
             220.0,
             395.0,
-            210.0,
+            250.0,
             22.0
           ],
-          "text": "gen~ @gen ../gen/ev_powertrain"
+          "text": "gen~ @gen Patcher:/gen/ev_powertrain.gendsp"
         }
       },
       {
@@ -112,10 +112,10 @@
           "patching_rect": [
             510.0,
             395.0,
-            220.0,
+            260.0,
             22.0
           ],
-          "text": "gen~ @gen ../gen/v12_powertrain"
+          "text": "gen~ @gen Patcher:/gen/v12_powertrain.gendsp"
         }
       },
       {
@@ -131,10 +131,10 @@
           "patching_rect": [
             800.0,
             395.0,
-            220.0,
+            260.0,
             22.0
           ],
-          "text": "gen~ @gen ../gen/v10_powertrain"
+          "text": "gen~ @gen Patcher:/gen/v10_powertrain.gendsp"
         }
       },
       {

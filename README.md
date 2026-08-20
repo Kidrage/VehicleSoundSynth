@@ -13,9 +13,9 @@ is the supported low-CPU workflow.
 
 ## Quick start
 
-1. Open `VehicleSoundSynth-V4.maxproj` and wait for the Project window. Do not
-   open a runtime `.maxpat` directly from Finder: that bypasses the Project search
-   path and its abstractions will not load.
+1. Open `VehicleSoundSynth-V4.maxproj` and wait for the Project window. Directly
+   opening one of the three runtime `.maxpat` files is also supported: their
+   root-level abstractions use explicit `patchers/` paths.
 2. Open `main.maxpat` from the Project window, then click one profile. Audio
    starts off.
 3. In V10/V12, choose `Cinematic BEAP` or `Realistic Sample`, click
@@ -44,16 +44,14 @@ Each public profile patcher has one message inlet and stereo signal outlets:
 Each profile owns exactly one Gen powertrain. There are no runtime profile
 weights and no hidden V10/V12/EV generators muted behind gain objects.
 
-V10 is sample-led. A local state atlas supplies steady, acceleration, and
-deceleration texture at six firing-rate anchors. Adjacent RPM anchors and the
-three load states crossfade continuously, while sample playback is limited to
-0.88-1.12x. A low-passed procedural V10 layer remains at -18 dB as timing/body
-support, rather than creating the former saw-like high-frequency identity.
-
-V12 stays independent of the Ferrari V10 reference. It uses its own procedural
-core plus the tracked CC0 residual bank. EV combines a procedural motor with one
+V10 and V12 continuous sound is procedural. No idle, acceleration, deceleration,
+or shift-recovery recording is loaded or looped. Both engines use phase-locked
+four-stroke cylinder banks, low-order body resonances, bounded combustion
+residuals, and soft saturation instead of saw/square oscillators. V10 is tuned
+against offline Ferrari lifecycle targets; V12 remains an independent, smoother
+high-rev model. EV combines a procedural motor with one
 of three suspendable BEAP soundscapes. The motor remains the speed-tracking
-fundamental; the BEAP layer uses a compressed pitch trajectory and is high-passed
+fundamental; the BEAP layer uses the same continuous pitch law and is high-passed
 at 320 Hz, so it behaves as a cinematic layer instead of cancelling or replacing
 the motor body. Its default level is -9 dB.
 
@@ -62,16 +60,17 @@ The signal path per runtime is:
 ```text
 fixed drive/controller -> one profile powertrain + transient + road
                        -> powertrain-excited cabin/body
-                       -> four-band stereo EQ -> limiter/clip -> output
+                       -> four-band stereo EQ -> compressor -> limiter/clip -> output
 ```
 
 In `Internal Manual`, focus the runtime window and hold `W` to ramp throttle
 toward 1.0 or `S` to apply the brake. Releasing either key ramps that pedal back
 to zero. Keyboard pedals are disabled, and both are released, when leaving
-Manual mode. Throttle enters the running-state speed integrator and produces
-continuous RPM output. EV is single-speed. V10/V12 use a seven-speed fixed-profile
-DCT with 350 ms shift lockout and a 120 ms RPM transition; a shift makes one
-modest gain dip and one quieter transient, rather than retriggering a hard mute.
+Manual mode. Throttle enters one 20 ms physical integrator and cannot change RPM
+without elapsed vehicle time. EV is single-speed. V10 uses a faster DCT cut / RPM
+sweep / clutch re-engagement, while V12 uses longer, smoother phases. Both keep
+RPM continuous through a shift and produce one bounded torque dip rather than a
+reset or threshold jump.
 
 ## Engine start
 
@@ -140,7 +139,17 @@ eq_highmid <frequency_hz> <gain_db> <q>
 eq_high <frequency_hz> <gain_db>
 eq_bypass 0|1
 master_trim_db -24..0
+compressor_threshold_db -36..0
+compressor_ratio 1..50
+compressor_attack_rate 0..150
+compressor_release_rate 0..150
+compressor_makeup_db -12..12
+compressor_bypass 0|1
 ```
+
+OMX attack/release values are rates, not milliseconds: larger values are
+faster. Defaults are -12 dB, 2:1, attack 85, release 35, and 0 dB makeup. The
+peak limiter and -1 dBFS clip guard remain active after the compressor.
 
 EV additionally accepts:
 
@@ -155,10 +164,56 @@ pad_solo 0|1
 
 V10/V12 additionally accept `start_style cinematic|realistic`.
 
-## Local Ferrari V10 atlas
+## Offline Ferrari V10 lifecycle analysis
 
 `/Users/saintpeter/Desktop/Ferrari.wav` is a user-supplied V10 acoustic
-reference. Build the ignored local runtime bundle with:
+reference. Continuous engine audio never loads it or any derivative. Regenerate
+the tracked, non-audio lifecycle target table with:
+
+```sh
+python3 tools/analyze_reference_lifecycle.py \
+  /Users/saintpeter/Desktop/Ferrari.wav \
+  assets/ferrari_v10_lifecycle_targets.json
+```
+
+The table covers 14 windows across startup catch, cold/warm idle, low/mid/full
+acceleration attacks, loaded holds, shift recovery, and overrun/deceleration.
+Each node records cadence and direction, level/crest, centroid/rolloff, low-mid,
+rumble, harsh-band, and air-band ratios. These measurements constrain synthesis
+and render QA without embedding the source recording. Gate actual synthesized
+V10 role renders against those reference-derived envelopes with:
+
+```sh
+python3 tools/bind_drive_render.py v10_v10-lifecycle-drive_on_final.wav
+python3 tools/validate_v10_lifecycle.py \
+  --drive-lifecycle-wav v10_v10-lifecycle-drive_on_final.wav \
+  idle=v10_v10-lifecycle-idle_on_final.wav \
+  acceleration=v10_v10-lifecycle-acceleration_on_final.wav \
+  loaded_hold=v10_v10-lifecycle-loaded-hold_on_final.wav \
+  shift_recovery=v10_v10-lifecycle-shift-recovery_on_final.wav \
+  deceleration=v10_v10-lifecycle-deceleration_on_final.wav
+```
+
+The production gate requires the target table's 48 kHz sample rate and rejects
+clipping, weak low/mid body, insufficient rumble, excessive 2-6 kHz or >6 kHz
+energy, excessive centroid/roll-off, out-of-envelope RMS/crest, missing shift
+events, and wrong firing-cadence direction/range. The matching
+`v10_v10-lifecycle-*.lifecycle.json` sidecars are generated by the five
+`v10-lifecycle-*` runtime-probe scenarios. All five roles are mandatory unless
+the explicitly diagnostic `--allow-partial-lifecycle` flag is used.
+The additional 24 s `v10-lifecycle-drive` probe does not inject RPM, accel, or
+shift messages: it sends ignition/start/auto only, renders the same Max chain,
+and records a deterministic trace from the exact `code/drive_model.js` used by
+the runtime. The gate verifies throttle-driven RPM growth, startup catch,
+ordered automatic gears 2-7, paired shift events, bounded 20 ms RPM steps, and
+brake/deceleration before accepting its audio metrics. The binding step records
+the completed Max WAV hash, frame count, sample rate, and probe hash in the
+sidecar; validation rejects a trace copied from another render.
+`--allow-non-target-sample-rate` likewise exists only for CoreAudio diagnostics
+when Max ignores a requested 48 kHz rate.
+
+For the optional `Realistic Sample` startup choice only, build the ignored local
+bundle with:
 
 ```sh
 python3 tools/prepare_local_reference.py /Users/saintpeter/Desktop/Ferrari.wav media/local --bundle
@@ -167,16 +222,15 @@ python3 tools/prepare_local_reference.py /Users/saintpeter/Desktop/Ferrari.wav m
 The deterministic processor creates:
 
 - a 1.2 s startup layer;
-- a cyclic idle-body layer;
-- 18 atlas loops: steady/accel/decel x six firing-rate anchors;
+- legacy idle-body and 18 atlas loops retained for offline comparison only;
 - `ferrari_v10_atlas.json`, containing source and processor hashes, cadence/RPM
   anchors, source ranges, loop metadata, levels, confidence, and derivative
   hashes.
 
-A single global gain is applied to the atlas so the reference recording's
-relative state dynamics are preserved. `media/local/` is ignored by Git and
-must never be committed, synced, or redistributed. A clean checkout uses the
-tracked CC0 starter and texture fallback. V12 never loads these V10 files.
+Only the 1.2 s startup one-shot is reachable from a runtime, and only when
+`start_style realistic` is chosen. `media/local/` is ignored by Git and must
+never be committed, synced, or redistributed. A clean checkout uses the tracked
+CC0 starter. V12 never loads a Ferrari-derived file.
 
 Distributable audio provenance remains governed by `ASSET_LICENSES.md` and
 `assets/asset_manifest.json`.
