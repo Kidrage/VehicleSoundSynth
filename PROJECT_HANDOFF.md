@@ -14,7 +14,8 @@
 ## Current State
 
 - Branch: `main`
-- HEAD: `cf4c970`
+- HEAD: resolve `main` dynamically with `git rev-parse HEAD`; the consolidation
+  record starts at `942cd3f`, immediately after V5 feature head `cf4c970`.
 - Indexed paths: 140
 - Inventory truncated: `false`
 - Inaccessible paths: 0
@@ -93,6 +94,7 @@
 
 ## Change History
 
+- `942cd3f 2026-08-21 docs: record V5 mainline consolidation`
 - `cf4c970 2026-08-21 feat: add switchable gamepad manual throttle control`
 - `1738ef6 2026-08-20 docs: refresh V5 repository handoff`
 - `4a3d892 2026-08-20 fix: gate backfire by engine state`
@@ -116,7 +118,8 @@
 
 ## Current Changes
 
-- `## main...origin/main [ahead 5]`
+- Canonical delivery target: clean, synchronized `main...origin/main`; always
+  verify with `git status -sb` rather than relying on a stored ahead count.
 
 ## Related Repositories
 

@@ -103,8 +103,11 @@ On macOS, Max writes load diagnostics to
 
 ## Repository State
 
-- Branch: `codex/vehicle-sound-v5`; base is V4 stable tag `v4.0.0` at `6aa49d0`.
-- Remote initially points to the local V4 clone and must be replaced by the private GitHub origin after publication.
+- Canonical branch: `main`; it contains the complete V5 history and is based on
+  the frozen V4 stable tag `v4.0.0` at `6aa49d0`.
+- Canonical remote: `git@github.com:Kidrage/VehicleSoundSynth.git`; use
+  `origin/main` as the only operator/development entry point. Historical V3/V4
+  repositories remain read-only archives, not competing mainlines.
 - `media/local/` is ignored and must never be committed or mirrored; missing
   Ferrari layers intentionally fall back to the tracked CC0 paths.
 - Avoid cache files such as `tests/__pycache__/`.
