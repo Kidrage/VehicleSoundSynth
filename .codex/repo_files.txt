@@ -24,6 +24,7 @@ assets/ferrari_v10_lifecycle_targets.json
 assets/raw/README.md
 code/drive_model.js
 code/eq_state_path.js
+code/manual_input.js
 gen/ev_powertrain.gendsp
 gen/v10_powertrain.gendsp
 gen/v12_powertrain.gendsp
@@ -50,6 +51,7 @@ patchers/ev_soundscape_host~.maxpat
 patchers/ev_sport_beap~.maxpat
 patchers/ev_sport_voice.maxpat
 patchers/keyboard_drive_ws.maxpat
+patchers/manual_input.maxpat
 patchers/mix_master~.maxpat
 patchers/powertrain~.maxpat
 patchers/reference_texture~.maxpat
@@ -78,6 +80,7 @@ patchers/vehicle_engine_v10~.maxpat
 patchers/vehicle_engine_v12~.maxpat
 patchers/vehicle_engine~.maxpat
 presets/local/.gitkeep
+tests/test_manual_input.py
 presets/sound_dna.json
 presets/vehicle_bus_eq_default.json
 tests/test_project.py

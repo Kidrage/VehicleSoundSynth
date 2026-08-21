@@ -85,6 +85,45 @@ sweep / clutch re-engagement, while V12 uses longer, smoother phases. Both keep
 RPM continuous through a shift and produce one bounded torque dip rather than a
 reset or threshold jump.
 
+## Gamepad Manual Control
+
+V5 keeps the existing W/S keyboard pedals and adds a switchable macOS HID
+gamepad adapter. It uses Max 8.6.5's built-in `hi` object; no external package
+or commercial dependency is required.
+
+1. Pair the controller in macOS Bluetooth settings, open one runtime, and keep
+   the drive source on `Internal Manual`.
+2. In the Manual Input panel choose `Gamepad`, click the HID refresh button,
+   and select the connected controller from `HID Device`.
+3. Click `Learn Throttle`, sweep RT/R2 through its full travel and release it
+   within two seconds. Repeat with `Learn Brake` and LT/L2 if desired.
+4. Confirm `Detected`, `Last Element`, `Raw`, `Throttle Norm`, and `Brake Norm`
+   change. The learned
+   element and observed raw min/max are copied into the corresponding controls.
+5. If a trigger runs backwards, enable its `Invert Axis` toggle. `Linear` maps
+   trigger travel directly to pedal opening; `Progressive` applies
+   `pow(normalized, gamma)` with adjustable gamma, default 1.5.
+
+Learn deliberately chooses the HID element with the largest observed travel;
+do not move sticks or other axes during its two-second window. Manual axis and
+raw min/max editing remains available when Learn cannot identify a controller.
+The mapping is:
+
+```text
+normalized = clamp((raw - raw_min) / (raw_max - raw_min), 0, 1)
+```
+
+The default 0.02 dead zone is removed and the remaining travel is rescaled to
+reach 1.0. The default 35 ms smoothing suppresses Bluetooth jitter without
+changing the drivetrain clock. A trigger represents absolute pedal opening;
+it never accumulates speed or RPM itself. Selecting `Keyboard` disables HID
+pedals, selecting `Gamepad` disables W/S, and every source or Manual-mode exit
+sends immediate `throttle 0` and `brake 0` before accepting another source.
+
+GameSir Nova 2 Lite element numbers are intentionally not hard-coded because
+Bluetooth mode and firmware can expose different HID layouts. Use Learn or the
+live element/raw display on the connected machine.
+
 ## Engine start
 
 V10/V12 expose:

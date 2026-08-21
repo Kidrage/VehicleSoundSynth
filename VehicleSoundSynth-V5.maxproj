@@ -11,6 +11,10 @@
         "kind": "javascript",
         "local": 1
       },
+      "code/manual_input.js": {
+        "kind": "javascript",
+        "local": 1
+      },
       "gen/ev_powertrain.gendsp": {
         "kind": "gendsp",
         "local": 1
@@ -154,6 +158,10 @@
         "local": 1
       },
       "patchers/keyboard_drive_ws.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/manual_input.maxpat": {
         "kind": "patcher",
         "local": 1
       },

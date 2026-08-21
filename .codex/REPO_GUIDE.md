@@ -24,12 +24,17 @@ events, short cabin IR, adjustable stereo compression, EQ, and peak protection.
 - `tools/prepare_local_reference.py` — builds the ignored Ferrari startup one-shot plus analysis-only legacy derivatives and hash manifests.
 - `tools/analyze_reference_lifecycle.py` / `tools/validate_v10_lifecycle.py` — build the tracked 14-node target table and gate five synthesized roles plus the throttle-only full-drive render.
 - `code/drive_model.js` — exact deterministic 20 ms EV/V10/V12 drivetrain used by Max and Node regression traces.
+- `code/manual_input.js` — ES5/Node-testable HID normalization, curve,
+  smoothing, Learn, source exclusivity, and safe pedal-release state.
 - `assets/asset_manifest.json` / `ASSET_LICENSES.md` — runtime-audio provenance authority.
 - `main.maxpat` — DSP-free launcher; it must never instantiate an engine.
 - `VehicleSoundSynth-{EV,V10,V12}.maxpat` — independent runnable UIs; the
   single `Audio + Output` toggle enables both DSP and the output ramp.
 - `patchers/keyboard_drive_ws.maxpat` — focus-aware Manual-mode W/S throttle
   and brake ramps with forced release when leaving Manual.
+- `patchers/manual_input.maxpat` — generated deep module that selects the
+  keyboard adapter or Max's built-in macOS `hi` adapter and exposes only
+  normalized throttle/brake to the existing drivetrain.
 - `patchers/vehicle_engine_{ev,v10,v12}~.maxpat` — fixed public seams.
 - `patchers/{ev,v10,v12}_powertrain~.maxpat` — exactly one Gen per profile.
 - `patchers/ev_soundscape_host~.maxpat` — mode crossfade plus cancellable inactive-voice suspension.
@@ -79,8 +84,10 @@ On macOS, Max writes load diagnostics to
   probe names and only one isolated probe instance at a time on macOS.
 - Open the project first and launcher second in the same Max instance. Launcher
   selection writes/closes the prior top-level runtime before opening one unique
-  replacement. In Internal Manual, focus the runtime and hold W/S for
-  throttle/brake. Save user-tuned BEAP subpatchers, close every task-opened
+  replacement. In Internal Manual, choose Keyboard and focus the runtime for
+  W/S, or choose Gamepad and use HID Learn/configuration for RT/LT. Both adapters
+  feed only throttle/brake into the unchanged drive model. Save user-tuned BEAP
+  subpatchers, close every task-opened
   patcher, and quit Max after a smoke test.
 
 ## V5 Mainline
@@ -91,6 +98,8 @@ On macOS, Max writes load diagnostics to
 - Add independent, top-level-controlled, seed-once cinematic BEAP pads for V10/V12.
 - Persist one shared vehicle-bus four-band EQ across all three runtimes with safe default fallback.
 - Keep `main.maxpat` DSP-free and maintain one-runtime-at-a-time CPU behavior.
+- Keep Keyboard and configurable macOS HID gamepad pedals mutually exclusive,
+  with immediate zero release on source or Manual-mode exit.
 
 ## Repository State
 

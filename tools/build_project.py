@@ -4087,8 +4087,10 @@ def make_keyboard_drive_ws() -> dict[str, Any]:
     s_pressed = p.message("1", 165, 185, 30)
     s_released = p.message("0", 205, 185, 30)
     manual_off = p.new("sel 0", 315, 105, 45, numinlets=1, numoutlets=2)
-    release_both = p.message("0", 375, 105, 30)
-    default_off = p.new("loadmess 0", 425, 105, 80, numinlets=1, numoutlets=1)
+    disable_order = p.new("t b b", 375, 105, 50, numinlets=1, numoutlets=2)
+    reset_key_state = p.message("set 0", 435, 92, 45)
+    hard_zero = p.message("0.", 435, 120, 35)
+    default_off = p.new("loadmess 0", 490, 105, 80, numinlets=1, numoutlets=1)
     w_change = p.new("change", 25, 260, 55, numinlets=1, numoutlets=3)
     s_change = p.new("change", 165, 260, 55, numinlets=1, numoutlets=3)
     w_state = p.new("sel 1 0", 25, 300, 55, numinlets=1, numoutlets=3)
@@ -4120,9 +4122,13 @@ def make_keyboard_drive_ws() -> dict[str, Any]:
     p.connect(w_released, w_gate, 0, 1)
     p.connect(s_pressed, s_gate, 0, 1)
     p.connect(s_released, s_gate, 0, 1)
-    p.connect(manual_off, release_both, 0)
-    p.connect(release_both, w_change)
-    p.connect(release_both, s_change)
+    p.connect(manual_off, disable_order, 0)
+    p.connect(disable_order, reset_key_state, 1)
+    p.connect(reset_key_state, w_change)
+    p.connect(reset_key_state, s_change)
+    p.connect(disable_order, hard_zero, 0)
+    p.connect(hard_zero, throttle_line)
+    p.connect(hard_zero, brake_line)
     p.connect(w_gate, w_change)
     p.connect(s_gate, s_change)
     p.connect(w_change, w_state)
@@ -4140,10 +4146,250 @@ def make_keyboard_drive_ws() -> dict[str, Any]:
     return p.document()
 
 
+def make_manual_input() -> dict[str, Any]:
+    """Unify keyboard and configurable macOS HID pedals behind one seam."""
+    p = Patcher(1000, 700)
+    p.comment(
+        "MANUAL INPUT — Keyboard / Gamepad; source and mode changes force both pedals to zero",
+        20, 15, 760,
+    )
+    manual = inlet(p, 20, 45)
+    throttle_out = outlet(p, 830, 620)
+    brake_out = outlet(p, 900, 620)
+
+    p.comment("Input Source: Keyboard / Gamepad", 20, 48, 230)
+    source_menu = p.add(
+        "umenu", None, 20, 72, 125, numinlets=1, numoutlets=3,
+        items=["Keyboard", ",", "Gamepad"],
+    )
+    source_default = p.new("loadmess 0", 152, 72, 80, numinlets=1, numoutlets=1)
+    source_trigger = p.new("t i i", 240, 72, 50, numinlets=1, numoutlets=2)
+    source_select = p.new("sel 0 1", 298, 72, 55, numinlets=1, numoutlets=3)
+    source_keyboard = p.message("source keyboard", 360, 62, 110)
+    source_gamepad = p.message("source gamepad", 360, 88, 110)
+
+    p.comment("HID Device", 490, 48, 90)
+    refresh = p.add("button", None, 490, 72, 22, 22, numinlets=1, numoutlets=1)
+    p.comment("Refresh", 490, 100, 65)
+    refresh_trigger = p.new("t b b", 518, 48, 50, numinlets=1, numoutlets=2)
+    device_reset = p.message("device -1", 574, 48, 68)
+    menu_message = p.message("menu", 520, 72, 42)
+    device_menu = p.add("umenu", None, 670, 72, 175, numinlets=1, numoutlets=3)
+    device_trigger = p.new("t i i", 852, 72, 50, numinlets=1, numoutlets=2)
+    device_named = p.new("prepend device", 910, 72, 95, numinlets=1, numoutlets=1)
+    device_name_set = p.new("prepend set", 670, 100, 80, numinlets=1, numoutlets=1)
+    device_name = p.message("No HID device selected", 758, 100, 170)
+
+    p.comment("Detected", 20, 112, 70)
+    detected = p.add("toggle", None, 20, 136, 22, 22, numinlets=1, numoutlets=1)
+    p.comment("Last Element", 58, 112, 86)
+    last_element = p.add("number", None, 58, 136, 62, numinlets=1, numoutlets=2)
+    p.comment("Raw", 132, 112, 45)
+    last_raw = p.add("flonum", None, 132, 136, 78, numinlets=1, numoutlets=2)
+    p.comment("Throttle Norm", 220, 112, 90)
+    throttle_normalized = p.add("flonum", None, 220, 136, 78, numinlets=1, numoutlets=2)
+    p.comment("Brake Norm", 310, 112, 80)
+    brake_normalized = p.add("flonum", None, 310, 136, 78, numinlets=1, numoutlets=2)
+    p.comment("Learn Status", 400, 112, 90)
+    learn_status_set = p.new("prepend set", 400, 136, 82, numinlets=1, numoutlets=1)
+    learn_status = p.message("idle", 490, 136, 92)
+
+    pedal_ui: dict[str, dict[str, str]] = {}
+    for pedal, label, y in (("throttle", "Throttle", 178), ("brake", "Brake", 220)):
+        p.comment(f"{label} Axis", 20, y - 20, 78)
+        axis = p.add("number", None, 20, y, 58, numinlets=1, numoutlets=2)
+        axis_default = p.new("loadmess -1", 82, y, 88, numinlets=1, numoutlets=1)
+        axis_named = p.new(f"prepend {pedal}_axis", 174, y, 132, numinlets=1, numoutlets=1)
+        p.comment("Raw Min", 318, y - 20, 65)
+        minimum = p.add("flonum", None, 318, y, 72, numinlets=1, numoutlets=2)
+        minimum_default = p.new("loadmess 0.", 394, y, 88, numinlets=1, numoutlets=1)
+        minimum_named = p.new(f"prepend {pedal}_min", 486, y, 125, numinlets=1, numoutlets=1)
+        p.comment("Raw Max", 620, y - 20, 65)
+        maximum = p.add("flonum", None, 620, y, 72, numinlets=1, numoutlets=2)
+        maximum_default = p.new("loadmess 1.", 696, y, 88, numinlets=1, numoutlets=1)
+        maximum_named = p.new(f"prepend {pedal}_max", 788, y, 125, numinlets=1, numoutlets=1)
+        p.comment("Invert Axis", 920, y - 20, 78)
+        invert = p.add("toggle", None, 920, y, 22, 22, numinlets=1, numoutlets=1)
+        invert_default = p.new("loadmess 0", 948, y, 80, numinlets=1, numoutlets=1)
+        invert_named = p.new(f"prepend {pedal}_invert", 920, y + 26, 140, numinlets=1, numoutlets=1)
+        p.connect(axis_default, axis)
+        p.connect(axis, axis_named)
+        p.connect(minimum_default, minimum)
+        p.connect(minimum, minimum_named)
+        p.connect(maximum_default, maximum)
+        p.connect(maximum, maximum_named)
+        p.connect(invert_default, invert)
+        p.connect(invert, invert_named)
+        pedal_ui[pedal] = {
+            "axis": axis,
+            "minimum": minimum,
+            "maximum": maximum,
+            "axis_named": axis_named,
+            "minimum_named": minimum_named,
+            "maximum_named": maximum_named,
+            "invert_named": invert_named,
+        }
+
+    p.comment("Throttle Curve: Linear / Progressive", 20, 278, 245)
+    curve_menu = p.add(
+        "umenu", None, 20, 302, 125, numinlets=1, numoutlets=3,
+        items=["Linear", ",", "Progressive"],
+    )
+    curve_default = p.new("loadmess 0", 150, 302, 80, numinlets=1, numoutlets=1)
+    curve_select = p.new("sel 0 1", 236, 302, 55, numinlets=1, numoutlets=3)
+    curve_linear = p.message("curve linear", 298, 292, 90)
+    curve_progressive = p.message("curve progressive", 298, 318, 118)
+    p.comment("Gamma", 430, 278, 55)
+    gamma = p.add("flonum", None, 430, 302, 62, numinlets=1, numoutlets=2)
+    gamma_default = p.new("loadmess 1.5", 496, 302, 92, numinlets=1, numoutlets=1)
+    gamma_clip = p.new("clip 0.1 5.", 592, 302, 78, numinlets=3, numoutlets=1)
+    gamma_named = p.new("prepend gamma", 674, 302, 95, numinlets=1, numoutlets=1)
+    p.comment("Dead Zone", 780, 278, 78)
+    dead_zone = p.add("flonum", None, 780, 302, 62, numinlets=1, numoutlets=2)
+    dead_zone_default = p.new("loadmess 0.02", 846, 302, 100, numinlets=1, numoutlets=1)
+    dead_zone_clip = p.new("clip 0. 0.25", 780, 330, 90, numinlets=3, numoutlets=1)
+    dead_zone_named = p.new("prepend dead_zone", 875, 330, 120, numinlets=1, numoutlets=1)
+    p.comment("Smoothing ms", 20, 344, 95)
+    smoothing = p.add("flonum", None, 20, 368, 62, numinlets=1, numoutlets=2)
+    smoothing_default = p.new("loadmess 35.", 86, 368, 92, numinlets=1, numoutlets=1)
+    smoothing_clip = p.new("clip 0. 250.", 182, 368, 88, numinlets=3, numoutlets=1)
+    smoothing_named = p.new("prepend smoothing_ms", 276, 368, 145, numinlets=1, numoutlets=1)
+
+    learn_buttons: dict[str, str] = {}
+    for pedal, label, x in (("throttle", "Learn Throttle", 450), ("brake", "Learn Brake", 710)):
+        p.comment(label, x, 344, 105)
+        learn = p.add("button", None, x, 368, 22, 22, numinlets=1, numoutlets=1)
+        learn_trigger = p.new("t b b b", x + 30, 368, 62, numinlets=1, numoutlets=3)
+        stop_delay = p.message("stop", x + 98, 354, 38)
+        learn_begin = p.message(f"learn_{pedal} 1", x + 98, 380, 112)
+        learn_delay = p.new("delay 2000", x + 216, 368, 76, numinlets=2, numoutlets=1)
+        learn_commit = p.message(f"learn_commit {pedal}", x + 298, 368, 150)
+        p.connect(learn, learn_trigger)
+        p.connect(learn_trigger, stop_delay, 2)
+        p.connect(stop_delay, learn_delay)
+        p.connect(learn_trigger, learn_begin, 1)
+        p.connect(learn_trigger, learn_delay, 0)
+        p.connect(learn_delay, learn_commit)
+        learn_buttons[pedal] = learn_begin
+        learn_buttons[f"{pedal}_commit"] = learn_commit
+    p.comment("Learn: press, sweep the chosen trigger through its full travel, and release within 2 seconds.", 20, 410, 720)
+
+    manual_clip = p.new("clip 0 1", 20, 470, 65, numinlets=3, numoutlets=1)
+    manual_trigger = p.new("t i i", 92, 470, 50, numinlets=1, numoutlets=2)
+    manual_named = p.new("prepend manual", 150, 470, 100, numinlets=1, numoutlets=1)
+    source_state = p.new("pak 0 0", 260, 470, 70, numinlets=2, numoutlets=1)
+    keyboard_enabled = p.new("expr $i1*($i2==0)", 340, 458, 145, numinlets=2, numoutlets=1)
+    gamepad_enabled = p.new("expr $i1*($i2==1)", 340, 484, 145, numinlets=2, numoutlets=1)
+    keyboard = p.add(
+        "bpatcher", None, 500, 450, 190, 40, numinlets=1, numoutlets=2,
+        name="Patcher:/patchers/keyboard_drive_ws.maxpat",
+    )
+    keyboard_throttle = p.new("prepend keyboard_throttle", 700, 450, 175, numinlets=1, numoutlets=1)
+    keyboard_brake = p.new("prepend keyboard_brake", 700, 480, 165, numinlets=1, numoutlets=1)
+
+    hid = p.new("hi", 20, 555, 40, numinlets=1, numoutlets=2)
+    hid_named = p.new("prepend hid", 68, 555, 82, numinlets=1, numoutlets=1)
+    poll_select = p.new("sel 1 0", 160, 540, 55, numinlets=1, numoutlets=3)
+    poll_on = p.message("poll 10", 222, 530, 55)
+    poll_off = p.message("poll 0", 222, 556, 50)
+    clock = p.new("qmetro 10", 282, 540, 72, numinlets=2, numoutlets=1)
+    clock_off = p.new("loadmess 0", 282, 570, 80, numinlets=1, numoutlets=1)
+    model = p.new("js Patcher:/code/manual_input.js", 370, 540, 220, numinlets=1, numoutlets=3)
+    debug_route_names = (
+        "detected", "last_element", "last_raw", "throttle_normalized", "brake_normalized",
+        "throttle_axis", "throttle_min", "throttle_max",
+        "brake_axis", "brake_min", "brake_max", "learn_status",
+    )
+    debug_route = route(p, debug_route_names, 600, 540, 390)
+
+    p.connect(manual, manual_clip)
+    p.connect(manual_clip, manual_trigger)
+    p.connect(manual_trigger, manual_named, 1)
+    p.connect(manual_named, model)
+    p.connect(manual_trigger, source_state, 0, 0)
+    p.connect(source_default, source_menu)
+    p.connect(source_menu, source_trigger)
+    p.connect(source_trigger, source_select, 1)
+    p.connect(source_trigger, source_state, 0, 1)
+    p.connect(source_select, source_keyboard, 0)
+    p.connect(source_select, source_gamepad, 1)
+    p.connect(source_keyboard, model)
+    p.connect(source_gamepad, model)
+    p.connect(source_state, keyboard_enabled)
+    p.connect(source_state, gamepad_enabled)
+    p.connect(keyboard_enabled, keyboard)
+    p.connect(keyboard, keyboard_throttle, 0, 0)
+    p.connect(keyboard, keyboard_brake, 1, 0)
+    p.connect(keyboard_throttle, model)
+    p.connect(keyboard_brake, model)
+
+    p.connect(refresh, refresh_trigger)
+    p.connect(refresh_trigger, device_reset, 1)
+    p.connect(device_reset, model)
+    p.connect(refresh_trigger, menu_message, 0)
+    p.connect(menu_message, hid)
+    p.connect(hid, device_menu, 1, 0)
+    p.connect(device_menu, device_trigger, 0, 0)
+    p.connect(device_trigger, device_named, 1)
+    p.connect(device_named, model)
+    p.connect(device_trigger, hid, 0, 0)
+    p.connect(device_menu, device_name_set, 1, 0)
+    p.connect(device_name_set, device_name)
+    p.connect(hid, hid_named, 0, 0)
+    p.connect(hid_named, model)
+    p.connect(gamepad_enabled, poll_select)
+    p.connect(poll_select, poll_on, 0)
+    p.connect(poll_select, poll_off, 1)
+    p.connect(poll_on, hid)
+    p.connect(poll_off, hid)
+    p.connect(gamepad_enabled, clock)
+    p.connect(clock_off, clock)
+    p.connect(clock, model)
+
+    for pedal in ("throttle", "brake"):
+        for key in ("axis_named", "minimum_named", "maximum_named", "invert_named"):
+            p.connect(pedal_ui[pedal][key], model)
+        p.connect(learn_buttons[pedal], model)
+        p.connect(learn_buttons[f"{pedal}_commit"], model)
+
+    p.connect(curve_default, curve_menu)
+    p.connect(curve_menu, curve_select)
+    p.connect(curve_select, curve_linear, 0)
+    p.connect(curve_select, curve_progressive, 1)
+    p.connect(gamma_default, gamma)
+    p.connect(gamma, gamma_clip)
+    p.connect(gamma_clip, gamma_named)
+    p.connect(gamma_named, model)
+    p.connect(dead_zone_default, dead_zone)
+    p.connect(dead_zone, dead_zone_clip)
+    p.connect(dead_zone_clip, dead_zone_named)
+    p.connect(dead_zone_named, model)
+    p.connect(smoothing_default, smoothing)
+    p.connect(smoothing, smoothing_clip)
+    p.connect(smoothing_clip, smoothing_named)
+    p.connect(smoothing_named, model)
+    p.connect(curve_linear, model)
+    p.connect(curve_progressive, model)
+
+    p.connect(model, throttle_out, 0, 0)
+    p.connect(model, brake_out, 1, 0)
+    p.connect(model, debug_route, 2, 0)
+    debug_targets = (
+        detected, last_element, last_raw, throttle_normalized, brake_normalized,
+        pedal_ui["throttle"]["axis"], pedal_ui["throttle"]["minimum"], pedal_ui["throttle"]["maximum"],
+        pedal_ui["brake"]["axis"], pedal_ui["brake"]["minimum"], pedal_ui["brake"]["maximum"],
+        learn_status_set,
+    )
+    for index, target in enumerate(debug_targets):
+        p.connect(debug_route, target, index)
+    p.connect(learn_status_set, learn_status)
+    return p.document()
+
+
 def make_profile_main(profile: str, root: Path | None = None) -> dict[str, Any]:
     """Build one self-contained, profile-fixed runnable patcher."""
     config = PROFILE_CONFIG[profile]
-    p = Patcher(1180, 850)
+    p = Patcher(1500, 1080)
     p.comment(f"VehicleSoundSynth V5 — {config['title']} independent runtime", 25, 18, 720)
     p.comment("Audio starts OFF. This patch contains only this profile's DSP graph.", 25, 48, 620)
     active_profile = p.new("r vss.runtime.select", 850, 25, 145, numinlets=0, numoutlets=1)
@@ -4165,14 +4411,14 @@ def make_profile_main(profile: str, root: Path | None = None) -> dict[str, Any]:
     p.connect(close_save, eq_save)
 
     drive = p.add(
-        "bpatcher", None, 35, 390, 210, 55, numinlets=1, numoutlets=1,
+        "bpatcher", None, 1210, 330, 210, 55, numinlets=1, numoutlets=1,
         name=f"Patcher:/patchers/{config['drive']}.maxpat",
     )
-    external = p.new(f"r vss.{profile}.input", 215, 390, 130, numinlets=0, numoutlets=1)
-    source = p.new("switch 2", 35, 435, 75, numinlets=3, numoutlets=1)
-    source_default = p.new("loadmess 1", 125, 435, 80, numinlets=1, numoutlets=1)
+    external = p.new(f"r vss.{profile}.input", 1210, 395, 130, numinlets=0, numoutlets=1)
+    source = p.new("switch 2", 1210, 430, 75, numinlets=3, numoutlets=1)
+    source_default = p.new("loadmess 1", 1300, 430, 80, numinlets=1, numoutlets=1)
     engine = p.add(
-        "bpatcher", None, 400, 390, 220, 55, numinlets=1, numoutlets=2,
+        "bpatcher", None, 1210, 470, 220, 55, numinlets=1, numoutlets=2,
         name=f"Patcher:/patchers/{config['engine']}.maxpat",
     )
     p.connect(source_default, source, 0, 0)
@@ -4227,14 +4473,13 @@ def make_profile_main(profile: str, root: Path | None = None) -> dict[str, Any]:
         p.connect(initial, number)
         pedal_numbers[name] = number
 
-    keyboard = p.add(
-        "bpatcher", None, 25, 345, 190, 40, numinlets=1, numoutlets=2,
-        name="Patcher:/patchers/keyboard_drive_ws.maxpat",
+    manual_input = p.add(
+        "bpatcher", None, 25, 430, 1000, 430, numinlets=1, numoutlets=2,
+        name="Patcher:/patchers/manual_input.maxpat",
     )
-    p.comment("Focus this window: hold W = throttle, hold S = brake (Internal Manual only)", 175, 347, 470)
-    p.connect(manual_select, keyboard)
-    p.connect(keyboard, pedal_numbers["throttle"], 0, 0)
-    p.connect(keyboard, pedal_numbers["brake"], 1, 0)
+    p.connect(manual_select, manual_input)
+    p.connect(manual_input, pedal_numbers["throttle"], 0, 0)
+    p.connect(manual_input, pedal_numbers["brake"], 1, 0)
 
     if profile == "ev":
         p.comment("BEAP soundscape", 330, 205, 150)
@@ -4314,13 +4559,13 @@ def make_profile_main(profile: str, root: Path | None = None) -> dict[str, Any]:
     audio_off = p.new("loadmess 0", 795, 135, 80, numinlets=1, numoutlets=1)
     audio_pack = p.new("pack 0. 60", 760, 175, 85, numinlets=2, numoutlets=1)
     audio_line = p.new("line~", 760, 210, 50, numinlets=2, numoutlets=2)
-    gain_l = p.new("*~", 690, 505, 40, numinlets=2, numoutlets=1)
-    gain_r = p.new("*~", 815, 505, 40, numinlets=2, numoutlets=1)
-    dac = p.new("ezdac~", 740, 620, 65, numinlets=2, numoutlets=0)
-    meter_l = p.add("meter~", None, 660, 565, 18, 80, numinlets=1, numoutlets=1)
-    meter_r = p.add("meter~", None, 850, 565, 18, 80, numinlets=1, numoutlets=1)
-    spectrum_l = p.new("spectroscope~", 885, 390, 230, numinlets=2, numoutlets=0)
-    spectrum_r = p.new("spectroscope~", 885, 560, 230, numinlets=2, numoutlets=0)
+    gain_l = p.new("*~", 1060, 540, 40, numinlets=2, numoutlets=1)
+    gain_r = p.new("*~", 1175, 540, 40, numinlets=2, numoutlets=1)
+    dac = p.new("ezdac~", 1115, 635, 65, numinlets=2, numoutlets=0)
+    meter_l = p.add("meter~", None, 1035, 585, 18, 80, numinlets=1, numoutlets=1)
+    meter_r = p.add("meter~", None, 1225, 585, 18, 80, numinlets=1, numoutlets=1)
+    spectrum_l = p.new("spectroscope~", 1260, 540, 220, numinlets=2, numoutlets=0)
+    spectrum_r = p.new("spectroscope~", 1260, 680, 220, numinlets=2, numoutlets=0)
     p.connect(audio_off, audio_toggle)
     p.connect(audio_toggle, audio_pack)
     p.connect(audio_toggle, dac)
@@ -4336,7 +4581,7 @@ def make_profile_main(profile: str, root: Path | None = None) -> dict[str, Any]:
     p.connect(gain_l, spectrum_l)
     p.connect(gain_r, spectrum_r)
 
-    p.comment("Master compressor (attack/release are OMX rates: higher = faster)", 25, 700, 620)
+    p.comment("Master compressor (attack/release are OMX rates: higher = faster)", 25, 900, 620)
     compressor_ui = (
         ("Threshold dB", "compressor_threshold_db", -12.0, -36.0, 0.0),
         ("Ratio", "compressor_ratio", 2.0, 1.0, 50.0),
@@ -4346,23 +4591,23 @@ def make_profile_main(profile: str, root: Path | None = None) -> dict[str, Any]:
     )
     for index, (label, name, default, low, high) in enumerate(compressor_ui):
         x = 25 + index * 180
-        p.comment(label, x, 728, 130)
-        number = p.add("flonum", None, x, 752, 75, numinlets=1, numoutlets=2)
-        bounded = p.new(f"clip {low:g} {high:g}", x, 784, 90, numinlets=3, numoutlets=1)
-        named = p.new(f"prepend {name}", x, 816, 155, numinlets=1, numoutlets=1)
-        initial = p.new(f"loadmess {default:g}", x + 82, 752, 85, numinlets=1, numoutlets=1)
+        p.comment(label, x, 928, 130)
+        number = p.add("flonum", None, x, 952, 75, numinlets=1, numoutlets=2)
+        bounded = p.new(f"clip {low:g} {high:g}", x, 984, 90, numinlets=3, numoutlets=1)
+        named = p.new(f"prepend {name}", x, 1016, 155, numinlets=1, numoutlets=1)
+        initial = p.new(f"loadmess {default:g}", x + 82, 952, 85, numinlets=1, numoutlets=1)
         p.connect(number, bounded)
         p.connect(initial, number)
         p.connect(bounded, named)
         p.connect(named, engine)
-    p.comment("Bypass", 930, 728, 70)
-    compressor_bypass = p.add("toggle", None, 930, 752, 24, 24, numinlets=1, numoutlets=1)
-    compressor_bypass_named = p.new("prepend compressor_bypass", 965, 752, 175, numinlets=1, numoutlets=1)
-    compressor_bypass_default = p.new("loadmess 0", 930, 784, 80, numinlets=1, numoutlets=1)
+    p.comment("Bypass", 930, 928, 70)
+    compressor_bypass = p.add("toggle", None, 930, 952, 24, 24, numinlets=1, numoutlets=1)
+    compressor_bypass_named = p.new("prepend compressor_bypass", 965, 952, 175, numinlets=1, numoutlets=1)
+    compressor_bypass_default = p.new("loadmess 0", 930, 984, 80, numinlets=1, numoutlets=1)
     p.connect(compressor_bypass_default, compressor_bypass)
     p.connect(compressor_bypass, compressor_bypass_named)
     p.connect(compressor_bypass_named, engine)
-    p.comment(f"External control: send named messages to vss.{profile}.input", 650, 700, 480)
+    p.comment(f"External control: send named messages to vss.{profile}.input", 650, 900, 480)
     return p.document()
 
 
@@ -5120,6 +5365,7 @@ def project_file() -> dict[str, Any]:
         "patchers/cabin_master~.maxpat",
         "patchers/mix_master~.maxpat",
         "patchers/keyboard_drive_ws.maxpat",
+        "patchers/manual_input.maxpat",
     ]
     for profile in ("ev", "v10", "v12"):
         patchers.extend(
@@ -5144,6 +5390,7 @@ def project_file() -> dict[str, Any]:
     for name in GEN_CODE:
         contents["code"][f"gen/{name}.gendsp"] = {"kind": "gendsp", "local": 1}
     contents["code"]["code/drive_model.js"] = {"kind": "javascript", "local": 1}
+    contents["code"]["code/manual_input.js"] = {"kind": "javascript", "local": 1}
     contents["code"]["code/eq_state_path.js"] = {"kind": "javascript", "local": 1}
     for name in MEDIA_FRAMES:
         if name.startswith(("cabin_ir_", "starter_")):
@@ -5205,6 +5452,7 @@ def build_project(root: Path) -> None:
         "patchers/mix_master~.maxpat": make_mix_master(),
         "patchers/drive_simulator.maxpat": make_drive_simulator(),
         "patchers/keyboard_drive_ws.maxpat": make_keyboard_drive_ws(),
+        "patchers/manual_input.maxpat": make_manual_input(),
         "presets/sound_dna.json": PRESETS,
         "presets/vehicle_bus_eq_default.json": VEHICLE_BUS_EQ_DEFAULT,
         PROJECT_FILENAME: project_file(),

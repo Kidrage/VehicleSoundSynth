@@ -17,6 +17,7 @@ or `git grep` against the listed areas before opening source files.
 
 - code/drive_model.js
 - code/eq_state_path.js
+- code/manual_input.js
 - tools/analyze_reference_lifecycle.py
 - tools/audio_metrics.py
 - tools/bind_drive_render.py
@@ -33,6 +34,7 @@ or `git grep` against the listed areas before opening source files.
 
 ## tests
 
+- tests/test_manual_input.py
 - tests/test_project.py
 
 ## config

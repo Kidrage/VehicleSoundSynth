@@ -573,10 +573,10 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
             profile = name.removeprefix("VehicleSoundSynth-").removesuffix(".maxpat").lower()
             self.assertIn(f"drive_simulator_{profile}", text)
             self.assertIn(f"vehicle_engine_{profile}~", text)
-            self.assertIn("keyboard_drive_ws", text)
+            self.assertIn("manual_input", text)
             self.assertIn(f"patchers/drive_simulator_{profile}", text)
             self.assertIn(f"patchers/vehicle_engine_{profile}~", text)
-            self.assertIn("patchers/keyboard_drive_ws", text)
+            self.assertIn("patchers/manual_input", text)
 
         launcher = self.load_json("main.maxpat")["patcher"]
         launcher_text = "\n".join(
@@ -1710,7 +1710,7 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
                 )
             )
 
-    def test_profile_runtime_has_one_step_audio_enable_and_ws_keyboard_drive(self):
+    def test_profile_runtime_has_one_step_audio_enable_and_unified_manual_input(self):
         for name in ("EV", "V10", "V12"):
             main = self.load_json(f"VehicleSoundSynth-{name}.maxpat")["patcher"]
             boxes = {item["box"]["id"]: item["box"] for item in main["boxes"]}
@@ -1741,10 +1741,10 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
                 f"{name} Audio toggle must enable both the output ramp and DSP",
             )
 
-            keyboard_id = next(
+            manual_input_id = next(
                 box_id
                 for box_id, box in boxes.items()
-                if box.get("name", "").endswith("/patchers/keyboard_drive_ws.maxpat")
+                if box.get("name", "").endswith("/patchers/manual_input.maxpat")
             )
             throttle_number_id = next(
                 box_id
@@ -1760,14 +1760,14 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
             )
             self.assertTrue(
                 any(
-                    line["source"] == [keyboard_id, 0]
+                    line["source"] == [manual_input_id, 0]
                     and line["destination"] == [throttle_number_id, 0]
                     for line in lines
                 )
             )
             self.assertTrue(
                 any(
-                    line["source"] == [keyboard_id, 1]
+                    line["source"] == [manual_input_id, 1]
                     and line["destination"] == [brake_number_id, 0]
                     for line in lines
                 )
@@ -2122,8 +2122,33 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
         keyboard_text = "\n".join(
             item["box"].get("text", "") for item in keyboard["boxes"]
         )
-        for token in ("key", "keyup", "1. 1800", "0. 900", "1. 120", "0. 200"):
+        for token in (
+            "key", "keyup", "1. 1800", "0. 900", "1. 120", "0. 200",
+            "t b b", "set 0", "0.",
+        ):
             self.assertIn(token, keyboard_text)
+        boxes = {item["box"]["id"]: item["box"] for item in keyboard["boxes"]}
+        edges = {
+            (
+                line["patchline"]["source"][0],
+                line["patchline"]["source"][1],
+                line["patchline"]["destination"][0],
+                line["patchline"]["destination"][1],
+            )
+            for line in keyboard["lines"]
+        }
+        by_text = {}
+        for box_id, box in boxes.items():
+            by_text.setdefault(box.get("text", ""), []).append(box_id)
+        disable = by_text["sel 0"][0]
+        order = by_text["t b b"][0]
+        reset = by_text["set 0"][0]
+        hard_zero = by_text["0."][0]
+        self.assertIn((disable, 0, order, 0), edges)
+        for change in by_text["change"]:
+            self.assertIn((reset, 0, change, 0), edges)
+        for line in by_text["line 0."]:
+            self.assertIn((hard_zero, 0, line, 0), edges)
         for profile in ("ev", "v10", "v12"):
             patcher = self.load_json(f"patchers/drive_simulator_{profile}.maxpat")["patcher"]
             text = "\n".join(item["box"].get("text", "") for item in patcher["boxes"])
