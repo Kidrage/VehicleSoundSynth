@@ -54,7 +54,7 @@ cinematic BEAP Soundscape core through profile-specific continuous control maps.
 The procedural powertrain remains the speed-tracking fundamental; the shared
 layer is high-passed at 120 Hz, so it adds analog-pad width without cancelling
 or replacing the vehicle body. Its conservative default level is -14 dB for EV
-and -15 dB for V10/V12.
+and V10, and -15 dB for V12.
 
 V5 adds low-order crankcase/manifold motion to the ICE models and torque-ripple/
 gear-mesh motion to the EV model. These remain phase-continuous and are driven by
