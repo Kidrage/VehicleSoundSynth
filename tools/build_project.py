@@ -47,6 +47,9 @@ BEAP_CLIPPING_SHA256 = {
     "Random/bp.Noise.maxpat": "29f0644ed93cf63fbbfa24e5a7d61489d55bcff038885c6fbab72afc6e69de47",
     "Envelope/bp.AD.maxpat": "1b57cd17e4033d60c401d66991044e90e9cd97a950aa772d3a5a3adb74758d47",
     "Filter/bp.MMF.maxpat": "ad0be37d9cffafeef1f7b736527149fba1b63c36d45be82199b33bddf98d11b1",
+    "LFO/bp.LFO.maxpat": "122d2f54c95d993eb7d9e2063dca384542ddb547d45e784d515d5237283ed28a",
+    "Effects/bp.Chorus.maxpat": "63344b7dd9046a30a9a9f0ccd7632787b27de35c6f3dd12263f91c55a005df8b",
+    "Effects/bp.Reverb 2.maxpat": "48556085749a3a3560108523902feb2af7bd3b4ce41ef78c5682f6fc73390479",
 }
 
 STATE_NAMES = (
@@ -87,6 +90,11 @@ MACRO_NAMES = (
     "pad_level_db",
     "pad_mute",
     "pad_solo",
+    "soundscape_enable",
+    "soundscape_level_db",
+    "soundscape_motion",
+    "soundscape_space",
+    "soundscape_solo",
     "backfire_enable",
     "backfire_intensity",
     "reference_texture_level_db",
@@ -669,6 +677,295 @@ def make_ice_pad_host(profile: str) -> dict[str, Any]:
     return p.document()
 
 
+def make_cinematic_soundscape_beap() -> dict[str, Any]:
+    """Seed the one shared, user-owned Prophet-inspired BEAP soundscape."""
+    p = Patcher(2260, 930)
+    p.comment(
+        "USER-TUNABLE CINEMATIC SOUNDSCAPE — shared BEAP core for EV/V10/V12; preserved on rebuild",
+        25, 15, 1050,
+    )
+    pitch_cv = inlet(p, 30, 65, signal=True)
+    gate_cv = inlet(p, 120, 65, signal=True)
+    tone_cv = inlet(p, 210, 65, signal=True)
+    motion_cv = inlet(p, 300, 65, signal=True)
+    space_cv = inlet(p, 390, 65, signal=True)
+    for label, x in (
+        ("Pitch CV", 20), ("Gate 0/5V", 110), ("Tone CV", 205),
+        ("Motion 0..1", 295), ("Space 0..1", 390),
+    ):
+        p.comment(label, x, 95, 95)
+
+    lfo = add_beap_module(
+        p, "LFO/bp.LFO.maxpat", 510, 55, "LFO",
+        initial={"Frequency": 0.14, "Mute": 0},
+    )
+    lfo_scale = p.new("*~ 0.008", 510, 195, 72, numinlets=2, numoutlets=1)
+    motion_depth = p.new("*~", 590, 195, 40, numinlets=2, numoutlets=1)
+    opposite = p.new("*~ -1.", 640, 195, 58, numinlets=2, numoutlets=1)
+    pitch_a = p.new("+~", 710, 165, 40, numinlets=2, numoutlets=1)
+    pitch_b_mod = p.new("+~", 710, 215, 40, numinlets=2, numoutlets=1)
+    pitch_b = p.new("+~ 0.012", 760, 215, 72, numinlets=2, numoutlets=1)
+    tone_lfo = p.new("*~ 0.06", 510, 245, 68, numinlets=2, numoutlets=1)
+    tone_motion = p.new("*~", 590, 245, 40, numinlets=2, numoutlets=1)
+    tone_sum = p.new("+~", 640, 245, 40, numinlets=2, numoutlets=1)
+    p.connect(lfo, lfo_scale, 0, 0)
+    p.connect(lfo_scale, motion_depth, 0, 0)
+    p.connect(motion_cv, motion_depth, 0, 1)
+    p.connect(motion_depth, pitch_a, 0, 1)
+    p.connect(pitch_cv, pitch_a, 0, 0)
+    p.connect(motion_depth, opposite)
+    p.connect(opposite, pitch_b_mod, 0, 1)
+    p.connect(pitch_cv, pitch_b_mod, 0, 0)
+    p.connect(pitch_b_mod, pitch_b)
+    p.connect(lfo, tone_lfo, 1, 0)
+    p.connect(tone_lfo, tone_motion, 0, 0)
+    p.connect(motion_cv, tone_motion, 0, 1)
+    p.connect(tone_motion, tone_sum, 0, 1)
+    p.connect(tone_cv, tone_sum, 0, 0)
+
+    osc_a = add_beap_module(
+        p, "Oscillator/bp.Oscillator.maxpat", 25, 310, "Osc_A",
+        initial={"Waveform": 1, "Offset": -12, "Mute": 0},
+    )
+    osc_b = add_beap_module(
+        p, "Oscillator/bp.Oscillator.maxpat", 355, 310, "Osc_B",
+        initial={"Waveform": 3, "Offset": -12, "PW": 43, "PWM": 18, "Mute": 0},
+    )
+    noise = add_beap_module(p, "Random/bp.Noise.maxpat", 685, 310, "Noise")
+    noise_gain = p.new("*~ 0.018", 730, 455, 75, numinlets=2, numoutlets=1)
+    mixer = add_beap_module(
+        p, "Mixers/bp.Audio Mixer.maxpat", 835, 310, "Mixer",
+        initial={"in1": -10, "in2": -24, "in3": -34, "in4": -60},
+    )
+    ladder = add_beap_module(
+        p, "Filter/bp.Ladder.maxpat", 1080, 310, "Ladder",
+        initial={"Freq": 900, "Res": 5, "CV1": 72},
+    )
+    envelope = add_beap_module(
+        p, "Envelope/bp.ADSR.maxpat", 1390, 310, "ADSR",
+        initial={"Attack": 680, "Decay": 1500, "Sustain": 72, "Release": 2800},
+    )
+    vca = add_beap_module(p, "Level/bp.VCA.maxpat", 1645, 310, "VCA")
+    p.connect(pitch_a, osc_a, 0, 0)
+    p.connect(pitch_b, osc_b, 0, 0)
+    p.connect(lfo, osc_b, 2, 4)
+    p.connect(osc_a, mixer, 0, 0)
+    p.connect(osc_b, mixer, 0, 1)
+    p.connect(noise, noise_gain)
+    p.connect(noise_gain, mixer, 0, 2)
+    p.connect(mixer, ladder, 0, 0)
+    p.connect(tone_sum, ladder, 0, 1)
+    p.connect(gate_cv, envelope, 0, 0)
+    p.connect(ladder, vca, 0, 0)
+    p.connect(envelope, vca, 0, 1)
+
+    chorus = add_beap_module(
+        p, "Effects/bp.Chorus.maxpat", 25, 610, "Chorus",
+        initial={"Center": 620, "Rate": 0.22, "Regen": 0.22, "Width": 28, "bypass": 0},
+    )
+    reverb = add_beap_module(
+        p, "Effects/bp.Reverb 2.maxpat", 420, 610, "Reverb",
+        initial={"Damping": 1700, "Decay": 38, "Diffusion": 0.55, "Mix": 100, "Size": 58, "bypass": 0},
+    )
+    p.connect(vca, chorus)
+    p.connect(vca, reverb)
+    space_depth = p.new("*~ 0.34", 790, 650, 72, numinlets=2, numoutlets=1)
+    p.connect(space_cv, space_depth)
+    for channel, x in ((0, 990), (1, 1390)):
+        chorus_gain = p.new("*~ 0.72", x, 690, 72, numinlets=2, numoutlets=1)
+        reverb_gain = p.new("*~", x + 85, 690, 40, numinlets=2, numoutlets=1)
+        blend = p.new("+~", x + 45, 740, 40, numinlets=2, numoutlets=1)
+        highpass = p.new("svf~ 120 0.7", x + 45, 785, 100, numinlets=3, numoutlets=4)
+        safe = p.new("clip~ -0.8 0.8", x + 45, 825, 105, numinlets=3, numoutlets=1)
+        output = outlet(p, x + 45, 875, signal=True)
+        p.connect(chorus, chorus_gain, channel, 0)
+        p.connect(reverb, reverb_gain, channel, 0)
+        p.connect(space_depth, reverb_gain, 0, 1)
+        p.connect(chorus_gain, blend, 0, 0)
+        p.connect(reverb_gain, blend, 0, 1)
+        p.connect(blend, highpass)
+        p.connect(highpass, safe, 1, 0)
+        p.connect(safe, output)
+    return p.document()
+
+
+def make_cinematic_soundscape_voice() -> dict[str, Any]:
+    p = Patcher(760, 430)
+    p.comment("Shared cinematic soundscape poly voice", 20, 15, 480)
+    signals = [p.new(f"in~ {index}", 30 + (index - 1) * 95, 65, 48, numinlets=0, numoutlets=1) for index in range(1, 6)]
+    beap = p.new("cinematic_soundscape_beap~", 175, 145, 205, numinlets=5, numoutlets=2)
+    p.new("thispoly~", 500, 145, 70, numinlets=2, numoutlets=3)
+    left = p.new("out~ 1", 150, 335, 50, numinlets=1, numoutlets=0)
+    right = p.new("out~ 2", 350, 335, 50, numinlets=1, numoutlets=0)
+    for index, signal in enumerate(signals):
+        p.connect(signal, beap, 0, index)
+    p.connect(beap, left, 0, 0)
+    p.connect(beap, right, 1, 0)
+    return p.document()
+
+
+def make_cinematic_soundscape_host(profile: str) -> dict[str, Any]:
+    """Map one vehicle profile into the shared soundscape macros."""
+    p = Patcher(1420, 860)
+    p.comment(f"{profile.upper()} CINEMATIC SOUNDSCAPE HOST — continuous vehicle-state mapping and DSP suspension", 25, 15, 980)
+    control = inlet(p, 35, 65)
+    names = (
+        "rpm", "throttle", "load", "accel", "shift", "ignition", "start",
+        "soundscape_enable", "soundscape_level_db", "soundscape_motion", "soundscape_space",
+        "pad_level_db", "pad_mute", "ev_soundscape_level_db", "ev_soundscape_mute", "ev_mode",
+    )
+    router = route(p, names, 35, 105, 1250)
+    p.connect(control, router)
+
+    for outlet_index in (11, 13):
+        alias = p.new("prepend soundscape_level_db", 1050, 150 + 30 * (outlet_index - 11), 190, numinlets=1, numoutlets=1)
+        p.connect(router, alias, outlet_index)
+        p.connect(alias, router)
+    for outlet_index in (12, 14):
+        invert = p.new("expr 1-$i1", 1050, 220 + 30 * (outlet_index - 12), 80, numinlets=1, numoutlets=1)
+        alias = p.new("prepend soundscape_enable", 1140, 220 + 30 * (outlet_index - 12), 180, numinlets=1, numoutlets=1)
+        p.connect(router, invert, outlet_index)
+        p.connect(invert, alias)
+        p.connect(alias, router)
+
+    if profile == "ev":
+        legacy_modes = p.new("sel relax expressive sport", 1050, 315, 210, numinlets=1, numoutlets=4)
+        legacy_macros = (
+            p.message("soundscape_motion 0.35, soundscape_space 0.55", 1010, 355, 320),
+            p.message("soundscape_motion 0.62, soundscape_space 0.42", 1010, 390, 320),
+            p.message("soundscape_motion 0.88, soundscape_space 0.24", 1010, 425, 320),
+        )
+        p.connect(router, legacy_modes, 15)
+        for outlet_index, macro_message in enumerate(legacy_macros):
+            p.connect(legacy_modes, macro_message, outlet_index)
+            p.connect(macro_message, router)
+
+    rpm = p.new("clip 0. 10000.", 35, 170, 105, numinlets=3, numoutlets=1)
+    pitch_formula = {
+        "ev": "expr log(max(24.,55.+0.032*$f1)/261.625565)/log(2.)",
+        "v10": "expr log(max(24.,36.7+0.014*$f1)/261.625565)/log(2.)",
+        "v12": "expr log(max(24.,32.7+0.012*$f1)/261.625565)/log(2.)",
+    }[profile]
+    pitch = p.new(pitch_formula, 35, 210, 390, numinlets=1, numoutlets=1)
+    pitch_pack = p.new("pack 0. 90", 35, 250, 85, numinlets=2, numoutlets=1)
+    pitch_line = p.new("line~", 35, 290, 50, numinlets=2, numoutlets=2)
+    p.connect(router, rpm, 0)
+    p.connect(rpm, pitch)
+    p.connect(pitch, pitch_pack)
+    p.connect(pitch_pack, pitch_line)
+
+    state = p.new("pak 0. 0. 0.", 450, 170, 100, numinlets=3, numoutlets=1)
+    base_tone = {"ev": 0.82, "v10": 0.48, "v12": 0.38}[profile]
+    tone = p.new(
+        f"expr min(3.5,max(0.,{base_tone:g}+1.9*$f1+0.55*max(0.,$f2)+0.25*abs($f3)))",
+        450, 210, 500, numinlets=3, numoutlets=1,
+    )
+    tone_pack = p.new("pack 0. 150", 450, 250, 95, numinlets=2, numoutlets=1)
+    tone_line = p.new("line~", 450, 290, 50, numinlets=2, numoutlets=2)
+    p.connect(router, state, 1, 0)
+    p.connect(router, state, 2, 1)
+    p.connect(router, state, 3, 2)
+    p.connect(state, tone)
+    p.connect(tone, tone_pack)
+    p.connect(tone_pack, tone_line)
+
+    motion_state = p.new("pak 0. 0.55", 35, 345, 100, numinlets=2, numoutlets=1)
+    motion_map = p.new("expr min(1.,max(0.,0.12+0.42*$f1+0.46*$f2))", 35, 385, 335, numinlets=2, numoutlets=1)
+    motion_pack = p.new("pack 0. 180", 35, 425, 95, numinlets=2, numoutlets=1)
+    motion_line = p.new("line~", 35, 465, 50, numinlets=2, numoutlets=2)
+    motion_default_value = {"ev": 0.62, "v10": 0.52, "v12": 0.42}[profile]
+    motion_default = p.new(f"loadmess {motion_default_value:g}", 145, 345, 95, numinlets=1, numoutlets=1)
+    p.connect(router, motion_state, 1, 0)
+    p.connect(router, motion_state, 9, 1)
+    p.connect(motion_default, motion_state, 0, 1)
+    p.connect(motion_state, motion_map)
+    p.connect(motion_map, motion_pack)
+    p.connect(motion_pack, motion_line)
+
+    space_state = p.new("pak 0.45 0.", 420, 345, 100, numinlets=2, numoutlets=1)
+    space_map = p.new("expr min(1.,max(0.,0.12+0.72*$f1+0.16*(1.-$f2)))", 420, 385, 355, numinlets=2, numoutlets=1)
+    space_pack = p.new("pack 0. 220", 420, 425, 95, numinlets=2, numoutlets=1)
+    space_line = p.new("line~", 420, 465, 50, numinlets=2, numoutlets=2)
+    space_default_value = {"ev": 0.42, "v10": 0.38, "v12": 0.52}[profile]
+    space_default = p.new(f"loadmess {space_default_value:g}", 530, 345, 95, numinlets=1, numoutlets=1)
+    p.connect(router, space_state, 10, 0)
+    p.connect(router, space_state, 1, 1)
+    p.connect(space_default, space_state, 0, 0)
+    p.connect(space_state, space_map)
+    p.connect(space_map, space_pack)
+    p.connect(space_pack, space_line)
+
+    ignition = p.new("clip 0 1", 805, 345, 65, numinlets=3, numoutlets=1)
+    enable = p.new("clip 0 1", 880, 345, 65, numinlets=3, numoutlets=1)
+    active_state = p.new("pak 0 0", 955, 345, 75, numinlets=2, numoutlets=1)
+    active = p.new("expr $i1*$i2", 1040, 345, 90, numinlets=2, numoutlets=1)
+    enable_default = p.new("loadmess 0", 880, 380, 80, numinlets=1, numoutlets=1)
+    gate_cv = p.new("expr 5.*$f1", 1040, 385, 90, numinlets=1, numoutlets=1)
+    gate_pack = p.new("pack 0. 80", 1040, 425, 85, numinlets=2, numoutlets=1)
+    gate_line = p.new("line~", 1040, 465, 50, numinlets=2, numoutlets=2)
+    p.connect(router, ignition, 5)
+    p.connect(router, enable, 7)
+    p.connect(enable_default, enable)
+    p.connect(ignition, active_state, 0, 0)
+    p.connect(enable, active_state, 0, 1)
+    p.connect(active_state, active)
+    p.connect(active, gate_cv)
+    p.connect(gate_cv, gate_pack)
+    p.connect(gate_pack, gate_line)
+
+    voice = p.new("poly~ cinematic_soundscape_voice 1", 370, 535, 230, numinlets=5, numoutlets=2)
+    for source, inlet_index in ((pitch_line, 0), (gate_line, 1), (tone_line, 2), (motion_line, 3), (space_line, 4)):
+        p.connect(source, voice, 0, inlet_index)
+    edges = p.new("sel 1 0", 805, 505, 55, numinlets=1, numoutlets=3)
+    cancel = p.message("stop", 870, 505, 40)
+    unmute = p.message("mute 1 0", 920, 505, 65)
+    off_order = p.new("t b b", 805, 545, 50, numinlets=1, numoutlets=2)
+    suspend_delay = p.new("delay 3300", 870, 575, 80, numinlets=2, numoutlets=1)
+    suspend = p.message("mute 1 1", 960, 575, 65)
+    initial_suspend = p.new("loadmess mute 1 1", 1035, 575, 125, numinlets=1, numoutlets=1)
+    p.connect(active, edges)
+    p.connect(edges, cancel, 0)
+    p.connect(cancel, suspend_delay)
+    p.connect(edges, unmute, 0)
+    p.connect(unmute, voice)
+    p.connect(edges, off_order, 1)
+    p.connect(off_order, cancel, 1)
+    p.connect(off_order, suspend_delay, 0)
+    p.connect(suspend_delay, suspend)
+    p.connect(suspend, voice)
+    p.connect(initial_suspend, voice)
+
+    level = add_db_gain_control(p, router, 8, 35, 555, -14.0 if profile != "v12" else -15.0)
+    shift_edge = p.new("sel 1", 680, 535, 45, numinlets=1, numoutlets=2)
+    shift_shape = p.message("0.72 35, 1. 300 35", 680, 575, 145)
+    shift_line = p.new("line~ 1.", 680, 615, 65, numinlets=2, numoutlets=2)
+    start_edge = p.new("sel 1", 835, 640, 45, numinlets=1, numoutlets=2)
+    start_shape = p.message("0.35, 1. 950", 835, 680, 105)
+    start_line = p.new("line~ 1.", 835, 720, 65, numinlets=2, numoutlets=2)
+    p.connect(router, shift_edge, 4)
+    p.connect(shift_edge, shift_shape, 0)
+    p.connect(shift_shape, shift_line)
+    p.connect(router, start_edge, 6)
+    p.connect(start_edge, start_shape, 0)
+    p.connect(start_shape, start_line)
+
+    for channel, x in ((0, 270), (1, 570)):
+        level_gain = p.new("*~", x, 665, 40, numinlets=2, numoutlets=1)
+        shift_gain = p.new("*~", x, 705, 40, numinlets=2, numoutlets=1)
+        bloom_gain = p.new("*~", x, 745, 40, numinlets=2, numoutlets=1)
+        safe = p.new("clip~ -0.65 0.65", x, 785, 120, numinlets=3, numoutlets=1)
+        output = outlet(p, x, 825, signal=True)
+        p.connect(voice, level_gain, channel, 0)
+        p.connect(level, level_gain, 0, 1)
+        p.connect(level_gain, shift_gain)
+        p.connect(shift_line, shift_gain, 0, 1)
+        p.connect(shift_gain, bloom_gain)
+        p.connect(start_line, bloom_gain, 0, 1)
+        p.connect(bloom_gain, safe)
+        p.connect(safe, output)
+    return p.document()
+
+
 def make_ice_backfire_beap(profile: str) -> dict[str, Any]:
     """Seed a user-owned pressure-release voice built from BEAP modules."""
     p = Patcher(1540, 560)
@@ -1231,9 +1528,9 @@ def make_profile_engine(profile: str) -> dict[str, Any]:
     contract_names.extend(("start_style",) if profile != "ev" else ("ev_mode", "ev_soundscape_level_db", "ev_soundscape_mute"))
     contract = route(p, tuple(contract_names), 190, 150, 990)
     power = p.new(f"{profile}_powertrain~", 95, 260, 135, numinlets=1, numoutlets=2)
-    pad = (
-        p.new(f"{profile}_pad_host~", 95, 305, 135, numinlets=1, numoutlets=2)
-        if profile != "ev" else None
+    pad = p.new(
+        f"{profile}_cinematic_soundscape_host~", 95, 305, 220,
+        numinlets=1, numoutlets=2,
     )
     transient = p.new(f"transient_{profile}~", 285, 260, 120, numinlets=1, numoutlets=2)
     road = p.new("road_air~", 465, 260, 85, numinlets=1, numoutlets=2)
@@ -1256,28 +1553,41 @@ def make_profile_engine(profile: str) -> dict[str, Any]:
     p.connect(controller, fan)
     p.connect(fan, contract, 6)
     p.connect(fan, power, 5)
-    if pad is not None:
-        p.connect(fan, pad, 5)
+    p.connect(fan, pad, 5)
     p.connect(fan, transient, 4)
     p.connect(fan, road, 3)
     p.connect(fan, rumble, 2)
     p.connect(fan, cabin, 1, 0)
     p.connect(fan, mix, 0, 0)
-    power_l: str = power
-    power_r: str = power
+    solo_router = route(p, ("soundscape_solo", "pad_solo"), 1090, 210, 210)
+    solo_clip = p.new("clip 0 1", 1090, 250, 65, numinlets=3, numoutlets=1)
+    solo_gain = p.new("expr 1-$i1", 1165, 250, 80, numinlets=1, numoutlets=1)
+    solo_pack = p.new("pack 0. 35", 1255, 250, 85, numinlets=2, numoutlets=1)
+    solo_line = p.new("line~", 1345, 250, 50, numinlets=2, numoutlets=2)
+    solo_default = p.new("loadmess 0", 1090, 285, 80, numinlets=1, numoutlets=1)
+    core_l = p.new("*~", 95, 300, 40, numinlets=2, numoutlets=1)
+    core_r = p.new("*~", 390, 300, 40, numinlets=2, numoutlets=1)
+    p.connect(control, solo_router)
+    p.connect(solo_router, solo_clip, 0)
+    p.connect(solo_router, solo_clip, 1)
+    p.connect(solo_default, solo_clip)
+    p.connect(solo_clip, solo_gain)
+    p.connect(solo_gain, solo_pack)
+    p.connect(solo_pack, solo_line)
+    p.connect(power, core_l, 0, 0)
+    p.connect(power, core_r, 1, 0)
+    p.connect(solo_line, core_l, 0, 1)
+    p.connect(solo_line, core_r, 0, 1)
+    pad_sum_l = p.new("+~", 95, 340, 35, numinlets=2, numoutlets=1)
+    pad_sum_r = p.new("+~", 390, 340, 35, numinlets=2, numoutlets=1)
+    p.connect(core_l, pad_sum_l, 0, 0)
+    p.connect(pad, pad_sum_l, 0, 1)
+    p.connect(core_r, pad_sum_r, 0, 0)
+    p.connect(pad, pad_sum_r, 1, 1)
+    power_l = pad_sum_l
+    power_r = pad_sum_r
     power_l_out = 0
-    power_r_out = 1
-    if pad is not None:
-        pad_sum_l = p.new("+~", 95, 315, 35, numinlets=2, numoutlets=1)
-        pad_sum_r = p.new("+~", 390, 315, 35, numinlets=2, numoutlets=1)
-        p.connect(power, pad_sum_l, 0, 0)
-        p.connect(pad, pad_sum_l, 0, 1)
-        p.connect(power, pad_sum_r, 1, 0)
-        p.connect(pad, pad_sum_r, 1, 1)
-        power_l = pad_sum_l
-        power_r = pad_sum_r
-        power_l_out = 0
-        power_r_out = 0
+    power_r_out = 0
     p.connect(power_l, add_l1, power_l_out, 0)
     p.connect(transient, add_l1, 0, 1)
     p.connect(add_l1, add_l2, 0, 0)
@@ -1806,11 +2116,7 @@ def make_profile_powertrain(profile: str) -> dict[str, Any]:
         else ("rpm", "throttle", "load", "accel", "aggression", "brightness", "body", "texture")
     )
     fuel_names = ("engine_running", "combustion_gain", "shift_cut") if profile != "ev" else ()
-    profile_names = (
-        ("ev_mode", "ev_soundscape_level_db", "ev_soundscape_mute", "ignition", "start", "pad_solo")
-        if profile == "ev"
-        else ()
-    )
+    profile_names: tuple[str, ...] = ()
     names = tonal_names + fuel_names + profile_names + ("powertrain_level_db",)
     router = route(p, names, 35, 105, 860)
     p.connect(control, router)
@@ -1850,47 +2156,13 @@ def make_profile_powertrain(profile: str) -> dict[str, Any]:
         p.connect(bounded, named)
         p.connect(named, gen)
 
-    if profile == "ev":
-        texture = p.new("ev_soundscape_host~", 35, 330, 160, numinlets=1, numoutlets=2)
-        p.connect(control, texture)
-        solo_clip = p.new("clip 0 1", 515, 330, 65, numinlets=3, numoutlets=1)
-        solo_gain = p.new("expr 1-$i1", 590, 330, 80, numinlets=1, numoutlets=1)
-        solo_pack = p.new("pack 0. 30", 680, 330, 85, numinlets=2, numoutlets=1)
-        solo_line = p.new("line~", 775, 330, 50, numinlets=2, numoutlets=2)
-        solo_default = p.new("loadmess 0", 515, 365, 80, numinlets=1, numoutlets=1)
-        core_gain_l = p.new("*~", 300, 425, 40, numinlets=2, numoutlets=1)
-        core_gain_r = p.new("*~", 455, 425, 40, numinlets=2, numoutlets=1)
-        solo_route_index = len(tonal_names) + profile_names.index("pad_solo")
-        p.connect(router, solo_clip, solo_route_index)
-        p.connect(solo_default, solo_clip)
-        p.connect(solo_clip, solo_gain)
-        p.connect(solo_gain, solo_pack)
-        p.connect(solo_pack, solo_line)
-        p.connect(gen, core_gain_l, 0, 0)
-        p.connect(gen, core_gain_r, 1, 0)
-        p.connect(solo_line, core_gain_l, 0, 1)
-        p.connect(solo_line, core_gain_r, 0, 1)
-        core_l = core_gain_l
-        core_r = core_gain_r
-        core_l_out = 0
-        core_r_out = 0
-        sum_l = p.new("+~", 360, 485, 40, numinlets=2, numoutlets=1)
-        sum_r = p.new("+~", 580, 485, 40, numinlets=2, numoutlets=1)
-        p.connect(core_l, sum_l, core_l_out, 0)
-        p.connect(texture, sum_l, 0, 1)
-        p.connect(core_r, sum_r, core_r_out, 0)
-        p.connect(texture, sum_r, 1, 1)
-        mixed_l = sum_l
-        mixed_r = sum_r
-        mixed_l_out = 0
-        mixed_r_out = 0
-    else:
-        # Continuous ICE sound is procedural. Reference recordings are used
-        # offline to calibrate the Gen model and never enter this runtime seam.
-        mixed_l = gen
-        mixed_r = gen
-        mixed_l_out = 0
-        mixed_r_out = 1
+    # Every profile's continuous vehicle core remains procedural. The optional
+    # shared cinematic Soundscape is composed one layer higher so the same
+    # editable BEAP patcher can be used by EV, V10, and V12.
+    mixed_l = gen
+    mixed_r = gen
+    mixed_l_out = 0
+    mixed_r_out = 1
     stem_level = add_db_gain_control(p, router, len(names) - 1, 790, 375, -3.0)
     trim_l = p.new("*~", 360, 535, 40, numinlets=2, numoutlets=1)
     trim_r = p.new("*~", 580, 535, 40, numinlets=2, numoutlets=1)
@@ -4097,8 +4369,8 @@ def make_keyboard_drive_ws() -> dict[str, Any]:
     s_state = p.new("sel 1 0", 165, 300, 55, numinlets=1, numoutlets=3)
     throttle_up = p.message("1. 1800", 25, 340, 65)
     throttle_off = p.message("0. 900", 95, 340, 55)
-    brake_on = p.message("1. 120", 165, 340, 55)
-    brake_off = p.message("0. 200", 225, 340, 55)
+    brake_on = p.message("0.65 280", 165, 340, 65)
+    brake_off = p.message("0. 240", 235, 340, 55)
     throttle_line = p.new("line 0.", 320, 340, 60, numinlets=2, numoutlets=2)
     brake_line = p.new("line 0.", 410, 340, 60, numinlets=2, numoutlets=2)
     throttle_out = outlet(p, 320, 385)
@@ -4147,15 +4419,15 @@ def make_keyboard_drive_ws() -> dict[str, Any]:
 
 
 def make_manual_input() -> dict[str, Any]:
-    """Unify keyboard and configurable macOS HID pedals behind one seam."""
-    p = Patcher(1000, 700)
+    """Unify keyboard and fixed LT/RT gamepad pedals behind one small seam."""
+    p = Patcher(1000, 500)
     p.comment(
-        "MANUAL INPUT — Keyboard / Gamepad; source and mode changes force both pedals to zero",
+        "MANUAL INPUT — Keyboard W/S or Gamepad LT/RT; every source/mode change releases both pedals",
         20, 15, 760,
     )
     manual = inlet(p, 20, 45)
-    throttle_out = outlet(p, 830, 620)
-    brake_out = outlet(p, 900, 620)
+    throttle_out = outlet(p, 850, 450)
+    brake_out = outlet(p, 920, 450)
 
     p.comment("Input Source: Keyboard / Gamepad", 20, 48, 230)
     source_menu = p.add(
@@ -4168,139 +4440,62 @@ def make_manual_input() -> dict[str, Any]:
     source_keyboard = p.message("source keyboard", 360, 62, 110)
     source_gamepad = p.message("source gamepad", 360, 88, 110)
 
-    p.comment("HID Device", 490, 48, 90)
-    refresh = p.add("button", None, 490, 72, 22, 22, numinlets=1, numoutlets=1)
-    p.comment("Refresh", 490, 100, 65)
-    refresh_trigger = p.new("t b b", 518, 48, 50, numinlets=1, numoutlets=2)
-    device_reset = p.message("device -1", 574, 48, 68)
-    menu_message = p.message("menu", 520, 72, 42)
-    device_menu = p.add("umenu", None, 670, 72, 175, numinlets=1, numoutlets=3)
-    device_trigger = p.new("t i i", 852, 72, 50, numinlets=1, numoutlets=2)
-    device_named = p.new("prepend device", 910, 72, 95, numinlets=1, numoutlets=1)
-    device_name_set = p.new("prepend set", 670, 100, 80, numinlets=1, numoutlets=1)
-    device_name = p.message("No HID device selected", 758, 100, 170)
+    p.comment("Gamepad: fixed LT throttle / RT brake — use DS4 Wireless Controller Bluetooth mode", 490, 48, 480)
+    p.comment("Detected", 490, 72, 68)
+    detected = p.add("toggle", None, 490, 94, 22, 22, numinlets=1, numoutlets=1)
+    p.comment("Analog warning", 525, 72, 100)
+    analog_warning = p.add("toggle", None, 525, 94, 22, 22, numinlets=1, numoutlets=1)
+    device_name_set = p.new("prepend set", 565, 94, 82, numinlets=1, numoutlets=1)
+    device_name = p.message("No gamepad detected", 655, 94, 170)
+    device_type_set = p.new("prepend set", 835, 94, 82, numinlets=1, numoutlets=1)
+    device_type = p.message("unknown", 925, 94, 70)
 
-    p.comment("Detected", 20, 112, 70)
-    detected = p.add("toggle", None, 20, 136, 22, 22, numinlets=1, numoutlets=1)
-    p.comment("Last Element", 58, 112, 86)
-    last_element = p.add("number", None, 58, 136, 62, numinlets=1, numoutlets=2)
-    p.comment("Raw", 132, 112, 45)
-    last_raw = p.add("flonum", None, 132, 136, 78, numinlets=1, numoutlets=2)
-    p.comment("Throttle Norm", 220, 112, 90)
-    throttle_normalized = p.add("flonum", None, 220, 136, 78, numinlets=1, numoutlets=2)
-    p.comment("Brake Norm", 310, 112, 80)
-    brake_normalized = p.add("flonum", None, 310, 136, 78, numinlets=1, numoutlets=2)
-    p.comment("Learn Status", 400, 112, 90)
-    learn_status_set = p.new("prepend set", 400, 136, 82, numinlets=1, numoutlets=1)
-    learn_status = p.message("idle", 490, 136, 92)
-
-    pedal_ui: dict[str, dict[str, str]] = {}
-    for pedal, label, y in (("throttle", "Throttle", 178), ("brake", "Brake", 220)):
-        p.comment(f"{label} Axis", 20, y - 20, 78)
-        axis = p.add("number", None, 20, y, 58, numinlets=1, numoutlets=2)
-        axis_default = p.new("loadmess -1", 82, y, 88, numinlets=1, numoutlets=1)
-        axis_named = p.new(f"prepend {pedal}_axis", 174, y, 132, numinlets=1, numoutlets=1)
-        p.comment("Raw Min", 318, y - 20, 65)
-        minimum = p.add("flonum", None, 318, y, 72, numinlets=1, numoutlets=2)
-        minimum_default = p.new("loadmess 0.", 394, y, 88, numinlets=1, numoutlets=1)
-        minimum_named = p.new(f"prepend {pedal}_min", 486, y, 125, numinlets=1, numoutlets=1)
-        p.comment("Raw Max", 620, y - 20, 65)
-        maximum = p.add("flonum", None, 620, y, 72, numinlets=1, numoutlets=2)
-        maximum_default = p.new("loadmess 1.", 696, y, 88, numinlets=1, numoutlets=1)
-        maximum_named = p.new(f"prepend {pedal}_max", 788, y, 125, numinlets=1, numoutlets=1)
-        p.comment("Invert Axis", 920, y - 20, 78)
-        invert = p.add("toggle", None, 920, y, 22, 22, numinlets=1, numoutlets=1)
-        invert_default = p.new("loadmess 0", 948, y, 80, numinlets=1, numoutlets=1)
-        invert_named = p.new(f"prepend {pedal}_invert", 920, y + 26, 140, numinlets=1, numoutlets=1)
-        p.connect(axis_default, axis)
-        p.connect(axis, axis_named)
-        p.connect(minimum_default, minimum)
-        p.connect(minimum, minimum_named)
-        p.connect(maximum_default, maximum)
-        p.connect(maximum, maximum_named)
-        p.connect(invert_default, invert)
-        p.connect(invert, invert_named)
-        pedal_ui[pedal] = {
-            "axis": axis,
-            "minimum": minimum,
-            "maximum": maximum,
-            "axis_named": axis_named,
-            "minimum_named": minimum_named,
-            "maximum_named": maximum_named,
-            "invert_named": invert_named,
-        }
-
-    p.comment("Throttle Curve: Linear / Progressive", 20, 278, 245)
-    curve_menu = p.add(
-        "umenu", None, 20, 302, 125, numinlets=1, numoutlets=3,
-        items=["Linear", ",", "Progressive"],
+    debug_specs = (
+        ("LT Throttle Raw", 20),
+        ("Throttle Norm", 145),
+        ("RT Brake Raw", 270),
+        ("Brake Norm", 395),
     )
-    curve_default = p.new("loadmess 0", 150, 302, 80, numinlets=1, numoutlets=1)
-    curve_select = p.new("sel 0 1", 236, 302, 55, numinlets=1, numoutlets=3)
-    curve_linear = p.message("curve linear", 298, 292, 90)
-    curve_progressive = p.message("curve progressive", 298, 318, 118)
-    p.comment("Gamma", 430, 278, 55)
-    gamma = p.add("flonum", None, 430, 302, 62, numinlets=1, numoutlets=2)
-    gamma_default = p.new("loadmess 1.5", 496, 302, 92, numinlets=1, numoutlets=1)
-    gamma_clip = p.new("clip 0.1 5.", 592, 302, 78, numinlets=3, numoutlets=1)
-    gamma_named = p.new("prepend gamma", 674, 302, 95, numinlets=1, numoutlets=1)
-    p.comment("Dead Zone", 780, 278, 78)
-    dead_zone = p.add("flonum", None, 780, 302, 62, numinlets=1, numoutlets=2)
-    dead_zone_default = p.new("loadmess 0.02", 846, 302, 100, numinlets=1, numoutlets=1)
-    dead_zone_clip = p.new("clip 0. 0.25", 780, 330, 90, numinlets=3, numoutlets=1)
-    dead_zone_named = p.new("prepend dead_zone", 875, 330, 120, numinlets=1, numoutlets=1)
-    p.comment("Smoothing ms", 20, 344, 95)
-    smoothing = p.add("flonum", None, 20, 368, 62, numinlets=1, numoutlets=2)
-    smoothing_default = p.new("loadmess 35.", 86, 368, 92, numinlets=1, numoutlets=1)
-    smoothing_clip = p.new("clip 0. 250.", 182, 368, 88, numinlets=3, numoutlets=1)
-    smoothing_named = p.new("prepend smoothing_ms", 276, 368, 145, numinlets=1, numoutlets=1)
+    debug_numbers: list[str] = []
+    for label, x in debug_specs:
+        p.comment(label, x, 125, 110)
+        debug_numbers.append(p.add("flonum", None, x, 148, 82, numinlets=1, numoutlets=2))
 
-    learn_buttons: dict[str, str] = {}
-    for pedal, label, x in (("throttle", "Learn Throttle", 450), ("brake", "Learn Brake", 710)):
-        p.comment(label, x, 344, 105)
-        learn = p.add("button", None, x, 368, 22, 22, numinlets=1, numoutlets=1)
-        learn_trigger = p.new("t b b b", x + 30, 368, 62, numinlets=1, numoutlets=3)
-        stop_delay = p.message("stop", x + 98, 354, 38)
-        learn_begin = p.message(f"learn_{pedal} 1", x + 98, 380, 112)
-        learn_delay = p.new("delay 2000", x + 216, 368, 76, numinlets=2, numoutlets=1)
-        learn_commit = p.message(f"learn_commit {pedal}", x + 298, 368, 150)
-        p.connect(learn, learn_trigger)
-        p.connect(learn_trigger, stop_delay, 2)
-        p.connect(stop_delay, learn_delay)
-        p.connect(learn_trigger, learn_begin, 1)
-        p.connect(learn_trigger, learn_delay, 0)
-        p.connect(learn_delay, learn_commit)
-        learn_buttons[pedal] = learn_begin
-        learn_buttons[f"{pedal}_commit"] = learn_commit
-    p.comment("Learn: press, sweep the chosen trigger through its full travel, and release within 2 seconds.", 20, 410, 720)
+    p.comment("Dead Zone", 535, 125, 78)
+    dead_zone = p.add("flonum", None, 535, 148, 62, numinlets=1, numoutlets=2)
+    dead_zone_default = p.new("loadmess 0.02", 603, 148, 100, numinlets=1, numoutlets=1)
+    dead_zone_clip = p.new("clip 0. 0.25", 710, 148, 90, numinlets=3, numoutlets=1)
+    dead_zone_named = p.new("prepend dead_zone", 807, 148, 120, numinlets=1, numoutlets=1)
+    p.comment("Smoothing ms", 535, 182, 95)
+    smoothing = p.add("flonum", None, 535, 205, 62, numinlets=1, numoutlets=2)
+    smoothing_default = p.new("loadmess 30.", 603, 205, 92, numinlets=1, numoutlets=1)
+    smoothing_clip = p.new("clip 0. 100.", 710, 205, 88, numinlets=3, numoutlets=1)
+    smoothing_named = p.new("prepend smoothing_ms", 807, 205, 145, numinlets=1, numoutlets=1)
 
-    manual_clip = p.new("clip 0 1", 20, 470, 65, numinlets=3, numoutlets=1)
-    manual_trigger = p.new("t i i", 92, 470, 50, numinlets=1, numoutlets=2)
-    manual_named = p.new("prepend manual", 150, 470, 100, numinlets=1, numoutlets=1)
-    source_state = p.new("pak 0 0", 260, 470, 70, numinlets=2, numoutlets=1)
-    keyboard_enabled = p.new("expr $i1*($i2==0)", 340, 458, 145, numinlets=2, numoutlets=1)
-    gamepad_enabled = p.new("expr $i1*($i2==1)", 340, 484, 145, numinlets=2, numoutlets=1)
+    manual_clip = p.new("clip 0 1", 20, 245, 65, numinlets=3, numoutlets=1)
+    manual_trigger = p.new("t i i", 92, 245, 50, numinlets=1, numoutlets=2)
+    manual_named = p.new("prepend manual", 150, 245, 100, numinlets=1, numoutlets=1)
+    source_state = p.new("pak 0 0", 260, 245, 70, numinlets=2, numoutlets=1)
+    keyboard_enabled = p.new("expr $i1*($i2==0)", 340, 233, 145, numinlets=2, numoutlets=1)
+    gamepad_enabled = p.new("expr $i1*($i2==1)", 340, 259, 145, numinlets=2, numoutlets=1)
     keyboard = p.add(
-        "bpatcher", None, 500, 450, 190, 40, numinlets=1, numoutlets=2,
+        "bpatcher", None, 500, 245, 190, 40, numinlets=1, numoutlets=2,
         name="Patcher:/patchers/keyboard_drive_ws.maxpat",
     )
-    keyboard_throttle = p.new("prepend keyboard_throttle", 700, 450, 175, numinlets=1, numoutlets=1)
-    keyboard_brake = p.new("prepend keyboard_brake", 700, 480, 165, numinlets=1, numoutlets=1)
+    keyboard_throttle = p.new("prepend keyboard_throttle", 700, 240, 175, numinlets=1, numoutlets=1)
+    keyboard_brake = p.new("prepend keyboard_brake", 700, 270, 165, numinlets=1, numoutlets=1)
 
-    hid = p.new("hi", 20, 555, 40, numinlets=1, numoutlets=2)
-    hid_named = p.new("prepend hid", 68, 555, 82, numinlets=1, numoutlets=1)
-    poll_select = p.new("sel 1 0", 160, 540, 55, numinlets=1, numoutlets=3)
-    poll_on = p.message("poll 10", 222, 530, 55)
-    poll_off = p.message("poll 0", 222, 556, 50)
-    clock = p.new("qmetro 10", 282, 540, 72, numinlets=2, numoutlets=1)
-    clock_off = p.new("loadmess 0", 282, 570, 80, numinlets=1, numoutlets=1)
-    model = p.new("js Patcher:/code/manual_input.js", 370, 540, 220, numinlets=1, numoutlets=3)
+    gamepad = p.new("gamepad", 20, 315, 75, numinlets=1, numoutlets=3)
+    device_info = p.new("prepend device_info", 105, 335, 130, numinlets=1, numoutlets=1)
+    gamepad_status = p.new("prepend gamepad_status", 105, 365, 145, numinlets=1, numoutlets=1)
+    clock = p.new("qmetro 10", 260, 315, 72, numinlets=2, numoutlets=1)
+    clock_off = p.new("loadmess 0", 260, 345, 80, numinlets=1, numoutlets=1)
+    model = p.new("js Patcher:/code/manual_input.js", 355, 315, 220, numinlets=1, numoutlets=3)
     debug_route_names = (
-        "detected", "last_element", "last_raw", "throttle_normalized", "brake_normalized",
-        "throttle_axis", "throttle_min", "throttle_max",
-        "brake_axis", "brake_min", "brake_max", "learn_status",
+        "detected", "device_name", "device_type", "analog_warning",
+        "throttle_raw", "throttle_normalized", "brake_raw", "brake_normalized",
     )
-    debug_route = route(p, debug_route_names, 600, 540, 390)
+    debug_route = route(p, debug_route_names, 585, 315, 390)
 
     p.connect(manual, manual_clip)
     p.connect(manual_clip, manual_trigger)
@@ -4323,43 +4518,14 @@ def make_manual_input() -> dict[str, Any]:
     p.connect(keyboard_throttle, model)
     p.connect(keyboard_brake, model)
 
-    p.connect(refresh, refresh_trigger)
-    p.connect(refresh_trigger, device_reset, 1)
-    p.connect(device_reset, model)
-    p.connect(refresh_trigger, menu_message, 0)
-    p.connect(menu_message, hid)
-    p.connect(hid, device_menu, 1, 0)
-    p.connect(device_menu, device_trigger, 0, 0)
-    p.connect(device_trigger, device_named, 1)
-    p.connect(device_named, model)
-    p.connect(device_trigger, hid, 0, 0)
-    p.connect(device_menu, device_name_set, 1, 0)
-    p.connect(device_name_set, device_name)
-    p.connect(hid, hid_named, 0, 0)
-    p.connect(hid_named, model)
-    p.connect(gamepad_enabled, poll_select)
-    p.connect(poll_select, poll_on, 0)
-    p.connect(poll_select, poll_off, 1)
-    p.connect(poll_on, hid)
-    p.connect(poll_off, hid)
+    p.connect(gamepad, model, 0, 0)
+    p.connect(gamepad, device_info, 1, 0)
+    p.connect(device_info, model)
+    p.connect(gamepad, gamepad_status, 2, 0)
+    p.connect(gamepad_status, model)
     p.connect(gamepad_enabled, clock)
     p.connect(clock_off, clock)
     p.connect(clock, model)
-
-    for pedal in ("throttle", "brake"):
-        for key in ("axis_named", "minimum_named", "maximum_named", "invert_named"):
-            p.connect(pedal_ui[pedal][key], model)
-        p.connect(learn_buttons[pedal], model)
-        p.connect(learn_buttons[f"{pedal}_commit"], model)
-
-    p.connect(curve_default, curve_menu)
-    p.connect(curve_menu, curve_select)
-    p.connect(curve_select, curve_linear, 0)
-    p.connect(curve_select, curve_progressive, 1)
-    p.connect(gamma_default, gamma)
-    p.connect(gamma, gamma_clip)
-    p.connect(gamma_clip, gamma_named)
-    p.connect(gamma_named, model)
     p.connect(dead_zone_default, dead_zone)
     p.connect(dead_zone, dead_zone_clip)
     p.connect(dead_zone_clip, dead_zone_named)
@@ -4368,21 +4534,18 @@ def make_manual_input() -> dict[str, Any]:
     p.connect(smoothing, smoothing_clip)
     p.connect(smoothing_clip, smoothing_named)
     p.connect(smoothing_named, model)
-    p.connect(curve_linear, model)
-    p.connect(curve_progressive, model)
 
     p.connect(model, throttle_out, 0, 0)
     p.connect(model, brake_out, 1, 0)
     p.connect(model, debug_route, 2, 0)
     debug_targets = (
-        detected, last_element, last_raw, throttle_normalized, brake_normalized,
-        pedal_ui["throttle"]["axis"], pedal_ui["throttle"]["minimum"], pedal_ui["throttle"]["maximum"],
-        pedal_ui["brake"]["axis"], pedal_ui["brake"]["minimum"], pedal_ui["brake"]["maximum"],
-        learn_status_set,
+        detected, device_name_set, device_type_set, analog_warning,
+        debug_numbers[0], debug_numbers[1], debug_numbers[2], debug_numbers[3],
     )
     for index, target in enumerate(debug_targets):
         p.connect(debug_route, target, index)
-    p.connect(learn_status_set, learn_status)
+    p.connect(device_name_set, device_name)
+    p.connect(device_type_set, device_type)
     return p.document()
 
 
@@ -4481,34 +4644,66 @@ def make_profile_main(profile: str, root: Path | None = None) -> dict[str, Any]:
     p.connect(manual_input, pedal_numbers["throttle"], 0, 0)
     p.connect(manual_input, pedal_numbers["brake"], 1, 0)
 
+    p.comment("Cinematic Soundscape (shared editable BEAP core)", 330, 205, 310)
+    p.comment("Soundscape Enable", 330, 230, 115)
+    soundscape_enable = p.add("toggle", None, 330, 253, 24, 24, numinlets=1, numoutlets=1)
+    soundscape_enable_named = p.new("prepend soundscape_enable", 360, 253, 175, numinlets=1, numoutlets=1)
+    soundscape_enable_default = p.new("loadmess 0", 360, 280, 80, numinlets=1, numoutlets=1)
+    p.connect(soundscape_enable, soundscape_enable_named)
+    p.connect(soundscape_enable_named, engine)
+    p.connect(soundscape_enable_default, soundscape_enable)
+
+    soundscape_specs = (
+        ("Soundscape dB", "soundscape_level_db", -14.0 if profile != "v12" else -15.0, -60.0, 6.0, 550),
+        ("Motion", "soundscape_motion", {"ev": 0.62, "v10": 0.52, "v12": 0.42}[profile], 0.0, 1.0, 690),
+        ("Space", "soundscape_space", {"ev": 0.42, "v10": 0.38, "v12": 0.52}[profile], 0.0, 1.0, 810),
+    )
+    for label, name, default, low, high, x in soundscape_specs:
+        p.comment(label, x, 230, 105)
+        number = p.add("flonum", None, x, 253, 70, numinlets=1, numoutlets=2)
+        bounded = p.new(f"clip {low:g} {high:g}", x, 280, 85, numinlets=3, numoutlets=1)
+        named = p.new(f"prepend {name}", x + 90, 253, 170, numinlets=1, numoutlets=1)
+        initial = p.new(f"loadmess {default:g}", x + 90, 280, 95, numinlets=1, numoutlets=1)
+        p.connect(number, bounded)
+        p.connect(bounded, named)
+        p.connect(named, engine)
+        p.connect(initial, number)
+    p.comment("Soundscape Solo", 960, 230, 115)
+    soundscape_solo = p.add("toggle", None, 960, 253, 24, 24, numinlets=1, numoutlets=1)
+    soundscape_solo_named = p.new("prepend soundscape_solo", 990, 253, 170, numinlets=1, numoutlets=1)
+    soundscape_solo_default = p.new("loadmess 0", 990, 280, 80, numinlets=1, numoutlets=1)
+    p.connect(soundscape_solo, soundscape_solo_named)
+    p.connect(soundscape_solo_named, engine)
+    p.connect(soundscape_solo_default, soundscape_solo)
+
     if profile == "ev":
-        p.comment("BEAP soundscape", 330, 205, 150)
+        p.comment("Legacy EV macro preset", 330, 315, 150)
         mode = p.add(
-            "umenu", None, 330, 232, 145, numinlets=1, numoutlets=3,
+            "umenu", None, 330, 340, 145, numinlets=1, numoutlets=3,
             items=["Relax", ",", "Expressive", ",", "Sport"],
         )
         mode_messages = (
-            p.message("ev_mode relax", 330, 270, 105),
-            p.message("ev_mode expressive", 445, 270, 135),
-            p.message("ev_mode sport", 590, 270, 105),
+            p.message("ev_mode relax", 485, 330, 105),
+            p.message("ev_mode expressive", 485, 355, 135),
+            p.message("ev_mode sport", 625, 355, 105),
         )
-        selector = p.new("sel 0 1 2", 490, 232, 70, numinlets=1, numoutlets=4)
-        mode_default = p.new("loadmess 0", 575, 232, 80, numinlets=1, numoutlets=1)
+        selector = p.new("sel 0 1 2", 740, 340, 70, numinlets=1, numoutlets=4)
+        mode_default = p.new("loadmess 0", 820, 340, 80, numinlets=1, numoutlets=1)
         p.connect(mode_default, mode)
         p.connect(mode, selector)
         for index, message in enumerate(mode_messages):
             p.connect(selector, message, index)
             p.connect(message, engine)
     else:
-        p.comment("Start sound", 330, 205, 120)
+        p.comment("Start sound", 330, 315, 120)
         style = p.add(
-            "umenu", None, 330, 232, 145, numinlets=1, numoutlets=3,
+            "umenu", None, 330, 340, 145, numinlets=1, numoutlets=3,
             items=["Cinematic BEAP", ",", "Realistic Sample"],
         )
-        style_selector = p.new("sel 0 1", 490, 232, 55, numinlets=1, numoutlets=3)
-        cinematic = p.message("start_style cinematic", 330, 270, 145)
-        realistic = p.message("start_style realistic", 490, 270, 135)
-        style_default = p.new("loadmess 0", 640, 232, 80, numinlets=1, numoutlets=1)
+        style_selector = p.new("sel 0 1", 485, 340, 55, numinlets=1, numoutlets=3)
+        cinematic = p.message("start_style cinematic", 550, 330, 145)
+        realistic = p.message("start_style realistic", 550, 355, 135)
+        style_default = p.new("loadmess 0", 700, 340, 80, numinlets=1, numoutlets=1)
         p.connect(style_default, style)
         p.connect(style, style_selector)
         p.connect(style_selector, cinematic, 0)
@@ -4516,25 +4711,6 @@ def make_profile_main(profile: str, root: Path | None = None) -> dict[str, Any]:
         p.connect(cinematic, engine)
         p.connect(realistic, engine)
 
-        p.comment("Cinematic Pad dB", 330, 315, 130)
-        pad_level = p.add("flonum", None, 330, 340, 70, numinlets=1, numoutlets=2)
-        pad_level_clip = p.new("clip -60. 6.", 410, 340, 85, numinlets=3, numoutlets=1)
-        pad_level_named = p.new("prepend pad_level_db", 505, 340, 145, numinlets=1, numoutlets=1)
-        pad_level_default = p.new(
-            f"loadmess {-18.0 if profile == 'v10' else -20.0:g}",
-            660, 340, 105, numinlets=1, numoutlets=1,
-        )
-        p.connect(pad_level, pad_level_clip)
-        p.connect(pad_level_clip, pad_level_named)
-        p.connect(pad_level_named, engine)
-        p.connect(pad_level_default, pad_level)
-        p.comment("Pad Mute", 775, 315, 80)
-        pad_mute = p.add("toggle", None, 775, 340, 24, 24, numinlets=1, numoutlets=1)
-        pad_mute_named = p.new("prepend pad_mute", 810, 340, 115, numinlets=1, numoutlets=1)
-        pad_mute_default = p.new("loadmess 0", 935, 340, 80, numinlets=1, numoutlets=1)
-        p.connect(pad_mute, pad_mute_named)
-        p.connect(pad_mute_named, engine)
-        p.connect(pad_mute_default, pad_mute)
         p.comment("Backfire Enable / Intensity", 25, 315, 185)
         backfire_enable = p.add("toggle", None, 25, 340, 24, 24, numinlets=1, numoutlets=1)
         backfire_enable_named = p.new("prepend backfire_enable", 60, 340, 155, numinlets=1, numoutlets=1)
@@ -5346,14 +5522,8 @@ def project_file() -> dict[str, Any]:
         "patchers/ev_powertrain~.maxpat",
         "patchers/v10_powertrain~.maxpat",
         "patchers/v12_powertrain~.maxpat",
-        "patchers/ev_pad_driver~.maxpat",
-        "patchers/ev_pad_beap~.maxpat",
-        "patchers/ev_expressive_beap~.maxpat",
-        "patchers/ev_sport_beap~.maxpat",
-        "patchers/ev_soundscape_host~.maxpat",
-        "patchers/ev_relax_voice.maxpat",
-        "patchers/ev_expressive_voice.maxpat",
-        "patchers/ev_sport_voice.maxpat",
+        "patchers/cinematic_soundscape_beap~.maxpat",
+        "patchers/cinematic_soundscape_voice.maxpat",
         "patchers/cabin_rumble~.maxpat",
         "patchers/transient~.maxpat",
         "patchers/transient_ev~.maxpat",
@@ -5373,14 +5543,12 @@ def project_file() -> dict[str, Any]:
                 f"patchers/vehicle_engine_{profile}~.maxpat",
                 f"patchers/engine_controller_{profile}.maxpat",
                 f"patchers/drive_simulator_{profile}.maxpat",
+                f"patchers/{profile}_cinematic_soundscape_host~.maxpat",
             )
         )
     for profile in ("v10", "v12"):
         patchers.extend(
             (
-                f"patchers/{profile}_pad_beap~.maxpat",
-                f"patchers/{profile}_pad_voice.maxpat",
-                f"patchers/{profile}_pad_host~.maxpat",
                 f"patchers/{profile}_backfire_beap~.maxpat",
                 f"patchers/{profile}_backfire_host~.maxpat",
             )
@@ -5440,6 +5608,7 @@ def build_project(root: Path) -> None:
         "patchers/ev_relax_voice.maxpat": make_ev_mode_voice("relax"),
         "patchers/ev_expressive_voice.maxpat": make_ev_mode_voice("expressive"),
         "patchers/ev_sport_voice.maxpat": make_ev_mode_voice("sport"),
+        "patchers/cinematic_soundscape_voice.maxpat": make_cinematic_soundscape_voice(),
         "patchers/reference_texture~.maxpat": make_reference_texture(),
         "patchers/cabin_rumble~.maxpat": make_cabin_rumble(),
         "patchers/transient~.maxpat": make_transient(),
@@ -5462,6 +5631,7 @@ def build_project(root: Path) -> None:
         outputs[f"patchers/{profile}_pad_host~.maxpat"] = make_ice_pad_host(profile)
         outputs[f"patchers/{profile}_backfire_host~.maxpat"] = make_ice_backfire_host(profile)
     for profile in ("ev", "v10", "v12"):
+        outputs[f"patchers/{profile}_cinematic_soundscape_host~.maxpat"] = make_cinematic_soundscape_host(profile)
         outputs[f"patchers/vehicle_engine_{profile}~.maxpat"] = make_profile_engine(profile)
         outputs[f"patchers/engine_controller_{profile}.maxpat"] = make_profile_controller(profile)
         outputs[f"patchers/drive_simulator_{profile}.maxpat"] = make_profile_drive_simulator(profile)
@@ -5490,6 +5660,9 @@ def build_project(root: Path) -> None:
     user_start = root / "patchers" / "engine_start_beap~.maxpat"
     if not user_start.exists():
         write_json(user_start, make_engine_start_beap())
+    shared_soundscape = root / "patchers" / "cinematic_soundscape_beap~.maxpat"
+    if not shared_soundscape.exists():
+        write_json(shared_soundscape, make_cinematic_soundscape_beap())
     for profile in ("v10", "v12"):
         user_pad = root / "patchers" / f"{profile}_pad_beap~.maxpat"
         if not user_pad.exists():

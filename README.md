@@ -71,7 +71,8 @@ trigger the former low-resolution event sample.
 The signal path per runtime is:
 
 ```text
-fixed drive/controller -> one profile powertrain + transient + road
+fixed drive/controller -> one profile powertrain + optional shared Soundscape
+                       + transient + road
                        -> powertrain-excited cabin/body
                        -> four-band stereo EQ -> compressor -> limiter/clip -> output
 ```
@@ -87,42 +88,35 @@ reset or threshold jump.
 
 ## Gamepad Manual Control
 
-V5 keeps the existing W/S keyboard pedals and adds a switchable macOS HID
-gamepad adapter. It uses Max 8.6.5's built-in `hi` object; no external package
-or commercial dependency is required.
+V5 keeps W/S and adds a fixed, deliberately small gamepad adapter in the
+independent `patchers/manual_input.maxpat` subpatcher. It uses Max 8.6.5's
+built-in [`gamepad`](https://docs.cycling74.com/max8/refpages/gamepad) object;
+there is no external package, HID element learning, or device-specific axis
+number.
 
-1. Pair the controller in macOS Bluetooth settings, open one runtime, and keep
-   the drive source on `Internal Manual`.
-2. In the Manual Input panel choose `Gamepad`, click the HID refresh button,
-   and select the connected controller from `HID Device`.
-3. Click `Learn Throttle`, sweep RT/R2 through its full travel and release it
-   within two seconds. Repeat with `Learn Brake` and LT/L2 if desired.
-4. Confirm `Detected`, `Last Element`, `Raw`, `Throttle Norm`, and `Brake Norm`
-   change. The learned
-   element and observed raw min/max are copied into the corresponding controls.
-5. If a trigger runs backwards, enable its `Invert Axis` toggle. `Linear` maps
-   trigger travel directly to pedal opening; `Progressive` applies
-   `pow(normalized, gamma)` with adjustable gamma, default 1.5.
+1. Pair the controller in macOS Bluetooth settings, open one runtime, and set
+   `Drive source` to `Internal Manual`.
+2. In the large `MANUAL INPUT` panel choose `Input Source: Gamepad`.
+3. LT/L2 is the accelerator and RT/R2 is the brake. Their physical travel is
+   mapped directly to `throttle 0..1` and `brake 0..1`; half travel is about
+   half pedal, rather than a per-frame accumulator.
+4. Confirm `Detected`, the device name/type, `LT Throttle Raw/Norm`, and
+   `RT Brake Raw/Norm` change. A 0.02 dead zone and 30 ms smoothing suppress
+   Bluetooth jitter while retaining an immediate response.
 
-Learn deliberately chooses the HID element with the largest observed travel;
-do not move sticks or other axes during its two-second window. Manual axis and
-raw min/max editing remains available when Learn cannot identify a controller.
-The mapping is:
+`Keyboard` makes W/S exclusive; `Gamepad` makes LT/RT exclusive. Changing the
+source, changing/disconnecting a controller, or leaving `Internal Manual`
+synchronously sends `throttle 0` and `brake 0`, so a held or lost trigger cannot
+leave the drivetrain accelerating. The gamepad adapter changes pedal inputs
+only: the unchanged 20 ms drivetrain still integrates speed, drag, RPM, and
+seven-speed DCT state.
 
-```text
-normalized = clamp((raw - raw_min) / (raw_max - raw_min), 0, 1)
-```
-
-The default 0.02 dead zone is removed and the remaining travel is rescaled to
-reach 1.0. The default 35 ms smoothing suppresses Bluetooth jitter without
-changing the drivetrain clock. A trigger represents absolute pedal opening;
-it never accumulates speed or RPM itself. Selecting `Keyboard` disables HID
-pedals, selecting `Gamepad` disables W/S, and every source or Manual-mode exit
-sends immediate `throttle 0` and `brake 0` before accepting another source.
-
-GameSir Nova 2 Lite element numbers are intentionally not hard-coded because
-Bluetooth mode and firmware can expose different HID layouts. Use Learn or the
-live element/raw display on the connected machine.
+For GameSir Nova 2 Lite, use the manufacturer's macOS-compatible
+[`Wireless Controller`/DS4 Bluetooth mode](https://gamesir.com/pages/tutorials-how-to-connect-nova-2-lite)
+when analog trigger travel is required. A `Pro Controller`/Switch-mode HID
+descriptor may expose LT/RT as digital buttons; the panel raises `Analog
+warning` in that case. The mapping remains based on the semantic
+`axis_left_trigger` and `axis_right_trigger` events, never a guessed axis index.
 
 ## Engine start
 
@@ -145,16 +139,24 @@ These files are seeded only when absent and are not overwritten by project
 regeneration:
 
 - `patchers/engine_start_beap~.maxpat` — cinematic engine start
+- `patchers/cinematic_soundscape_beap~.maxpat` — shared runtime EV/V10/V12 cinematic Soundscape
 - `patchers/ev_pad_beap~.maxpat` — EV Relax
 - `patchers/ev_expressive_beap~.maxpat` — EV Expressive
 - `patchers/ev_sport_beap~.maxpat` — EV Sport
 - `patchers/v10_pad_beap~.maxpat` / `patchers/v12_pad_beap~.maxpat` — cinematic ICE pads
 - `patchers/v10_backfire_beap~.maxpat` / `patchers/v12_backfire_beap~.maxpat` — physical backfire voices
 
-The EV host crossfades modes over 250 ms and then sends `mute 1 1` to inactive
-`poly~` voices, so only the selected BEAP graph remains on DSP. Legacy
-`pad_level_db` and `pad_mute` controls map to the same host controls, while
-`pad_solo 1` really mutes the procedural motor core for BEAP-only editing.
+Only the shared `cinematic_soundscape_beap~` is declared by the current runtime;
+the older EV and ICE pad graphs remain seed-once archives so existing user edits
+are never destroyed. The shared graph is a Prophet-style two-oscillator
+triangle/pulse pad with slow modulation, noise, ladder filtering, ADSR, VCA,
+chorus, reverb, DC/infra filtering, and bounded output. Pitch, brightness,
+movement, and space follow RPM/load/throttle continuously. This follows the
+layered analog-synth approach documented in the
+[Sequential Prophet-5 guide](https://sequential.com/wp-content/uploads/2021/02/Prophet-5-Users-Guide-1.3.pdf),
+without copying any score or preset. `Soundscape Enable`, dB, `Motion`, `Space`,
+and `Solo` are exposed on every runtime; edit and save this one subpatcher to
+tune all three profiles.
 
 ## Public control messages
 
@@ -185,6 +187,11 @@ powertrain_level_db -60..6
 transient_level_db -60..6
 road_level_db -60..6
 rumble_level_db -60..6
+soundscape_enable 0|1
+soundscape_level_db -60..6
+soundscape_motion 0..1
+soundscape_space 0..1
+soundscape_solo 0|1
 reference_texture_level_db -60..6
 reference_texture_mute 0|1
 eq_low <frequency_hz> <gain_db>
@@ -205,7 +212,7 @@ OMX attack/release values are rates, not milliseconds: larger values are
 faster. Defaults are -12 dB, 2:1, attack 85, release 35, and 0 dB makeup. The
 peak limiter and -1 dBFS clip guard remain active after the compressor.
 
-EV additionally accepts:
+Legacy aliases remain accepted for saved controller mappings:
 
 ```text
 ev_mode relax|expressive|sport
@@ -222,14 +229,13 @@ They also accept:
 ```text
 backfire_enable 0|1
 backfire_intensity 0..1
-pad_level_db -60..6
-pad_mute 0|1
 ```
 
 The V10 defaults are more active and sharper; V12 defaults are rarer and
-rounder. Both runtime pages expose Pad level/mute and Backfire enable/intensity.
-The pad and backfire `.maxpat` files are seed-once user-owned files: edit and
-save them directly in Max, and project regeneration will preserve your tuning.
+rounder. Both runtime pages expose the shared Soundscape macros and Backfire
+enable/intensity. The Soundscape, start and backfire BEAP `.maxpat` files are
+seed-once user-owned files: edit and save them directly in Max, and project
+regeneration will preserve your tuning.
 
 ## Persistent vehicle-bus EQ
 

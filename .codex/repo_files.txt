@@ -31,6 +31,8 @@ gen/v12_powertrain.gendsp
 main.maxpat
 patchers/cabin_master~.maxpat
 patchers/cabin_rumble~.maxpat
+patchers/cinematic_soundscape_beap~.maxpat
+patchers/cinematic_soundscape_voice.maxpat
 patchers/drive_simulator.maxpat
 patchers/drive_simulator_ev.maxpat
 patchers/drive_simulator_v10.maxpat
@@ -41,6 +43,7 @@ patchers/engine_controller_v10.maxpat
 patchers/engine_controller_v12.maxpat
 patchers/engine_start_beap~.maxpat
 patchers/engine_start_voice.maxpat
+patchers/ev_cinematic_soundscape_host~.maxpat
 patchers/ev_expressive_beap~.maxpat
 patchers/ev_expressive_voice.maxpat
 patchers/ev_pad_beap~.maxpat
@@ -62,6 +65,7 @@ patchers/transient_v12~.maxpat
 patchers/transient~.maxpat
 patchers/v10_backfire_beap~.maxpat
 patchers/v10_backfire_host~.maxpat
+patchers/v10_cinematic_soundscape_host~.maxpat
 patchers/v10_fallback_renderer~.maxpat
 patchers/v10_pad_beap~.maxpat
 patchers/v10_pad_host~.maxpat
@@ -70,6 +74,7 @@ patchers/v10_powertrain~.maxpat
 patchers/v10_state_renderer~.maxpat
 patchers/v12_backfire_beap~.maxpat
 patchers/v12_backfire_host~.maxpat
+patchers/v12_cinematic_soundscape_host~.maxpat
 patchers/v12_pad_beap~.maxpat
 patchers/v12_pad_host~.maxpat
 patchers/v12_pad_voice.maxpat

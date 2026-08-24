@@ -9,14 +9,14 @@
 - Working root: `.`
 - Repository name: `VehicleSoundSynth-V5`
 - Git repository: `true`
-- Generated at: `2026-08-21T06:01:33.326555+00:00`
+- Generated at: `2026-08-24T05:07:39Z`
 
 ## Current State
 
 - Branch: `main`
 - HEAD: resolve `main` dynamically with `git rev-parse HEAD`; the consolidation
   record starts at `942cd3f`, immediately after V5 feature head `cf4c970`.
-- Indexed paths: 140
+- Indexed paths: 145
 - Inventory truncated: `false`
 - Inaccessible paths: 0
 - Scan mode: complete path/metadata inventory; no bulk content read; no symlink traversal.
@@ -44,7 +44,7 @@
 
 | Route | Files |
 |---|---:|
-| `patchers` | 50 |
+| `patchers` | 55 |
 | `media` | 35 |
 | `.` | 16 |
 | `tools` | 13 |
@@ -69,7 +69,7 @@
 
 ### Common Extensions
 
-- `.maxpat`: 54
+- `.maxpat`: 59
 - `.wav`: 41
 - `.py`: 15
 - `.md`: 7
@@ -118,8 +118,25 @@
 
 ## Current Changes
 
-- Canonical delivery target: clean, synchronized `main...origin/main`; always
-  verify with `git status -sb` rather than relying on a stored ahead count.
+- Canonical delivery target: commit and synchronize the following V5-only work
+  on `main...origin/main`; always verify with `git status -sb` rather than a
+  stored ahead count.
+- Modified: `.codex/MAINLINE.md`, `.codex/REPO_GUIDE.md`,
+  `.codex/repo_files.txt`, `.codex/source_index.txt`, `PROJECT_HANDOFF.md`,
+  `README.md`, `VehicleSoundSynth-EV.maxpat`, `VehicleSoundSynth-V10.maxpat`,
+  `VehicleSoundSynth-V12.maxpat`, `VehicleSoundSynth-V5.maxproj`,
+  `code/drive_model.js`, `code/manual_input.js`,
+  `patchers/ev_powertrain~.maxpat`, `patchers/keyboard_drive_ws.maxpat`,
+  `patchers/manual_input.maxpat`, `patchers/vehicle_engine_ev~.maxpat`,
+  `patchers/vehicle_engine_v10~.maxpat`,
+  `patchers/vehicle_engine_v12~.maxpat`, `patchers/vehicle_engine~.maxpat`,
+  `tests/test_manual_input.py`, `tests/test_project.py`,
+  `tools/build_project.py`, and `tools/build_runtime_probe.py`.
+- Added: `patchers/cinematic_soundscape_beap~.maxpat`,
+  `patchers/cinematic_soundscape_voice.maxpat`,
+  `patchers/ev_cinematic_soundscape_host~.maxpat`,
+  `patchers/v10_cinematic_soundscape_host~.maxpat`, and
+  `patchers/v12_cinematic_soundscape_host~.maxpat`.
 
 ## Related Repositories
 
@@ -201,6 +218,34 @@
 ## Agent Notes
 
 <!-- AGENT_NOTES_START -->
+- 2026-08-24 fixed gamepad pedals and shared cinematic Soundscape: all three
+  runtimes retain the generated `manual_input.maxpat` deep module and now use
+  Max 8.6.5's built-in `gamepad` semantic events with fixed LT/L2 throttle and
+  RT/R2 brake; there is no Learn, axis index, inversion, or throttle curve.
+  Triggers are absolute 0..1 pedals with 0.02 dead zone and 30 ms smoothing.
+  Source/manual/device/disconnect changes synchronously clear both pedals;
+  Keyboard W/S remains exclusive and Auto/External remain isolated. The 20 ms
+  RPM/shift integration is unchanged; only service-brake force is now a
+  progressive `31*brake^1.35` law, with full/keyboard/half-pedal regression
+  stop times of 3-4/5-7/6-9 seconds from 100 km/h. EV/V10/V12 now share one
+  declared, seed-once `cinematic_soundscape_beap~` Prophet-style analog core
+  (triangle/pulse/noise, ladder, ADSR, LFO, chorus, reverb and bounded
+  post-filtering), with generated per-profile RPM/load/throttle hosts and common
+  Enable/dB/Motion/Space/Solo controls. Legacy pad files are preserved but
+  undeclared. Six finalized Max NonRealTime on/off renders were each 122880
+  stereo frames at the installed driver's 44.1 kHz, had distinct hashes, zero
+  clipped samples and large audible RMS deltas: EV -40.53/-54.80 dBFS, V10
+  -40.41/-43.99, V12 -40.40/-41.63; on-state centroids were 106.5/144.1/186.9
+  Hz and harsh ratios remained below 3e-7. All 121 tests pass after the final
+  deterministic regeneration and `git diff --check` is clean. A real Max 8.6.5
+  pass loaded EV, V10 and V12 with no missing object, invalid category, bad
+  outlet/function, or patchcord-range blocker; direct CLI opens retained the
+  already documented project-association search-path warning. Each top-level
+  runtime received its own `write -> delay 20 -> wclose` transition. After
+  Max ignored its visible Quit command and TERM despite all documents being
+  saved/closed, the sole task PID was terminated exactly; final
+  `application "Max" is running` is false. No local media, EQ state, user
+  preset, or temporary probe file is part of the repository diff.
 - 2026-08-21 V5 mainline consolidation: remote V2, V3, and V4 histories were verified as strict ancestors of `cf4c970`; no divergent core branch required a content merge. The local working copy fast-forwarded to the latest switchable-Gamepad V5 commit, then local `main` fast-forwarded from frozen V4 `6aa49d0` to the same V5 head. Three pre-update top-level Max runtime saves contained no Gamepad input layer and were excluded from the mainline as obsolete runtime/UI state; no local audio, EQ state, preset, or media was committed. `tools/build_project.py --output-root .` was deterministic against the committed outputs, all 119 unit tests passed, and `git diff --check` was clean. Fresh Max 8.6.5 instances loaded the project with EV, V10, and V12; project-path, missing-object, Gen, and patchcord blocker patterns were absent. Max continued to emit its known application-level read-only object-database warnings and informational HID-disposal messages. All smoke-test instances and the pre-existing windowless Max process were closed through normal Max quit handling; final `application "Max" is running` was false.
 - 2026-08-21 switchable Manual Input: EV/V10/V12 now share generated `patchers/manual_input.maxpat`, which selects either the existing W/S keyboard envelope or macOS Max `hi` HID input before the unchanged fixed-20-ms `code/drive_model.js`. Gamepad pedals accept configurable element/min/max/invert values, clamp to 0..1, add a 0.02 dead zone, optional 35 ms smoothing, a Linear or adjustable Progressive (`pow(x, gamma)`) throttle response, independent throttle/brake normalized diagnostics, and two-second largest-travel Learn for each pedal. Source changes, HID device changes, and leaving Internal Manual synchronously clear both pedals; keyboard disable first resets both `change` states and then hard-stops both `line` ramps at zero, preventing a fast Keyboard->Gamepad->Keyboard residual. Inactive sources cannot affect the drivetrain or Internal Auto. All 119 Python tests pass, including normalization, clamp, inversion, dead zone, throttle-only curve, smoothing, Learn, source-release, keyboard fallback/hard reset, Auto isolation, generated-port, and deterministic regeneration checks; `git diff --check` is clean and `code/drive_model.js` is unchanged. Fresh Max 8.6.5 task instances loaded EV, V10, and V12 one at a time after the outlet declaration fix; none logged `bad outlet`, `patchcord ... out of range`, `no function`, missing object, or invalid category for the new input layer. Direct CLI document opening still emits the repository's known `manual_input.maxpat: patcher is not in the search path` warning because it bypasses Project/launcher document association; operator use remains project/launcher-only. The three task runtime windows were individually closed, their exact task PIDs terminated, generated files were already saved by `tools/build_project.py`, and final Max process count was zero. No Max UI edit was saved. Remote commit follows this note.
 - 2026-08-20 V5 fork: V4 is frozen unchanged at tag `v4.0.0` (`6aa49d0`). V5 keeps the three independent fixed-profile runtimes and DSP-free launcher. Runtime shift/up/down, near-zero deceleration, pop, crackle, intake-backfire, and mechanical-click sample players are removed; only realistic starter one-shots and the cabin IR remain declared runtime recordings. V10/V12 now use seed-once user-owned BEAP backfire voices driven by actual overrun/shift state, with V10 more active and V12 rounder; the event gate additionally requires ignition and engine-running state, and fresh Max off-state renders were exactly silent. Each ICE runtime adds a separately editable/suspendable cinematic BEAP pad with top-level level/mute controls. The continuous engines add bounded crankcase/manifold (ICE) or torque-ripple/gear-mesh (EV) motion without saw/square waveforms; both EV channels contain the new continuous layers. The visible four-band bus EQ uses one shared ignored `presets/local/vehicle_bus_eq.json`, explicit Save/Reload/Reset controls, tracked safe defaults, a tracked empty local-state directory, and a portable runtime path helper. All 107 Python tests pass and `git diff --check` is clean. Fresh Max 8.6.5 NonRealTime renders covered EV Pad on/off, V10/V12 idle/high RPM, both BEAP backfires, both backfire ignition-off gates, and both V10/V12 Pad on/off; every enabled WAV was non-silent and unclipped, Pad/event pairs had different hashes, and the installed driver again rendered at 44.1 kHz. A V10 close wrote the shared EQ file synchronously; a subsequent V12 reopen/close preserved the exact file SHA-256, proving cross-profile persistence. The three final runtimes were then opened one at a time, sent their built-in `write -> delay 20 -> wclose` path, and Max was confirmed fully exited. No project object/Gen/patchcord/attribute/missing-file errors remained; Max's separate read-only object-database `sqlite_exec` warning persists at application level.

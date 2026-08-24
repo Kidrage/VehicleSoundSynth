@@ -132,25 +132,41 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
         v12 = json.dumps(self.load_json("patchers/v12_backfire_beap~.maxpat"), sort_keys=True)
         self.assertNotEqual(v10, v12)
 
-    def test_v5_v10_v12_have_editable_cinematic_pad_stems_and_top_level_controls(self):
+    def test_v5_all_profiles_share_one_editable_cinematic_soundscape_core(self):
         project = self.load_json("VehicleSoundSynth-V5.maxproj")
         declared = set(project["contents"]["patchers"])
-        for profile in ("v10", "v12"):
-            beap_path = f"patchers/{profile}_pad_beap~.maxpat"
-            host_path = f"patchers/{profile}_pad_host~.maxpat"
-            self.assertIn(beap_path, declared)
+        core_path = "patchers/cinematic_soundscape_beap~.maxpat"
+        voice_path = "patchers/cinematic_soundscape_voice.maxpat"
+        self.assertIn(core_path, declared)
+        self.assertIn(voice_path, declared)
+        core = self.load_json(core_path)["patcher"]
+        core_text = "\n".join(item["box"].get("text", "") for item in core["boxes"])
+        self.assertIn("USER-TUNABLE", core_text)
+        for module in ("Osc_A", "Osc_B", "Noise", "Mixer", "Ladder", "LFO", "ADSR", "VCA", "Chorus", "Reverb"):
+            self.assertIn(module, json.dumps(core))
+        self.assertNotIn("saw~", core_text.lower())
+        self.assertNotIn("rect~", core_text.lower())
+
+        for profile in ("ev", "v10", "v12"):
+            host_path = f"patchers/{profile}_cinematic_soundscape_host~.maxpat"
             self.assertIn(host_path, declared)
             host = self.load_json(host_path)["patcher"]
             host_text = "\n".join(item["box"].get("text", "") for item in host["boxes"])
-            for control in ("rpm", "throttle", "ignition", "pad_level_db", "pad_mute"):
+            for control in (
+                "rpm", "throttle", "load", "accel", "shift", "ignition", "start",
+                "soundscape_enable", "soundscape_level_db", "soundscape_motion", "soundscape_space",
+                "pad_level_db", "pad_mute",
+            ):
                 self.assertIn(control, host_text)
-            self.assertIn("poly~", host_text)
+            self.assertIn("poly~ cinematic_soundscape_voice 1", host_text)
             self.assertIn("mute 1 1", host_text)
+            engine = self.load_json(f"patchers/vehicle_engine_{profile}~.maxpat")["patcher"]
+            engine_text = "\n".join(item["box"].get("text", "") for item in engine["boxes"])
+            self.assertIn(f"{profile}_cinematic_soundscape_host~", engine_text)
             runtime = self.load_json(f"VehicleSoundSynth-{profile.upper()}.maxpat")["patcher"]
             runtime_text = "\n".join(item["box"].get("text", "") for item in runtime["boxes"])
-            self.assertIn("Cinematic Pad dB", runtime_text)
-            self.assertIn("Pad Mute", runtime_text)
-            self.assertIn("Backfire", runtime_text)
+            for label in ("Soundscape Enable", "Soundscape dB", "Motion", "Space", "Soundscape Solo"):
+                self.assertIn(label, runtime_text)
 
     def test_v5_vehicle_bus_eq_has_one_shared_persistent_local_state(self):
         self.assertTrue((ROOT / "presets" / "local" / ".gitkeep").is_file())
@@ -205,6 +221,24 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
                     before = path.read_bytes()
                     subprocess.run(command, check=True, cwd=ROOT, capture_output=True, text=True)
                     self.assertEqual(before, path.read_bytes())
+
+    def test_v5_generator_preserves_shared_cinematic_soundscape_tuning(self):
+        with tempfile.TemporaryDirectory() as directory:
+            destination = Path(directory)
+            command = [
+                sys.executable,
+                str(ROOT / "tools" / "build_project.py"),
+                "--output-root",
+                str(destination),
+            ]
+            subprocess.run(command, check=True, cwd=ROOT, capture_output=True, text=True)
+            path = destination / "patchers" / "cinematic_soundscape_beap~.maxpat"
+            payload = json.loads(path.read_text())
+            payload["patcher"]["description"] = "shared-soundscape-user-tuning"
+            path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
+            before = path.read_bytes()
+            subprocess.run(command, check=True, cwd=ROOT, capture_output=True, text=True)
+            self.assertEqual(before, path.read_bytes())
 
     def test_v5_continuous_models_add_load_and_idle_acoustic_identity_without_sawtooth(self):
         expected = {
@@ -713,7 +747,7 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
             self.assertIn(f"{profile}_backfire_host~", transient_text)
             self.assertNotIn("play~ shift_", transient_text)
 
-    def test_ev_modes_are_user_editable_and_suspend_inactive_poly_voices(self):
+    def test_legacy_ev_modes_are_preserved_while_shared_soundscape_owns_runtime_dsp(self):
         expected = (
             "patchers/ev_pad_beap~.maxpat",
             "patchers/ev_expressive_beap~.maxpat",
@@ -729,62 +763,19 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
                 sum(item["box"]["maxclass"] == "bpatcher" for item in patcher["boxes"]),
                 10,
             )
-
-        host = self.load_json("patchers/ev_soundscape_host~.maxpat")["patcher"]
-        text = "\n".join(
-            item["box"].get("text", "") for item in host["boxes"]
-        )
-        for mode in ("relax", "expressive", "sport"):
-            self.assertIn(mode, text)
-        self.assertEqual(3, text.count("poly~ ev_"))
-        self.assertIn("mute 1 1", text)
-        self.assertIn("mute 1 0", text)
-        self.assertEqual(1, text.count("delay 260"))
-        self.assertIn("stop", text)
-        self.assertIn("int 0", text)
-        self.assertIn("pack 0. 250", text)
-        self.assertIn("prepend ev_soundscape_level_db", text)
-        self.assertIn("prepend ev_soundscape_mute", text)
-        self.assertEqual(2, text.count("svf~ 320 0.7"))
-        self.assertIn("loadmess -9", text)
-        self.assertIn("pak 0. 650.", text)
-        self.assertIn("$f2/10000.", text)
-        self.assertIn("55.+$f1*.052", text)
-
-        boxes = {item["box"]["id"]: item["box"] for item in host["boxes"]}
-        mode_select = next(
-            box["id"] for box in boxes.values()
-            if box.get("text") == "sel relax expressive sport"
-        )
-        reschedule = next(
-            box["id"] for box in boxes.values() if box.get("text") == "t b b"
-        )
-        delay = next(
-            box["id"] for box in boxes.values() if box.get("text") == "delay 260"
-        )
-        stop = next(box["id"] for box in boxes.values() if box.get("text") == "stop")
-        lines = [item["patchline"] for item in host["lines"]]
-        self.assertEqual(
-            {0, 1, 2},
-            {
-                line["source"][1]
-                for line in lines
-                if line["source"][0] == mode_select
-                and line["destination"][0] == reschedule
-            },
-            "every rapid mode change must cancel and reschedule the same suspend timer",
-        )
-        self.assertTrue(any(
-            line["source"][0] == stop and line["destination"][0] == delay
-            for line in lines
-        ))
-
-        powertrain_text = "\n".join(
-            item["box"].get("text", "")
-            for item in self.load_json("patchers/ev_powertrain~.maxpat")["patcher"]["boxes"]
-        )
-        self.assertIn("pad_solo", powertrain_text)
-        self.assertIn("expr 1-$i1", powertrain_text)
+        project = self.load_json("VehicleSoundSynth-V5.maxproj")
+        declared = set(project["contents"]["patchers"])
+        self.assertNotIn("patchers/ev_soundscape_host~.maxpat", declared)
+        host = self.load_json("patchers/ev_cinematic_soundscape_host~.maxpat")["patcher"]
+        host_text = "\n".join(item["box"].get("text", "") for item in host["boxes"])
+        self.assertIn("poly~ cinematic_soundscape_voice 1", host_text)
+        self.assertIn("delay 3300", host_text)
+        self.assertIn("mute 1 0", host_text)
+        self.assertIn("mute 1 1", host_text)
+        engine = self.load_json("patchers/vehicle_engine_ev~.maxpat")["patcher"]
+        engine_text = "\n".join(item["box"].get("text", "") for item in engine["boxes"])
+        self.assertIn("route soundscape_solo pad_solo", engine_text)
+        self.assertIn("expr 1-$i1", engine_text)
 
 
     def test_ice_start_defaults_to_cinematic_beap_with_realistic_sample_option(self):
@@ -1935,36 +1926,26 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
             }
             self.assertTrue(output_ids.issubset(destinations), path.name)
 
-    def test_ev_profile_exposes_two_complete_user_tunable_beap_pad_chains(self):
+    def test_shared_soundscape_replaces_legacy_ev_pad_in_declared_runtime(self):
         project = self.load_json("VehicleSoundSynth-V5.maxproj")
         declared = {
             relative_path
             for category in project["contents"].values()
             for relative_path in category
         }
-        self.assertIn("patchers/ev_pad_driver~.maxpat", declared)
-        self.assertIn("patchers/ev_pad_beap~.maxpat", declared)
+        self.assertNotIn("patchers/ev_pad_driver~.maxpat", declared)
+        self.assertNotIn("patchers/ev_pad_beap~.maxpat", declared)
+        self.assertIn("patchers/ev_cinematic_soundscape_host~.maxpat", declared)
+        self.assertIn("patchers/cinematic_soundscape_voice.maxpat", declared)
+        self.assertIn("patchers/cinematic_soundscape_beap~.maxpat", declared)
 
-        powertrain = self.load_json("patchers/powertrain~.maxpat")["patcher"]
-        powertrain_text = "\n".join(
-            item["box"].get("text", "") for item in powertrain["boxes"]
-        )
-        self.assertIn("ev_pad_driver~", powertrain_text)
-
-        driver = self.load_json("patchers/ev_pad_driver~.maxpat")["patcher"]
-        driver_text = "\n".join(
-            item["box"].get("text", "") for item in driver["boxes"]
-        )
-        self.assertIn("route rpm throttle ignition", driver_text)
-        self.assertNotIn("route rpm throttle engine_running", driver_text)
-
-        pad = self.load_json("patchers/ev_pad_beap~.maxpat")["patcher"]
+        pad = self.load_json("patchers/cinematic_soundscape_beap~.maxpat")["patcher"]
         modules = [
             item["box"] for item in pad["boxes"]
             if item["box"].get("maxclass") == "bpatcher"
         ]
-        self.assertEqual(12, len(modules))
-        self.assertEqual(12, len({module.get("varname") for module in modules}))
+        self.assertGreaterEqual(len(modules), 10)
+        self.assertEqual(len(modules), len({module.get("varname") for module in modules}))
         signal_inlets = [
             item for item in pad["boxes"]
             if item["box"].get("maxclass") == "inlet"
@@ -1975,7 +1956,7 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
             if item["box"].get("maxclass") == "outlet"
             and item["box"].get("comment") == "signal"
         ]
-        self.assertEqual(3, len(signal_inlets))
+        self.assertEqual(5, len(signal_inlets))
         self.assertEqual(2, len(signal_outlets))
 
     def test_seeded_beap_pad_restores_audible_pad_defaults(self):
@@ -2117,13 +2098,13 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
             ]
             self.assertTrue(any(boxes[source].get("text") == "loadmess 0" for source in incoming))
 
-    def test_manual_mode_keyboard_has_linear_throttle_and_fast_brake_envelopes(self):
+    def test_manual_mode_keyboard_has_linear_throttle_and_normal_service_brake_envelopes(self):
         keyboard = self.load_json("patchers/keyboard_drive_ws.maxpat")["patcher"]
         keyboard_text = "\n".join(
             item["box"].get("text", "") for item in keyboard["boxes"]
         )
         for token in (
-            "key", "keyup", "1. 1800", "0. 900", "1. 120", "0. 200",
+            "key", "keyup", "1. 1800", "0. 900", "0.65 280", "0. 240",
             "t b b", "set 0", "0.",
         ):
             self.assertIn(token, keyboard_text)
@@ -2417,7 +2398,9 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
         source = (ROOT / "tools" / "build_runtime_probe.py").read_text(encoding="utf-8")
         for scenario in (
             "idle-v12", "idle-v10", "high-v12-3500", "high-v10-4200",
-            "ev-pad-on", "ev-pad-off", "ev-pad-solo", "ev-pad-mute",
+            "ev-soundscape-on", "ev-soundscape-off", "ev-soundscape-solo",
+            "v10-soundscape-on", "v10-soundscape-off",
+            "v12-soundscape-on", "v12-soundscape-off",
             "shift-up", "shift-down", "intake-backfire", "exhaust-pop",
             "v10-backfire-running", "v10-backfire-ignition-off",
             "v12-backfire-running", "v12-backfire-ignition-off",
@@ -2469,8 +2452,9 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
             bundle = Path(directory)
             probe_path = bundle / "runtime_probe_ev_idle_off.maxpat"
             self.assertTrue(probe_path.is_file())
-            self.assertTrue((bundle / "ev_pad_driver~.maxpat").is_file())
-            self.assertTrue((bundle / "ev_pad_beap~.maxpat").is_file())
+            self.assertTrue((bundle / "ev_cinematic_soundscape_host~.maxpat").is_file())
+            self.assertTrue((bundle / "cinematic_soundscape_voice.maxpat").is_file())
+            self.assertTrue((bundle / "cinematic_soundscape_beap~.maxpat").is_file())
             patch = json.loads(probe_path.read_text(encoding="utf-8"))
             text = "\n".join(item["box"].get("text", "") for item in patch["patcher"]["boxes"])
             self.assertIn("engine_controller_ev", text)
@@ -2504,7 +2488,7 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
                 self.assertIn("ignition 0", text)
                 self.assertIn("exhaust_pop 1", text)
 
-    def test_runtime_probe_can_render_ice_pad_on_without_enabling_it_in_other_scenarios(self):
+    def test_runtime_probe_can_render_ice_soundscape_without_enabling_other_scenarios(self):
         for profile, level in (("v10", -8), ("v12", -9)):
             with tempfile.TemporaryDirectory() as directory:
                 subprocess.run(
@@ -2512,7 +2496,7 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
                         sys.executable,
                         str(ROOT / "tools" / "build_runtime_probe.py"),
                         "--bundle-root", directory,
-                        "--scenario", f"{profile}-pad-on",
+                        "--scenario", f"{profile}-soundscape-on",
                         "--render-ms", "1000",
                     ],
                     check=True,
@@ -2520,12 +2504,12 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
                     capture_output=True,
                     text=True,
                 )
-                probe_path = Path(directory) / f"runtime_probe_{profile}_{profile}-pad-on_on.maxpat"
+                probe_path = Path(directory) / f"runtime_probe_{profile}_{profile}-soundscape-on_on.maxpat"
                 probe = json.loads(probe_path.read_text(encoding="utf-8"))["patcher"]
                 text = "\n".join(item["box"].get("text", "") for item in probe["boxes"])
-                self.assertIn(f"{profile}_pad_host~", text)
-                self.assertIn(f"pad_level_db {level}", text)
-                self.assertIn("pad_mute 0", text)
+                self.assertIn(f"{profile}_cinematic_soundscape_host~", text)
+                self.assertIn(f"soundscape_level_db {level}", text)
+                self.assertIn("soundscape_enable 1", text)
 
     def test_mix_runtime_probe_builder_exposes_eq_trim_and_bypass_scenarios(self):
         with tempfile.TemporaryDirectory() as directory:

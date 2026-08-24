@@ -89,6 +89,14 @@
         "kind": "patcher",
         "local": 1
       },
+      "patchers/cinematic_soundscape_beap~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/cinematic_soundscape_voice.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
       "patchers/drive_simulator_ev.maxpat": {
         "kind": "patcher",
         "local": 1
@@ -121,39 +129,11 @@
         "kind": "patcher",
         "local": 1
       },
-      "patchers/ev_expressive_beap~.maxpat": {
-        "kind": "patcher",
-        "local": 1
-      },
-      "patchers/ev_expressive_voice.maxpat": {
-        "kind": "patcher",
-        "local": 1
-      },
-      "patchers/ev_pad_beap~.maxpat": {
-        "kind": "patcher",
-        "local": 1
-      },
-      "patchers/ev_pad_driver~.maxpat": {
+      "patchers/ev_cinematic_soundscape_host~.maxpat": {
         "kind": "patcher",
         "local": 1
       },
       "patchers/ev_powertrain~.maxpat": {
-        "kind": "patcher",
-        "local": 1
-      },
-      "patchers/ev_relax_voice.maxpat": {
-        "kind": "patcher",
-        "local": 1
-      },
-      "patchers/ev_soundscape_host~.maxpat": {
-        "kind": "patcher",
-        "local": 1
-      },
-      "patchers/ev_sport_beap~.maxpat": {
-        "kind": "patcher",
-        "local": 1
-      },
-      "patchers/ev_sport_voice.maxpat": {
         "kind": "patcher",
         "local": 1
       },
@@ -197,15 +177,7 @@
         "kind": "patcher",
         "local": 1
       },
-      "patchers/v10_pad_beap~.maxpat": {
-        "kind": "patcher",
-        "local": 1
-      },
-      "patchers/v10_pad_host~.maxpat": {
-        "kind": "patcher",
-        "local": 1
-      },
-      "patchers/v10_pad_voice.maxpat": {
+      "patchers/v10_cinematic_soundscape_host~.maxpat": {
         "kind": "patcher",
         "local": 1
       },
@@ -221,15 +193,7 @@
         "kind": "patcher",
         "local": 1
       },
-      "patchers/v12_pad_beap~.maxpat": {
-        "kind": "patcher",
-        "local": 1
-      },
-      "patchers/v12_pad_host~.maxpat": {
-        "kind": "patcher",
-        "local": 1
-      },
-      "patchers/v12_pad_voice.maxpat": {
+      "patchers/v12_cinematic_soundscape_host~.maxpat": {
         "kind": "patcher",
         "local": 1
       },

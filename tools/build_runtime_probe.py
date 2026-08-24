@@ -41,25 +41,34 @@ SCENARIOS = {
     "idle-v10": {"profile": "v10", "rpm": 740.0},
     "high-v12-3500": {"profile": "v12", "rpm": 3500.0, "throttle": 0.72, "load": 0.65, "lock_rpm": True},
     "high-v10-4200": {"profile": "v10", "rpm": 4200.0, "throttle": 0.78, "load": 0.70, "lock_rpm": True},
-    "ev-pad-on": {"profile": "ev", "rpm": 1800.0, "throttle": 0.35, "pad_level_db": -3.0},
-    "ev-pad-off": {"profile": "ev", "rpm": 1800.0, "throttle": 0.35, "pad_mute": 1},
-    "ev-pad-solo": {"profile": "ev", "rpm": 1800.0, "throttle": 0.35, "pad_solo": 1},
-    "ev-pad-mute": {"profile": "ev", "rpm": 1800.0, "pad_mute": 1},
-    "v10-pad-on": {
+    "ev-soundscape-on": {
+        "profile": "ev", "rpm": 1800.0, "throttle": 0.35,
+        "soundscape_enable": 1, "soundscape_level_db": -3.0,
+    },
+    "ev-soundscape-off": {
+        "profile": "ev", "rpm": 1800.0, "throttle": 0.35,
+        "soundscape_enable": 0,
+    },
+    "ev-soundscape-solo": {
+        "profile": "ev", "rpm": 1800.0, "throttle": 0.35,
+        "soundscape_enable": 1, "soundscape_level_db": -3.0,
+        "soundscape_solo": 1,
+    },
+    "v10-soundscape-on": {
         "profile": "v10", "rpm": 1800.0, "throttle": 0.35, "lock_rpm": True,
-        "pad_level_db": -8.0, "pad_mute": 0,
+        "soundscape_level_db": -8.0, "soundscape_enable": 1,
     },
-    "v10-pad-off": {
+    "v10-soundscape-off": {
         "profile": "v10", "rpm": 1800.0, "throttle": 0.35, "lock_rpm": True,
-        "pad_mute": 1,
+        "soundscape_enable": 0,
     },
-    "v12-pad-on": {
+    "v12-soundscape-on": {
         "profile": "v12", "rpm": 1800.0, "throttle": 0.35, "lock_rpm": True,
-        "pad_level_db": -9.0, "pad_mute": 0,
+        "soundscape_level_db": -9.0, "soundscape_enable": 1,
     },
-    "v12-pad-off": {
+    "v12-soundscape-off": {
         "profile": "v12", "rpm": 1800.0, "throttle": 0.35, "lock_rpm": True,
-        "pad_mute": 1,
+        "soundscape_enable": 0,
     },
     "shift-up": {"profile": "v12", "rpm": 3200.0, "event": "shift_dir 1, shift 1"},
     "shift-down": {"profile": "v10", "rpm": 2800.0, "event": "shift_dir -1, shift 1"},
@@ -193,10 +202,9 @@ def make_probe(
     rpm_select_default = p.new("loadmess 1", 190, 260, 80, numinlets=1, numoutlets=1)
     rpm_named = p.new("prepend rpm", 190, 320, 90, numinlets=1, numoutlets=1)
     powertrain = p.new(f"{profile}_powertrain~", 300, 330, 135, numinlets=1, numoutlets=2)
-    pad = (
-        p.new(f"{profile}_pad_host~", 445, 330, 135, numinlets=1, numoutlets=2)
-        if profile in ("v10", "v12")
-        else None
+    soundscape = p.new(
+        f"{profile}_cinematic_soundscape_host~", 445, 330, 205,
+        numinlets=1, numoutlets=2,
     )
     transient = p.new(f"transient_{profile}~", 160, 330, 125, numinlets=1, numoutlets=2)
     road = p.new("road_air~", 70, 330, 85, numinlets=1, numoutlets=2)
@@ -213,34 +221,48 @@ def make_probe(
     p.connect(rpm_named, controller)
     for controlled in (powertrain, transient, road, rumble, cabin, mix):
         p.connect(controller, controlled, 0, 0)
-    if pad is not None:
-        p.connect(controller, pad, 0, 0)
-    p.connect(powertrain, add_l, 0, 0)
+    p.connect(controller, soundscape, 0, 0)
+    solo_router = p.new("route soundscape_solo pad_solo", 660, 300, 210, numinlets=1, numoutlets=3)
+    solo_clip = p.new("clip 0 1", 660, 335, 65, numinlets=3, numoutlets=1)
+    solo_gain = p.new("expr 1-$i1", 735, 335, 80, numinlets=1, numoutlets=1)
+    solo_pack = p.new("pack 0. 35", 825, 335, 80, numinlets=2, numoutlets=1)
+    solo_line = p.new("line~", 915, 335, 50, numinlets=2, numoutlets=2)
+    solo_default = p.new("loadmess 0", 660, 370, 80, numinlets=1, numoutlets=1)
+    core_l = p.new("*~", 300, 345, 40, numinlets=2, numoutlets=1)
+    core_r = p.new("*~", 430, 345, 40, numinlets=2, numoutlets=1)
+    p.connect(controller, solo_router)
+    p.connect(solo_router, solo_clip, 0)
+    p.connect(solo_router, solo_clip, 1)
+    p.connect(solo_default, solo_clip)
+    p.connect(solo_clip, solo_gain)
+    p.connect(solo_gain, solo_pack)
+    p.connect(solo_pack, solo_line)
+    p.connect(powertrain, core_l, 0, 0)
+    p.connect(powertrain, core_r, 1, 0)
+    p.connect(solo_line, core_l, 0, 1)
+    p.connect(solo_line, core_r, 0, 1)
+    p.connect(core_l, add_l, 0, 0)
     p.connect(transient, add_l, 0, 1)
     p.connect(powertrain, rumble, 0, 1)
     road_l = p.new("+~", 250, 395, 40, numinlets=2, numoutlets=1)
     sum_l = p.new("+~", 300, 420, 40, numinlets=2, numoutlets=1)
-    engine_l = add_l
-    if pad is not None:
-        pad_sum_l = p.new("+~", 205, 375, 40, numinlets=2, numoutlets=1)
-        p.connect(add_l, pad_sum_l, 0, 0)
-        p.connect(pad, pad_sum_l, 0, 1)
-        engine_l = pad_sum_l
+    pad_sum_l = p.new("+~", 205, 375, 40, numinlets=2, numoutlets=1)
+    p.connect(add_l, pad_sum_l, 0, 0)
+    p.connect(soundscape, pad_sum_l, 0, 1)
+    engine_l = pad_sum_l
     p.connect(engine_l, road_l, 0, 0)
     p.connect(road, road_l, 0, 1)
     p.connect(road_l, sum_l, 0, 0)
     p.connect(rumble, sum_l, 0, 1)
-    p.connect(powertrain, add_r, 1, 0)
+    p.connect(core_r, add_r, 0, 0)
     p.connect(transient, add_r, 1, 1)
     p.connect(powertrain, rumble, 1, 2)
     road_r = p.new("+~", 480, 395, 40, numinlets=2, numoutlets=1)
     sum_r = p.new("+~", 430, 420, 40, numinlets=2, numoutlets=1)
-    engine_r = add_r
-    if pad is not None:
-        pad_sum_r = p.new("+~", 525, 375, 40, numinlets=2, numoutlets=1)
-        p.connect(add_r, pad_sum_r, 0, 0)
-        p.connect(pad, pad_sum_r, 1, 1)
-        engine_r = pad_sum_r
+    pad_sum_r = p.new("+~", 525, 375, 40, numinlets=2, numoutlets=1)
+    p.connect(add_r, pad_sum_r, 0, 0)
+    p.connect(soundscape, pad_sum_r, 1, 1)
+    engine_r = pad_sum_r
     p.connect(engine_r, road_r, 0, 0)
     p.connect(road, road_r, 1, 1)
     p.connect(road_r, sum_r, 0, 0)
@@ -263,8 +285,7 @@ def make_probe(
             "eq_high 9000. -4.",
         "master_trim_db -8.",
     )
-    if profile in ("v10", "v12"):
-        default_messages += ("pad_mute 1",)
+    default_messages += ("soundscape_enable 0",)
     if drive_lifecycle:
         default_messages = (
             "ignition 0", "auto 1",
@@ -518,7 +539,10 @@ def main() -> None:
     load_value = scenario.get("load", args.load_value)
     lock_rpm = bool(scenario.get("lock_rpm", False))
     extra_messages = list(scenario.get("extra_messages", ())) + list(args.eq_message)
-    for name in ("pad_level_db", "pad_mute", "pad_solo"):
+    for name in (
+        "soundscape_enable", "soundscape_level_db", "soundscape_motion",
+        "soundscape_space", "soundscape_solo",
+    ):
         if name in scenario:
             extra_messages.append(f"{name} {scenario[name]:g}")
     if args.stem is not None and args.stem_db is not None:
@@ -668,19 +692,15 @@ def main() -> None:
         "engine_start_voice.maxpat",
         "engine_start_beap~.maxpat",
     }
-    if profile == "ev":
-        required_patchers.update({
-            "ev_soundscape_host~.maxpat",
-            "ev_relax_voice.maxpat", "ev_expressive_voice.maxpat", "ev_sport_voice.maxpat",
-            "ev_pad_beap~.maxpat", "ev_expressive_beap~.maxpat", "ev_sport_beap~.maxpat",
-        })
-    else:
+    required_patchers.update({
+        f"{profile}_cinematic_soundscape_host~.maxpat",
+        "cinematic_soundscape_voice.maxpat",
+        "cinematic_soundscape_beap~.maxpat",
+    })
+    if profile != "ev":
         required_patchers.update({
             f"{profile}_backfire_host~.maxpat",
             f"{profile}_backfire_beap~.maxpat",
-            f"{profile}_pad_host~.maxpat",
-            f"{profile}_pad_voice.maxpat",
-            f"{profile}_pad_beap~.maxpat",
         })
     patcher_contents = {
         path.name: {"kind": "patcher", "local": 1}

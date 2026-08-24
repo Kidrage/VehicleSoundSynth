@@ -144,7 +144,7 @@ DriveModel.prototype.effectivePedals = function () {
     if (driveTime < 18.0) {
         return [0.20 * (1.0 - smoothstep((driveTime - 14.0) / 4.0)), 0.0];
     }
-    return [0.0, 0.42];
+    return [0.0, 0.80];
 };
 
 DriveModel.prototype.normalIceTarget = function () {
@@ -224,6 +224,7 @@ DriveModel.prototype.tick = function (dt) {
     var pedals;
     var force;
     var drag;
+    var serviceBrake;
     var target;
     var alpha;
     dt = clamp(Number(dt) || 0.02, 0.001, 0.1);
@@ -232,11 +233,12 @@ DriveModel.prototype.tick = function (dt) {
     this.throttle = pedals[0];
     this.brake = pedals[1];
     drag = 0.5 + 0.00012 * this.speed * this.speed;
-    force = this.throttle * (34.0 - 0.07 * this.speed) - drag - this.brake * 55.0;
+    serviceBrake = 31.0 * Math.pow(this.brake, 1.35);
+    force = this.throttle * (34.0 - 0.07 * this.speed) - drag - serviceBrake;
     if (this.running) {
         this.speed = clamp(this.speed + dt * force, 0.0, 300.0);
     } else {
-        this.speed = clamp(this.speed - dt * (drag + this.brake * 55.0), 0.0, 300.0);
+        this.speed = clamp(this.speed - dt * (drag + serviceBrake), 0.0, 300.0);
     }
     this.accel = clamp(force / 34.0, -1.0, 1.0);
 

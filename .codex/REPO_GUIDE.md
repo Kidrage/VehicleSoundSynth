@@ -4,8 +4,9 @@
 
 Max 8.6.5 vehicle-sound V5, forked from stable V4 tag `v4.0.0`, with three independent fixed-profile runtimes. V10
 and V12 continuous audio are procedural; Ferrari.wav is a V10 lifecycle-analysis
-target and may supply only the optional ignored realistic-start one-shot. EV has
-three suspendable, user-editable BEAP soundscapes. The project also contains a
+target and may supply only the optional ignored realistic-start one-shot. All
+three profiles share one suspendable, user-editable cinematic BEAP soundscape.
+The project also contains a
 start-relative single-speed/seven-speed drivetrain, cabin rumble, licensed
 events, short cabin IR, adjustable stereo compression, EQ, and peak protection.
 
@@ -24,8 +25,8 @@ events, short cabin IR, adjustable stereo compression, EQ, and peak protection.
 - `tools/prepare_local_reference.py` — builds the ignored Ferrari startup one-shot plus analysis-only legacy derivatives and hash manifests.
 - `tools/analyze_reference_lifecycle.py` / `tools/validate_v10_lifecycle.py` — build the tracked 14-node target table and gate five synthesized roles plus the throttle-only full-drive render.
 - `code/drive_model.js` — exact deterministic 20 ms EV/V10/V12 drivetrain used by Max and Node regression traces.
-- `code/manual_input.js` — ES5/Node-testable HID normalization, curve,
-  smoothing, Learn, source exclusivity, and safe pedal-release state.
+- `code/manual_input.js` — ES5/Node-testable fixed LT-throttle/RT-brake
+  normalization, smoothing, source exclusivity, and safe pedal-release state.
 - `assets/asset_manifest.json` / `ASSET_LICENSES.md` — runtime-audio provenance authority.
 - `main.maxpat` — DSP-free launcher; it must never instantiate an engine.
 - `VehicleSoundSynth-{EV,V10,V12}.maxpat` — independent runnable UIs; the
@@ -33,12 +34,16 @@ events, short cabin IR, adjustable stereo compression, EQ, and peak protection.
 - `patchers/keyboard_drive_ws.maxpat` — focus-aware Manual-mode W/S throttle
   and brake ramps with forced release when leaving Manual.
 - `patchers/manual_input.maxpat` — generated deep module that selects the
-  keyboard adapter or Max's built-in macOS `hi` adapter and exposes only
+  keyboard adapter or Max's built-in macOS `gamepad` adapter and exposes only
   normalized throttle/brake to the existing drivetrain.
 - `patchers/vehicle_engine_{ev,v10,v12}~.maxpat` — fixed public seams.
 - `patchers/{ev,v10,v12}_powertrain~.maxpat` — exactly one Gen per profile.
-- `patchers/ev_soundscape_host~.maxpat` — mode crossfade plus cancellable inactive-voice suspension.
-- `patchers/engine_start_beap~.maxpat`, `patchers/ev_*beap~.maxpat`, and V5's `patchers/{v10,v12}_{pad,backfire}_beap~.maxpat` — seed-once, user-tunable BEAP graphs.
+- `patchers/{ev,v10,v12}_cinematic_soundscape_host~.maxpat` and
+  `patchers/cinematic_soundscape_voice.maxpat` — generated profile mappings and
+  cancellable voice suspension around one shared runtime Soundscape.
+- `patchers/cinematic_soundscape_beap~.maxpat` plus the engine-start, three
+  legacy EV, two legacy ICE-pad, and two backfire graphs — nine seed-once,
+  user-tunable BEAP files. The legacy pads are preserved but undeclared.
 - `patchers/`, `gen/`, `media/`, `presets/` — generated runtime resources.
 - `tests/` — deterministic structural and resource checks.
 
@@ -55,9 +60,9 @@ python3 tools/validate_v10_lifecycle.py --drive-lifecycle-wav v10_v10-lifecycle-
 ```
 
 Regenerate twice and compare hashes when generator determinism matters. Never
-hand-edit generated `.maxpat`, `.gendsp`, or `.wav` files except the eight
-seed-once BEAP patchers named above (engine start, three EV voices, two ICE
-pads, and two ICE backfires). The project generator preserves those files
+hand-edit generated `.maxpat`, `.gendsp`, or `.wav` files except the nine
+seed-once BEAP patchers named above (shared Soundscape, engine start, three
+legacy EV voices, two legacy ICE pads, and two ICE backfires). The project generator preserves those files
 after their first seed. The project generator
 never overwrites curated runtime WAVs already present in `media/`.
 
@@ -85,7 +90,7 @@ On macOS, Max writes load diagnostics to
 - Open the project first and launcher second in the same Max instance. Launcher
   selection writes/closes the prior top-level runtime before opening one unique
   replacement. In Internal Manual, choose Keyboard and focus the runtime for
-  W/S, or choose Gamepad and use HID Learn/configuration for RT/LT. Both adapters
+  W/S, or choose Gamepad for fixed LT throttle / RT brake. Both adapters
   feed only throttle/brake into the unchanged drive model. Save user-tuned BEAP
   subpatchers, close every task-opened
   patcher, and quit Max after a smoke test.
@@ -95,10 +100,10 @@ On macOS, Max writes load diagnostics to
 - Remove runtime shift/pop/crackle sample playback; keep only licensed starter one-shots.
 - Deepen EV/V10/V12 idle and acceleration realism without discontinuous pitch or plastic high-frequency oscillators.
 - Add physically triggered, seed-once BEAP backfire voices for V10/V12.
-- Add independent, top-level-controlled, seed-once cinematic BEAP pads for V10/V12.
+- Add one shared, top-level-controlled, seed-once cinematic BEAP Soundscape for EV/V10/V12.
 - Persist one shared vehicle-bus four-band EQ across all three runtimes with safe default fallback.
 - Keep `main.maxpat` DSP-free and maintain one-runtime-at-a-time CPU behavior.
-- Keep Keyboard and configurable macOS HID gamepad pedals mutually exclusive,
+- Keep Keyboard and fixed semantic macOS gamepad pedals mutually exclusive,
   with immediate zero release on source or Manual-mode exit.
 
 ## Repository State

@@ -88,8 +88,13 @@
           "id": "obj-5",
           "maxclass": "newobj",
           "numinlets": 1,
-          "numoutlets": 52,
+          "numoutlets": 57,
           "outlettype": [
+            "",
+            "",
+            "",
+            "",
+            "",
             "",
             "",
             "",
@@ -149,7 +154,7 @@
             900.0,
             22.0
           ],
-          "text": "route engine_type ignition start speed_kph rpm throttle brake load accel gear shift shift_dir pop intake_backfire exhaust_pop click ev_weight v12_weight v10_weight aggression brightness body texture cabin_width cabin_rumble exhaust_boom structure_vibration cabin_ir_mix powertrain_level_db transient_level_db road_level_db rumble_level_db pad_level_db pad_mute pad_solo backfire_enable backfire_intensity reference_texture_level_db reference_texture_mute eq_low eq_lowmid eq_highmid eq_high eq_bypass master_trim_db compressor_threshold_db compressor_ratio compressor_attack_rate compressor_release_rate compressor_makeup_db compressor_bypass"
+          "text": "route engine_type ignition start speed_kph rpm throttle brake load accel gear shift shift_dir pop intake_backfire exhaust_pop click ev_weight v12_weight v10_weight aggression brightness body texture cabin_width cabin_rumble exhaust_boom structure_vibration cabin_ir_mix powertrain_level_db transient_level_db road_level_db rumble_level_db pad_level_db pad_mute pad_solo soundscape_enable soundscape_level_db soundscape_motion soundscape_space soundscape_solo backfire_enable backfire_intensity reference_texture_level_db reference_texture_mute eq_low eq_lowmid eq_highmid eq_high eq_bypass master_trim_db compressor_threshold_db compressor_ratio compressor_attack_rate compressor_release_rate compressor_makeup_db compressor_bypass"
         }
       },
       {

@@ -21,52 +21,64 @@ def run_node(script: str, *paths: Path) -> dict:
 
 
 class ManualInputTests(unittest.TestCase):
-    def test_axis_normalization_uses_configured_range_and_clamps(self):
+    def test_gamepad_trigger_normalization_clamps_and_rescales_dead_zone(self):
         result = run_node(
             """
 const input = require(process.argv[1]);
 console.log(JSON.stringify({
-  low: input.normalizeAxis(-100, 0, 255, false, 0, 'linear', 1.5),
-  middle: input.normalizeAxis(127.5, 0, 255, false, 0, 'linear', 1.5),
-  high: input.normalizeAxis(999, 0, 255, false, 0, 'linear', 1.5)
+  low: input.normalizeTrigger(-100, 0.02, false),
+  jitter: input.normalizeTrigger(0.01, 0.02, false),
+  middle: input.normalizeTrigger(0.51, 0.02, false),
+  high: input.normalizeTrigger(999, 0.02, false),
+  signedRest: input.normalizeTrigger(-1, 0.02, true),
+  signedFull: input.normalizeTrigger(1, 0.02, true)
 }));
 """
         )
         self.assertEqual(0.0, result["low"])
+        self.assertEqual(0.0, result["jitter"])
         self.assertAlmostEqual(0.5, result["middle"], places=9)
         self.assertEqual(1.0, result["high"])
+        self.assertEqual(0.0, result["signedRest"])
+        self.assertEqual(1.0, result["signedFull"])
 
-    def test_inverted_axis_and_dead_zone_preserve_full_travel(self):
+    def test_signed_trigger_range_is_detected_without_axis_learning(self):
         result = run_node(
             """
 const input = require(process.argv[1]);
-console.log(JSON.stringify({
-  invertedRest: input.normalizeAxis(255, 0, 255, true, 0.02, 'linear', 1.5),
-  invertedFull: input.normalizeAxis(0, 0, 255, true, 0.02, 'linear', 1.5),
-  jitter: input.normalizeAxis(3, 0, 255, false, 0.02, 'linear', 1.5),
-  middle: input.normalizeAxis(127.5, 0, 255, false, 0.02, 'linear', 1.5)
-}));
+const model = new input.ManualInputModel();
+model.handle('manual', [1]);
+model.handle('source', ['gamepad']);
+model.handle('dead_zone', [0]);
+model.handle('smoothing_ms', [0]);
+model.handle('axis_left_trigger', [-1]);
+const rest = model.snapshot().throttle;
+model.handle('axis_left_trigger', [0]);
+const middle = model.snapshot().throttle;
+model.handle('axis_left_trigger', [1]);
+console.log(JSON.stringify({rest, middle, full: model.snapshot().throttle}));
 """
         )
-        self.assertEqual(0.0, result["invertedRest"])
-        self.assertEqual(1.0, result["invertedFull"])
-        self.assertEqual(0.0, result["jitter"])
-        self.assertAlmostEqual((0.5 - 0.02) / 0.98, result["middle"], places=9)
-
-    def test_progressive_curve_uses_adjustable_gamma(self):
-        result = run_node(
-            """
-const input = require(process.argv[1]);
-console.log(JSON.stringify({
-  linear: input.normalizeAxis(0.5, 0, 1, false, 0, 'linear', 1.5),
-  progressive: input.normalizeAxis(0.5, 0, 1, false, 0, 'progressive', 1.5),
-  full: input.normalizeAxis(1, 0, 1, false, 0, 'progressive', 2.5)
-}));
-"""
-        )
-        self.assertAlmostEqual(0.5, result["linear"], places=9)
-        self.assertAlmostEqual(0.5**1.5, result["progressive"], places=9)
+        self.assertEqual(0.0, result["rest"])
+        self.assertEqual(0.5, result["middle"])
         self.assertEqual(1.0, result["full"])
+
+    def test_trigger_pedal_is_absolute_and_linear_not_frame_accumulated(self):
+        result = run_node(
+            """
+const input = require(process.argv[1]);
+const model = new input.ManualInputModel();
+model.handle('manual', [1]);
+model.handle('source', ['gamepad']);
+model.handle('dead_zone', [0]);
+model.handle('smoothing_ms', [0]);
+model.handle('axis_left_trigger', [0.4]);
+for (let i = 0; i < 100; i += 1) model.tick(0.01);
+console.log(JSON.stringify(model.snapshot()));
+"""
+        )
+        self.assertAlmostEqual(0.4, result["throttle"], places=9)
+        self.assertAlmostEqual(0.4, result["throttleTarget"], places=9)
 
     def test_switching_input_source_immediately_clears_both_pedals(self):
         result = run_node(
@@ -88,55 +100,49 @@ console.log(JSON.stringify({before, after: model.snapshot(), events}));
         self.assertIn(["throttle", 0], result["events"])
         self.assertIn(["brake", 0], result["events"])
 
-    def test_selected_gamepad_axes_map_to_pedals_and_other_elements_are_ignored(self):
+    def test_fixed_left_and_right_triggers_map_directly_to_throttle_and_brake(self):
         result = run_node(
             """
 const input = require(process.argv[1]);
 const model = new input.ManualInputModel();
 model.handle('manual', [1]);
 model.handle('source', ['gamepad']);
-model.handle('throttle_axis', [7]);
-model.handle('throttle_min', [0]);
-model.handle('throttle_max', [255]);
-model.handle('brake_axis', [9]);
-model.handle('brake_min', [-32768]);
-model.handle('brake_max', [32767]);
 model.handle('dead_zone', [0]);
 model.handle('smoothing_ms', [0]);
-model.handle('hid', [6, 255]);
+model.handle('axis_left_x', [1]);
 const ignored = model.snapshot();
-model.handle('hid', [7, 127.5]);
-model.handle('hid', [9, 0]);
-console.log(JSON.stringify({ignored, mapped: model.snapshot()}));
+const leftEvents = model.handle('axis_left_trigger', [0.5]);
+const rightEvents = model.handle('axis_right_trigger', [0.75]);
+console.log(JSON.stringify({ignored, leftEvents, rightEvents, mapped: model.snapshot()}));
 """
         )
         self.assertEqual(0.0, result["ignored"]["throttle"])
         self.assertEqual(0.0, result["ignored"]["brake"])
         self.assertAlmostEqual(0.5, result["mapped"]["throttle"], places=9)
-        self.assertAlmostEqual(32768 / 65535, result["mapped"]["brake"], places=9)
+        self.assertAlmostEqual(0.75, result["mapped"]["brake"], places=9)
+        self.assertIn(["throttle_normalized", 0.5], result["leftEvents"])
+        self.assertIn(["brake_normalized", 0.75], result["rightEvents"])
 
-    def test_progressive_curve_is_throttle_only_and_debug_separates_both_pedals(self):
+    def test_gamepad_debug_keeps_raw_and_normalized_pedals_separate(self):
         result = run_node(
             """
 const input = require(process.argv[1]);
 const model = new input.ManualInputModel();
 model.handle('manual', [1]);
 model.handle('source', ['gamepad']);
-model.handle('throttle_axis', [4]);
-model.handle('brake_axis', [5]);
 model.handle('dead_zone', [0]);
-model.handle('curve', ['progressive']);
-model.handle('gamma', [2]);
 model.handle('smoothing_ms', [0]);
-const throttleEvents = model.handle('hid', [4, 0.5]);
-const brakeEvents = model.handle('hid', [5, 0.5]);
+const throttleEvents = model.handle('axis_left_trigger', [0.5]);
+const brakeEvents = model.handle('axis_right_trigger', [0.75]);
 console.log(JSON.stringify({throttleEvents, brakeEvents, state: model.snapshot()}));
 """
         )
-        self.assertAlmostEqual(0.25, result["state"]["throttle"], places=9)
-        self.assertAlmostEqual(0.5, result["state"]["brake"], places=9)
-        self.assertIn(["throttle_normalized", 0.25], result["throttleEvents"])
-        self.assertIn(["brake_normalized", 0.5], result["brakeEvents"])
+        self.assertAlmostEqual(0.5, result["state"]["throttle"], places=9)
+        self.assertAlmostEqual(0.75, result["state"]["brake"], places=9)
+        self.assertIn(["throttle_raw", 0.5], result["throttleEvents"])
+        self.assertIn(["throttle_normalized", 0.5], result["throttleEvents"])
+        self.assertIn(["brake_raw", 0.75], result["brakeEvents"])
+        self.assertIn(["brake_normalized", 0.75], result["brakeEvents"])
 
     def test_gamepad_smoothing_is_fast_but_does_not_jump(self):
         result = run_node(
@@ -145,10 +151,9 @@ const input = require(process.argv[1]);
 const model = new input.ManualInputModel();
 model.handle('manual', [1]);
 model.handle('source', ['gamepad']);
-model.handle('throttle_axis', [4]);
 model.handle('dead_zone', [0]);
-model.handle('smoothing_ms', [40]);
-model.handle('hid', [4, 1]);
+model.handle('smoothing_ms', [30]);
+model.handle('axis_left_trigger', [1]);
 const before = model.snapshot().throttle;
 model.tick(0.01);
 const first = model.snapshot().throttle;
@@ -157,8 +162,8 @@ console.log(JSON.stringify({before, first, settled: model.snapshot().throttle}))
 """
         )
         self.assertEqual(0.0, result["before"])
-        self.assertGreater(result["first"], 0.20)
-        self.assertLess(result["first"], 0.30)
+        self.assertGreater(result["first"], 0.28)
+        self.assertLess(result["first"], 0.29)
         self.assertGreater(result["settled"], 0.999)
 
     def test_leaving_manual_mode_releases_and_ignores_gamepad_input(self):
@@ -168,12 +173,11 @@ const input = require(process.argv[1]);
 const model = new input.ManualInputModel();
 model.handle('manual', [1]);
 model.handle('source', ['gamepad']);
-model.handle('throttle_axis', [4]);
 model.handle('smoothing_ms', [0]);
-model.handle('hid', [4, 1]);
+model.handle('axis_left_trigger', [1]);
 const active = model.snapshot();
 const release = model.handle('manual', [0]);
-model.handle('hid', [4, 1]);
+model.handle('axis_left_trigger', [1]);
 model.tick(0.01);
 console.log(JSON.stringify({active, release, inactive: model.snapshot()}));
 """
@@ -184,24 +188,30 @@ console.log(JSON.stringify({active, release, inactive: model.snapshot()}));
         self.assertEqual(0.0, result["inactive"]["throttle"])
         self.assertEqual(0.0, result["inactive"]["brake"])
 
-    def test_learn_selects_the_axis_with_the_largest_observed_travel(self):
+    def test_gamepad_device_status_reports_analog_capability_and_disconnect_releases(self):
         result = run_node(
             """
 const input = require(process.argv[1]);
 const model = new input.ManualInputModel();
-model.handle('learn_throttle', [1]);
-model.handle('hid', [4, 0]);
-model.handle('hid', [7, 100]);
-model.handle('hid', [4, 255]);
-model.handle('hid', [7, 120]);
-const events = model.handle('learn_commit', ['throttle']);
-console.log(JSON.stringify({events, learned: model.snapshot()}));
+model.handle('manual', [1]);
+model.handle('source', ['gamepad']);
+model.handle('smoothing_ms', [0]);
+const ds4 = model.handle('device_info', [0, 91, 'Wireless Controller', 'ps4']);
+model.handle('axis_left_trigger', [1]);
+const active = model.snapshot();
+const disconnected = model.handle('gamepad_status', ['device_removed', 91]);
+const pro = model.handle('device_info', [0, 92, 'Pro Controller', 'switch_pro']);
+console.log(JSON.stringify({ds4, active, disconnected, pro, final: model.snapshot()}));
 """
         )
-        self.assertEqual(4, result["learned"]["throttleAxis"])
-        self.assertEqual(0, result["learned"]["throttleMin"])
-        self.assertEqual(255, result["learned"]["throttleMax"])
-        self.assertIn(["throttle_axis", 4], result["events"])
+        self.assertIn(["detected", 1], result["ds4"])
+        self.assertIn(["analog_warning", 0], result["ds4"])
+        self.assertEqual(1.0, result["active"]["throttle"])
+        self.assertIn(["throttle", 0], result["disconnected"])
+        self.assertIn(["brake", 0], result["disconnected"])
+        self.assertIn(["detected", 0], result["disconnected"])
+        self.assertIn(["analog_warning", 1], result["pro"])
+        self.assertEqual(0.0, result["final"]["throttle"])
 
     def test_gamepad_activity_cannot_change_internal_auto_drive_behavior(self):
         result = run_node(
@@ -215,10 +225,9 @@ function trace(withGamepadNoise) {
   model.handle('start', [1]);
   model.handle('auto', [1]);
   manual.handle('source', ['gamepad']);
-  manual.handle('throttle_axis', [4]);
   for (let index = 0; index < 600; index += 1) {
     if (withGamepadNoise) {
-      manual.handle('hid', [4, index % 2]);
+      manual.handle('axis_left_trigger', [index % 2]);
       for (const event of manual.tick(0.01)) {
         if (event[0] === 'throttle' || event[0] === 'brake') {
           model.handle(event[0], [event[1]]);
@@ -256,6 +265,39 @@ console.log(JSON.stringify({keyboard, gamepad, restored: model.snapshot()}));
         self.assertEqual(0.0, result["gamepad"]["throttle"])
         self.assertEqual(0.4, result["restored"]["throttle"])
 
+    def test_progressive_service_brake_has_realistic_monotonic_stop_times(self):
+        result = run_node(
+            """
+const drive = require(process.argv[1]);
+function stopTime(brake) {
+  const model = new drive.DriveModel('v10');
+  model.handle('ignition', [1]);
+  model.handle('start', [1]);
+  for (let i = 0; i < 60; i += 1) model.tick(0.02);
+  model.handle('throttle', [1]);
+  for (let i = 0; i < 20000 && model.snapshot().speed < 100; i += 1) model.tick(0.02);
+  model.handle('throttle', [0]);
+  model.handle('brake', [brake]);
+  let ticks = 0;
+  while (model.snapshot().speed > 0 && ticks < 2000) {
+    model.tick(0.02);
+    ticks += 1;
+  }
+  return ticks * 0.02;
+}
+console.log(JSON.stringify({full: stopTime(1), half: stopTime(0.5), keyboard: stopTime(0.65)}));
+""",
+            DRIVE_MODEL_JS,
+        )
+        self.assertGreaterEqual(result["full"], 3.0)
+        self.assertLessEqual(result["full"], 4.0)
+        self.assertGreaterEqual(result["half"], 6.0)
+        self.assertLessEqual(result["half"], 9.0)
+        self.assertGreaterEqual(result["keyboard"], 5.0)
+        self.assertLessEqual(result["keyboard"], 7.0)
+        self.assertGreater(result["half"], result["keyboard"])
+        self.assertGreater(result["keyboard"], result["full"])
+
     def test_generated_manual_input_is_the_only_manual_pedal_adapter(self):
         source = MANUAL_INPUT_JS.read_text()
         self.assertIn("inlets = 1;\noutlets = 3;", source)
@@ -265,20 +307,21 @@ console.log(JSON.stringify({keyboard, gamepad, restored: model.snapshot()}));
         manual_text = "\n".join(item["box"].get("text", "") for item in manual["boxes"])
         manual_names = [item["box"].get("name", "") for item in manual["boxes"]]
         for token in (
-            "hi",
+            "gamepad",
             "js Patcher:/code/manual_input.js",
             "Keyboard",
             "Gamepad",
-            "Learn Throttle",
-            "Throttle Axis",
-            "Brake Axis",
+            "LT Throttle Raw",
+            "RT Brake Raw",
             "Throttle Norm",
             "Brake Norm",
             "Dead Zone",
             "Smoothing ms",
-            "Progressive",
+            "Wireless Controller",
         ):
             self.assertIn(token, manual_text)
+        for removed in ("\nhi\n", "Learn", " Axis", "Progressive", "Gamma", "Raw Min", "Raw Max"):
+            self.assertNotIn(removed, manual_text)
         self.assertTrue(any(name.endswith("/patchers/keyboard_drive_ws.maxpat") for name in manual_names))
 
         for label in ("EV", "V10", "V12"):
