@@ -55,6 +55,15 @@ function smoothstep(value) {
     return x * x * (3.0 - 2.0 * x);
 }
 
+function drivetrainDrag(speed, throttle) {
+    // Preserve the original powered aero load, but make a released vehicle
+    // settle decisively near zero while retaining more high-speed inertia.
+    var aero = 0.5 + 0.00012 * speed * speed;
+    var coast = 0.65 + 1.45 / (1.0 + Math.pow(speed / 35.0, 2.0));
+    var coastMix = 1.0 - smoothstep(throttle / 0.08);
+    return aero + (coast - aero) * coastMix;
+}
+
 function DriveModel(profile) {
     if (!DRIVE_CONFIG[profile]) {
         throw new Error("Unsupported drive profile: " + profile);
@@ -232,7 +241,7 @@ DriveModel.prototype.tick = function (dt) {
     pedals = this.effectivePedals();
     this.throttle = pedals[0];
     this.brake = pedals[1];
-    drag = 0.5 + 0.00012 * this.speed * this.speed;
+    drag = drivetrainDrag(this.speed, this.throttle);
     serviceBrake = 31.0 * Math.pow(this.brake, 1.35);
     force = this.throttle * (34.0 - 0.07 * this.speed) - drag - serviceBrake;
     if (this.running) {

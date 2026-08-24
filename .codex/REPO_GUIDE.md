@@ -107,6 +107,9 @@ On macOS, Max writes load diagnostics to
 - Keep `main.maxpat` DSP-free and maintain one-runtime-at-a-time CPU behavior.
 - Keep Keyboard and fixed semantic macOS gamepad pedals mutually exclusive,
   with immediate zero release on source or Manual-mode exit.
+- Keep natural coast inside the shared 20 ms drive model: released low-speed
+  settling is stronger than high-speed coasting, blends to the original powered
+  drag by 0.08 throttle, and must not alter the public throttle/brake interface.
 
 ## Repository State
 

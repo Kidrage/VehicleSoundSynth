@@ -112,6 +112,12 @@ leave the drivetrain accelerating. The gamepad adapter changes pedal inputs
 only: the unchanged 20 ms drivetrain still integrates speed, drag, RPM, and
 seven-speed DCT state.
 
+With both pedals released, V5 uses a shared progressive coast law: low speed
+settles more decisively (about 10 seconds from 20 km/h to rest), while highway
+speed retains noticeably more inertia (about 24 seconds from 100 to 80 km/h).
+The curve blends back to the original powered drag below 0.08 throttle, so
+normal acceleration, active braking, RPM coupling, and shifting do not jump.
+
 For GameSir Nova 2 Lite, use the manufacturer's macOS-compatible
 [`Wireless Controller`/DS4 Bluetooth mode](https://gamesir.com/pages/tutorials-how-to-connect-nova-2-lite)
 when analog trigger travel is required. A `Pro Controller`/Switch-mode HID

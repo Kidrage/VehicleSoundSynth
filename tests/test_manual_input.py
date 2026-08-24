@@ -337,6 +337,65 @@ console.log(JSON.stringify({full: stopTime(1), half: stopTime(0.5), keyboard: st
         self.assertGreater(result["half"], result["keyboard"])
         self.assertGreater(result["keyboard"], result["full"])
 
+    def test_natural_coast_settles_low_speed_but_preserves_high_speed_inertia(self):
+        result = run_node(
+            """
+const drive = require(process.argv[1]);
+function coastTime(fromSpeed, toSpeed) {
+  const model = new drive.DriveModel('ev');
+  model.handle('ignition', [1]);
+  model.handle('start', [1]);
+  for (let i = 0; i < 20; i += 1) model.tick(0.02);
+  model.handle('throttle', [1]);
+  for (let i = 0; i < 30000 && model.snapshot().speed < fromSpeed; i += 1) {
+    model.tick(0.02);
+  }
+  model.handle('throttle', [0]);
+  let ticks = 0;
+  while (model.snapshot().speed > toSpeed && ticks < 10000) {
+    model.tick(0.02);
+    ticks += 1;
+  }
+  return ticks * 0.02;
+}
+console.log(JSON.stringify({
+  low: coastTime(20, 0),
+  high: coastTime(100, 80),
+  veryHigh: coastTime(200, 180)
+}));
+""",
+            DRIVE_MODEL_JS,
+        )
+        self.assertGreaterEqual(result["low"], 10.0)
+        self.assertLessEqual(result["low"], 14.0)
+        self.assertGreaterEqual(result["high"], 22.0)
+        self.assertLessEqual(result["high"], 28.0)
+        self.assertGreaterEqual(result["veryHigh"], 27.0)
+        self.assertLessEqual(result["veryHigh"], 32.0)
+        self.assertGreater(result["veryHigh"], result["high"])
+        self.assertGreater(result["high"], result["low"])
+
+    def test_natural_coast_curve_does_not_change_full_throttle_acceleration(self):
+        result = run_node(
+            """
+const drive = require(process.argv[1]);
+const speeds = {};
+for (const profile of ['ev', 'v10', 'v12']) {
+  const model = new drive.DriveModel(profile);
+  model.handle('ignition', [1]);
+  model.handle('start', [1]);
+  for (let i = 0; i < 60; i += 1) model.tick(0.02);
+  model.handle('throttle', [1]);
+  for (let i = 0; i < 400; i += 1) model.tick(0.02);
+  speeds[profile] = model.snapshot().speed;
+}
+console.log(JSON.stringify(speeds));
+""",
+            DRIVE_MODEL_JS,
+        )
+        for profile in ("ev", "v10", "v12"):
+            self.assertAlmostEqual(192.99922998164607, result[profile], places=9)
+
     def test_generated_manual_input_is_the_only_manual_pedal_adapter(self):
         source = MANUAL_INPUT_JS.read_text()
         self.assertIn("inlets = 1;\noutlets = 3;", source)
