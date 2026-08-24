@@ -91,7 +91,9 @@ On macOS, Max writes load diagnostics to
   selection writes/closes the prior top-level runtime before opening one unique
   replacement. In Internal Manual, choose Keyboard and focus the runtime for
   W/S, or choose Gamepad for fixed LT throttle / RT brake. Both adapters
-  feed only throttle/brake into the unchanged drive model. Save user-tuned BEAP
+  feed only throttle/brake into the existing fixed-step drivetrain interface;
+  its 20 ms RPM/shift integration remains unchanged while V5 uses a gentler,
+  progressive service-brake law. Save user-tuned BEAP
   subpatchers, close every task-opened
   patcher, and quit Max after a smoke test.
 

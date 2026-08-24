@@ -49,11 +49,12 @@ or shift-recovery recording is loaded or looped. Both engines use phase-locked
 four-stroke cylinder banks, low-order body resonances, bounded combustion
 residuals, and soft saturation instead of saw/square oscillators. V10 is tuned
 against offline Ferrari lifecycle targets; V12 remains an independent, smoother
-high-rev model. EV combines a procedural motor with one
-of three suspendable BEAP soundscapes. The motor remains the speed-tracking
-fundamental; the BEAP layer uses the same continuous pitch law and is high-passed
-at 320 Hz, so it behaves as a cinematic layer instead of cancelling or replacing
-the motor body. Its default level is -9 dB.
+high-rev model. EV, V10 and V12 all feed one shared, independently editable
+cinematic BEAP Soundscape core through profile-specific continuous control maps.
+The procedural powertrain remains the speed-tracking fundamental; the shared
+layer is high-passed at 120 Hz, so it adds analog-pad width without cancelling
+or replacing the vehicle body. Its conservative default level is -14 dB for EV
+and -15 dB for V10/V12.
 
 V5 adds low-order crankcase/manifold motion to the ICE models and torque-ripple/
 gear-mesh motion to the EV model. These remain phase-continuous and are driven by

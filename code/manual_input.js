@@ -98,8 +98,12 @@ ManualInputModel.prototype.handle = function (name, args) {
     } else if (name === "smoothing_ms") {
         this.smoothingMs = clamp(Number(value) || 0.0, 0.0, 100.0);
     } else if (name === "device_info") {
-        nextInstance = args.length > 1 ? Number(args[1]) : -1;
-        events = nextInstance !== this.deviceInstance ? this.release() : [];
+        // Max 8.6.5 gamepad outlet 2: instance_id, device_index, name, type.
+        // Track the instance, not the reusable HID device index, so a hot swap
+        // cannot inherit a held pedal from the controller it replaced.
+        nextInstance = args.length ? Number(args[0]) : -1;
+        events = nextInstance !== this.deviceInstance && this.source === "gamepad" ?
+            this.release() : [];
         this.connected = 1;
         this.deviceInstance = nextInstance;
         this.deviceName = args.length > 3 ? args.slice(2, args.length - 1).join(" ") :
@@ -109,13 +113,14 @@ ManualInputModel.prototype.handle = function (name, args) {
     } else if (name === "gamepad_status") {
         status = args.join(" ").toLowerCase();
         if (status.indexOf("remove") >= 0 || status.indexOf("disconnect") >= 0) {
+            events = this.source === "gamepad" ? this.release() : [];
             this.connected = 0;
             this.deviceInstance = -1;
             this.deviceName = "No gamepad detected";
             this.deviceType = "unknown";
             this.leftTriggerSigned = 0;
             this.rightTriggerSigned = 0;
-            return this.release().concat(this.deviceEvents());
+            return events.concat(this.deviceEvents());
         }
     } else if (name === "axis_left_trigger" || name === "axis_right_trigger") {
         pedal = name === "axis_left_trigger" ? "throttle" : "brake";
@@ -172,6 +177,7 @@ ManualInputModel.prototype.snapshot = function () {
         throttleTarget: this.throttleTarget,
         brakeTarget: this.brakeTarget,
         connected: this.connected,
+        deviceInstance: this.deviceInstance,
         deviceName: this.deviceName,
         deviceType: this.deviceType
     };

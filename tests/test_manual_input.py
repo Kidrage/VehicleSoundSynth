@@ -196,11 +196,11 @@ const model = new input.ManualInputModel();
 model.handle('manual', [1]);
 model.handle('source', ['gamepad']);
 model.handle('smoothing_ms', [0]);
-const ds4 = model.handle('device_info', [0, 91, 'Wireless Controller', 'ps4']);
+const ds4 = model.handle('device_info', [91, 0, 'Wireless Controller', 'ps4']);
 model.handle('axis_left_trigger', [1]);
 const active = model.snapshot();
 const disconnected = model.handle('gamepad_status', ['device_removed', 91]);
-const pro = model.handle('device_info', [0, 92, 'Pro Controller', 'switch_pro']);
+const pro = model.handle('device_info', [92, 0, 'Pro Controller', 'switch_pro']);
 console.log(JSON.stringify({ds4, active, disconnected, pro, final: model.snapshot()}));
 """
         )
@@ -212,6 +212,45 @@ console.log(JSON.stringify({ds4, active, disconnected, pro, final: model.snapsho
         self.assertIn(["detected", 0], result["disconnected"])
         self.assertIn(["analog_warning", 1], result["pro"])
         self.assertEqual(0.0, result["final"]["throttle"])
+
+    def test_inactive_gamepad_device_changes_cannot_release_keyboard_pedals(self):
+        result = run_node(
+            """
+const input = require(process.argv[1]);
+const model = new input.ManualInputModel();
+model.handle('manual', [1]);
+model.handle('keyboard_throttle', [0.8]);
+const connected = model.handle('device_info', [91, 0, 'Wireless Controller', 'ps4']);
+const afterConnect = model.snapshot();
+const disconnected = model.handle('gamepad_status', ['device_removed', 91]);
+console.log(JSON.stringify({connected, afterConnect, disconnected, final: model.snapshot()}));
+"""
+        )
+        self.assertEqual(0.8, result["afterConnect"]["throttle"])
+        self.assertEqual(0.8, result["final"]["throttle"])
+        self.assertNotIn(["throttle", 0], result["connected"])
+        self.assertNotIn(["throttle", 0], result["disconnected"])
+
+    def test_gamepad_instance_hot_swap_releases_even_when_device_index_is_reused(self):
+        result = run_node(
+            """
+const input = require(process.argv[1]);
+const model = new input.ManualInputModel();
+model.handle('manual', [1]);
+model.handle('source', ['gamepad']);
+model.handle('smoothing_ms', [0]);
+model.handle('device_info', [91, 0, 'Wireless Controller', 'ps4']);
+model.handle('axis_left_trigger', [1]);
+const before = model.snapshot();
+const events = model.handle('device_info', [92, 0, 'Replacement Controller', 'xbox']);
+console.log(JSON.stringify({before, events, after: model.snapshot()}));
+"""
+        )
+        self.assertEqual(1.0, result["before"]["throttle"])
+        self.assertIn(["throttle", 0], result["events"])
+        self.assertIn(["brake", 0], result["events"])
+        self.assertEqual(0.0, result["after"]["throttle"])
+        self.assertEqual(92, result["after"]["deviceInstance"])
 
     def test_gamepad_activity_cannot_change_internal_auto_drive_behavior(self):
         result = run_node(

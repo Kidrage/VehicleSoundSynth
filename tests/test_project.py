@@ -777,6 +777,62 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
         self.assertIn("route soundscape_solo pad_solo", engine_text)
         self.assertIn("expr 1-$i1", engine_text)
 
+    def test_soundscape_solo_isolates_every_non_soundscape_stem(self):
+        for profile in ("ev", "v10", "v12"):
+            patcher = self.load_json(
+                f"patchers/vehicle_engine_{profile}~.maxpat"
+            )["patcher"]
+            text_by_id = {
+                item["box"]["id"]: item["box"].get("text", "")
+                for item in patcher["boxes"]
+            }
+            edges = [item["patchline"] for item in patcher["lines"]]
+            solo_lines = [
+                box_id for box_id, text in text_by_id.items() if text == "line~"
+            ]
+            self.assertEqual(1, len(solo_lines), profile)
+            solo_line = solo_lines[0]
+            solo_gains = {
+                edge["destination"][0]
+                for edge in edges
+                if edge["source"][0] == solo_line
+                and edge["destination"][1] == 1
+                and text_by_id[edge["destination"][0]] == "*~"
+            }
+            self.assertGreaterEqual(len(solo_gains), 8, profile)
+            sources = (
+                f"{profile}_powertrain~",
+                f"transient_{profile}~",
+                "road_air~",
+                "cabin_rumble~",
+            )
+            source_ids = {
+                text: next(box_id for box_id, value in text_by_id.items() if value == text)
+                for text in sources
+            }
+            for source_text, source_id in source_ids.items():
+                for channel in (0, 1):
+                    self.assertTrue(
+                        any(
+                            edge["source"] == [source_id, channel]
+                            and edge["destination"][0] in solo_gains
+                            and edge["destination"][1] == 0
+                            for edge in edges
+                        ),
+                        f"{profile} solo does not gate {source_text} channel {channel}",
+                    )
+            rumble_id = source_ids["cabin_rumble~"]
+            power_id = source_ids[f"{profile}_powertrain~"]
+            self.assertFalse(
+                any(
+                    edge["source"][0] == power_id
+                    and edge["destination"][0] == rumble_id
+                    and edge["destination"][1] in (1, 2)
+                    for edge in edges
+                ),
+                f"{profile} solo bypasses the gate through rumble excitation",
+            )
+
 
     def test_ice_start_defaults_to_cinematic_beap_with_realistic_sample_option(self):
         start_beap = self.load_json("patchers/engine_start_beap~.maxpat")["patcher"]
