@@ -9,7 +9,7 @@
 - Working root: `.`
 - Repository name: `VehicleSoundSynth-V5`
 - Git repository: `true`
-- Generated at: `2026-08-24T05:31:00Z`
+- Generated at: `2026-08-24T06:14:05Z`
 
 ## Current State
 
@@ -94,6 +94,7 @@
 
 ## Change History
 
+- `0fccd1f 2026-08-24 feat: tune speed-dependent natural coasting`
 - `4c206bd 2026-08-24 fix: isolate gamepad state and soundscape solo`
 - `9f066e4 2026-08-24 feat: add fixed gamepad pedals and cinematic soundscape`
 - `942cd3f 2026-08-21 docs: record V5 mainline consolidation`
@@ -120,8 +121,10 @@
 
 ## Current Changes
 
-- No uncommitted implementation changes are expected after this handoff update.
-  Canonical delivery is `main...origin/main`; always verify with
+- User-owned local Max saves remain modified in `VehicleSoundSynth-EV.maxpat`
+  and `VehicleSoundSynth-V10.maxpat`; they predate the coast task, are archived
+  under the Codex export namespace, and are intentionally excluded from commits.
+- Canonical delivery is `main...origin/main`; always verify with
   `git status -sb` and `git rev-parse HEAD` instead of a stored ahead count.
 
 ## Related Repositories
@@ -204,6 +207,22 @@
 ## Agent Notes
 
 <!-- AGENT_NOTES_START -->
+- 2026-08-24 balanced natural coast: the unchanged public throttle/brake seam
+  now keeps the original powered aero drag from 0.08 throttle upward and uses
+  a smooth released-pedal curve that is stronger near rest and weaker at high
+  speed. Public DriveModel traces measure 20->0 km/h in 10.40 s, 100->80 in
+  23.84 s, and 200->180 in 29.04 s; the pre-change full-throttle 8 s speed is
+  preserved exactly for EV/V10/V12, and active-brake stop-time gates still pass.
+  The clean commit passed 126/126 tests in an isolated worktree and
+  `git diff --check`. Clean EV/V10/V12 Max 8.6.5 loads after their per-profile
+  timestamps had no missing-object, Gen/function, bad-outlet, or patchcord-range
+  blocker; direct CLI loading retains the documented search-path warnings. Max
+  ignored Quit only after windows had closed, so the exact task-owned PIDs were
+  ended and final `application "Max" is running` is false. The pre-existing
+  user-owned EV/V10 top-level saves were not rewritten (their before/after SHA
+  values match), were excluded from clean validation and remain uncommitted;
+  direct loading of the local EV save separately exposed its existing Max
+  patchcord-deletion errors, so it must not be treated as canonical delivery.
 - 2026-08-24 fixed gamepad pedals and shared cinematic Soundscape: all three
   runtimes retain the generated `manual_input.maxpat` deep module and now use
   Max 8.6.5's built-in `gamepad` semantic events with fixed LT/L2 throttle and
