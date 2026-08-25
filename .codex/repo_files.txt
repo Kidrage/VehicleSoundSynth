@@ -7,6 +7,7 @@ AGENTS.md
 ASSET_LICENSES.md
 PROJECT_HANDOFF.md
 README.md
+SOUND_DESIGN_GUIDE.md
 VehicleSoundSynth-EV.maxpat
 VehicleSoundSynth-V10.maxpat
 VehicleSoundSynth-V12.maxpat
@@ -23,6 +24,7 @@ assets/ferrari_sf90_acoustic_target.json
 assets/ferrari_v10_lifecycle_targets.json
 assets/raw/README.md
 code/drive_model.js
+code/dna_state_path.js
 code/eq_state_path.js
 code/manual_input.js
 gen/ev_powertrain.gendsp
@@ -49,6 +51,7 @@ patchers/ev_expressive_voice.maxpat
 patchers/ev_pad_beap~.maxpat
 patchers/ev_pad_driver~.maxpat
 patchers/ev_powertrain~.maxpat
+patchers/ev_sound_dna~.maxpat
 patchers/ev_relax_voice.maxpat
 patchers/ev_soundscape_host~.maxpat
 patchers/ev_sport_beap~.maxpat
@@ -71,6 +74,7 @@ patchers/v10_pad_beap~.maxpat
 patchers/v10_pad_host~.maxpat
 patchers/v10_pad_voice.maxpat
 patchers/v10_powertrain~.maxpat
+patchers/v10_sound_dna~.maxpat
 patchers/v10_state_renderer~.maxpat
 patchers/v12_backfire_beap~.maxpat
 patchers/v12_backfire_host~.maxpat
@@ -79,11 +83,13 @@ patchers/v12_pad_beap~.maxpat
 patchers/v12_pad_host~.maxpat
 patchers/v12_pad_voice.maxpat
 patchers/v12_powertrain~.maxpat
+patchers/v12_sound_dna~.maxpat
 patchers/v12_texture_renderer~.maxpat
 patchers/vehicle_engine_ev~.maxpat
 patchers/vehicle_engine_v10~.maxpat
 patchers/vehicle_engine_v12~.maxpat
 patchers/vehicle_engine~.maxpat
+patchers/vehicle_bus_eq~.maxpat
 presets/local/.gitkeep
 tests/test_manual_input.py
 presets/sound_dna.json

@@ -147,6 +147,7 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
         self.assertNotIn("saw~", core_text.lower())
         self.assertNotIn("rect~", core_text.lower())
 
+        preset_names = {"ev": "Future EV", "v10": "Aggressive V10", "v12": "High-Rev V12"}
         for profile in ("ev", "v10", "v12"):
             host_path = f"patchers/{profile}_cinematic_soundscape_host~.maxpat"
             self.assertIn(host_path, declared)
@@ -173,8 +174,8 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
         ignore_rules = (ROOT / ".gitignore").read_text(encoding="utf-8")
         self.assertIn("presets/local/*", ignore_rules)
         self.assertIn("!presets/local/.gitkeep", ignore_rules)
-        mix = self.load_json("patchers/mix_master~.maxpat")["patcher"]
-        text = "\n".join(item["box"].get("text", "") for item in mix["boxes"])
+        eq = self.load_json("patchers/vehicle_bus_eq~.maxpat")["patcher"]
+        text = "\n".join(item["box"].get("text", "") for item in eq["boxes"])
         self.assertIn("autopattr", text)
         self.assertIn("pattrstorage vehicle_bus_eq", text)
         self.assertIn("Patcher:/presets/vehicle_bus_eq_default.json", text)
@@ -240,6 +241,105 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
             subprocess.run(command, check=True, cwd=ROOT, capture_output=True, text=True)
             self.assertEqual(before, path.read_bytes())
 
+    def test_sound_design_is_split_into_user_owned_dna_eq_and_soundscape_modules(self):
+        project = self.load_json("VehicleSoundSynth-V5.maxproj")
+        declared = set(project["contents"]["patchers"])
+        self.assertIn("patchers/vehicle_bus_eq~.maxpat", declared)
+        for profile in ("ev", "v10", "v12"):
+            dna_path = f"patchers/{profile}_sound_dna~.maxpat"
+            self.assertIn(dna_path, declared)
+            dna = self.load_json(dna_path)["patcher"]
+            dna_text = "\n".join(
+                item["box"].get("text", "") + " " + item["box"].get("varname", "")
+                for item in dna["boxes"]
+            )
+            self.assertIn("USER-TUNABLE SOUND DNA", dna_text)
+            self.assertIn(f"{profile}_powertrain~", dna_text)
+            self.assertIn(f"js Patcher:/code/dna_state_path.js {profile}", dna_text)
+            for control in (
+                "aggression", "brightness", "body", "texture", "air_detail",
+                "cycle_irregularity", "stereo_width", "throttle_loudness_depth",
+                "saturation",
+            ):
+                self.assertIn(control, dna_text)
+            engine = self.load_json(f"patchers/vehicle_engine_{profile}~.maxpat")["patcher"]
+            engine_text = "\n".join(
+                item["box"].get("text", "") + " " + item["box"].get("name", "")
+                for item in engine["boxes"]
+            )
+            self.assertIn(f"{profile}_sound_dna~", engine_text)
+            self.assertNotIn(f"{profile}_powertrain~", engine_text)
+            self.assertIn("vehicle_bus_eq~.maxpat", engine_text)
+
+        mix = self.load_json("patchers/mix_master~.maxpat")["patcher"]
+        mix_text = "\n".join(item["box"].get("text", "") for item in mix["boxes"])
+        self.assertNotIn("filtergraph~", mix_text)
+        self.assertNotIn("pattrstorage vehicle_bus_eq", mix_text)
+        self.assertIn("omx.comp~", mix_text)
+        self.assertIn("omx.peaklim~", mix_text)
+
+        eq = self.load_json("patchers/vehicle_bus_eq~.maxpat")["patcher"]
+        eq_text = "\n".join(
+            item["box"].get("text", "") + " " + item["box"].get("maxclass", "")
+            for item in eq["boxes"]
+        )
+        self.assertIn("USER-TUNABLE VEHICLE BUS EQ", eq_text)
+        self.assertIn("filtergraph~", eq_text)
+        self.assertIn("pattrstorage vehicle_bus_eq", eq_text)
+        self.assertNotIn("omx.comp~", eq_text)
+        self.assertNotIn("omx.peaklim~", eq_text)
+
+    def test_generator_preserves_user_owned_sound_dna_and_bus_eq_tuning(self):
+        with tempfile.TemporaryDirectory() as directory:
+            destination = Path(directory)
+            command = [
+                sys.executable,
+                str(ROOT / "tools" / "build_project.py"),
+                "--output-root",
+                str(destination),
+            ]
+            subprocess.run(command, check=True, cwd=ROOT, capture_output=True, text=True)
+            paths = [destination / "patchers" / "vehicle_bus_eq~.maxpat"]
+            paths.extend(destination / "patchers" / f"{p}_sound_dna~.maxpat" for p in ("ev", "v10", "v12"))
+            for path in paths:
+                payload = json.loads(path.read_text())
+                payload["patcher"]["description"] = "user-tuning-must-survive"
+                path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
+                before = path.read_bytes()
+                subprocess.run(command, check=True, cwd=ROOT, capture_output=True, text=True)
+                self.assertEqual(before, path.read_bytes(), path.name)
+
+    def test_sound_dna_exposes_realism_controls_without_direct_throttle_pitch(self):
+        defaults = self.load_json("presets/sound_dna.json")
+        preset_names = {"ev": "Future EV", "v10": "Aggressive V10", "v12": "High-Rev V12"}
+        for profile in ("ev", "v10", "v12"):
+            code = "\n".join(
+                item["box"].get("code", "")
+                for item in self.load_json(f"gen/{profile}_powertrain.gendsp")["patcher"]["boxes"]
+            ).lower()
+            for parameter in (
+                "air_detail", "cycle_irregularity", "stereo_width",
+                "throttle_loudness_depth", "saturation",
+            ):
+                self.assertIn(f"param {parameter}", code)
+            self.assertIn("pow(10, (t * throttle_loudness_depth) / 20)", code)
+            frequency_region = code.split("throttle_gain", 1)[0]
+            self.assertNotRegex(frequency_region, r"\bt\s*\*")
+            preset = defaults[preset_names[profile]]
+            self.assertGreaterEqual(preset["throttle_loudness_depth"], 4.0)
+            self.assertLessEqual(preset["throttle_loudness_depth"], 5.0)
+            self.assertIn("stereo_width", code)
+
+    def test_shared_beap_soundscape_has_three_voice_motion_and_formant_colour(self):
+        core = self.load_json("patchers/cinematic_soundscape_beap~.maxpat")["patcher"]
+        text = json.dumps(core)
+        for token in ("LFO_Slow", "Osc_C", "MMF", "Mixer"):
+            self.assertIn(token, text)
+        plain = "\n".join(item["box"].get("text", "") for item in core["boxes"])
+        self.assertIn("svf~ 120 0.7", plain)
+        self.assertNotIn("saw~", plain.lower())
+        self.assertNotIn("rect~", plain.lower())
+
     def test_v5_continuous_models_add_load_and_idle_acoustic_identity_without_sawtooth(self):
         expected = {
             "ev": ("torque_ripple", "gear_mesh", "electrical_motion"),
@@ -256,9 +356,9 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
             for token in tokens:
                 self.assertIn(token, code)
             if profile == "ev":
-                right_base = code.split("right_base =", 1)[1].split(";", 1)[0]
-                for token in tokens:
-                    self.assertIn(token, right_base)
+                right_side = code.split("side_r =", 1)[1].split(";", 1)[0]
+                for token in ("h3_r", "gear_r", "inverter_r", "air_r"):
+                    self.assertIn(token, right_side)
             for forbidden in ("saw", "square", "rect~"):
                 self.assertNotIn(forbidden, code)
 
@@ -801,7 +901,7 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
             }
             self.assertGreaterEqual(len(solo_gains), 8, profile)
             sources = (
-                f"{profile}_powertrain~",
+                f"{profile}_sound_dna~",
                 f"transient_{profile}~",
                 "road_air~",
                 "cabin_rumble~",
@@ -822,7 +922,7 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
                         f"{profile} solo does not gate {source_text} channel {channel}",
                     )
             rumble_id = source_ids["cabin_rumble~"]
-            power_id = source_ids[f"{profile}_powertrain~"]
+            power_id = source_ids[f"{profile}_sound_dna~"]
             self.assertFalse(
                 any(
                     edge["source"][0] == power_id
@@ -960,14 +1060,14 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
             self.assertIn(name, text)
 
     def test_v31_master_eq_is_one_visible_four_node_graph_before_stereo_cascade(self):
-        mix = self.load_json("patchers/mix_master~.maxpat")["patcher"]
-        boxes = [item["box"] for item in mix["boxes"]]
+        eq = self.load_json("patchers/vehicle_bus_eq~.maxpat")["patcher"]
+        boxes = [item["box"] for item in eq["boxes"]]
         graphs = [box for box in boxes if box["maxclass"] == "filtergraph~"]
         self.assertEqual(1, len(graphs))
         self.assertEqual(4, graphs[0]["nfilters"])
         self.assertEqual(1, graphs[0]["presentation"])
         self.assertEqual(2, sum(box.get("text") == "cascade~ 4" for box in boxes))
-        self.assertEqual(1, mix["openinpresentation"])
+        self.assertEqual(1, eq["openinpresentation"])
 
         engine = self.load_json("patchers/vehicle_engine~.maxpat")["patcher"]
         engine_boxes = [item["box"] for item in engine["boxes"]]
@@ -993,11 +1093,11 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
         for name, bank_events in (("v12_powertrain", "3"), ("v10_powertrain", "2.5")):
             patcher = self.load_json(f"gen/{name}.gendsp")["patcher"]
             code = "\n".join(item["box"].get("code", "") for item in patcher["boxes"])
-            self.assertIn(f"bank_events = {bank_events};", code)
-            self.assertIn("bank_phase_l = phasor(bank_fire)", code)
-            self.assertIn("bank_phase_r = bank_phase_l + 0.5", code)
+            self.assertIn(f"bank_fire = clamp(crank * {bank_events} *", code)
+            self.assertIn("phase_l = phasor(bank_fire)", code)
+            self.assertIn("phase_r = phase_l + 0.5", code)
             self.assertIn("fire = bank_fire * 2", code)
-            self.assertIn("h1 = cycle(fire)", code)
+            self.assertIn("orders_l = cycle(fire)", code)
             self.assertNotIn("raw_phase = phasor(fire)", code)
             self.assertNotIn("noise()", code)
             self.assertNotIn("0.5015", code)
@@ -1013,14 +1113,13 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
             patcher = self.load_json(f"gen/{name}")["patcher"]
             code = "\n".join(item["box"].get("code", "") for item in patcher["boxes"])
             self.assertIn("cycle_variation", code)
-            self.assertIn("cylinder =", code)
-            self.assertIn("pulse_curve_l = pow(0.5 + 0.5 * cos(bank_phase_l * 6.283185307179586), 4)", code)
-            self.assertIn("pulse_curve_r = pow(0.5 + 0.5 * cos(bank_phase_r * 6.283185307179586), 4)", code)
-            self.assertIn("pulse_l = pulse_curve_l - 0.2734375", code)
-            self.assertIn("pulse_r = pulse_curve_r - 0.2734375", code)
+            self.assertIn("cylinder_l =", code)
+            self.assertIn("cylinder_r =", code)
+            self.assertIn("pulse_l = pow(0.5 + 0.5 * cos(phase_l * 6.283185307179586), 4) - 0.2734375", code)
+            self.assertIn("pulse_r = pow(0.5 + 0.5 * cos(phase_r * 6.283185307179586), 4) - 0.2734375", code)
             self.assertIn("bank_l =", code)
             self.assertIn("bank_r =", code)
-            self.assertIn("resonance =", code)
+            self.assertIn("shared_low =", code)
             self.assertNotIn("exp(-bank_phase", code)
             self.assertNotIn("event_trigger", code)
             self.assertNotIn("event_phase_l", code)
@@ -1260,19 +1359,21 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
 
             self.assertLess(projected_amplitude(61.5), projected_amplitude(347.0) * 0.10)
 
-    def test_v4_banked_harmonic_body_matches_the_known_good_v3_orders(self):
+    def test_v4_banked_harmonic_body_preserves_low_orders_and_adds_independent_air(self):
         expected = {
             "v12_powertrain": (
-                "h1 = cycle(fire) * (0.16 + body * 0.08)",
-                "0.0945 + brightness * 0.108 + speedmix * 0.081",
-                "0.05625 + texture * 0.06875 + speedmix * 0.0625",
-                "0.48 + body * 0.16",
+                "orders_l = cycle(fire) * 0.17",
+                "cycle(clamp(fire * 2.0, 45, 3200))",
+                "cycle(clamp(fire * 3.0, 55, 5200))",
+                "bright_l =",
+                "bright_r =",
             ),
             "v10_powertrain": (
-                "h1 = cycle(fire) * (0.17 + aggression * 0.08)",
-                "0.08775 + brightness * 0.0945 + speedmix * 0.07425",
-                "0.055 + texture * 0.075 + speedmix * 0.060",
-                "0.50 + body * 0.16",
+                "orders_l = cycle(fire) * 0.18",
+                "cycle(clamp(fire * 1.5, 45, 1800))",
+                "cycle(clamp(fire * 2.5, 65, 5200))",
+                "bright_l =",
+                "bright_r =",
             ),
         }
         for name, coefficients in expected.items():
@@ -1293,8 +1394,8 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
         self.assertEqual(4, powertrain_text.count("svf~ 3000 0.65"))
 
         expected = {
-            "v12_powertrain": "sat_drive = 1.08 + speedmix * 0.18 + t * 0.09",
-            "v10_powertrain": "sat_drive = 1.10 + speedmix * 0.20 + t * 0.12",
+            "v12_powertrain": "sat_drive = 1 + saturation * 0.85",
+            "v10_powertrain": "sat_drive = 1 + saturation * 0.95",
         }
         for name, drive in expected.items():
             patcher = self.load_json(f"gen/{name}.gendsp")["patcher"]
@@ -1500,17 +1601,15 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
             code = "\n".join(item["box"].get("code", "") for item in patcher["boxes"])
             for parameter in ("engine_running", "combustion_gain", "shift_cut"):
                 self.assertIn(f"Param {parameter}", code)
-            self.assertIn(f"bank_events = {bank_events};", code)
-            self.assertIn("bank_phase_l = phasor(bank_fire)", code)
-            self.assertIn("pulse_curve_l = pow(0.5 + 0.5 * cos(bank_phase_l", code)
-            self.assertIn("pulse_curve_r = pow(0.5 + 0.5 * cos(bank_phase_r", code)
-            self.assertIn("pulse_l = pulse_curve_l - 0.2734375", code)
-            self.assertIn("pulse_r = pulse_curve_r - 0.2734375", code)
+            self.assertIn(f"bank_fire = clamp(crank * {bank_events} *", code)
+            self.assertIn("phase_l = phasor(bank_fire)", code)
+            self.assertIn("pulse_l = pow(0.5 + 0.5 * cos(phase_l", code)
+            self.assertIn("pulse_r = pow(0.5 + 0.5 * cos(phase_r", code)
             self.assertNotIn("pulse_l = exp(-bank_phase_l", code)
             self.assertNotIn("pulse_r = exp(-bank_phase_r", code)
             self.assertIn("tanh(", code)
             self.assertGreaterEqual(code.count("cycle("), 12)
-            self.assertIn("idle", code)
+            self.assertIn("idle_weight", code)
 
     def test_v2_internal_drive_model_exposes_seven_speed_dct_events(self):
         drive = self.load_json("patchers/drive_simulator.maxpat")
@@ -1620,9 +1719,16 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
             "compressor_threshold_db", "compressor_ratio",
             "compressor_attack_rate", "compressor_release_rate",
             "compressor_makeup_db", "compressor_bypass",
+            "air_detail", "cycle_irregularity", "stereo_width",
+            "throttle_loudness_depth", "saturation",
         }
         for values in presets.values():
-            self.assertEqual(expected, set(values))
+            profile_specific = (
+                {"torque_ripple_level", "gear_mesh_level", "electrical_detail"}
+                if values["engine_type"] == "ev"
+                else {"combustion_pulse", "intake_detail", "exhaust_detail", "residual_detail"}
+            )
+            self.assertEqual(expected | profile_specific, set(values))
             self.assertIn(values["engine_type"], {"ev", "v12", "v10"})
             db_parameters = {
                 "master_trim_db", "powertrain_level_db", "transient_level_db",
@@ -1636,9 +1742,10 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
             }
             bounded = {
                 key: value for key, value in values.items()
-                if key not in {"engine_type", *db_parameters, *compressor_parameters}
+                if key not in {"engine_type", "throttle_loudness_depth", *db_parameters, *compressor_parameters}
             }
             self.assertTrue(all(0.0 <= value <= 1.0 for value in bounded.values()))
+            self.assertTrue(0.0 <= values["throttle_loudness_depth"] <= 8.0)
             self.assertTrue(-24.0 <= values["master_trim_db"] <= 0.0)
             self.assertTrue(all(-60.0 <= values[key] <= 6.0 for key in db_parameters - {"master_trim_db"}))
             self.assertTrue(-36.0 <= values["compressor_threshold_db"] <= 0.0)
@@ -1675,13 +1782,18 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
         self.assertNotIn("omx.peaklim~", cabin_text)
         self.assertNotIn("clip~ -0.891 0.891", cabin_text)
 
+        eq = self.load_json("patchers/vehicle_bus_eq~.maxpat")
+        eq_boxes = {item["box"]["id"]: item["box"] for item in eq["patcher"]["boxes"]}
+        eq_text = "\n".join(box.get("text", "") for box in eq_boxes.values())
+        self.assertEqual(1, sum(box["maxclass"] == "filtergraph~" for box in eq_boxes.values()))
+        self.assertEqual(2, sum(box.get("text") == "cascade~ 4" for box in eq_boxes.values()))
+        for token in ("eq_low", "eq_lowmid", "eq_highmid", "eq_high", "eq_bypass", "master_trim_db"):
+            self.assertIn(token, eq_text)
+
         mix = self.load_json("patchers/mix_master~.maxpat")
         mix_boxes = {item["box"]["id"]: item["box"] for item in mix["patcher"]["boxes"]}
         mix_text = "\n".join(box.get("text", "") for box in mix_boxes.values())
-        self.assertEqual(1, sum(box["maxclass"] == "filtergraph~" for box in mix_boxes.values()))
-        self.assertEqual(2, sum(box.get("text") == "cascade~ 4" for box in mix_boxes.values()))
-        for token in ("eq_low", "eq_lowmid", "eq_highmid", "eq_high", "eq_bypass", "master_trim_db"):
-            self.assertIn(token, mix_text)
+        self.assertNotIn("filtergraph~", mix_text)
         limiter = next(box["id"] for box in mix_boxes.values() if box.get("text") == "omx.peaklim~")
         clippers = {box["id"] for box in mix_boxes.values() if box.get("text") == "clip~ -0.891 0.891"}
         outlets = {box["id"] for box in mix_boxes.values() if box["maxclass"] == "outlet"}
@@ -1695,9 +1807,9 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
 
     def test_eq_parameter_lists_drive_filtergraph_coefficient_inlets(self):
         """Each EQ band's [frequency, linear gain, Q] list must recalculate coefficients."""
-        mix = self.load_json("patchers/mix_master~.maxpat")["patcher"]
-        boxes = {item["box"]["id"]: item["box"] for item in mix["boxes"]}
-        lines = [item["patchline"] for item in mix["lines"]]
+        eq = self.load_json("patchers/vehicle_bus_eq~.maxpat")["patcher"]
+        boxes = {item["box"]["id"]: item["box"] for item in eq["boxes"]}
+        lines = [item["patchline"] for item in eq["lines"]]
         graphs = {
             box_id for box_id, box in boxes.items()
             if box["maxclass"] == "filtergraph~"
@@ -1726,15 +1838,11 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
         self.assertFalse(
             any(box.get("text", "").startswith("prepend highshelf") for box in boxes.values())
         )
-        self.assertEqual(
-            5,
-            sum(box.get("text") == "expr pow(10., $f1/10.)" for box in boxes.values()),
-        )
+        # Max 8.6.5 escapes literal commas when it serializes an expr object.
+        normalized_texts = [box.get("text", "").replace("\\,", ",") for box in boxes.values()]
+        self.assertEqual(5, normalized_texts.count("expr pow(10., $f1/10.)"))
         self.assertTrue(
-            any(
-                box.get("text") == "expr 10.*log(max($f1,0.000001))/log(10.)"
-                for box in boxes.values()
-            )
+            "expr 10.*log(max($f1,0.000001))/log(10.)" in normalized_texts
         )
 
     def test_demo_starts_muted(self):
@@ -2005,7 +2113,6 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
         signal_inlets = [
             item for item in pad["boxes"]
             if item["box"].get("maxclass") == "inlet"
-            and item["box"].get("outlettype") == ["signal"]
         ]
         signal_outlets = [
             item for item in pad["boxes"]
@@ -2113,13 +2220,13 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
             engine = self.load_json(f"patchers/vehicle_engine_{profile}~.maxpat")
             engine_text = "\n".join(item["box"].get("text", "") for item in engine["patcher"]["boxes"])
             for abstraction in (
-                f"engine_controller_{profile}", f"{profile}_powertrain~",
+                f"engine_controller_{profile}", f"{profile}_sound_dna~",
                 f"transient_{profile}~", "road_air~", "cabin_master~",
             ):
                 self.assertIn(abstraction, engine_text)
             self.assertTrue(any(
                 item["box"]["maxclass"] == "bpatcher"
-                and item["box"].get("name") == "mix_master~.maxpat"
+                and item["box"].get("name") == "vehicle_bus_eq~.maxpat"
                 for item in engine["patcher"]["boxes"]
             ))
 
@@ -2220,8 +2327,8 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
                 "eq_high", "eq_bypass", "master_trim_db",
             ):
                 self.assertIn(token, text)
-        mix = self.load_json("patchers/mix_master~.maxpat")["patcher"]
-        self.assertTrue(any(item["box"]["maxclass"] == "filtergraph~" for item in mix["boxes"]))
+        eq = self.load_json("patchers/vehicle_bus_eq~.maxpat")["patcher"]
+        self.assertTrue(any(item["box"]["maxclass"] == "filtergraph~" for item in eq["boxes"]))
 
     def test_generator_is_deterministic(self):
         def build_and_hash(destination):

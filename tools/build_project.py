@@ -78,6 +78,18 @@ MACRO_NAMES = (
     "brightness",
     "body",
     "texture",
+    "air_detail",
+    "cycle_irregularity",
+    "stereo_width",
+    "throttle_loudness_depth",
+    "saturation",
+    "torque_ripple_level",
+    "gear_mesh_level",
+    "electrical_detail",
+    "combustion_pulse",
+    "intake_detail",
+    "exhaust_detail",
+    "residual_detail",
     "cabin_width",
     "cabin_rumble",
     "exhaust_boom",
@@ -142,6 +154,53 @@ PROFILE_CONFIG = {
         "drive": "drive_simulator_v12",
         "idle_rpm": 780.0,
     },
+}
+
+DNA_PARAMETER_SPECS = {
+    "ev": (
+        ("aggression", "Aggression", 0.0, 1.0),
+        ("brightness", "Brightness", 0.0, 1.0),
+        ("body", "Body", 0.0, 1.0),
+        ("texture", "Texture", 0.0, 1.0),
+        ("air_detail", "Air Detail", 0.0, 1.0),
+        ("cycle_irregularity", "Cycle Irregularity", 0.0, 1.0),
+        ("stereo_width", "Stereo / Bank Separation", 0.0, 1.0),
+        ("throttle_loudness_depth", "Throttle Loudness Depth dB", 0.0, 8.0),
+        ("saturation", "Saturation", 0.0, 1.0),
+        ("torque_ripple_level", "Torque Ripple", 0.0, 1.0),
+        ("gear_mesh_level", "Gear Mesh", 0.0, 1.0),
+        ("electrical_detail", "Electrical Detail", 0.0, 1.0),
+    ),
+    "v10": (
+        ("aggression", "Aggression", 0.0, 1.0),
+        ("brightness", "Brightness", 0.0, 1.0),
+        ("body", "Body", 0.0, 1.0),
+        ("texture", "Texture", 0.0, 1.0),
+        ("air_detail", "Air Detail", 0.0, 1.0),
+        ("cycle_irregularity", "Cycle Irregularity", 0.0, 1.0),
+        ("stereo_width", "Stereo / Bank Separation", 0.0, 1.0),
+        ("throttle_loudness_depth", "Throttle Loudness Depth dB", 0.0, 8.0),
+        ("saturation", "Saturation", 0.0, 1.0),
+        ("combustion_pulse", "Combustion Pulse", 0.0, 1.0),
+        ("intake_detail", "Intake Detail", 0.0, 1.0),
+        ("exhaust_detail", "Exhaust Detail", 0.0, 1.0),
+        ("residual_detail", "Residual Detail", 0.0, 1.0),
+    ),
+    "v12": (
+        ("aggression", "Aggression", 0.0, 1.0),
+        ("brightness", "Brightness", 0.0, 1.0),
+        ("body", "Body", 0.0, 1.0),
+        ("texture", "Texture", 0.0, 1.0),
+        ("air_detail", "Air Detail", 0.0, 1.0),
+        ("cycle_irregularity", "Cycle Irregularity", 0.0, 1.0),
+        ("stereo_width", "Stereo / Bank Separation", 0.0, 1.0),
+        ("throttle_loudness_depth", "Throttle Loudness Depth dB", 0.0, 8.0),
+        ("saturation", "Saturation", 0.0, 1.0),
+        ("combustion_pulse", "Combustion Pulse", 0.0, 1.0),
+        ("intake_detail", "Intake Detail", 0.0, 1.0),
+        ("exhaust_detail", "Exhaust Detail", 0.0, 1.0),
+        ("residual_detail", "Residual Detail", 0.0, 1.0),
+    ),
 }
 
 MEDIA_FRAMES = {
@@ -677,9 +736,103 @@ def make_ice_pad_host(profile: str) -> dict[str, Any]:
     return p.document()
 
 
+def make_sound_dna(profile: str) -> dict[str, Any]:
+    """Seed one editable profile DNA panel around the generated DSP adapter."""
+    p = Patcher(1280, 760)
+    p.comment(
+        f"{profile.upper()} USER-TUNABLE SOUND DNA — synthesis controls only; state/RPM remain drivetrain-owned",
+        25, 15, 1050,
+    )
+    control = inlet(p, 35, 60)
+    specs = DNA_PARAMETER_SPECS[profile]
+    names = tuple(item[0] for item in specs)
+    router = route(p, names, 35, 100, 1160)
+    powertrain = p.new(f"{profile}_powertrain~", 475, 610, 150, numinlets=1, numoutlets=2)
+    left = outlet(p, 475, 700, signal=True)
+    right = outlet(p, 675, 700, signal=True)
+    p.connect(control, router)
+    # The unmatched outlet is the read-only vehicle state seam: rpm, throttle,
+    # load, accel, lifecycle and level controls pass through unchanged.
+    p.connect(router, powertrain, len(names), 0)
+
+    p.new("autopattr @autorestore 0", 930, 15, 155, numinlets=1, numoutlets=4)
+    storage = p.new(
+        f"pattrstorage {profile}_sound_dna @savemode 3 @changemode 1 @autorestore 0",
+        930, 50, 300, numinlets=1, numoutlets=4,
+    )
+    state_path = p.new(
+        f"js Patcher:/code/dna_state_path.js {profile}",
+        930, 85, 260, numinlets=1, numoutlets=1,
+    )
+    load = p.new("loadbang", 930, 120, 60, numinlets=1, numoutlets=1)
+    restore_delay = p.new("delay 140", 1000, 120, 70, numinlets=2, numoutlets=1)
+    restore_order = p.new("t b b", 1080, 120, 50, numinlets=1, numoutlets=2)
+    restore = p.message("restore", 1140, 120, 55)
+    recall_delay = p.new("delay 35", 1080, 155, 65, numinlets=2, numoutlets=1)
+    recall = p.message("1", 1155, 155, 30)
+    save = p.message("save", 930, 190, 45)
+    close = p.new("closebang", 985, 190, 65, numinlets=0, numoutlets=1)
+    p.connect(load, restore_delay)
+    p.connect(restore_delay, restore_order)
+    p.connect(restore_order, restore, 1)
+    p.connect(restore, state_path)
+    p.connect(state_path, storage)
+    p.connect(restore_order, recall_delay, 0)
+    p.connect(recall_delay, recall)
+    p.connect(recall, storage)
+    p.connect(close, save)
+    p.connect(save, state_path)
+
+    preset_name = {"ev": "Future EV", "v10": "Aggressive V10", "v12": "High-Rev V12"}[profile]
+    defaults = PRESETS[preset_name]
+    reset_button = p.add(
+        "message", "Reset DNA", 1080, 210, 75, numinlets=2, numoutlets=1,
+        presentation=1, presentation_rect=[1090.0, 690.0, 80.0, 22.0],
+    )
+    save_button = p.add(
+        "message", "Save DNA", 930, 210, 70, numinlets=2, numoutlets=1,
+        presentation=1, presentation_rect=[910.0, 690.0, 75.0, 22.0],
+    )
+    reload_button = p.add(
+        "message", "Reload DNA", 1005, 210, 80, numinlets=2, numoutlets=1,
+        presentation=1, presentation_rect=[995.0, 690.0, 85.0, 22.0],
+    )
+    p.connect(save_button, save)
+    p.connect(reload_button, restore_order)
+
+    for index, (name, label, low, high) in enumerate(specs):
+        column = index % 4
+        row = index // 4
+        x = 35 + column * 300
+        y = 165 + row * 125
+        p.add(
+            "comment", label, x, y, 220, 20, numinlets=1, numoutlets=0,
+            presentation=1, presentation_rect=[x, y, 220.0, 20.0],
+        )
+        value = p.add(
+            "flonum", None, x, y + 25, 90, numinlets=1, numoutlets=2,
+            minimum=low, maximum=high, varname=f"dna_{name}",
+            presentation=1, presentation_rect=[x, y + 25, 90.0, 22.0],
+        )
+        bounded = p.new(f"clip {low:g} {high:g}", x + 100, y + 25, 90, numinlets=3, numoutlets=1)
+        named = p.new(f"prepend {name}", x + 195, y + 25, 100, numinlets=1, numoutlets=1)
+        default_message = p.message(f"{defaults[name]:g}", x, y + 60, 65)
+        p.connect(router, value, index)
+        p.connect(value, bounded)
+        p.connect(bounded, named)
+        p.connect(named, powertrain)
+        p.connect(load, default_message)
+        p.connect(reset_button, default_message)
+        p.connect(default_message, value)
+
+    p.connect(powertrain, left, 0, 0)
+    p.connect(powertrain, right, 1, 0)
+    return p.document(presentation=True)
+
+
 def make_cinematic_soundscape_beap() -> dict[str, Any]:
     """Seed the one shared, user-owned Prophet-inspired BEAP soundscape."""
-    p = Patcher(2260, 930)
+    p = Patcher(2820, 980)
     p.comment(
         "USER-TUNABLE CINEMATIC SOUNDSCAPE — shared BEAP core for EV/V10/V12; preserved on rebuild",
         25, 15, 1050,
@@ -699,12 +852,20 @@ def make_cinematic_soundscape_beap() -> dict[str, Any]:
         p, "LFO/bp.LFO.maxpat", 510, 55, "LFO",
         initial={"Frequency": 0.14, "Mute": 0},
     )
+    lfo_slow = add_beap_module(
+        p, "LFO/bp.LFO.maxpat", 840, 55, "LFO_Slow",
+        initial={"Frequency": 0.037, "Mute": 0},
+    )
     lfo_scale = p.new("*~ 0.008", 510, 195, 72, numinlets=2, numoutlets=1)
     motion_depth = p.new("*~", 590, 195, 40, numinlets=2, numoutlets=1)
     opposite = p.new("*~ -1.", 640, 195, 58, numinlets=2, numoutlets=1)
     pitch_a = p.new("+~", 710, 165, 40, numinlets=2, numoutlets=1)
     pitch_b_mod = p.new("+~", 710, 215, 40, numinlets=2, numoutlets=1)
     pitch_b = p.new("+~ 0.012", 760, 215, 72, numinlets=2, numoutlets=1)
+    slow_pitch = p.new("*~ 0.006", 840, 215, 72, numinlets=2, numoutlets=1)
+    slow_motion = p.new("*~", 920, 215, 40, numinlets=2, numoutlets=1)
+    pitch_c_base = p.new("+~ 1.5849625", 970, 215, 100, numinlets=2, numoutlets=1)
+    pitch_c = p.new("+~", 1080, 215, 40, numinlets=2, numoutlets=1)
     tone_lfo = p.new("*~ 0.06", 510, 245, 68, numinlets=2, numoutlets=1)
     tone_motion = p.new("*~", 590, 245, 40, numinlets=2, numoutlets=1)
     tone_sum = p.new("+~", 640, 245, 40, numinlets=2, numoutlets=1)
@@ -717,6 +878,12 @@ def make_cinematic_soundscape_beap() -> dict[str, Any]:
     p.connect(opposite, pitch_b_mod, 0, 1)
     p.connect(pitch_cv, pitch_b_mod, 0, 0)
     p.connect(pitch_b_mod, pitch_b)
+    p.connect(lfo_slow, slow_pitch, 1, 0)
+    p.connect(slow_pitch, slow_motion, 0, 0)
+    p.connect(motion_cv, slow_motion, 0, 1)
+    p.connect(pitch_cv, pitch_c_base)
+    p.connect(pitch_c_base, pitch_c, 0, 0)
+    p.connect(slow_motion, pitch_c, 0, 1)
     p.connect(lfo, tone_lfo, 1, 0)
     p.connect(tone_lfo, tone_motion, 0, 0)
     p.connect(motion_cv, tone_motion, 0, 1)
@@ -725,38 +892,51 @@ def make_cinematic_soundscape_beap() -> dict[str, Any]:
 
     osc_a = add_beap_module(
         p, "Oscillator/bp.Oscillator.maxpat", 25, 310, "Osc_A",
-        initial={"Waveform": 1, "Offset": -12, "Mute": 0},
+        initial={"Waveform": 1, "Offset": -5, "Mute": 0},
     )
     osc_b = add_beap_module(
         p, "Oscillator/bp.Oscillator.maxpat", 355, 310, "Osc_B",
-        initial={"Waveform": 3, "Offset": -12, "PW": 43, "PWM": 18, "Mute": 0},
+        initial={"Waveform": 3, "Offset": -7, "PW": 43, "PWM": 18, "Mute": 0},
     )
-    noise = add_beap_module(p, "Random/bp.Noise.maxpat", 685, 310, "Noise")
-    noise_gain = p.new("*~ 0.018", 730, 455, 75, numinlets=2, numoutlets=1)
+    osc_c = add_beap_module(
+        p, "Oscillator/bp.Oscillator.maxpat", 685, 310, "Osc_C",
+        initial={"Waveform": 1, "Offset": -12, "Mute": 0},
+    )
+    noise = add_beap_module(p, "Random/bp.Noise.maxpat", 1015, 310, "Noise")
+    noise_gain = p.new("*~ 0.026", 1060, 455, 75, numinlets=2, numoutlets=1)
     mixer = add_beap_module(
-        p, "Mixers/bp.Audio Mixer.maxpat", 835, 310, "Mixer",
-        initial={"in1": -10, "in2": -24, "in3": -34, "in4": -60},
+        p, "Mixers/bp.Audio Mixer.maxpat", 1190, 310, "Mixer",
+        initial={"in1": -7, "in2": -15, "in3": -29, "in4": -19},
     )
     ladder = add_beap_module(
-        p, "Filter/bp.Ladder.maxpat", 1080, 310, "Ladder",
-        initial={"Freq": 900, "Res": 5, "CV1": 72},
+        p, "Filter/bp.Ladder.maxpat", 1435, 310, "Ladder",
+        initial={"Freq": 1850, "Res": 7, "CV1": 72},
+    )
+    mmf = add_beap_module(
+        p, "Filter/bp.MMF.maxpat", 1745, 310, "MMF",
+        initial={"Freq": 2450, "Res": 9, "FilterType": 0},
     )
     envelope = add_beap_module(
-        p, "Envelope/bp.ADSR.maxpat", 1390, 310, "ADSR",
-        initial={"Attack": 680, "Decay": 1500, "Sustain": 72, "Release": 2800},
+        p, "Envelope/bp.ADSR.maxpat", 2020, 310, "ADSR",
+        initial={"Attack": 520, "Decay": 1350, "Sustain": 76, "Release": 2600},
     )
-    vca = add_beap_module(p, "Level/bp.VCA.maxpat", 1645, 310, "VCA")
+    vca = add_beap_module(p, "Level/bp.VCA.maxpat", 2275, 310, "VCA")
     p.connect(pitch_a, osc_a, 0, 0)
     p.connect(pitch_b, osc_b, 0, 0)
+    p.connect(pitch_c, osc_c, 0, 0)
     p.connect(lfo, osc_b, 2, 4)
+    p.connect(lfo_slow, osc_c, 2, 4)
     p.connect(osc_a, mixer, 0, 0)
     p.connect(osc_b, mixer, 0, 1)
     p.connect(noise, noise_gain)
     p.connect(noise_gain, mixer, 0, 2)
+    p.connect(osc_c, mixer, 0, 3)
     p.connect(mixer, ladder, 0, 0)
     p.connect(tone_sum, ladder, 0, 1)
+    p.connect(ladder, mmf, 0, 0)
+    p.connect(tone_sum, mmf, 0, 1)
     p.connect(gate_cv, envelope, 0, 0)
-    p.connect(ladder, vca, 0, 0)
+    p.connect(mmf, vca, 0, 0)
     p.connect(envelope, vca, 0, 1)
 
     chorus = add_beap_module(
@@ -765,7 +945,7 @@ def make_cinematic_soundscape_beap() -> dict[str, Any]:
     )
     reverb = add_beap_module(
         p, "Effects/bp.Reverb 2.maxpat", 420, 610, "Reverb",
-        initial={"Damping": 1700, "Decay": 38, "Diffusion": 0.55, "Mix": 100, "Size": 58, "bypass": 0},
+        initial={"Damping": 4200, "Decay": 46, "Diffusion": 0.68, "Mix": 100, "Size": 66, "bypass": 0},
     )
     p.connect(vca, chorus)
     p.connect(vca, reverb)
@@ -1527,7 +1707,7 @@ def make_profile_engine(profile: str) -> dict[str, Any]:
     contract_names = list(PROFILE_MESSAGES)
     contract_names.extend(("start_style",) if profile != "ev" else ("ev_mode", "ev_soundscape_level_db", "ev_soundscape_mute"))
     contract = route(p, tuple(contract_names), 190, 150, 990)
-    power = p.new(f"{profile}_powertrain~", 95, 260, 135, numinlets=1, numoutlets=2)
+    power = p.new(f"{profile}_sound_dna~", 95, 260, 145, numinlets=1, numoutlets=2)
     pad = p.new(
         f"{profile}_cinematic_soundscape_host~", 95, 305, 220,
         numinlets=1, numoutlets=2,
@@ -1536,11 +1716,12 @@ def make_profile_engine(profile: str) -> dict[str, Any]:
     road = p.new("road_air~", 465, 260, 85, numinlets=1, numoutlets=2)
     rumble = p.new("cabin_rumble~", 625, 260, 110, numinlets=3, numoutlets=2)
     cabin = p.new("cabin_master~", 800, 450, 110, numinlets=3, numoutlets=2)
-    mix = p.add(
+    eq = p.add(
         "bpatcher", None, 460, 495, 970, 340,
-        numinlets=3, numoutlets=2, name="mix_master~.maxpat",
+        numinlets=3, numoutlets=2, name="vehicle_bus_eq~.maxpat",
         presentation=1, presentation_rect=[15.0, 15.0, 970.0, 340.0],
     )
+    mix = p.new("mix_master~", 1030, 500, 110, numinlets=3, numoutlets=2)
     add_l1 = p.new("+~", 130, 350, 35, numinlets=2, numoutlets=1)
     add_l2 = p.new("+~", 235, 390, 35, numinlets=2, numoutlets=1)
     add_l3 = p.new("+~", 340, 430, 35, numinlets=2, numoutlets=1)
@@ -1559,6 +1740,7 @@ def make_profile_engine(profile: str) -> dict[str, Any]:
     p.connect(fan, rumble, 2)
     p.connect(fan, cabin, 1, 0)
     p.connect(fan, mix, 0, 0)
+    p.connect(fan, eq, 0, 0)
     solo_router = route(p, ("soundscape_solo", "pad_solo"), 1090, 210, 210)
     solo_clip = p.new("clip 0 1", 1090, 250, 65, numinlets=3, numoutlets=1)
     solo_gain = p.new("expr 1-$i1", 1165, 250, 80, numinlets=1, numoutlets=1)
@@ -1621,8 +1803,10 @@ def make_profile_engine(profile: str) -> dict[str, Any]:
     p.connect(core_r, rumble, 0, 2)
     p.connect(add_l3, cabin, 0, 1)
     p.connect(add_r3, cabin, 0, 2)
-    p.connect(cabin, mix, 0, 1)
-    p.connect(cabin, mix, 1, 2)
+    p.connect(cabin, eq, 0, 1)
+    p.connect(cabin, eq, 1, 2)
+    p.connect(eq, mix, 0, 1)
+    p.connect(eq, mix, 1, 2)
     p.connect(mix, left, 0)
     p.connect(mix, right, 1)
     return p.document(presentation=True)
@@ -1818,16 +2002,14 @@ def make_engine_controller() -> dict[str, Any]:
     return p.document()
 
 
-def make_mix_master() -> dict[str, Any]:
+def make_vehicle_bus_eq() -> dict[str, Any]:
     p = Patcher(1180, 900)
-    p.comment("VISIBLE MASTER EQ — drag four nodes or use the public eq_* messages", 25, 15, 700)
+    p.comment("USER-TUNABLE VEHICLE BUS EQ — drag four nodes; saved locally and preserved on rebuild", 25, 15, 850)
     control = inlet(p, 35, 60)
     left_in = inlet(p, 170, 60, signal=True)
     right_in = inlet(p, 280, 60, signal=True)
     master_controls = (
         "eq_low", "eq_lowmid", "eq_highmid", "eq_high", "eq_bypass", "master_trim_db",
-        "compressor_threshold_db", "compressor_ratio", "compressor_attack_rate",
-        "compressor_release_rate", "compressor_makeup_db", "compressor_bypass",
     )
     router = route(p, master_controls, 35, 105, 1080)
     p.connect(control, router)
@@ -2052,74 +2234,89 @@ def make_mix_master() -> dict[str, Any]:
         p.connect(blend, trim, 0, 0)
         p.connect(trim_line, trim, 0, 1)
         masters.append(trim)
-    compressor = p.new("omx.comp~", 500, 700, 105, numinlets=2, numoutlets=4)
-    compressor_defaults_bang = p.new("loadbang", 35, 775, 60, numinlets=1, numoutlets=1)
-    compressor_defaults = p.message(
+    left = outlet(p, 470, 820, signal=True)
+    right = outlet(p, 650, 820, signal=True)
+    p.connect(masters[0], left)
+    p.connect(masters[1], right)
+    return p.document(presentation=True)
+
+
+def make_mix_master() -> dict[str, Any]:
+    """Generated safety dynamics only; user tone shaping lives in vehicle_bus_eq~."""
+    p = Patcher(920, 520)
+    p.comment("GENERATED SAFETY MASTER — compressor, makeup, limiter and final ceiling", 25, 15, 720)
+    control = inlet(p, 35, 60)
+    left_in = inlet(p, 175, 60, signal=True)
+    right_in = inlet(p, 285, 60, signal=True)
+    names = (
+        "compressor_threshold_db", "compressor_ratio", "compressor_attack_rate",
+        "compressor_release_rate", "compressor_makeup_db", "compressor_bypass",
+    )
+    router = route(p, names, 35, 105, 790)
+    p.connect(control, router)
+    compressor = p.new("omx.comp~", 360, 270, 105, numinlets=2, numoutlets=4)
+    defaults_bang = p.new("loadbang", 35, 155, 60, numinlets=1, numoutlets=1)
+    defaults = p.message(
         "agcEnabled 1, agcThreshold -12., ratio 2., attack 85., release 35., "
         "smoothGain 35., range 0, channelCoupling 0, dualBandEnabled 0, "
         "limEnabled 0, ngEnabled 0, sidechainFilterEnabled 0, delay 0, "
         "progressiveRelease 0, bypass 0",
-        105, 775, 470,
+        105, 155, 650,
     )
-    p.connect(compressor_defaults_bang, compressor_defaults)
-    p.connect(compressor_defaults, compressor)
-
-    compressor_specs = (
+    p.connect(defaults_bang, defaults)
+    p.connect(defaults, compressor)
+    p.connect(left_in, compressor, 0, 0)
+    p.connect(right_in, compressor, 0, 1)
+    specs = (
         ("clip -36. 0.", "prepend agcThreshold", -12.0),
         ("clip 1. 50.", "prepend ratio", 2.0),
         ("clip 0. 150.", "prepend attack", 85.0),
         ("clip 0. 150.", "prepend release", 35.0),
     )
-    for offset, (clip_text, prepend_text, default) in enumerate(compressor_specs):
-        x = 600 + offset * 140
-        bounded = p.new(clip_text, x, 775, 95, numinlets=3, numoutlets=1)
-        named = p.new(prepend_text, x, 810, 110, numinlets=1, numoutlets=1)
-        initial = p.new(f"loadmess {default:g}", x, 845, 95, numinlets=1, numoutlets=1)
-        p.connect(router, bounded, 6 + offset)
+    for index, (clip_text, prepend_text, default) in enumerate(specs):
+        x = 35 + index * 200
+        bounded = p.new(clip_text, x, 205, 95, numinlets=3, numoutlets=1)
+        named = p.new(prepend_text, x, 240, 150, numinlets=1, numoutlets=1)
+        initial = p.new(f"loadmess {default:g}", x, 275, 95, numinlets=1, numoutlets=1)
+        p.connect(router, bounded, index)
         p.connect(initial, bounded)
         p.connect(bounded, named)
         p.connect(named, compressor)
-
-    bypass_clip = p.new("clip 0 1", 1035, 775, 65, numinlets=3, numoutlets=1)
-    bypass_named = p.new("prepend bypass", 1035, 810, 100, numinlets=1, numoutlets=1)
-    bypass_initial = p.new("loadmess 0", 1035, 845, 80, numinlets=1, numoutlets=1)
-    p.connect(router, bypass_clip, 11)
-    p.connect(bypass_initial, bypass_clip)
-    p.connect(bypass_clip, bypass_named)
-    p.connect(bypass_named, compressor)
-
-    makeup_clip = p.new("clip -12. 12.", 35, 815, 85, numinlets=3, numoutlets=1)
-    makeup_amp = p.new("expr pow(10.,$f1/20.)", 130, 815, 150, numinlets=1, numoutlets=1)
-    makeup_pack = p.new("pack 0. 50", 290, 815, 85, numinlets=2, numoutlets=1)
-    makeup_line = p.new("line~", 385, 815, 50, numinlets=2, numoutlets=2)
-    makeup_initial = p.new("loadmess 0.", 35, 850, 85, numinlets=1, numoutlets=1)
-    p.connect(router, makeup_clip, 10)
+    makeup_clip = p.new("clip -12. 12.", 35, 325, 85, numinlets=3, numoutlets=1)
+    makeup_amp = p.new("expr pow(10.,$f1/20.)", 130, 325, 150, numinlets=1, numoutlets=1)
+    makeup_pack = p.new("pack 0. 50", 290, 325, 85, numinlets=2, numoutlets=1)
+    makeup_line = p.new("line~", 385, 325, 50, numinlets=2, numoutlets=2)
+    makeup_initial = p.new("loadmess 0.", 35, 360, 85, numinlets=1, numoutlets=1)
+    p.connect(router, makeup_clip, 4)
     p.connect(makeup_initial, makeup_clip)
     p.connect(makeup_clip, makeup_amp)
     p.connect(makeup_amp, makeup_pack)
     p.connect(makeup_pack, makeup_line)
-
-    compressed: list[str] = []
-    for channel in (0, 1):
-        gain = p.new("*~", 435 + channel * 265, 745, 40, numinlets=2, numoutlets=1)
+    bypass_clip = p.new("clip 0 1", 500, 325, 65, numinlets=3, numoutlets=1)
+    bypass_named = p.new("prepend bypass", 575, 325, 100, numinlets=1, numoutlets=1)
+    bypass_initial = p.new("loadmess 0", 685, 325, 80, numinlets=1, numoutlets=1)
+    p.connect(router, bypass_clip, 5)
+    p.connect(bypass_initial, bypass_clip)
+    p.connect(bypass_clip, bypass_named)
+    p.connect(bypass_named, compressor)
+    gains = []
+    for channel, x in ((0, 285), (1, 535)):
+        gain = p.new("*~", x, 370, 40, numinlets=2, numoutlets=1)
         p.connect(compressor, gain, channel, 0)
         p.connect(makeup_line, gain, 0, 1)
-        compressed.append(gain)
-
-    limiter = p.new("omx.peaklim~", 500, 790, 105, numinlets=2, numoutlets=4)
-    clip_l = p.new("clip~ -0.891 0.891", 365, 830, 130, numinlets=3, numoutlets=1)
-    clip_r = p.new("clip~ -0.891 0.891", 630, 830, 130, numinlets=3, numoutlets=1)
-    left = outlet(p, 470, 865, signal=True)
-    right = outlet(p, 650, 865, signal=True)
-    p.connect(masters[0], compressor, 0, 0)
-    p.connect(masters[1], compressor, 0, 1)
-    p.connect(compressed[0], limiter, 0, 0)
-    p.connect(compressed[1], limiter, 0, 1)
+        gains.append(gain)
+    limiter = p.new("omx.peaklim~", 360, 410, 105, numinlets=2, numoutlets=4)
+    clip_l = p.new("clip~ -0.891 0.891", 235, 450, 130, numinlets=3, numoutlets=1)
+    clip_r = p.new("clip~ -0.891 0.891", 510, 450, 130, numinlets=3, numoutlets=1)
+    left = outlet(p, 360, 490, signal=True)
+    right = outlet(p, 555, 490, signal=True)
+    p.connect(gains[0], limiter, 0, 0)
+    p.connect(gains[1], limiter, 0, 1)
     p.connect(limiter, clip_l, 0, 0)
     p.connect(limiter, clip_r, 1, 0)
     p.connect(clip_l, left)
     p.connect(clip_r, right)
-    return p.document(presentation=True)
+    return p.document()
 
 
 def make_profile_powertrain(profile: str) -> dict[str, Any]:
@@ -2133,8 +2330,16 @@ def make_profile_powertrain(profile: str) -> dict[str, Any]:
         else ("rpm", "throttle", "load", "accel", "aggression", "brightness", "body", "texture")
     )
     fuel_names = ("engine_running", "combustion_gain", "shift_cut") if profile != "ev" else ()
-    profile_names: tuple[str, ...] = ()
-    names = tonal_names + fuel_names + profile_names + ("powertrain_level_db",)
+    common_realism_names = (
+        "air_detail", "cycle_irregularity", "stereo_width",
+        "throttle_loudness_depth", "saturation",
+    )
+    profile_names = (
+        ("torque_ripple_level", "gear_mesh_level", "electrical_detail")
+        if profile == "ev"
+        else ("combustion_pulse", "intake_detail", "exhaust_detail", "residual_detail")
+    )
+    names = tonal_names + fuel_names + common_realism_names + profile_names + ("powertrain_level_db",)
     router = route(p, names, 35, 105, 860)
     p.connect(control, router)
     gen = p.new(
@@ -2170,6 +2375,21 @@ def make_profile_powertrain(profile: str) -> dict[str, Any]:
         bounded = p.new("clip 0. 1.", x, 250, 75, numinlets=3, numoutlets=1)
         named = p.message(f"{name} $1", x, 285, 125)
         p.connect(router, bounded, len(tonal_names) + offset)
+        p.connect(bounded, named)
+        p.connect(named, gen)
+
+    realism_bounds = {
+        **{name: (0.0, 1.0) for name in common_realism_names + profile_names},
+        "throttle_loudness_depth": (0.0, 8.0),
+    }
+    realism_start = len(tonal_names) + len(fuel_names)
+    for offset, name in enumerate(common_realism_names + profile_names):
+        low, high = realism_bounds[name]
+        x = 35 + (offset % 6) * 170
+        y = 335 + (offset // 6) * 80
+        bounded = p.new(f"clip {low:g} {high:g}", x, y, 90, numinlets=3, numoutlets=1)
+        named = p.new(f"prepend {name}", x, y + 35, 145, numinlets=1, numoutlets=1)
+        p.connect(router, bounded, realism_start + offset)
         p.connect(bounded, named)
         p.connect(named, gen)
 
@@ -4692,6 +4912,21 @@ def make_profile_main(profile: str, root: Path | None = None) -> dict[str, Any]:
     p.connect(soundscape_solo, soundscape_solo_named)
     p.connect(soundscape_solo_named, engine)
     p.connect(soundscape_solo_default, soundscape_solo)
+    design_windows = p.new("pcontrol", 1410, 280, 70, numinlets=1, numoutlets=0)
+    open_dna = p.message("Open Sound DNA", 1180, 230, 125)
+    open_dna_file = p.message(
+        f"loadunique Patcher:/patchers/{profile}_sound_dna~.maxpat",
+        1180, 260, 220,
+    )
+    open_soundscape = p.message("Open Soundscape BEAP", 1180, 300, 160)
+    open_soundscape_file = p.message(
+        "loadunique Patcher:/patchers/cinematic_soundscape_beap~.maxpat",
+        1180, 330, 260,
+    )
+    p.connect(open_dna, open_dna_file)
+    p.connect(open_dna_file, design_windows)
+    p.connect(open_soundscape, open_soundscape_file)
+    p.connect(open_soundscape_file, design_windows)
 
     if profile == "ev":
         p.comment("Legacy EV macro preset", 330, 315, 150)
@@ -5102,110 +5337,70 @@ LEGACY_GEN_CODE = {
 # solely as migration context and cannot leak into generated project artifacts.
 GEN_CODE: dict[str, str] = {}
 GEN_CODE.update({
-    "ev_powertrain": """// Phase-coherent EV motor: stable low fundamental with harmonic upper structure.
+    "ev_powertrain": """// Procedural EV motor: RPM owns pitch; pedal owns bounded torque loudness.
 Param rpm(650, min=0, max=10000);
 Param throttle(0, min=0, max=1);
 Param load(0, min=-1, max=1);
 Param aggression(0.25, min=0, max=1);
-Param brightness(0.7, min=0, max=1);
-Param body(0.35, min=0, max=1);
+Param brightness(0.72, min=0, max=1);
+Param body(0.34, min=0, max=1);
 Param texture(0.2, min=0, max=1);
+Param air_detail(0.58, min=0, max=1);
+Param cycle_irregularity(0.18, min=0, max=1);
+Param stereo_width(0.68, min=0, max=1);
+Param throttle_loudness_depth(4.5, min=0, max=8);
+Param saturation(0.2, min=0, max=1);
+Param torque_ripple_level(0.48, min=0, max=1);
+Param gear_mesh_level(0.42, min=0, max=1);
+Param electrical_detail(0.64, min=0, max=1);
 r = slide(clamp(rpm, 0, 10000), 1200, 1800);
 t = slide(clamp(throttle, 0, 1), 700, 1400);
 l = abs(clamp(load, -1, 1));
 f = clamp(55 + r * 0.052, 55, 760);
-a = clamp(0.03 + t * 0.20 + l * 0.05, 0, 0.28);
-electrical_motion = 0.97 + cycle(clamp(r / 240, 0.35, 30)) * (0.012 + t * 0.018);
-torque_ripple = cycle(clamp(f * 0.5, 27.5, 380)) * (0.035 + l * 0.035) * (1 - clamp(r / 8500, 0, 1) * 0.55);
-gear_mesh = cycle(clamp(f * 1.5, 82.5, 1140)) * (0.026 + t * 0.028) + cycle(clamp(f * 2.25, 124, 1710)) * 0.018;
+throttle_gain = pow(10, (t * throttle_loudness_depth) / 20);
+a = clamp((0.045 + l * 0.028) * throttle_gain, 0, 0.16);
+slow_motion = cycle(clamp(r / 240, 0.35, 30)) * cycle_irregularity;
+electrical_motion = 0.985 + slow_motion * 0.018;
+torque_ripple = cycle(clamp(f * 0.5, 27.5, 380)) * (0.035 + l * 0.035) * torque_ripple_level;
+gear_l = cycle(clamp(f * 1.49, 82, 1140)) * 0.045 + cycle(clamp(f * 2.23, 124, 1710)) * 0.026;
+gear_r = cycle(clamp(f * 1.53, 84, 1160)) * 0.045 + cycle(clamp(f * 2.29, 126, 1750)) * 0.026;
 coherent_low = cycle(f) * (0.58 + body * 0.18);
 h2 = cycle(clamp(f * 2, 110, 1520)) * (0.08 + body * 0.05);
-h3 = cycle(clamp(f * 3, 165, 2280)) * (0.035 + texture * 0.055);
-inverter = cycle(clamp(f * (2.8 + brightness), 150, 4200)) * (0.10 + texture * 0.14);
-sheen_l = cycle(clamp(f * (5.2 + brightness * 0.4), 300, 6200)) * aggression * 0.025;
-sheen_r = cycle(clamp(f * (6.2 + brightness * 0.4), 360, 7200)) * aggression * 0.025;
-base = (coherent_low + torque_ripple + h2 + h3 + gear_mesh + inverter) * electrical_motion;
-right_base = (coherent_low + torque_ripple * 0.995 + h2 * 0.99 + h3 * 1.02 + gear_mesh * 1.015 + inverter * 0.98) * electrical_motion;
-left_drive = (base + sheen_l) * a;
-right_drive = (right_base + sheen_r) * a;
-out1 = tanh(left_drive * 1.2) / 1.2;
-out2 = tanh(right_drive * 1.2) / 1.2;""",
-    "v12_powertrain": """// Four-stroke V12: two phase-locked six-cylinder banks and load-shaped combustion residual.
-Param rpm(780, min=0, max=10000);
-Param throttle(0, min=0, max=1);
-Param load(0, min=-1, max=1);
-Param accel(0, min=-1, max=1);
-Param aggression(0.6, min=0, max=1);
-Param brightness(0.75, min=0, max=1);
-Param body(0.7, min=0, max=1);
-Param texture(0.5, min=0, max=1);
-Param engine_running(0, min=0, max=1);
-Param combustion_gain(0, min=0, max=1);
-Param shift_cut(1, min=0, max=1);
-r = slide(clamp(rpm, 0, 10000), 700, 1100);
-t = slide(clamp(throttle, 0, 1), 420, 850);
-l = max(clamp(load, -1, 1), 0);
-motion = slide(clamp(accel, -1, 1), 320, 900);
-accel_drive = max(motion, 0);
-decel_drive = max(-motion, 0);
-run = slide(clamp(engine_running * combustion_gain * shift_cut, 0, 1), 480, 1900);
-speedmix = clamp((r - 780) / 8220, 0, 1);
-idle_weight = 1 - clamp((r - 780) / 1800, 0, 1);
-events = 6;
-crank = clamp(r / 60, 6, 170);
-bank_events = 3;
-cycle_variation = clamp(cycle(crank * 0.5) * 0.020 + cycle(crank * 1.5) * 0.008, -0.03, 0.03);
-bank_fire = clamp(crank * bank_events * (1 + cycle_variation), 18, 525);
-fire = bank_fire * 2;
-bank_phase_l = phasor(bank_fire);
-bank_phase_r = bank_phase_l + 0.5;
-bank_phase_r = bank_phase_r - floor(bank_phase_r);
-pulse_curve_l = pow(0.5 + 0.5 * cos(bank_phase_l * 6.283185307179586), 4);
-pulse_curve_r = pow(0.5 + 0.5 * cos(bank_phase_r * 6.283185307179586), 4);
-pulse_l = pulse_curve_l - 0.2734375;
-pulse_r = pulse_curve_r - 0.2734375;
-cylinder = 0.97 + cycle(crank * 0.5) * (0.020 + speedmix * 0.035) + cycle(crank * 1.5) * (0.010 + speedmix * 0.020);
-idle = 0.205 + body * 0.050;
-a = clamp(idle + t * 0.27 + l * 0.14 + accel_drive * 0.045 - decel_drive * 0.025, 0, 0.64) * run;
-sub = cycle(clamp(fire * 0.5, 24, 520)) * (0.060 + body * 0.050 + decel_drive * 0.018) * (1-speedmix*0.55);
-h1 = cycle(fire) * (0.16 + body * 0.08);
-h2 = cycle(clamp(fire * 2, 45, 3200)) * (0.0945 + brightness * 0.108 + speedmix * 0.081);
-h3 = cycle(clamp(fire * 3, 55, 5200)) * (0.05625 + texture * 0.06875 + speedmix * 0.0625);
-h4 = cycle(clamp(fire * 4, 70, 7000)) * speedmix * (0.025 + brightness * 0.050);
-h6 = cycle(clamp(fire * 6, 90, 9800)) * brightness * speedmix * 0.025;
-h8 = cycle(clamp(fire * 8, 110, 12000)) * texture * speedmix * 0.014;
-sideband_low = cycle(clamp(fire * 0.83, 35, 1500)) * (0.018 + speedmix * 0.075);
-sideband_high = cycle(clamp(fire * 1.17, 40, 1900)) * (0.018 + speedmix * 0.072);
-order23 = cycle(clamp(fire * 2.33, 60, 4100)) * speedmix * 0.045;
-order27 = cycle(clamp(fire * 2.67, 70, 4700)) * speedmix * 0.040;
-intake = cycle(clamp(fire * 1.5, 45, 2200)) * t * (0.020 + texture * 0.034 + accel_drive * 0.030);
-overrun = cycle(clamp(fire * 0.75, 32, 1050)) * decel_drive * (0.030 + body * 0.020) * (1-speedmix*0.35);
-crankcase_body = (cycle(clamp(crank * 2.6, 28, 260)) * 0.040 + cycle(clamp(crank * 3.8, 38, 420)) * 0.024) * body * idle_weight;
-manifold = cycle(clamp(fire * 0.42, 32, 950)) * (0.018 + t * 0.032 + l * 0.020) * (0.65 + idle_weight * 0.35);
-residual_gate_l = clamp(abs(pulse_l) * 1.7, 0, 1);
-residual_gate_r = clamp(abs(pulse_r) * 1.7, 0, 1);
-residual_l = (cycle(clamp(fire * 1.33, 40, 2200)) * 0.040 + cycle(clamp(fire * 2.17, 65, 4200)) * 0.024) * residual_gate_l * (0.35 + texture * 0.65);
-residual_r = (cycle(clamp(fire * 1.33, 40, 2200)) * 0.040 + cycle(clamp(fire * 2.17, 65, 4200)) * 0.024) * residual_gate_r * (0.35 + texture * 0.65);
-bank_l = (pulse_l * 0.88 + pulse_r * 0.12) * cylinder * (0.48 + body * 0.16) * (1 - speedmix * 0.30);
-bank_r = (pulse_r * 0.88 + pulse_l * 0.12) * cylinder * (0.48 + body * 0.16) * (1 - speedmix * 0.30);
-resonance = sub + crankcase_body + manifold + h1 + sideband_low + sideband_high + h2 + order23 + order27 + h3 + h4 + h6 + h8 + intake + overrun;
-left_drive = (bank_l + resonance + residual_l) * a * (0.86 + aggression * 0.14);
-right_drive = (bank_r + resonance + residual_r) * a * (0.86 + aggression * 0.14);
-sat_drive = 1.08 + speedmix * 0.18 + t * 0.09;
+h3_l = cycle(clamp(f * 3.03, 165, 2320)) * (0.035 + texture * 0.055);
+h3_r = cycle(clamp(f * 2.97, 165, 2260)) * (0.035 + texture * 0.055);
+inverter_l = cycle(clamp(f * (2.81 + brightness), 150, 4400)) * (0.08 + electrical_detail * 0.16);
+inverter_r = cycle(clamp(f * (2.93 + brightness), 155, 4600)) * (0.08 + electrical_detail * 0.16);
+air_l = (cycle(clamp(f * 5.37, 300, 7800)) + cycle(clamp(f * 7.11, 420, 11200)) * 0.55) * air_detail * 0.035;
+air_r = (cycle(clamp(f * 5.61, 320, 8100)) + cycle(clamp(f * 6.83, 400, 10800)) * 0.55) * air_detail * 0.035;
+shared = coherent_low + torque_ripple + h2;
+side_l = h3_l + gear_l * gear_mesh_level + inverter_l + air_l;
+side_r = h3_r + gear_r * gear_mesh_level + inverter_r + air_r;
+left_drive = (shared + side_l * (0.45 + stereo_width * 0.55)) * electrical_motion * a;
+right_drive = (shared + side_r * (0.45 + stereo_width * 0.55)) * electrical_motion * a;
+sat_drive = 1 + saturation * 0.85;
 out1 = tanh(left_drive * sat_drive) / sat_drive;
 out2 = tanh(right_drive * sat_drive) / sat_drive;""",
-    "v10_powertrain": """// Four-stroke V10: phase-locked five-cylinder banks with odd-order intake colour.
+    "v10_powertrain": """// Procedural V10: independent five-cylinder banks, bounded pedal loudness and intake/exhaust colour.
 Param rpm(740, min=0, max=10000);
 Param throttle(0, min=0, max=1);
 Param load(0, min=-1, max=1);
 Param accel(0, min=-1, max=1);
 Param aggression(0.9, min=0, max=1);
-Param brightness(0.65, min=0, max=1);
-Param body(0.85, min=0, max=1);
-Param texture(0.85, min=0, max=1);
+Param brightness(0.66, min=0, max=1);
+Param body(0.84, min=0, max=1);
+Param texture(0.86, min=0, max=1);
 Param engine_running(0, min=0, max=1);
 Param combustion_gain(0, min=0, max=1);
 Param shift_cut(1, min=0, max=1);
+Param air_detail(0.74, min=0, max=1);
+Param cycle_irregularity(0.52, min=0, max=1);
+Param stereo_width(0.72, min=0, max=1);
+Param throttle_loudness_depth(4.5, min=0, max=8);
+Param saturation(0.36, min=0, max=1);
+Param combustion_pulse(0.88, min=0, max=1);
+Param intake_detail(0.82, min=0, max=1);
+Param exhaust_detail(0.72, min=0, max=1);
+Param residual_detail(0.78, min=0, max=1);
 r = slide(clamp(rpm, 0, 10000), 620, 980);
 t = slide(clamp(throttle, 0, 1), 360, 760);
 l = max(clamp(load, -1, 1), 0);
@@ -5215,50 +5410,108 @@ decel_drive = max(-motion, 0);
 run = slide(clamp(engine_running * combustion_gain * shift_cut, 0, 1), 420, 1650);
 speedmix = clamp((r - 740) / 7560, 0, 1);
 idle_weight = 1 - clamp((r - 740) / 1650, 0, 1);
-events = 5;
 crank = clamp(r / 60, 6, 170);
-bank_events = 2.5;
-cycle_variation = clamp(cycle(crank * 0.5) * 0.024 + cycle(crank * 2.5) * 0.006, -0.03, 0.03);
-bank_fire = clamp(crank * bank_events * (1 + cycle_variation), 16, 450);
+cycle_variation = cycle(crank * 0.5) * (0.006 + cycle_irregularity * 0.022) + cycle(crank * 2.5) * cycle_irregularity * 0.008;
+bank_fire = clamp(crank * 2.5 * (1 + cycle_variation), 16, 450);
 fire = bank_fire * 2;
-bank_phase_l = phasor(bank_fire);
-bank_phase_r = bank_phase_l + 0.5;
-bank_phase_r = bank_phase_r - floor(bank_phase_r);
-pulse_curve_l = pow(0.5 + 0.5 * cos(bank_phase_l * 6.283185307179586), 4);
-pulse_curve_r = pow(0.5 + 0.5 * cos(bank_phase_r * 6.283185307179586), 4);
-pulse_l = pulse_curve_l - 0.2734375;
-pulse_r = pulse_curve_r - 0.2734375;
-cylinder = 0.95 + cycle(crank * 0.5) * (0.030 + speedmix * 0.045) + cycle(crank * 2.5) * (0.016 + speedmix * 0.024);
-idle = 0.225 + body * 0.055;
-a = clamp(idle + t * 0.29 + l * 0.16 + accel_drive * 0.055 - decel_drive * 0.030, 0, 0.67) * run;
-sub = cycle(clamp(fire * 0.5, 24, 460)) * (0.072 + body * 0.060 + decel_drive * 0.022) * (1-speedmix*0.50);
-h1 = cycle(fire) * (0.17 + aggression * 0.08);
-h15 = cycle(clamp(fire * 1.5, 45, 1800)) * (0.040 + texture * 0.050);
-h2 = cycle(clamp(fire * 2, 55, 3500)) * (0.08775 + brightness * 0.0945 + speedmix * 0.07425);
-h25 = cycle(clamp(fire * 2.5, 65, 5200)) * (0.055 + texture * 0.075 + speedmix * 0.060);
-h3 = cycle(clamp(fire * 3, 75, 6500)) * (0.0425 + aggression * 0.050 + speedmix * 0.050);
-h5 = cycle(clamp(fire * 5, 95, 9000)) * brightness * speedmix * 0.040;
-h7 = cycle(clamp(fire * 7, 120, 12000)) * texture * speedmix * 0.020;
-sideband_low = cycle(clamp(fire * 0.81, 32, 1450)) * (0.022 + speedmix * 0.080);
-sideband_high = cycle(clamp(fire * 1.19, 40, 1900)) * (0.022 + speedmix * 0.078);
-order22 = cycle(clamp(fire * 2.20, 60, 4000)) * speedmix * 0.070;
-order28 = cycle(clamp(fire * 2.80, 75, 5100)) * speedmix * 0.060;
-intake_fm = fire * 1.25 * (1 + cycle(crank) * 0.008);
-intake = cycle(clamp(intake_fm, 45, 2600)) * t * (0.030 + texture * 0.048 + accel_drive * 0.042);
-exhaust_load = cycle(clamp(fire * 0.67, 32, 1500)) * accel_drive * (0.035 + body * 0.030) * (1-speedmix*0.25);
-overrun = cycle(clamp(fire * 0.75, 32, 1250)) * decel_drive * (0.040 + body * 0.025) * (1-speedmix*0.30);
-crankcase_body = (cycle(clamp(crank * 2.55, 28, 260)) * 0.052 + cycle(clamp(crank * 3.65, 38, 430)) * 0.030) * body * idle_weight;
-manifold = cycle(clamp(fire * 0.38, 32, 980)) * (0.024 + t * 0.040 + l * 0.026) * (0.68 + idle_weight * 0.32);
-residual_gate_l = clamp(abs(pulse_l) * 1.8, 0, 1);
-residual_gate_r = clamp(abs(pulse_r) * 1.8, 0, 1);
-residual_l = (cycle(clamp(fire * 1.37, 40, 2300)) * 0.045 + cycle(clamp(fire * 2.23, 65, 4300)) * 0.028) * residual_gate_l * (0.30 + texture * 0.70);
-residual_r = (cycle(clamp(fire * 1.37, 40, 2300)) * 0.045 + cycle(clamp(fire * 2.23, 65, 4300)) * 0.028) * residual_gate_r * (0.30 + texture * 0.70);
-bank_l = (pulse_l * 0.86 + pulse_r * 0.14) * cylinder * (0.50 + body * 0.16) * (1 - speedmix * 0.32);
-bank_r = (pulse_r * 0.86 + pulse_l * 0.14) * cylinder * (0.50 + body * 0.16) * (1 - speedmix * 0.32);
-resonance = sub + crankcase_body + manifold + h1 + sideband_low + sideband_high + h15 + h2 + order22 + h25 + order28 + h3 + h5 + h7 + intake + exhaust_load + overrun;
-left_drive = (bank_l + resonance + residual_l) * a * (0.88 + aggression * 0.12);
-right_drive = (bank_r + resonance + residual_r) * a * (0.88 + aggression * 0.12);
-sat_drive = 1.10 + speedmix * 0.20 + t * 0.12;
+phase_l = phasor(bank_fire);
+phase_r = phase_l + 0.5;
+phase_r = phase_r - floor(phase_r);
+pulse_l = pow(0.5 + 0.5 * cos(phase_l * 6.283185307179586), 4) - 0.2734375;
+pulse_r = pow(0.5 + 0.5 * cos(phase_r * 6.283185307179586), 4) - 0.2734375;
+throttle_gain = pow(10, (t * throttle_loudness_depth) / 20);
+a = clamp((0.22 + body * 0.055 + l * 0.045 + accel_drive * 0.025 - decel_drive * 0.020) * throttle_gain, 0, 0.58) * run;
+cylinder_l = 0.95 + cycle(crank * 0.5) * (0.025 + cycle_irregularity * 0.040) + cycle(crank * 2.5) * 0.018;
+cylinder_r = 0.95 + cycle(crank * 0.53) * (0.025 + cycle_irregularity * 0.040) + cycle(crank * 2.47) * 0.018;
+idle_body = (cycle(clamp(crank * 2.55, 28, 260)) * 0.052 + cycle(clamp(crank * 3.65, 38, 430)) * 0.030) * body * idle_weight;
+crankcase_body = idle_body;
+manifold_l = cycle(clamp(fire * 0.38, 32, 980)) * (0.022 + l * 0.026) * (0.68 + idle_weight * 0.32);
+manifold_r = cycle(clamp(fire * 0.405, 34, 1030)) * (0.022 + l * 0.026) * (0.68 + idle_weight * 0.32);
+manifold = (manifold_l + manifold_r) * 0.5;
+shared_low = cycle(clamp(fire * 0.5, 24, 460)) * (0.075 + body * 0.060) * (1-speedmix*0.50) + idle_body;
+orders_l = cycle(fire) * 0.18 + cycle(clamp(fire * 1.5, 45, 1800)) * 0.072 + cycle(clamp(fire * 2.5, 65, 5200)) * (0.065 + texture * 0.070);
+orders_r = cycle(clamp(fire * 1.02, 35, 930)) * 0.18 + cycle(clamp(fire * 1.47, 45, 1800)) * 0.072 + cycle(clamp(fire * 2.56, 65, 5300)) * (0.065 + texture * 0.070);
+bright_l = (cycle(clamp(fire * 3.17, 90, 7200)) * 0.055 + cycle(clamp(fire * 5.13, 140, 11800)) * 0.032) * air_detail * (0.35 + speedmix * 0.65);
+bright_r = (cycle(clamp(fire * 3.31, 95, 7500)) * 0.055 + cycle(clamp(fire * 4.87, 135, 11500)) * 0.032) * air_detail * (0.35 + speedmix * 0.65);
+intake_l = cycle(clamp(fire * 1.23, 45, 2700)) * intake_detail * (0.028 + accel_drive * 0.050);
+intake_r = cycle(clamp(fire * 1.29, 45, 2800)) * intake_detail * (0.028 + accel_drive * 0.050);
+exhaust_l = cycle(clamp(fire * 0.67, 32, 1500)) * exhaust_detail * (accel_drive * 0.050 + decel_drive * 0.032);
+exhaust_r = cycle(clamp(fire * 0.71, 34, 1580)) * exhaust_detail * (accel_drive * 0.050 + decel_drive * 0.032);
+residual_l = (cycle(clamp(fire * 1.37, 40, 2300)) * 0.050 + cycle(clamp(fire * 2.23, 65, 4300)) * 0.032) * abs(pulse_l) * residual_detail;
+residual_r = (cycle(clamp(fire * 1.43, 42, 2400)) * 0.050 + cycle(clamp(fire * 2.17, 65, 4200)) * 0.032) * abs(pulse_r) * residual_detail;
+bank_l = pulse_l * cylinder_l * (0.42 + combustion_pulse * 0.24);
+bank_r = pulse_r * cylinder_r * (0.42 + combustion_pulse * 0.24);
+side_gain = 0.45 + stereo_width * 0.55;
+left_drive = (shared_low + bank_l + (manifold_l + orders_l + bright_l + intake_l + exhaust_l + residual_l) * side_gain) * a * (0.88 + aggression * 0.12);
+right_drive = (shared_low + bank_r + (manifold_r + orders_r + bright_r + intake_r + exhaust_r + residual_r) * side_gain) * a * (0.88 + aggression * 0.12);
+sat_drive = 1 + saturation * 0.95;
+out1 = tanh(left_drive * sat_drive) / sat_drive;
+out2 = tanh(right_drive * sat_drive) / sat_drive;""",
+    "v12_powertrain": """// Procedural V12: smooth independent six-cylinder banks with high-order air.
+Param rpm(780, min=0, max=10000);
+Param throttle(0, min=0, max=1);
+Param load(0, min=-1, max=1);
+Param accel(0, min=-1, max=1);
+Param aggression(0.62, min=0, max=1);
+Param brightness(0.78, min=0, max=1);
+Param body(0.72, min=0, max=1);
+Param texture(0.52, min=0, max=1);
+Param engine_running(0, min=0, max=1);
+Param combustion_gain(0, min=0, max=1);
+Param shift_cut(1, min=0, max=1);
+Param air_detail(0.68, min=0, max=1);
+Param cycle_irregularity(0.34, min=0, max=1);
+Param stereo_width(0.64, min=0, max=1);
+Param throttle_loudness_depth(4.5, min=0, max=8);
+Param saturation(0.28, min=0, max=1);
+Param combustion_pulse(0.80, min=0, max=1);
+Param intake_detail(0.68, min=0, max=1);
+Param exhaust_detail(0.62, min=0, max=1);
+Param residual_detail(0.64, min=0, max=1);
+r = slide(clamp(rpm, 0, 10000), 700, 1100);
+t = slide(clamp(throttle, 0, 1), 420, 850);
+l = max(clamp(load, -1, 1), 0);
+motion = slide(clamp(accel, -1, 1), 320, 900);
+accel_drive = max(motion, 0);
+decel_drive = max(-motion, 0);
+run = slide(clamp(engine_running * combustion_gain * shift_cut, 0, 1), 480, 1900);
+speedmix = clamp((r - 780) / 8220, 0, 1);
+idle_weight = 1 - clamp((r - 780) / 1800, 0, 1);
+crank = clamp(r / 60, 6, 170);
+cycle_variation = cycle(crank * 0.5) * (0.004 + cycle_irregularity * 0.016) + cycle(crank * 1.5) * cycle_irregularity * 0.006;
+bank_fire = clamp(crank * 3 * (1 + cycle_variation), 18, 525);
+fire = bank_fire * 2;
+phase_l = phasor(bank_fire);
+phase_r = phase_l + 0.5;
+phase_r = phase_r - floor(phase_r);
+pulse_l = pow(0.5 + 0.5 * cos(phase_l * 6.283185307179586), 4) - 0.2734375;
+pulse_r = pow(0.5 + 0.5 * cos(phase_r * 6.283185307179586), 4) - 0.2734375;
+throttle_gain = pow(10, (t * throttle_loudness_depth) / 20);
+a = clamp((0.205 + body * 0.050 + l * 0.040 + accel_drive * 0.022 - decel_drive * 0.016) * throttle_gain, 0, 0.54) * run;
+cylinder_l = 0.97 + cycle(crank * 0.5) * (0.018 + cycle_irregularity * 0.030) + cycle(crank * 1.5) * 0.012;
+cylinder_r = 0.97 + cycle(crank * 0.48) * (0.018 + cycle_irregularity * 0.030) + cycle(crank * 1.53) * 0.012;
+idle_body = (cycle(clamp(crank * 2.6, 28, 260)) * 0.040 + cycle(clamp(crank * 3.8, 38, 420)) * 0.024) * body * idle_weight;
+crankcase_body = idle_body;
+manifold_l = cycle(clamp(fire * 0.42, 32, 950)) * (0.018 + l * 0.020) * (0.65 + idle_weight * 0.35);
+manifold_r = cycle(clamp(fire * 0.445, 34, 1000)) * (0.018 + l * 0.020) * (0.65 + idle_weight * 0.35);
+manifold = (manifold_l + manifold_r) * 0.5;
+shared_low = cycle(clamp(fire * 0.5, 24, 520)) * (0.062 + body * 0.050) * (1-speedmix*0.55) + idle_body;
+orders_l = cycle(fire) * 0.17 + cycle(clamp(fire * 2.0, 45, 3200)) * (0.10 + brightness * 0.10) + cycle(clamp(fire * 3.0, 55, 5200)) * (0.06 + texture * 0.07);
+orders_r = cycle(clamp(fire * 1.01, 35, 1060)) * 0.17 + cycle(clamp(fire * 1.97, 45, 3150)) * (0.10 + brightness * 0.10) + cycle(clamp(fire * 3.07, 55, 5350)) * (0.06 + texture * 0.07);
+bright_l = (cycle(clamp(fire * 4.11, 90, 8000)) * 0.050 + cycle(clamp(fire * 6.17, 130, 12000)) * 0.026) * air_detail * (0.30 + speedmix * 0.70);
+bright_r = (cycle(clamp(fire * 3.89, 85, 7700)) * 0.050 + cycle(clamp(fire * 5.83, 125, 11800)) * 0.026) * air_detail * (0.30 + speedmix * 0.70);
+intake_l = cycle(clamp(fire * 1.49, 45, 2500)) * intake_detail * (0.020 + accel_drive * 0.038);
+intake_r = cycle(clamp(fire * 1.53, 45, 2600)) * intake_detail * (0.020 + accel_drive * 0.038);
+exhaust_l = cycle(clamp(fire * 0.73, 32, 1300)) * exhaust_detail * (accel_drive * 0.038 + decel_drive * 0.026);
+exhaust_r = cycle(clamp(fire * 0.77, 34, 1380)) * exhaust_detail * (accel_drive * 0.038 + decel_drive * 0.026);
+residual_l = (cycle(clamp(fire * 1.33, 40, 2200)) * 0.042 + cycle(clamp(fire * 2.17, 65, 4200)) * 0.026) * abs(pulse_l) * residual_detail;
+residual_r = (cycle(clamp(fire * 1.39, 42, 2300)) * 0.042 + cycle(clamp(fire * 2.11, 65, 4100)) * 0.026) * abs(pulse_r) * residual_detail;
+bank_l = pulse_l * cylinder_l * (0.40 + combustion_pulse * 0.22);
+bank_r = pulse_r * cylinder_r * (0.40 + combustion_pulse * 0.22);
+side_gain = 0.45 + stereo_width * 0.55;
+left_drive = (shared_low + bank_l + (manifold_l + orders_l + bright_l + intake_l + exhaust_l + residual_l) * side_gain) * a * (0.86 + aggression * 0.14);
+right_drive = (shared_low + bank_r + (manifold_r + orders_r + bright_r + intake_r + exhaust_r + residual_r) * side_gain) * a * (0.86 + aggression * 0.14);
+sat_drive = 1 + saturation * 0.85;
 out1 = tanh(left_drive * sat_drive) / sat_drive;
 out2 = tanh(right_drive * sat_drive) / sat_drive;""",
 })
@@ -5348,6 +5601,15 @@ PRESETS = {
         "reference_texture_mute": 0.0,
         "ev_weight": 0.0,
         "texture": 0.86,
+        "air_detail": 0.74,
+        "cycle_irregularity": 0.52,
+        "stereo_width": 0.72,
+        "throttle_loudness_depth": 4.5,
+        "saturation": 0.36,
+        "combustion_pulse": 0.88,
+        "intake_detail": 0.82,
+        "exhaust_detail": 0.72,
+        "residual_detail": 0.78,
         "v10_weight": 1.0,
         "v12_weight": 0.0,
         "master_trim_db": -8.0,
@@ -5379,6 +5641,14 @@ PRESETS = {
         "reference_texture_mute": 0.0,
         "ev_weight": 1.0,
         "texture": 0.20,
+        "air_detail": 0.58,
+        "cycle_irregularity": 0.18,
+        "stereo_width": 0.68,
+        "throttle_loudness_depth": 4.5,
+        "saturation": 0.20,
+        "torque_ripple_level": 0.48,
+        "gear_mesh_level": 0.42,
+        "electrical_detail": 0.64,
         "v10_weight": 0.0,
         "v12_weight": 0.0,
         "master_trim_db": -8.0,
@@ -5410,6 +5680,15 @@ PRESETS = {
         "reference_texture_mute": 0.0,
         "ev_weight": 0.0,
         "texture": 0.52,
+        "air_detail": 0.68,
+        "cycle_irregularity": 0.34,
+        "stereo_width": 0.64,
+        "throttle_loudness_depth": 4.5,
+        "saturation": 0.28,
+        "combustion_pulse": 0.80,
+        "intake_detail": 0.68,
+        "exhaust_detail": 0.62,
+        "residual_detail": 0.64,
         "v10_weight": 0.0,
         "v12_weight": 1.0,
         "master_trim_db": -8.0,
@@ -5539,6 +5818,7 @@ def project_file() -> dict[str, Any]:
         "patchers/ev_powertrain~.maxpat",
         "patchers/v10_powertrain~.maxpat",
         "patchers/v12_powertrain~.maxpat",
+        "patchers/vehicle_bus_eq~.maxpat",
         "patchers/cinematic_soundscape_beap~.maxpat",
         "patchers/cinematic_soundscape_voice.maxpat",
         "patchers/cabin_rumble~.maxpat",
@@ -5557,6 +5837,7 @@ def project_file() -> dict[str, Any]:
     for profile in ("ev", "v10", "v12"):
         patchers.extend(
             (
+                f"patchers/{profile}_sound_dna~.maxpat",
                 f"patchers/vehicle_engine_{profile}~.maxpat",
                 f"patchers/engine_controller_{profile}.maxpat",
                 f"patchers/drive_simulator_{profile}.maxpat",
@@ -5577,6 +5858,7 @@ def project_file() -> dict[str, Any]:
     contents["code"]["code/drive_model.js"] = {"kind": "javascript", "local": 1}
     contents["code"]["code/manual_input.js"] = {"kind": "javascript", "local": 1}
     contents["code"]["code/eq_state_path.js"] = {"kind": "javascript", "local": 1}
+    contents["code"]["code/dna_state_path.js"] = {"kind": "javascript", "local": 1}
     for name in MEDIA_FRAMES:
         if name.startswith(("cabin_ir_", "starter_")):
             contents["media"][f"media/{name}.wav"] = {"kind": "mediafile", "local": 1}
@@ -5680,6 +5962,13 @@ def build_project(root: Path) -> None:
     shared_soundscape = root / "patchers" / "cinematic_soundscape_beap~.maxpat"
     if not shared_soundscape.exists():
         write_json(shared_soundscape, make_cinematic_soundscape_beap())
+    user_eq = root / "patchers" / "vehicle_bus_eq~.maxpat"
+    if not user_eq.exists():
+        write_json(user_eq, make_vehicle_bus_eq())
+    for profile in ("ev", "v10", "v12"):
+        user_dna = root / "patchers" / f"{profile}_sound_dna~.maxpat"
+        if not user_dna.exists():
+            write_json(user_dna, make_sound_dna(profile))
     for profile in ("v10", "v12"):
         user_pad = root / "patchers" / f"{profile}_pad_beap~.maxpat"
         if not user_pad.exists():

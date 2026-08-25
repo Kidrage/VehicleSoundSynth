@@ -3,6 +3,10 @@
   "autoorganize": 0,
   "contents": {
     "code": {
+      "code/dna_state_path.js": {
+        "kind": "javascript",
+        "local": 1
+      },
       "code/drive_model.js": {
         "kind": "javascript",
         "local": 1
@@ -137,6 +141,10 @@
         "kind": "patcher",
         "local": 1
       },
+      "patchers/ev_sound_dna~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
       "patchers/keyboard_drive_ws.maxpat": {
         "kind": "patcher",
         "local": 1
@@ -185,6 +193,10 @@
         "kind": "patcher",
         "local": 1
       },
+      "patchers/v10_sound_dna~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
       "patchers/v12_backfire_beap~.maxpat": {
         "kind": "patcher",
         "local": 1
@@ -198,6 +210,14 @@
         "local": 1
       },
       "patchers/v12_powertrain~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/v12_sound_dna~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/vehicle_bus_eq~.maxpat": {
         "kind": "patcher",
         "local": 1
       },

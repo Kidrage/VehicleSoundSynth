@@ -13,10 +13,11 @@
 
 ## Current State
 
-- Branch: `main`
+- Branch: `codex/sound-design-modules` (isolated implementation worktree;
+  original `main` worktree and its user-owned runtime saves are untouched)
 - HEAD: resolve `main` dynamically with `git rev-parse HEAD`; the consolidation
   record starts at `942cd3f`, immediately after V5 feature head `cf4c970`.
-- Indexed paths: 145
+- Indexed paths: 151 after the six new sound-design paths are committed
 - Inventory truncated: `false`
 - Inaccessible paths: 0
 - Scan mode: complete path/metadata inventory; no bulk content read; no symlink traversal.
@@ -121,11 +122,15 @@
 
 ## Current Changes
 
-- User-owned local Max saves remain modified in `VehicleSoundSynth-EV.maxpat`
-  and `VehicleSoundSynth-V10.maxpat`; they predate the coast task, are archived
-  under the Codex export namespace, and are intentionally excluded from commits.
-- Canonical delivery is `main...origin/main`; always verify with
-  `git status -sb` and `git rev-parse HEAD` instead of a stored ahead count.
+- Active feature work comprises generated runtime/project/engine/Gen updates;
+  `tools/build_project.py`, `tests/test_project.py`, `presets/sound_dna.json`;
+  the three seed-once `patchers/*_sound_dna~.maxpat` modules; the seed-once
+  `patchers/vehicle_bus_eq~.maxpat`; the seed-once shared
+  `patchers/cinematic_soundscape_beap~.maxpat`; `code/dna_state_path.js`;
+  `SOUND_DESIGN_GUIDE.md`, README and Codex indexes/guides.
+- The original repository still has pre-existing user Max saves in its three
+  top-level runtimes. Their before/after hashes are unchanged; they are outside
+  this isolated branch and must not be overwritten or folded into this commit.
 
 ## Related Repositories
 
@@ -207,6 +212,25 @@
 ## Agent Notes
 
 <!-- AGENT_NOTES_START -->
+- 2026-08-25 sound-design modularization: EV/V10/V12 now route continuous
+  synthesis through separate seed-once `*_sound_dna~` modules with persistent
+  profile-local controls for air/detail, irregularity, stereo width, saturation,
+  throttle loudness depth and profile-specific motor/combustion voices. RPM alone
+  owns cadence/pitch; throttle applies a bounded dB gain and timbre/load response,
+  eliminating the accidental loudness-only control seam. Independent non-integer
+  upper banks and decorrelated high-frequency paths add real stereo detail without
+  sample loops, saws or squares. The visible seed-once `vehicle_bus_eq~` is now
+  separate from the generated compressor/limiter and saves one ignored local EQ
+  state. The shared editable BEAP Soundscape adds a third oscillator, slow motion,
+  multimode/formant colour, ladder filtering and deeper stereo effects; main UI
+  buttons open DNA and Soundscape directly. `SOUND_DESIGN_GUIDE.md` distinguishes
+  human tuning modules from generated routing/safety modules and documents every
+  public control. Full validation passed 130/130 tests and `git diff --check`.
+  Fresh Max 8.6.5 smoke opened all three runtimes plus DNA/EQ/Soundscape modules;
+  missing-object, missing-function, invalid-category, bad-outlet and patchcord-range
+  blocker counts were zero. All eight task windows were explicitly saved and
+  closed. Exact task PIDs 4871 and 35448 ignored TERM only after zero windows, so
+  they were ended by exact PID; final `application "Max" is running` was false.
 - 2026-08-24 balanced natural coast: the unchanged public throttle/brake seam
   now keeps the original powered aero drag from 0.08 throttle upward and uses
   a smooth released-pedal curve that is stronger near rest and weaker at high

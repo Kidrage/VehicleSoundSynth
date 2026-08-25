@@ -41,7 +41,7 @@ Each public profile patcher has one message inlet and stereo signal outlets:
 - `patchers/vehicle_engine_v10~.maxpat`
 - `patchers/vehicle_engine_v12~.maxpat`
 
-Each profile owns exactly one Gen powertrain. There are no runtime profile
+Each profile owns exactly one user-editable Sound DNA wrapper around one Gen powertrain. There are no runtime profile
 weights and no hidden V10/V12/EV generators muted behind gain objects.
 
 V10 and V12 continuous sound is procedural. No idle, acceleration, deceleration,
@@ -56,7 +56,7 @@ layer is high-passed at 120 Hz, so it adds analog-pad width without cancelling
 or replacing the vehicle body. Its conservative default level is -14 dB for EV
 and V10, and -15 dB for V12.
 
-V5 adds low-order crankcase/manifold motion to the ICE models and torque-ripple/
+V5 adds visible per-profile `Open Sound DNA` panels, low-order crankcase/manifold motion to the ICE models and torque-ripple/
 gear-mesh motion to the EV model. These remain phase-continuous and are driven by
 RPM, load, acceleration and throttle; no saw/square oscillator or lifecycle loop
 is used. The stronger idle signature is deliberately concentrated in the body
@@ -72,11 +72,17 @@ trigger the former low-resolution event sample.
 The signal path per runtime is:
 
 ```text
-fixed drive/controller -> one profile powertrain + optional shared Soundscape
+fixed drive/controller -> one editable profile Sound DNA -> one Gen powertrain
+                       + optional shared Soundscape
                        + transient + road
                        -> powertrain-excited cabin/body
-                       -> four-band stereo EQ -> compressor -> limiter/clip -> output
+                       -> editable four-band stereo EQ
+                       -> generated compressor -> limiter/clip -> output
 ```
+
+See `SOUND_DESIGN_GUIDE.md` for the exact sound-design controls, the files that
+are safe to edit, plastic-tone troubleshooting, EQ ranges, and the BEAP/MSP
+division inside the cinematic Soundscape.
 
 In `Internal Manual`, focus the runtime window and hold `W` to ramp throttle
 toward 1.0 or `S` to apply the brake. Releasing either key ramps that pedal back
@@ -247,6 +253,7 @@ regeneration will preserve your tuning.
 ## Persistent vehicle-bus EQ
 
 All three runtimes share one four-band EQ state. `mix_master~` loads
+The separate user-owned `patchers/vehicle_bus_eq~.maxpat` reads
 `presets/local/vehicle_bus_eq.json` when present and falls back to the tracked
 `presets/vehicle_bus_eq_default.json` when the local file is absent or cannot be
 read. Use `Save EQ`, `Reload EQ`, and `Reset EQ` in the visible bus-EQ panel.
@@ -327,8 +334,9 @@ Distributable audio provenance remains governed by `ASSET_LICENSES.md` and
 ## Regeneration and validation
 
 Generated `.maxpat`, `.gendsp`, preset, and fallback media are owned by
-`tools/build_project.py`. Only the eight BEAP patchers listed above are
-user-owned.
+`tools/build_project.py`. The shared bus EQ, three Sound DNA panels, and the
+seed-once BEAP patchers documented in `SOUND_DESIGN_GUIDE.md` are user-owned and
+preserved by normal regeneration.
 
 ```sh
 python3 tools/build_project.py --output-root .

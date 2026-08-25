@@ -37,7 +37,11 @@ events, short cabin IR, adjustable stereo compression, EQ, and peak protection.
   keyboard adapter or Max's built-in macOS `gamepad` adapter and exposes only
   normalized throttle/brake to the existing drivetrain.
 - `patchers/vehicle_engine_{ev,v10,v12}~.maxpat` — fixed public seams.
+- `patchers/{ev,v10,v12}_sound_dna~.maxpat` — seed-once, user-editable profile
+  sound-design panels that own synthesis macros and wrap one generated powertrain.
 - `patchers/{ev,v10,v12}_powertrain~.maxpat` — exactly one Gen per profile.
+- `patchers/vehicle_bus_eq~.maxpat` — seed-once, user-editable shared four-band
+  EQ; `patchers/mix_master~.maxpat` contains generated safety dynamics only.
 - `patchers/{ev,v10,v12}_cinematic_soundscape_host~.maxpat` and
   `patchers/cinematic_soundscape_voice.maxpat` — generated profile mappings and
   cancellable voice suspension around one shared runtime Soundscape.
@@ -60,10 +64,10 @@ python3 tools/validate_v10_lifecycle.py --drive-lifecycle-wav v10_v10-lifecycle-
 ```
 
 Regenerate twice and compare hashes when generator determinism matters. Never
-hand-edit generated `.maxpat`, `.gendsp`, or `.wav` files except the nine
-seed-once BEAP patchers named above (shared Soundscape, engine start, three
-legacy EV voices, two legacy ICE pads, and two ICE backfires). The project generator preserves those files
-after their first seed. The project generator
+hand-edit generated `.maxpat`, `.gendsp`, or `.wav` files. The three Sound DNA
+panels, shared bus EQ, and nine seed-once BEAP patchers named above are explicit
+user-owned exceptions. The project generator preserves those files after their
+first seed. The project generator
 never overwrites curated runtime WAVs already present in `media/`.
 
 Runtime smoke-check the generated project in Max 8.6.5 after structural tests.
