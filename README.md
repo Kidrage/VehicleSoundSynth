@@ -252,8 +252,8 @@ regeneration will preserve your tuning.
 
 ## Persistent vehicle-bus EQ
 
-All three runtimes share one four-band EQ state. `mix_master~` loads
-The separate user-owned `patchers/vehicle_bus_eq~.maxpat` reads
+All three runtimes share one four-band EQ state. The separate user-owned
+`patchers/vehicle_bus_eq~.maxpat` reads
 `presets/local/vehicle_bus_eq.json` when present and falls back to the tracked
 `presets/vehicle_bus_eq_default.json` when the local file is absent or cannot be
 read. Use `Save EQ`, `Reload EQ`, and `Reset EQ` in the visible bus-EQ panel.

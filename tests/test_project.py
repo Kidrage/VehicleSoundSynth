@@ -323,12 +323,66 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
             ):
                 self.assertIn(f"param {parameter}", code)
             self.assertIn("pow(10, (t * throttle_loudness_depth) / 20)", code)
+            self.assertIn("tone_t =", code)
+            self.assertRegex(code, r"tone_t\s*=.*\bt\s*\*")
             frequency_region = code.split("throttle_gain", 1)[0]
             self.assertNotRegex(frequency_region, r"\bt\s*\*")
             preset = defaults[preset_names[profile]]
             self.assertGreaterEqual(preset["throttle_loudness_depth"], 4.0)
             self.assertLessEqual(preset["throttle_loudness_depth"], 5.0)
             self.assertIn("stereo_width", code)
+            if profile in ("v10", "v12"):
+                # Both banks share one physical firing cadence. Stereo colour
+                # comes from bank phase/amplitude and manifold modes, not
+                # detuning the engine's dominant harmonic order.
+                self.assertIn("orders_r = cycle(fire)", code)
+                self.assertNotRegex(code, r"orders_r\s*=\s*cycle\(clamp\(fire\s*\*")
+
+    def test_runtime_open_sound_dna_targets_the_audible_instance(self):
+        for profile in ("ev", "v10", "v12"):
+            runtime = json.dumps(self.load_json(f"VehicleSoundSynth-{profile.upper()}.maxpat"))
+            dna = json.dumps(self.load_json(f"patchers/{profile}_sound_dna~.maxpat"))
+            address = f"open.{profile}.sound_dna"
+            self.assertIn(f"s {address}", runtime)
+            self.assertNotIn(f"loadunique Patcher:/patchers/{profile}_sound_dna~.maxpat", runtime)
+            self.assertIn(f"r {address}", dna)
+            self.assertIn('"text": "front"', dna)
+            self.assertIn('"text": "thispatcher"', dna)
+
+    def test_fixed_rpm_dna_probe_bypasses_drive_only_for_acoustic_ab(self):
+        with tempfile.TemporaryDirectory() as directory:
+            subprocess.run(
+                [
+                    sys.executable, str(ROOT / "tools" / "build_runtime_probe.py"),
+                    "--bundle-root", directory,
+                    "--scenario", "dna-v10-throttle-high",
+                    "--rumble", "off", "--tap", "pre-cabin",
+                    "--render-ms", "1500", "--start", "off",
+                ],
+                check=True, cwd=ROOT, capture_output=True, text=True,
+            )
+            patch = json.loads(
+                (Path(directory) / "runtime_probe_v10_dna-v10-throttle-high_off.maxpat").read_text()
+            )["patcher"]
+            boxes = {item["box"]["id"]: item["box"] for item in patch["boxes"]}
+            controller = next(
+                box_id for box_id, box in boxes.items()
+                if box.get("text") == "engine_controller_v10"
+            )
+            powertrain = next(
+                box_id for box_id, box in boxes.items()
+                if box.get("text") == "v10_powertrain~"
+            )
+            cords = {
+                (item["patchline"]["source"][0], item["patchline"]["destination"][0])
+                for item in patch["lines"]
+            }
+            self.assertNotIn((controller, powertrain), cords)
+            replay = next(
+                box_id for box_id, box in boxes.items()
+                if box.get("text", "").startswith("ignition 1, rpm 4200, throttle 0.9")
+            )
+            self.assertIn((replay, powertrain), cords)
 
     def test_shared_beap_soundscape_has_three_voice_motion_and_formant_colour(self):
         core = self.load_json("patchers/cinematic_soundscape_beap~.maxpat")["patcher"]

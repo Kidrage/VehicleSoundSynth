@@ -41,6 +41,46 @@ SCENARIOS = {
     "idle-v10": {"profile": "v10", "rpm": 740.0},
     "high-v12-3500": {"profile": "v12", "rpm": 3500.0, "throttle": 0.72, "load": 0.65, "lock_rpm": True},
     "high-v10-4200": {"profile": "v10", "rpm": 4200.0, "throttle": 0.78, "load": 0.70, "lock_rpm": True},
+    # Fixed-state acoustic A/B probes: throttle may change level and spectral
+    # colour, but the locked RPM keeps every engine-order frequency unchanged.
+    "dna-ev-throttle-low": {
+        "profile": "ev", "rpm": 3200.0, "throttle": 0.10, "load": 0.55,
+        "lock_rpm": True, "direct_powertrain": True,
+        "extra_messages": ("accel 0", "speed_kph 0"),
+    },
+    "dna-ev-throttle-high": {
+        "profile": "ev", "rpm": 3200.0, "throttle": 0.90, "load": 0.55,
+        "lock_rpm": True, "direct_powertrain": True,
+        "extra_messages": ("accel 0", "speed_kph 0"),
+    },
+    "dna-v10-throttle-low": {
+        "profile": "v10", "rpm": 4200.0, "throttle": 0.10, "load": 0.65,
+        "lock_rpm": True, "direct_powertrain": True, "extra_messages": (
+            "accel 0", "speed_kph 0", "engine_running 1",
+            "combustion_gain 1", "shift_cut 1", "starter 0",
+        ),
+    },
+    "dna-v10-throttle-high": {
+        "profile": "v10", "rpm": 4200.0, "throttle": 0.90, "load": 0.65,
+        "lock_rpm": True, "direct_powertrain": True, "extra_messages": (
+            "accel 0", "speed_kph 0", "engine_running 1",
+            "combustion_gain 1", "shift_cut 1", "starter 0",
+        ),
+    },
+    "dna-v12-throttle-low": {
+        "profile": "v12", "rpm": 4500.0, "throttle": 0.10, "load": 0.65,
+        "lock_rpm": True, "direct_powertrain": True, "extra_messages": (
+            "accel 0", "speed_kph 0", "engine_running 1",
+            "combustion_gain 1", "shift_cut 1", "starter 0",
+        ),
+    },
+    "dna-v12-throttle-high": {
+        "profile": "v12", "rpm": 4500.0, "throttle": 0.90, "load": 0.65,
+        "lock_rpm": True, "direct_powertrain": True, "extra_messages": (
+            "accel 0", "speed_kph 0", "engine_running 1",
+            "combustion_gain 1", "shift_cut 1", "starter 0",
+        ),
+    },
     "ev-soundscape-on": {
         "profile": "ev", "rpm": 1800.0, "throttle": 0.35,
         "soundscape_enable": 1, "soundscape_level_db": -3.0,
@@ -186,6 +226,7 @@ def make_probe(
     extra_messages: tuple[str, ...] = (),
     event_message: str | None = None,
     drive_lifecycle: bool = False,
+    direct_powertrain: bool = False,
 ) -> dict:
     settings = PROFILE_SETTINGS[profile]
     rumble_values = settings["rumble"] if rumble_enabled else (0.0, 0.0, 0.0)
@@ -219,7 +260,9 @@ def make_probe(
     p.connect(rpm_select_default, rpm_select, 0, 0)
     p.connect(rpm_select, rpm_named)
     p.connect(rpm_named, controller)
-    for controlled in (powertrain, transient, road, rumble, cabin, mix):
+    if not direct_powertrain:
+        p.connect(controller, powertrain, 0, 0)
+    for controlled in (transient, road, rumble, cabin, mix):
         p.connect(controller, controlled, 0, 0)
     p.connect(controller, soundscape, 0, 0)
     solo_router = p.new("route soundscape_solo pad_solo", 660, 300, 210, numinlets=1, numoutlets=3)
@@ -318,7 +361,7 @@ def make_probe(
     ) + extra_messages
     for index, message in enumerate(control_messages):
         initial = p.new(f"loadmess {message}", 25, 110 + index * 32, 245, numinlets=1, numoutlets=1)
-        p.connect(initial, drive)
+        p.connect(initial, powertrain if direct_powertrain else drive)
 
     load = p.new("loadbang", 500, 110, 65, numinlets=1, numoutlets=1)
     start_delay = p.new("delay 100", 500, 150, 70, numinlets=2, numoutlets=1)
@@ -421,7 +464,7 @@ def make_probe(
         p.connect(start_trigger, open_file, 5, 0)
         p.connect(start_trigger, dsp_start, 4, 0)
         p.connect(start_trigger, runtime_replay, 3, 0)
-        p.connect(runtime_replay, drive)
+        p.connect(runtime_replay, powertrain if direct_powertrain else drive)
         if lock_rpm:
             catch_complete = p.new("delay 1000", 540, 665, 75, numinlets=2, numoutlets=1)
             lock_order = p.new("t b b b", 540, 700, 65, numinlets=1, numoutlets=3)
@@ -658,6 +701,7 @@ def main() -> None:
             extra_messages=tuple(extra_messages),
             event_message=scenario.get("event"),
             drive_lifecycle=bool(scenario.get("drive_lifecycle", False)),
+            direct_powertrain=bool(scenario.get("direct_powertrain", False)),
         ),
     )
     if "lifecycle_role" in scenario:

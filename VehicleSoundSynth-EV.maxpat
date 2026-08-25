@@ -1100,21 +1100,6 @@
       {
         "box": {
           "id": "obj-63",
-          "maxclass": "newobj",
-          "numinlets": 1,
-          "numoutlets": 0,
-          "patching_rect": [
-            1410.0,
-            280.0,
-            70.0,
-            22.0
-          ],
-          "text": "pcontrol"
-        }
-      },
-      {
-        "box": {
-          "id": "obj-64",
           "maxclass": "message",
           "numinlets": 2,
           "numoutlets": 1,
@@ -1132,20 +1117,32 @@
       },
       {
         "box": {
-          "id": "obj-65",
-          "maxclass": "message",
-          "numinlets": 2,
-          "numoutlets": 1,
-          "outlettype": [
-            ""
-          ],
+          "id": "obj-64",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 0,
           "patching_rect": [
             1180.0,
             260.0,
-            220.0,
+            180.0,
             22.0
           ],
-          "text": "loadunique Patcher:/patchers/ev_sound_dna~.maxpat"
+          "text": "s open.ev.sound_dna"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-65",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            1410.0,
+            330.0,
+            70.0,
+            22.0
+          ],
+          "text": "pcontrol"
         }
       },
       {
@@ -2683,23 +2680,11 @@
       {
         "patchline": {
           "destination": [
-            "obj-65",
-            0
-          ],
-          "source": [
             "obj-64",
             0
-          ]
-        }
-      },
-      {
-        "patchline": {
-          "destination": [
-            "obj-63",
-            0
           ],
           "source": [
-            "obj-65",
+            "obj-63",
             0
           ]
         }
@@ -2719,7 +2704,7 @@
       {
         "patchline": {
           "destination": [
-            "obj-63",
+            "obj-65",
             0
           ],
           "source": [

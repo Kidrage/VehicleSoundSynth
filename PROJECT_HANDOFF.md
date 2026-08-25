@@ -45,14 +45,14 @@
 
 | Route | Files |
 |---|---:|
-| `patchers` | 55 |
+| `patchers` | 59 |
 | `media` | 35 |
-| `.` | 16 |
+| `.` | 17 |
 | `tools` | 13 |
 | `assets` | 11 |
 | `assets/raw` | 7 |
 | `.codex` | 4 |
-| `code` | 3 |
+| `code` | 4 |
 | `gen` | 3 |
 | `presets` | 3 |
 | `tests` | 2 |
@@ -70,13 +70,13 @@
 
 ### Common Extensions
 
-- `.maxpat`: 59
+- `.maxpat`: 63
 - `.wav`: 41
 - `.py`: 15
-- `.md`: 7
+- `.md`: 8
 - `.json`: 6
 - `.docx`: 5
-- `.js`: 3
+- `.js`: 4
 - `.gendsp`: 3
 - `.txt`: 2
 - `[no extension]`: 2
@@ -225,12 +225,24 @@
   multimode/formant colour, ladder filtering and deeper stereo effects; main UI
   buttons open DNA and Soundscape directly. `SOUND_DESIGN_GUIDE.md` distinguishes
   human tuning modules from generated routing/safety modules and documents every
-  public control. Full validation passed 130/130 tests and `git diff --check`.
+  public control. Review follow-up removed detuned dominant ICE orders and added
+  a fixed-RPM direct-powertrain A/B matrix: throttle now changes bounded spectral
+  colour as well as level while both banks retain one firing cadence. Final Max
+  diagnostics measured EV/V10/V12 low-to-high-throttle gain of 2.86/3.06/3.18
+  dB and centroid movement of 213->222/342->353/508->524 Hz, with zero clipped
+  samples. ICE mono-fold loss is 0.79-1.13 dB instead of the reviewed 2.2-2.4 dB.
+  The installed NonRealTime driver produced 44.1 kHz despite a 48 kHz request,
+  so this proves comparative timbre/stereo behavior, not sample-rate delivery.
+  Full validation passed 132/132 tests and `git diff --check`.
   Fresh Max 8.6.5 smoke opened all three runtimes plus DNA/EQ/Soundscape modules;
   missing-object, missing-function, invalid-category, bad-outlet and patchcord-range
   blocker counts were zero. All eight task windows were explicitly saved and
-  closed. Exact task PIDs 4871 and 35448 ignored TERM only after zero windows, so
-  they were ended by exact PID; final `application "Max" is running` was false.
+  closed. Final review smoke loaded the project, three runtimes, three DNA panels,
+  shared EQ and Soundscape with zero specified blocker patterns. All GUI windows
+  closed; 21 probe/smoke processes accepted TERM and the last two ignored it only
+  after their window count reached zero, so exact PIDs 7963 and 10984 were ended.
+  Final process inspection found no Max executable and `application "Max" is
+  running` was false.
 - 2026-08-24 balanced natural coast: the unchanged public throttle/brake seam
   now keeps the original powered aero drag from 0.08 throttle upward and uses
   a smooth released-pedal curve that is stronger near rest and weaker at high

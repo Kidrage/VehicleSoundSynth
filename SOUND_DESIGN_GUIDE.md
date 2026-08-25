@@ -36,8 +36,10 @@ interfaces must change; do not tune their generated JSON directly.
 
 RPM is the only master pitch/cadence input. Throttle does not directly tune an
 oscillator: the drivetrain first integrates vehicle speed and RPM, while the
-DNA applies only a bounded 0–8 dB torque-loudness contour. The default is
-4.5 dB, so pedal motion can no longer hide RPM motion behind a large volume jump.
+DNA applies a bounded 0–8 dB torque-loudness contour plus a smaller continuous
+upper-order/intake/electrical colour contour. The default level depth is 4.5 dB,
+so pedal motion cannot hide RPM motion behind a large volume jump, while a fixed-
+RPM pedal change is still audibly more open rather than merely louder.
 
 Common controls:
 
@@ -101,3 +103,18 @@ their hosts map RPM, throttle, load, acceleration, Motion and Space differently.
 
 After tuning, save the BEAP patcher, turn Solo off, verify the final meters stay
 below the ceiling, close every patcher window, and quit Max normally.
+
+## Acoustic A/B validation
+
+`tools/build_runtime_probe.py` includes six `dna-*-throttle-low/high` scenarios.
+They bypass the drive/controller only inside the monitor-muted diagnostic patch,
+hold RPM/load/acceleration constant, and send the public DNA controls directly
+to the same profile powertrain abstraction. Production runtimes and lifecycle
+probes still use the unmodified drivetrain path.
+
+The final Max 8.6.5 diagnostic renders used 0.10 versus 0.90 throttle. EV/V10/V12
+gained 2.86/3.06/3.18 dB while spectral centroid moved 213→222, 342→353 and
+508→524 Hz respectively. Clipped-sample ratio was zero for all six files; V10
+and V12 full-band mono-fold loss stayed at 0.98–1.13 dB and 0.79–0.88 dB. The
+installed NonRealTime driver wrote 44.1 kHz despite the 48 kHz request, so these
+are comparative design diagnostics, not sample-rate delivery evidence.

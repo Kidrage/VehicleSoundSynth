@@ -756,6 +756,13 @@ def make_sound_dna(profile: str) -> dict[str, Any]:
     p.connect(router, powertrain, len(names), 0)
 
     p.new("autopattr @autorestore 0", 930, 15, 155, numinlets=1, numoutlets=4)
+    open_request = p.new(
+        f"r open.{profile}.sound_dna", 760, 15, 160, numinlets=0, numoutlets=1,
+    )
+    front = p.message("front", 760, 45, 45)
+    patcher_window = p.new("thispatcher", 815, 45, 75, numinlets=1, numoutlets=2)
+    p.connect(open_request, front)
+    p.connect(front, patcher_window)
     storage = p.new(
         f"pattrstorage {profile}_sound_dna @savemode 3 @changemode 1 @autorestore 0",
         930, 50, 300, numinlets=1, numoutlets=4,
@@ -4912,19 +4919,18 @@ def make_profile_main(profile: str, root: Path | None = None) -> dict[str, Any]:
     p.connect(soundscape_solo, soundscape_solo_named)
     p.connect(soundscape_solo_named, engine)
     p.connect(soundscape_solo_default, soundscape_solo)
-    design_windows = p.new("pcontrol", 1410, 280, 70, numinlets=1, numoutlets=0)
     open_dna = p.message("Open Sound DNA", 1180, 230, 125)
-    open_dna_file = p.message(
-        f"loadunique Patcher:/patchers/{profile}_sound_dna~.maxpat",
-        1180, 260, 220,
+    open_dna_instance = p.new(
+        f"s open.{profile}.sound_dna", 1180, 260, 180,
+        numinlets=1, numoutlets=0,
     )
+    design_windows = p.new("pcontrol", 1410, 330, 70, numinlets=1, numoutlets=0)
     open_soundscape = p.message("Open Soundscape BEAP", 1180, 300, 160)
     open_soundscape_file = p.message(
         "loadunique Patcher:/patchers/cinematic_soundscape_beap~.maxpat",
         1180, 330, 260,
     )
-    p.connect(open_dna, open_dna_file)
-    p.connect(open_dna_file, design_windows)
+    p.connect(open_dna, open_dna_instance)
     p.connect(open_soundscape, open_soundscape_file)
     p.connect(open_soundscape_file, design_windows)
 
@@ -5358,6 +5364,8 @@ t = slide(clamp(throttle, 0, 1), 700, 1400);
 l = abs(clamp(load, -1, 1));
 f = clamp(55 + r * 0.052, 55, 760);
 throttle_gain = pow(10, (t * throttle_loudness_depth) / 20);
+tone_t = 0.62 + t * 0.38;
+body_t = 1 - t * 0.12;
 a = clamp((0.045 + l * 0.028) * throttle_gain, 0, 0.16);
 slow_motion = cycle(clamp(r / 240, 0.35, 30)) * cycle_irregularity;
 electrical_motion = 0.985 + slow_motion * 0.018;
@@ -5368,13 +5376,13 @@ coherent_low = cycle(f) * (0.58 + body * 0.18);
 h2 = cycle(clamp(f * 2, 110, 1520)) * (0.08 + body * 0.05);
 h3_l = cycle(clamp(f * 3.03, 165, 2320)) * (0.035 + texture * 0.055);
 h3_r = cycle(clamp(f * 2.97, 165, 2260)) * (0.035 + texture * 0.055);
-inverter_l = cycle(clamp(f * (2.81 + brightness), 150, 4400)) * (0.08 + electrical_detail * 0.16);
-inverter_r = cycle(clamp(f * (2.93 + brightness), 155, 4600)) * (0.08 + electrical_detail * 0.16);
-air_l = (cycle(clamp(f * 5.37, 300, 7800)) + cycle(clamp(f * 7.11, 420, 11200)) * 0.55) * air_detail * 0.035;
-air_r = (cycle(clamp(f * 5.61, 320, 8100)) + cycle(clamp(f * 6.83, 400, 10800)) * 0.55) * air_detail * 0.035;
-shared = coherent_low + torque_ripple + h2;
-side_l = h3_l + gear_l * gear_mesh_level + inverter_l + air_l;
-side_r = h3_r + gear_r * gear_mesh_level + inverter_r + air_r;
+inverter_l = cycle(clamp(f * (2.81 + brightness), 150, 4400)) * (0.08 + electrical_detail * 0.16) * tone_t;
+inverter_r = cycle(clamp(f * (2.93 + brightness), 155, 4600)) * (0.08 + electrical_detail * 0.16) * tone_t;
+air_l = (cycle(clamp(f * 5.37, 300, 7800)) + cycle(clamp(f * 7.11, 420, 11200)) * 0.55) * air_detail * 0.035 * tone_t;
+air_r = (cycle(clamp(f * 5.61, 320, 8100)) + cycle(clamp(f * 6.83, 400, 10800)) * 0.55) * air_detail * 0.035 * tone_t;
+shared = (coherent_low + torque_ripple + h2) * body_t;
+side_l = h3_l * (0.82 + t * 0.18) + gear_l * gear_mesh_level * (0.76 + t * 0.24) + inverter_l + air_l;
+side_r = h3_r * (0.82 + t * 0.18) + gear_r * gear_mesh_level * (0.76 + t * 0.24) + inverter_r + air_r;
 left_drive = (shared + side_l * (0.45 + stereo_width * 0.55)) * electrical_motion * a;
 right_drive = (shared + side_r * (0.45 + stereo_width * 0.55)) * electrical_motion * a;
 sat_drive = 1 + saturation * 0.85;
@@ -5420,6 +5428,8 @@ phase_r = phase_r - floor(phase_r);
 pulse_l = pow(0.5 + 0.5 * cos(phase_l * 6.283185307179586), 4) - 0.2734375;
 pulse_r = pow(0.5 + 0.5 * cos(phase_r * 6.283185307179586), 4) - 0.2734375;
 throttle_gain = pow(10, (t * throttle_loudness_depth) / 20);
+tone_t = 0.58 + t * 0.42;
+body_t = 1 - t * 0.16;
 a = clamp((0.22 + body * 0.055 + l * 0.045 + accel_drive * 0.025 - decel_drive * 0.020) * throttle_gain, 0, 0.58) * run;
 cylinder_l = 0.95 + cycle(crank * 0.5) * (0.025 + cycle_irregularity * 0.040) + cycle(crank * 2.5) * 0.018;
 cylinder_r = 0.95 + cycle(crank * 0.53) * (0.025 + cycle_irregularity * 0.040) + cycle(crank * 2.47) * 0.018;
@@ -5430,20 +5440,23 @@ manifold_r = cycle(clamp(fire * 0.405, 34, 1030)) * (0.022 + l * 0.026) * (0.68 
 manifold = (manifold_l + manifold_r) * 0.5;
 shared_low = cycle(clamp(fire * 0.5, 24, 460)) * (0.075 + body * 0.060) * (1-speedmix*0.50) + idle_body;
 orders_l = cycle(fire) * 0.18 + cycle(clamp(fire * 1.5, 45, 1800)) * 0.072 + cycle(clamp(fire * 2.5, 65, 5200)) * (0.065 + texture * 0.070);
-orders_r = cycle(clamp(fire * 1.02, 35, 930)) * 0.18 + cycle(clamp(fire * 1.47, 45, 1800)) * 0.072 + cycle(clamp(fire * 2.56, 65, 5300)) * (0.065 + texture * 0.070);
-bright_l = (cycle(clamp(fire * 3.17, 90, 7200)) * 0.055 + cycle(clamp(fire * 5.13, 140, 11800)) * 0.032) * air_detail * (0.35 + speedmix * 0.65);
-bright_r = (cycle(clamp(fire * 3.31, 95, 7500)) * 0.055 + cycle(clamp(fire * 4.87, 135, 11500)) * 0.032) * air_detail * (0.35 + speedmix * 0.65);
-intake_l = cycle(clamp(fire * 1.23, 45, 2700)) * intake_detail * (0.028 + accel_drive * 0.050);
-intake_r = cycle(clamp(fire * 1.29, 45, 2800)) * intake_detail * (0.028 + accel_drive * 0.050);
-exhaust_l = cycle(clamp(fire * 0.67, 32, 1500)) * exhaust_detail * (accel_drive * 0.050 + decel_drive * 0.032);
-exhaust_r = cycle(clamp(fire * 0.71, 34, 1580)) * exhaust_detail * (accel_drive * 0.050 + decel_drive * 0.032);
+orders_r = cycle(fire) * 0.17 + cycle(clamp(fire * 1.5, 45, 1800)) * 0.076 + cycle(clamp(fire * 2.5, 65, 5200)) * (0.061 + texture * 0.074);
+bright_l = (cycle(clamp(fire * 3.17, 90, 7200)) * 0.055 + cycle(clamp(fire * 5.13, 140, 11800)) * 0.032) * air_detail * (0.35 + speedmix * 0.65) * tone_t;
+bright_r = (cycle(clamp(fire * 3.31, 95, 7500)) * 0.055 + cycle(clamp(fire * 4.87, 135, 11500)) * 0.032) * air_detail * (0.35 + speedmix * 0.65) * tone_t;
+intake_l = cycle(clamp(fire * 1.23, 45, 2700)) * intake_detail * (0.020 + t * 0.030 + accel_drive * 0.038);
+intake_r = cycle(clamp(fire * 1.29, 45, 2800)) * intake_detail * (0.020 + t * 0.030 + accel_drive * 0.038);
+exhaust_l = cycle(clamp(fire * 0.67, 32, 1500)) * exhaust_detail * (t * 0.030 + accel_drive * 0.032 + decel_drive * 0.032);
+exhaust_r = cycle(clamp(fire * 0.71, 34, 1580)) * exhaust_detail * (t * 0.030 + accel_drive * 0.032 + decel_drive * 0.032);
 residual_l = (cycle(clamp(fire * 1.37, 40, 2300)) * 0.050 + cycle(clamp(fire * 2.23, 65, 4300)) * 0.032) * abs(pulse_l) * residual_detail;
 residual_r = (cycle(clamp(fire * 1.43, 42, 2400)) * 0.050 + cycle(clamp(fire * 2.17, 65, 4200)) * 0.032) * abs(pulse_r) * residual_detail;
 bank_l = pulse_l * cylinder_l * (0.42 + combustion_pulse * 0.24);
 bank_r = pulse_r * cylinder_r * (0.42 + combustion_pulse * 0.24);
-side_gain = 0.45 + stereo_width * 0.55;
-left_drive = (shared_low + bank_l + (manifold_l + orders_l + bright_l + intake_l + exhaust_l + residual_l) * side_gain) * a * (0.88 + aggression * 0.12);
-right_drive = (shared_low + bank_r + (manifold_r + orders_r + bright_r + intake_r + exhaust_r + residual_r) * side_gain) * a * (0.88 + aggression * 0.12);
+bank_mid = (bank_l + bank_r) * 0.5;
+bank_side = (bank_l - bank_r) * 0.5;
+bank_spread = 0.28 + stereo_width * 0.32;
+side_gain = 0.35 + stereo_width * 0.40;
+left_drive = ((shared_low + bank_mid) * body_t + bank_side * bank_spread + (manifold_l + orders_l + bright_l + intake_l + exhaust_l + residual_l) * side_gain) * a * (0.88 + aggression * 0.12);
+right_drive = ((shared_low + bank_mid) * body_t - bank_side * bank_spread + (manifold_r + orders_r + bright_r + intake_r + exhaust_r + residual_r) * side_gain) * a * (0.88 + aggression * 0.12);
 sat_drive = 1 + saturation * 0.95;
 out1 = tanh(left_drive * sat_drive) / sat_drive;
 out2 = tanh(right_drive * sat_drive) / sat_drive;""",
@@ -5487,6 +5500,8 @@ phase_r = phase_r - floor(phase_r);
 pulse_l = pow(0.5 + 0.5 * cos(phase_l * 6.283185307179586), 4) - 0.2734375;
 pulse_r = pow(0.5 + 0.5 * cos(phase_r * 6.283185307179586), 4) - 0.2734375;
 throttle_gain = pow(10, (t * throttle_loudness_depth) / 20);
+tone_t = 0.62 + t * 0.38;
+body_t = 1 - t * 0.14;
 a = clamp((0.205 + body * 0.050 + l * 0.040 + accel_drive * 0.022 - decel_drive * 0.016) * throttle_gain, 0, 0.54) * run;
 cylinder_l = 0.97 + cycle(crank * 0.5) * (0.018 + cycle_irregularity * 0.030) + cycle(crank * 1.5) * 0.012;
 cylinder_r = 0.97 + cycle(crank * 0.48) * (0.018 + cycle_irregularity * 0.030) + cycle(crank * 1.53) * 0.012;
@@ -5497,20 +5512,23 @@ manifold_r = cycle(clamp(fire * 0.445, 34, 1000)) * (0.018 + l * 0.020) * (0.65 
 manifold = (manifold_l + manifold_r) * 0.5;
 shared_low = cycle(clamp(fire * 0.5, 24, 520)) * (0.062 + body * 0.050) * (1-speedmix*0.55) + idle_body;
 orders_l = cycle(fire) * 0.17 + cycle(clamp(fire * 2.0, 45, 3200)) * (0.10 + brightness * 0.10) + cycle(clamp(fire * 3.0, 55, 5200)) * (0.06 + texture * 0.07);
-orders_r = cycle(clamp(fire * 1.01, 35, 1060)) * 0.17 + cycle(clamp(fire * 1.97, 45, 3150)) * (0.10 + brightness * 0.10) + cycle(clamp(fire * 3.07, 55, 5350)) * (0.06 + texture * 0.07);
-bright_l = (cycle(clamp(fire * 4.11, 90, 8000)) * 0.050 + cycle(clamp(fire * 6.17, 130, 12000)) * 0.026) * air_detail * (0.30 + speedmix * 0.70);
-bright_r = (cycle(clamp(fire * 3.89, 85, 7700)) * 0.050 + cycle(clamp(fire * 5.83, 125, 11800)) * 0.026) * air_detail * (0.30 + speedmix * 0.70);
-intake_l = cycle(clamp(fire * 1.49, 45, 2500)) * intake_detail * (0.020 + accel_drive * 0.038);
-intake_r = cycle(clamp(fire * 1.53, 45, 2600)) * intake_detail * (0.020 + accel_drive * 0.038);
-exhaust_l = cycle(clamp(fire * 0.73, 32, 1300)) * exhaust_detail * (accel_drive * 0.038 + decel_drive * 0.026);
-exhaust_r = cycle(clamp(fire * 0.77, 34, 1380)) * exhaust_detail * (accel_drive * 0.038 + decel_drive * 0.026);
+orders_r = cycle(fire) * 0.165 + cycle(clamp(fire * 2.0, 45, 3200)) * (0.096 + brightness * 0.104) + cycle(clamp(fire * 3.0, 55, 5200)) * (0.064 + texture * 0.066);
+bright_l = (cycle(clamp(fire * 4.11, 90, 8000)) * 0.050 + cycle(clamp(fire * 6.17, 130, 12000)) * 0.026) * air_detail * (0.30 + speedmix * 0.70) * tone_t;
+bright_r = (cycle(clamp(fire * 3.89, 85, 7700)) * 0.050 + cycle(clamp(fire * 5.83, 125, 11800)) * 0.026) * air_detail * (0.30 + speedmix * 0.70) * tone_t;
+intake_l = cycle(clamp(fire * 1.49, 45, 2500)) * intake_detail * (0.016 + t * 0.024 + accel_drive * 0.030);
+intake_r = cycle(clamp(fire * 1.53, 45, 2600)) * intake_detail * (0.016 + t * 0.024 + accel_drive * 0.030);
+exhaust_l = cycle(clamp(fire * 0.73, 32, 1300)) * exhaust_detail * (t * 0.024 + accel_drive * 0.026 + decel_drive * 0.026);
+exhaust_r = cycle(clamp(fire * 0.77, 34, 1380)) * exhaust_detail * (t * 0.024 + accel_drive * 0.026 + decel_drive * 0.026);
 residual_l = (cycle(clamp(fire * 1.33, 40, 2200)) * 0.042 + cycle(clamp(fire * 2.17, 65, 4200)) * 0.026) * abs(pulse_l) * residual_detail;
 residual_r = (cycle(clamp(fire * 1.39, 42, 2300)) * 0.042 + cycle(clamp(fire * 2.11, 65, 4100)) * 0.026) * abs(pulse_r) * residual_detail;
 bank_l = pulse_l * cylinder_l * (0.40 + combustion_pulse * 0.22);
 bank_r = pulse_r * cylinder_r * (0.40 + combustion_pulse * 0.22);
-side_gain = 0.45 + stereo_width * 0.55;
-left_drive = (shared_low + bank_l + (manifold_l + orders_l + bright_l + intake_l + exhaust_l + residual_l) * side_gain) * a * (0.86 + aggression * 0.14);
-right_drive = (shared_low + bank_r + (manifold_r + orders_r + bright_r + intake_r + exhaust_r + residual_r) * side_gain) * a * (0.86 + aggression * 0.14);
+bank_mid = (bank_l + bank_r) * 0.5;
+bank_side = (bank_l - bank_r) * 0.5;
+bank_spread = 0.26 + stereo_width * 0.30;
+side_gain = 0.34 + stereo_width * 0.38;
+left_drive = ((shared_low + bank_mid) * body_t + bank_side * bank_spread + (manifold_l + orders_l + bright_l + intake_l + exhaust_l + residual_l) * side_gain) * a * (0.86 + aggression * 0.14);
+right_drive = ((shared_low + bank_mid) * body_t - bank_side * bank_spread + (manifold_r + orders_r + bright_r + intake_r + exhaust_r + residual_r) * side_gain) * a * (0.86 + aggression * 0.14);
 sat_drive = 1 + saturation * 0.85;
 out1 = tanh(left_drive * sat_drive) / sat_drive;
 out2 = tanh(right_drive * sat_drive) / sat_drive;""",

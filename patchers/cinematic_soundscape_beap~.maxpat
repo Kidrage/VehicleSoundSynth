@@ -29916,13 +29916,6 @@
 				"type" : "svg",
 				"implicit" : 1
 			}
-, 			{
-				"name" : "yafr2.maxpat",
-				"bootpath" : "~/Library/Application Support/Cycling '74/Max 8/Examples/effects/reverb/lib",
-				"patcherrelativepath" : "../../../../../Users/saintpeter/Library/Application Support/Cycling '74/Max 8/Examples/effects/reverb/lib",
-				"type" : "JSON",
-				"implicit" : 1
-			}
  ],
 		"autosave" : 0
 	}
