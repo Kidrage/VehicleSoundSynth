@@ -173,6 +173,21 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
                 self.assertIn(module, beap_text)
             self.assertIn("tanh~", beap_text)
 
+            boxes = {item["box"]["id"]: item["box"] for item in beap["boxes"]}
+            self.assertFalse(any(box.get("text") == "noise~" for box in boxes.values()))
+            sources_by_text = {}
+            for line in beap["lines"]:
+                patchline = line["patchline"]
+                source_id = patchline["source"][0]
+                dest_id = patchline["destination"][0]
+                sources_by_text.setdefault(boxes[dest_id].get("text", ""), set()).add(
+                    boxes[source_id].get("varname", "")
+                )
+            body_compat = next(text for text in sources_by_text if text.startswith("lores~"))
+            crack_compat = next(text for text in sources_by_text if text.startswith("svf~") and "180 " not in text)
+            self.assertIn("Pressure_Body", sources_by_text[body_compat])
+            self.assertIn("Exhaust_Crack", sources_by_text[crack_compat])
+
             host = self.load_json(f"patchers/{profile}_backfire_host~.maxpat")["patcher"]
             host_text = "\n".join(item["box"].get("text", "") for item in host["boxes"])
             self.assertIn("max(0.,min(1.,($f1-0.35)/0.65))", host_text)

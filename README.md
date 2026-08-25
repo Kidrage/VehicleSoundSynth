@@ -274,9 +274,10 @@ rounder and slightly longer.
 
 Open `patchers/v10_backfire_beap~.maxpat` or
 `patchers/v12_backfire_beap~.maxpat` to tune the labelled `PRESSURE BODY`,
-`EXHAUST CRACK`, and `TAIL COLOR / OUTPUT` panels. Start with the Mixer/MMF and
-AD controls, then set runtime Intensity; use transient dB only for the whole
-stem balance. The Soundscape, start and backfire BEAP `.maxpat` files are
+`EXHAUST CRACK`, and `TAIL COLOR / OUTPUT` panels. Mixer/MMF controls feed both
+the native BEAP path and its short-gate compatibility envelope; AD controls
+shape the native layer. Then set runtime Intensity, and use transient dB only
+for the whole stem balance. The Soundscape, start and backfire BEAP `.maxpat` files are
 seed-once user-owned files: edit and save them directly in Max, and project
 regeneration will preserve your tuning.
 

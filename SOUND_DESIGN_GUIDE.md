@@ -43,13 +43,15 @@ The editable patch is split into labelled `PRESSURE BODY`, `EXHAUST CRACK`,
 and `TAIL COLOR / OUTPUT` panels. Pressure Body controls the low resonant mass;
 Exhaust Crack controls the short band-limited edge; Tail Color/Output controls
 the decay colour, stereo split and final drive. A co-located Max 8.6.5-safe
-pressure envelope mirrors the visible BEAP graph so very short physical gates
-cannot disappear on BEAP revisions whose AD/VCA response differs. The
+pressure envelope is fed from the visible BEAP Mixer/MMF output so those tone
+controls remain authoritative even when very short physical gates would vanish
+on BEAP revisions whose AD/VCA response differs. AD controls shape the native
+BEAP layer; the compatibility envelope keeps its documented profile timing. The
 generated host keeps only a roughly -15 dB safety click/resonator; it is not the
 dominant sound or another event source.
 
-For tone work, tune the BEAP Mixer/MMF and AD controls first, then audition low,
-default and high runtime Intensity. Intensity morphs from a compact pressure
+For tone work, tune the BEAP Mixer/MMF first, then the native-layer AD controls,
+and audition low, default and high runtime Intensity. Intensity morphs from a compact pressure
 release through filtered crack to brighter colour and a second tail, rather
 than merely scaling the same waveform. Use transient dB last for whole-stem
 balance. Change `tools/build_project.py` only when the physical event, host

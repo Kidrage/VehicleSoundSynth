@@ -1205,7 +1205,6 @@ def make_ice_backfire_beap(profile: str) -> dict[str, Any]:
         f"*~ {0.75 if profile == 'v10' else 0.85:g}",
         1210, 400, 65, numinlets=2, numoutlets=1,
     )
-    reliable_noise = p.new("noise~", 920, 400, 55, numinlets=1, numoutlets=1)
     body_compat_filter = p.new(
         f"lores~ {520 if profile == 'v10' else 390} {0.62 if profile == 'v10' else 0.68:g}",
         985, 400, 110, numinlets=3, numoutlets=1,
@@ -1282,9 +1281,9 @@ def make_ice_backfire_beap(profile: str) -> dict[str, Any]:
     p.connect(body_filter, body_vca, 0, 0)
     p.connect(body_env_amount, body_vca, 0, 1)
     p.connect(gate, body_gate_trim)
-    p.connect(reliable_noise, body_compat_filter, 0, 0)
-    p.connect(reliable_noise, body_mode_a, 0, 0)
-    p.connect(reliable_noise, body_mode_b, 0, 0)
+    p.connect(body_filter, body_compat_filter, 0, 0)
+    p.connect(body_filter, body_mode_a, 0, 0)
+    p.connect(body_filter, body_mode_b, 0, 0)
     p.connect(body_mode_a, body_modes, 0, 0)
     p.connect(body_mode_b, body_modes, 0, 1)
     p.connect(body_compat_filter, body_colour, 0, 0)
@@ -1302,7 +1301,7 @@ def make_ice_backfire_beap(profile: str) -> dict[str, Any]:
     p.connect(crack_filter, crack_vca, 0, 0)
     p.connect(crack_env_amount, crack_vca, 0, 1)
     p.connect(gate, crack_gate_trim)
-    p.connect(reliable_noise, crack_compat_filter, 0, 0)
+    p.connect(crack_filter, crack_compat_filter, 0, 0)
     p.connect(crack_compat_filter, crack_pressure_vca, 2, 0)
     p.connect(crack_gate_trim, crack_pressure_vca, 0, 1)
     p.connect(crack_vca, crack_sum, 0, 0)
