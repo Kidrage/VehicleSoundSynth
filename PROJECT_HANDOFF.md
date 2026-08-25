@@ -9,12 +9,12 @@
 - Working root: `.`
 - Repository name: `VehicleSoundSynth-V5`
 - Git repository: `true`
-- Generated at: `2026-08-25T19:14:55+08:00`
+- Generated at: `2026-08-25T19:25:20+08:00`
 
 ## Current State
 
 - Branch: canonical `main`; layered-backfire delivery fixed point is
-  `69312396c368f4ea674753543cdc1cf64c46b5cd`.
+  `9fffe195d9e3aa68678856ad880693ac6a5df63a`.
 - Pedal/backfire implementation commit: `136ca58511a733bd486774e38cd92e5ded73e3f8`.
 - Indexed paths: 152 including the repository-local AgentLab handoff
 - Inventory truncated: `false`
@@ -62,11 +62,11 @@
 
 ### Tracked payload
 
-- total: 152 files, 119933728 bytes
+- total: 152 files, 119934371 bytes
 - audio (`.wav`): 41 files, 103833150 bytes
-- executable sources (`.py`, `.js`, `.gendsp`): 22 files, 801774 bytes
-- Max project/patch (`.maxpat`, `.maxproj`): 64 files, 14640505 bytes
-- documentation (`.md`, `.docx`, `.pdf`): 15 files, 617920 bytes
+- executable sources (`.py`, `.js`, `.gendsp`): 22 files, 802595 bytes
+- Max project/patch (`.maxpat`, `.maxproj`): 64 files, 14639797 bytes
+- documentation (`.md`, `.docx`, `.pdf`): 15 files, 618450 bytes
 - structured data (`.json`): 6 files, 33939 bytes
 - other tracked text/markers: 4 files, 6440 bytes
 
@@ -97,6 +97,7 @@
 
 ## Change History
 
+- `9fffe19 2026-08-25 fix: make backfire BEAP tone controls authoritative`
 - `6931239 2026-08-25 feat: deepen layered backfire pop synthesis`
 - `136ca58 2026-08-25 feat: refine pedals and physical overrun backfire`
 - `16ac747 2026-08-25 fix: validate throttle timbre and stereo coherence`
@@ -224,8 +225,11 @@
   generated host owns only engine-state gating, event/tail scheduling, soft
   saturation, and a roughly -15 dB compatibility click. No sample or Ferrari
   runtime audio is used. Final Max NonRealTime default Solo renders were
-  non-silent and unclipped: V10 peak/RMS -9.90/-36.89 dBFS and V12
-  -9.44/-38.92 dBFS, with zero clipped-sample ratio. Low/default/high probes
+  non-silent and unclipped: V10 peak/RMS -9.90/-41.52 dBFS and V12
+  -9.44/-43.41 dBFS, with zero clipped-sample ratio. After the review fix, the
+  Max-safe envelope is sourced from the visible BEAP Mixer/MMF outputs instead
+  of an independent noise path; their final default centroids measured about
+  826 Hz (V10) and 703 Hz (V12). Low/default/high probes
   were monotonic and spectrally distinct; the installed driver again produced
   44.1 kHz. All 139 tests pass, generator determinism and seed-once preservation
   pass, and `git diff --check` is clean. A fresh Max 8.6.5 project smoke and
@@ -233,7 +237,9 @@
   category, or patchcord blockers. Direct runtime loads retain the known
   search-path warning; the optional local Ferrari starter cleanly falls back.
   All task windows reached zero; Max ignored normal Quit/TERM, so exact task
-  PIDs 49806, 49928, 49996, and 50085 were ended only after closure. The
+  PIDs 49806, 49928, 49996, and 50085 were ended only after closure. Final
+  authority-check render PIDs 51587 and 51670 likewise reached zero windows
+  before exact termination. The
   pre-existing user Max PID 44294 was preserved. Crash recovery was restored
   from the temporary probe setting to `Ask`.
 - 2026-08-25 realistic pedals and audible overrun backfire: Keyboard Manual now
