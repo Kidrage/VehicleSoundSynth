@@ -32,6 +32,28 @@ Soundscape hosts, cabin, road, transient and `mix_master~` are generated bridge
 or safety modules. Edit `tools/build_project.py` and regenerate when those
 interfaces must change; do not tune their generated JSON directly.
 
+## Backfire voice
+
+The editable sound is in `patchers/v10_backfire_beap~.maxpat` and
+`patchers/v12_backfire_beap~.maxpat`. The matching generated
+`*_backfire_host~.maxpat` files are plumbing: they require ignition, a running
+engine and Backfire Enable, scale event strength/intensity, shape the short
+tail, and route the result into the transient stem. The host also contains one
+MSP pressure-click/resonator for the guaranteed main pop plus a quiet
+band-limited pressure tail driven by the same event. These prevent short-gate
+silence on Max 8.6.x BEAP revisions but are not additional event sources.
+Change the BEAP graph for editable noise/oscillator/filter character; change
+`tools/build_project.py` only when the physical event, main-pop compatibility
+layer, or safety contract must change.
+
+To hear the voice alone, start V10 or V12, set `Backfire Enable`, turn on
+`Backfire Solo`, and press `Test Pop`. In normal driving, hold enough throttle
+to load the engine above roughly 1600 RPM, then release W/trigger quickly. The
+drive model emits one strength-scaled `overrun` event; slow lift-off, braking by
+itself, low RPM, EV, or an off engine is intentionally silent. Save the BEAP
+patcher after tone edits, then disable Solo and verify the full mix below the
+final ceiling.
+
 ## Sound DNA controls
 
 RPM is the only master pitch/cadence input. Throttle does not directly tune an

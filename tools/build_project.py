@@ -65,6 +65,7 @@ STATE_NAMES = (
     "gear",
     "shift",
     "shift_dir",
+    "overrun",
     "pop",
     "intake_backfire",
     "exhaust_pop",
@@ -109,6 +110,7 @@ MACRO_NAMES = (
     "soundscape_solo",
     "backfire_enable",
     "backfire_intensity",
+    "backfire_solo",
     "reference_texture_level_db",
     "reference_texture_mute",
     "eq_low",
@@ -1215,7 +1217,7 @@ def make_ice_backfire_host(profile: str) -> dict[str, Any]:
     names = (
         "rpm", "throttle", "accel", "shift", "shift_dir", "intake_backfire",
         "exhaust_pop", "pop", "ignition", "engine_running", "backfire_enable",
-        "backfire_intensity", "transient_level_db",
+        "backfire_intensity", "transient_level_db", "overrun",
     )
     router = route(p, names, 35, 105, 960)
     p.connect(control, router)
@@ -1231,16 +1233,7 @@ def make_ice_backfire_host(profile: str) -> dict[str, Any]:
     p.connect(pitch_pack, pitch_line)
 
     throttle = p.new("clip 0. 1.", 430, 160, 75, numinlets=3, numoutlets=1)
-    accel_rpm = p.new("pak 0. 1800.", 520, 160, 95, numinlets=2, numoutlets=1)
-    overrun = p.new("expr ($f1 < -0.18) && ($f2 > 1400.)", 520, 205, 235, numinlets=2, numoutlets=1)
-    overrun_change = p.new("change", 520, 245, 55, numinlets=1, numoutlets=1)
-    overrun_edge = p.new("sel 1", 585, 245, 45, numinlets=1, numoutlets=2)
     p.connect(router, throttle, 1)
-    p.connect(router, accel_rpm, 2, 0)
-    p.connect(rpm, accel_rpm, 0, 1)
-    p.connect(accel_rpm, overrun)
-    p.connect(overrun, overrun_change)
-    p.connect(overrun_change, overrun_edge)
 
     enable = p.new("clip 0 1", 780, 160, 65, numinlets=3, numoutlets=1)
     enable_default = p.new("loadmess 1", 855, 160, 80, numinlets=1, numoutlets=1)
@@ -1265,28 +1258,58 @@ def make_ice_backfire_host(profile: str) -> dict[str, Any]:
     p.connect(running, physical_state, 0, 2)
     p.connect(physical_state, physical_gate)
     p.connect(physical_gate, event_gate, 0, 0)
-    p.connect(overrun_edge, event_gate, 0, 1)
-    for index in (3, 5, 6, 7):
-        edge = p.new("sel 1", 650 + (index - 3) * 70, 205, 45, numinlets=1, numoutlets=2)
+
+    event_strength = p.new("f 1.", 650, 285, 55, numinlets=2, numoutlets=1)
+    event_strength_default = p.new("loadmess 1.", 710, 285, 85, numinlets=1, numoutlets=1)
+    p.connect(event_strength_default, event_strength)
+
+    def fixed_event(index: int, strength: float, x: float) -> None:
+        edge = p.new("sel 1", x, 205, 45, numinlets=1, numoutlets=2)
+        order = p.new("t b b", x, 245, 50, numinlets=1, numoutlets=2)
+        strength_message = p.message(f"{strength:g}", x + 55, 245, 35)
         p.connect(router, edge, index)
-        p.connect(edge, event_gate, 0, 1)
+        p.connect(edge, order)
+        p.connect(order, strength_message, 1)
+        p.connect(strength_message, event_strength)
+        p.connect(order, event_gate, 0, 1)
+
+    fixed_event(3, 0.75, 430)
+    fixed_event(5, 1.0, 520)
+    fixed_event(6, 1.0, 610)
+    fixed_event(7, 1.0, 700)
+
+    overrun_clip = p.new("clip 0. 1.", 430, 285, 75, numinlets=3, numoutlets=1)
+    overrun_nonzero = p.new("sel 0.", 515, 285, 50, numinlets=1, numoutlets=2)
+    overrun_order = p.new("t b f", 575, 285, 50, numinlets=1, numoutlets=2)
+    p.connect(router, overrun_clip, 13)
+    p.connect(overrun_clip, overrun_nonzero)
+    p.connect(overrun_nonzero, overrun_order, 1, 0)
+    p.connect(overrun_order, event_strength, 1, 0)
+    p.connect(overrun_order, event_gate, 0, 1)
 
     intensity_default_value = 0.82 if profile == "v10" else 0.55
     intensity = p.new("clip 0. 1.", 35, 345, 75, numinlets=3, numoutlets=1)
     intensity_default = p.new(f"loadmess {intensity_default_value:g}", 120, 345, 105, numinlets=1, numoutlets=1)
-    intensity_state = p.new("pak 0.7 0.", 235, 345, 95, numinlets=2, numoutlets=1)
-    intensity_map = p.new("expr 0.8+3.2*$f1+0.6*(1.-$f2)", 345, 345, 245, numinlets=2, numoutlets=1)
+    intensity_state = p.new("pak 0.7 0. 1.", 235, 345, 110, numinlets=3, numoutlets=1)
+    intensity_map = p.new(
+        "expr (0.8+3.2*$f1+0.6*(1.-$f2))*(0.55+0.45*$f3)",
+        355, 345, 355, numinlets=3, numoutlets=1,
+    )
     intensity_pack = p.new("pack 0. 25", 600, 345, 85, numinlets=2, numoutlets=1)
     intensity_line = p.new("line~", 695, 345, 50, numinlets=2, numoutlets=2)
     p.connect(router, intensity, 11)
     p.connect(intensity_default, intensity)
     p.connect(intensity, intensity_state, 0, 0)
     p.connect(throttle, intensity_state, 0, 1)
+    p.connect(event_strength, intensity_state, 0, 2)
     p.connect(intensity_state, intensity_map)
     p.connect(intensity_map, intensity_pack)
     p.connect(intensity_pack, intensity_line)
 
-    gate_message = p.message("5. 0, 0. 130", 780, 285, 105)
+    gate_message = p.message(
+        f"5. 0, 0. {150 if profile == 'v10' else 190}",
+        805, 285, 115,
+    )
     gate_line = p.new("line~", 805, 345, 50, numinlets=2, numoutlets=2)
     p.connect(event_gate, rpm_store)
     p.connect(event_gate, gate_message)
@@ -1295,19 +1318,93 @@ def make_ice_backfire_host(profile: str) -> dict[str, Any]:
     p.connect(pitch_line, beap, 0, 0)
     p.connect(gate_line, beap, 0, 1)
     p.connect(intensity_line, beap, 0, 2)
+    # BEAP AD/VCA revisions in some Max 8.6.x installs can miss very short
+    # external gates. Keep the editable BEAP voice as the main design, but add
+    # one quiet, band-limited pressure release driven by the exact same physical
+    # envelope so a valid event can never become digital silence.
+    pressure_noise = p.new("noise~", 35, 445, 55, numinlets=1, numoutlets=1)
+    pressure_env = p.new("*~ 0.04", 100, 445, 65, numinlets=2, numoutlets=1)
+    pressure_burst = p.new("*~", 175, 445, 40, numinlets=2, numoutlets=1)
+    pressure_l = p.new(
+        f"lores~ {1050 if profile == 'v10' else 760} {0.68 if profile == 'v10' else 0.72:g}",
+        175, 485, 115, numinlets=3, numoutlets=1,
+    )
+    pressure_r = p.new(
+        f"lores~ {1180 if profile == 'v10' else 860} {0.64 if profile == 'v10' else 0.69:g}",
+        35, 530, 115, numinlets=3, numoutlets=1,
+    )
+    beap_pressure_l = p.new("+~", 310, 490, 40, numinlets=2, numoutlets=1)
+    beap_pressure_r = p.new("+~", 530, 490, 40, numinlets=2, numoutlets=1)
+    p.connect(gate_line, pressure_env)
+    p.connect(pressure_noise, pressure_burst, 0, 0)
+    p.connect(pressure_env, pressure_burst, 0, 1)
+    p.connect(pressure_burst, pressure_l)
+    p.connect(pressure_burst, pressure_r)
+    main_click = p.new("click~", 35, 570, 50, numinlets=1, numoutlets=1)
+    click_body = p.new(
+        f"reson~ {50 if profile == 'v10' else 58} {105 if profile == 'v10' else 82} {2.4 if profile == 'v10' else 2.8:g}",
+        95, 570, 135, numinlets=4, numoutlets=1,
+    )
+    click_crack = p.new(
+        f"reson~ {10.5 if profile == 'v10' else 11.5} {920 if profile == 'v10' else 680} {1.1 if profile == 'v10' else 1.35:g}",
+        95, 605, 135, numinlets=4, numoutlets=1,
+    )
+    click_sum = p.new("+~", 240, 585, 40, numinlets=2, numoutlets=1)
+    pressure_click_l = p.new("+~", 260, 490, 40, numinlets=2, numoutlets=1)
+    pressure_click_r = p.new("+~", 480, 490, 40, numinlets=2, numoutlets=1)
+    p.connect(event_gate, main_click)
+    tail_delay_1 = p.new(
+        f"delay {55 if profile == 'v10' else 75}", 35, 610, 65,
+        numinlets=2, numoutlets=1,
+    )
+    tail_delay_2 = p.new(
+        f"delay {105 if profile == 'v10' else 135}", 35, 640, 70,
+        numinlets=2, numoutlets=1,
+    )
+    tail_level_1 = p.message("0.32" if profile == "v10" else "0.24", 110, 640, 40)
+    tail_level_2 = p.message("0.16" if profile == "v10" else "0.12", 155, 640, 40)
+    p.connect(event_gate, tail_delay_1)
+    p.connect(event_gate, tail_delay_2)
+    p.connect(tail_delay_1, tail_level_1)
+    p.connect(tail_delay_2, tail_level_2)
+    p.connect(tail_level_1, main_click)
+    p.connect(tail_level_2, main_click)
+    p.connect(main_click, click_body)
+    p.connect(main_click, click_crack)
+    p.connect(click_body, click_sum, 0, 0)
+    p.connect(click_crack, click_sum, 0, 1)
+    p.connect(pressure_l, pressure_click_l, 0, 0)
+    p.connect(click_sum, pressure_click_l, 0, 1)
+    p.connect(pressure_r, pressure_click_r, 0, 0)
+    p.connect(click_sum, pressure_click_r, 0, 1)
+    p.connect(beap, beap_pressure_l, 0, 0)
+    p.connect(pressure_click_l, beap_pressure_l, 0, 1)
+    p.connect(beap, beap_pressure_r, 1, 0)
+    p.connect(pressure_click_r, beap_pressure_r, 0, 1)
     left_filter = p.new("svf~ 35 0.7", 310, 530, 95, numinlets=3, numoutlets=4)
     right_filter = p.new("svf~ 35 0.7", 530, 530, 95, numinlets=3, numoutlets=4)
-    left_gain = p.new("*~ 0.16", 310, 575, 65, numinlets=2, numoutlets=1)
-    right_gain = p.new("*~ 0.16", 530, 575, 65, numinlets=2, numoutlets=1)
+    output_gain_state = p.new("pak 0.7 1.", 780, 430, 90, numinlets=2, numoutlets=1)
+    output_gain_map = p.new("expr 0.32*$f1*(0.55+0.45*$f2)", 880, 430, 235, numinlets=2, numoutlets=1)
+    output_gain_pack = p.new("pack 0. 20", 880, 465, 85, numinlets=2, numoutlets=1)
+    output_gain_line = p.new("line~", 975, 465, 50, numinlets=2, numoutlets=2)
+    p.connect(intensity, output_gain_state, 0, 0)
+    p.connect(event_strength, output_gain_state, 0, 1)
+    p.connect(output_gain_state, output_gain_map)
+    p.connect(output_gain_map, output_gain_pack)
+    p.connect(output_gain_pack, output_gain_line)
+    left_gain = p.new("*~", 310, 575, 40, numinlets=2, numoutlets=1)
+    right_gain = p.new("*~", 530, 575, 40, numinlets=2, numoutlets=1)
     stem_level = add_db_gain_control(p, router, 12, 780, 530, -6.0)
     left_trim = p.new("*~", 310, 615, 40, numinlets=2, numoutlets=1)
     right_trim = p.new("*~", 530, 615, 40, numinlets=2, numoutlets=1)
     left = outlet(p, 330, 665, signal=True)
     right = outlet(p, 550, 665, signal=True)
-    p.connect(beap, left_filter, 0, 0)
-    p.connect(beap, right_filter, 1, 0)
+    p.connect(beap_pressure_l, left_filter, 0, 0)
+    p.connect(beap_pressure_r, right_filter, 0, 0)
     p.connect(left_filter, left_gain, 1, 0)
     p.connect(right_filter, right_gain, 1, 0)
+    p.connect(output_gain_line, left_gain, 0, 1)
+    p.connect(output_gain_line, right_gain, 0, 1)
     p.connect(left_gain, left_trim)
     p.connect(right_gain, right_trim)
     p.connect(stem_level, left_trim, 0, 1)
@@ -1748,11 +1845,24 @@ def make_profile_engine(profile: str) -> dict[str, Any]:
     p.connect(fan, cabin, 1, 0)
     p.connect(fan, mix, 0, 0)
     p.connect(fan, eq, 0, 0)
-    solo_router = route(p, ("soundscape_solo", "pad_solo"), 1090, 210, 210)
-    solo_clip = p.new("clip 0 1", 1090, 250, 65, numinlets=3, numoutlets=1)
-    solo_gain = p.new("expr 1-$i1", 1165, 250, 80, numinlets=1, numoutlets=1)
-    solo_pack = p.new("pack 0. 35", 1255, 250, 85, numinlets=2, numoutlets=1)
-    solo_line = p.new("line~", 1345, 250, 50, numinlets=2, numoutlets=2)
+    solo_router = route(p, ("soundscape_solo", "pad_solo", "backfire_solo"), 1010, 210, 330)
+    soundscape_solo_clip = p.new("clip 0 1", 1010, 250, 65, numinlets=3, numoutlets=1)
+    backfire_solo_clip = p.new("clip 0 1", 1085, 250, 65, numinlets=3, numoutlets=1)
+    solo_state = p.new("pak 0 0", 1160, 250, 75, numinlets=2, numoutlets=1)
+    base_solo_gain = p.new("expr 1-max($i1,$i2)", 1245, 220, 145, numinlets=2, numoutlets=1)
+    transient_solo_gain = p.new("expr 1-$i1*(1-$i2)", 1245, 250, 145, numinlets=2, numoutlets=1)
+    pad_solo_gain = p.new("expr 1-$i2", 1245, 280, 90, numinlets=2, numoutlets=1)
+
+    def solo_line(source: str, x: float, y: float) -> str:
+        packed = p.new("pack 0. 35", x, y, 85, numinlets=2, numoutlets=1)
+        line = p.new("line~", x + 95, y, 50, numinlets=2, numoutlets=2)
+        p.connect(source, packed)
+        p.connect(packed, line)
+        return line
+
+    base_solo_line = solo_line(base_solo_gain, 1010, 320)
+    transient_solo_line = solo_line(transient_solo_gain, 1160, 320)
+    pad_solo_line = solo_line(pad_solo_gain, 1310, 320)
     solo_default = p.new("loadmess 0", 1090, 285, 80, numinlets=1, numoutlets=1)
     core_l = p.new("*~", 95, 300, 40, numinlets=2, numoutlets=1)
     core_r = p.new("*~", 390, 300, 40, numinlets=2, numoutlets=1)
@@ -1762,13 +1872,19 @@ def make_profile_engine(profile: str) -> dict[str, Any]:
     road_r = p.new("*~", 515, 305, 40, numinlets=2, numoutlets=1)
     rumble_l = p.new("*~", 625, 305, 40, numinlets=2, numoutlets=1)
     rumble_r = p.new("*~", 675, 305, 40, numinlets=2, numoutlets=1)
+    pad_l = p.new("*~", 95, 335, 40, numinlets=2, numoutlets=1)
+    pad_r = p.new("*~", 390, 335, 40, numinlets=2, numoutlets=1)
     p.connect(control, solo_router)
-    p.connect(solo_router, solo_clip, 0)
-    p.connect(solo_router, solo_clip, 1)
-    p.connect(solo_default, solo_clip)
-    p.connect(solo_clip, solo_gain)
-    p.connect(solo_gain, solo_pack)
-    p.connect(solo_pack, solo_line)
+    p.connect(solo_router, soundscape_solo_clip, 0)
+    p.connect(solo_router, soundscape_solo_clip, 1)
+    p.connect(solo_router, backfire_solo_clip, 2)
+    p.connect(solo_default, soundscape_solo_clip)
+    p.connect(solo_default, backfire_solo_clip)
+    p.connect(soundscape_solo_clip, solo_state, 0, 0)
+    p.connect(backfire_solo_clip, solo_state, 0, 1)
+    p.connect(solo_state, base_solo_gain)
+    p.connect(solo_state, transient_solo_gain)
+    p.connect(solo_state, pad_solo_gain)
     p.connect(power, core_l, 0, 0)
     p.connect(power, core_r, 1, 0)
     p.connect(transient, transient_l, 0, 0)
@@ -1777,17 +1893,20 @@ def make_profile_engine(profile: str) -> dict[str, Any]:
     p.connect(road, road_r, 1, 0)
     p.connect(rumble, rumble_l, 0, 0)
     p.connect(rumble, rumble_r, 1, 0)
-    for stem_gain in (
-        core_l, core_r, transient_l, transient_r, road_l, road_r,
-        rumble_l, rumble_r,
-    ):
-        p.connect(solo_line, stem_gain, 0, 1)
+    for stem_gain in (core_l, core_r, road_l, road_r, rumble_l, rumble_r):
+        p.connect(base_solo_line, stem_gain, 0, 1)
+    for stem_gain in (transient_l, transient_r):
+        p.connect(transient_solo_line, stem_gain, 0, 1)
+    p.connect(pad, pad_l, 0, 0)
+    p.connect(pad, pad_r, 1, 0)
+    p.connect(pad_solo_line, pad_l, 0, 1)
+    p.connect(pad_solo_line, pad_r, 0, 1)
     pad_sum_l = p.new("+~", 95, 340, 35, numinlets=2, numoutlets=1)
     pad_sum_r = p.new("+~", 390, 340, 35, numinlets=2, numoutlets=1)
     p.connect(core_l, pad_sum_l, 0, 0)
-    p.connect(pad, pad_sum_l, 0, 1)
+    p.connect(pad_l, pad_sum_l, 0, 1)
     p.connect(core_r, pad_sum_r, 0, 0)
-    p.connect(pad, pad_sum_r, 1, 1)
+    p.connect(pad_r, pad_sum_r, 0, 1)
     power_l = pad_sum_l
     power_r = pad_sum_r
     power_l_out = 0
@@ -4582,10 +4701,10 @@ def make_launcher() -> dict[str, Any]:
 
 
 def make_keyboard_drive_ws() -> dict[str, Any]:
-    """Build a focus-aware W/S throttle and brake controller for Manual mode."""
+    """Build a focus-aware binary W/S pedal adapter for Manual mode."""
     p = Patcher(720, 430)
     p.comment(
-        "Runtime keyboard control — hold W for throttle, hold S for brake; releases return both pedals to zero",
+        "Keyboard adapter — W is immediate full throttle; S is immediate fixed service brake; releases return to zero",
         20,
         15,
         650,
@@ -4611,10 +4730,10 @@ def make_keyboard_drive_ws() -> dict[str, Any]:
     s_change = p.new("change", 165, 260, 55, numinlets=1, numoutlets=3)
     w_state = p.new("sel 1 0", 25, 300, 55, numinlets=1, numoutlets=3)
     s_state = p.new("sel 1 0", 165, 300, 55, numinlets=1, numoutlets=3)
-    throttle_up = p.message("1. 1800", 25, 340, 65)
-    throttle_off = p.message("0. 900", 95, 340, 55)
-    brake_on = p.message("0.65 280", 165, 340, 65)
-    brake_off = p.message("0. 240", 235, 340, 55)
+    throttle_up = p.message("1.", 25, 340, 35)
+    throttle_off = p.message("0.", 70, 340, 35)
+    brake_on = p.message("0.65", 165, 340, 45)
+    brake_off = p.message("0.", 220, 340, 35)
     throttle_line = p.new("line 0.", 320, 340, 60, numinlets=2, numoutlets=2)
     brake_line = p.new("line 0.", 410, 340, 60, numinlets=2, numoutlets=2)
     throttle_out = outlet(p, 320, 385)
@@ -4987,6 +5106,18 @@ def make_profile_main(profile: str, root: Path | None = None) -> dict[str, Any]:
         p.connect(backfire_intensity_clip, backfire_intensity_named)
         p.connect(backfire_intensity_named, engine)
         p.connect(backfire_intensity_default, backfire_intensity)
+
+        p.comment("Backfire Solo / Test Pop", 500, 315, 175)
+        backfire_solo = p.add("toggle", None, 500, 340, 24, 24, numinlets=1, numoutlets=1)
+        backfire_solo_named = p.new("prepend backfire_solo", 535, 340, 150, numinlets=1, numoutlets=1)
+        backfire_solo_default = p.new("loadmess 0", 695, 340, 80, numinlets=1, numoutlets=1)
+        backfire_test = p.add("button", None, 500, 375, 24, 24, numinlets=1, numoutlets=1)
+        backfire_test_message = p.message("pop 1", 535, 375, 50)
+        p.connect(backfire_solo, backfire_solo_named)
+        p.connect(backfire_solo_named, engine)
+        p.connect(backfire_solo_default, backfire_solo)
+        p.connect(backfire_test, backfire_test_message)
+        p.connect(backfire_test_message, engine)
 
     p.comment("Audio + Output", 760, 105, 120)
     audio_toggle = p.add("toggle", None, 760, 135, 24, 24, numinlets=1, numoutlets=1)

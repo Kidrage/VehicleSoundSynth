@@ -26,7 +26,14 @@ var DRIVE_CONFIG = {
         shiftSweepSeconds: 0.09,
         shiftEngageSeconds: 0.07,
         shiftFloor: 0.65,
-        shiftLockSeconds: 0.45
+        shiftLockSeconds: 0.45,
+        overrunMinRpm: 1600.0,
+        overrunArmThrottle: 0.35,
+        overrunCloseThrottle: 0.18,
+        overrunMinDrop: 0.35,
+        overrunArmSeconds: 0.12,
+        overrunWindowSeconds: 0.18,
+        overrunCooldownSeconds: 0.30
     },
     v12: {
         idle: 780.0,
@@ -42,7 +49,14 @@ var DRIVE_CONFIG = {
         shiftSweepSeconds: 0.12,
         shiftEngageSeconds: 0.10,
         shiftFloor: 0.72,
-        shiftLockSeconds: 0.55
+        shiftLockSeconds: 0.55,
+        overrunMinRpm: 1600.0,
+        overrunArmThrottle: 0.35,
+        overrunCloseThrottle: 0.18,
+        overrunMinDrop: 0.35,
+        overrunArmSeconds: 0.12,
+        overrunWindowSeconds: 0.18,
+        overrunCooldownSeconds: 0.30
     }
 };
 
@@ -90,6 +104,20 @@ DriveModel.prototype.reset = function () {
     this.shift = null;
     this.shiftCut = 1.0;
     this.lastShiftEnd = -999.0;
+    this.overrunArmElapsed = 0.0;
+    this.overrunArmed = 0;
+    this.overrunReleaseElapsed = -1.0;
+    this.overrunReleaseFrom = 0.0;
+    this.overrunPeakThrottle = 0.0;
+    this.overrunCooldown = 0.0;
+};
+
+DriveModel.prototype.clearOverrun = function () {
+    this.overrunArmElapsed = 0.0;
+    this.overrunArmed = 0;
+    this.overrunReleaseElapsed = -1.0;
+    this.overrunReleaseFrom = 0.0;
+    this.overrunPeakThrottle = 0.0;
 };
 
 DriveModel.prototype.handle = function (name, args) {
@@ -110,6 +138,8 @@ DriveModel.prototype.handle = function (name, args) {
             this.brake = 0.0;
             this.shift = null;
             this.shiftCut = 1.0;
+            this.clearOverrun();
+            this.overrunCooldown = 0.0;
             events.push(["shift_cut", 1.0]);
         }
     } else if (name === "start" && value && this.ignition) {
@@ -125,6 +155,8 @@ DriveModel.prototype.handle = function (name, args) {
         this.shift = null;
         this.shiftCut = 1.0;
         this.lastShiftEnd = -999.0;
+        this.clearOverrun();
+        this.overrunCooldown = 0.0;
         events.push(["gear", 1]);
         events.push(["start", 1]);
     } else {
@@ -165,6 +197,60 @@ DriveModel.prototype.normalIceTarget = function () {
         this.throttle * (this.config.launchRpm - this.config.idle);
     var clutch = smoothstep((this.speed - 4.0) / 20.0);
     return freeRev * (1.0 - clutch) + coupled * clutch;
+};
+
+DriveModel.prototype.updateOverrun = function (dt, previousThrottle, events) {
+    var drop;
+    var dropStrength;
+    var rpmStrength;
+    var strength;
+    if (this.profile === "ev" || !this.running ||
+            (this.startElapsed >= 0.0 && this.startElapsed < this.config.catchSeconds)) {
+        this.clearOverrun();
+        return;
+    }
+
+    this.overrunCooldown = Math.max(0.0, this.overrunCooldown - dt);
+    if (!this.overrunArmed) {
+        if (this.throttle >= this.config.overrunArmThrottle &&
+                this.rpm >= this.config.overrunMinRpm) {
+            this.overrunArmElapsed += dt;
+            this.overrunPeakThrottle = Math.max(this.overrunPeakThrottle, this.throttle);
+            if (this.overrunArmElapsed >= this.config.overrunArmSeconds) {
+                this.overrunArmed = 1;
+            }
+        } else {
+            this.overrunArmElapsed = 0.0;
+            this.overrunPeakThrottle = this.throttle;
+        }
+        return;
+    }
+
+    this.overrunPeakThrottle = Math.max(this.overrunPeakThrottle, previousThrottle);
+    if (this.overrunReleaseElapsed < 0.0 && previousThrottle - this.throttle >= 0.02) {
+        this.overrunReleaseElapsed = 0.0;
+        this.overrunReleaseFrom = Math.max(this.overrunPeakThrottle, previousThrottle);
+    }
+    if (this.overrunReleaseElapsed < 0.0) {
+        return;
+    }
+
+    this.overrunReleaseElapsed += dt;
+    drop = this.overrunReleaseFrom - this.throttle;
+    if (this.throttle <= this.config.overrunCloseThrottle &&
+            drop >= this.config.overrunMinDrop &&
+            this.overrunReleaseElapsed <= this.config.overrunWindowSeconds &&
+            this.rpm >= this.config.overrunMinRpm && this.overrunCooldown <= 0.0) {
+        dropStrength = clamp(drop / 0.8, 0.0, 1.0);
+        rpmStrength = clamp((this.rpm - this.config.overrunMinRpm) / 5000.0, 0.0, 1.0);
+        strength = clamp(0.35 + 0.40 * dropStrength + 0.25 * rpmStrength, 0.0, 1.0);
+        events.push(["overrun", strength]);
+        this.clearOverrun();
+        this.overrunCooldown = this.config.overrunCooldownSeconds;
+    } else if (this.overrunReleaseElapsed > this.config.overrunWindowSeconds ||
+            this.throttle > this.overrunReleaseFrom - 0.05) {
+        this.clearOverrun();
+    }
 };
 
 DriveModel.prototype.beginShift = function (direction, events) {
@@ -236,8 +322,10 @@ DriveModel.prototype.tick = function (dt) {
     var serviceBrake;
     var target;
     var alpha;
+    var previousThrottle;
     dt = clamp(Number(dt) || 0.02, 0.001, 0.1);
     this.time += dt;
+    previousThrottle = this.throttle;
     pedals = this.effectivePedals();
     this.throttle = pedals[0];
     this.brake = pedals[1];
@@ -268,6 +356,8 @@ DriveModel.prototype.tick = function (dt) {
         this.rpm = clamp(this.rpm, this.config.idle, 10000.0);
         this.maybeShift(events);
     }
+
+    this.updateOverrun(dt, previousThrottle, events);
 
     events.push(["speed_kph", this.speed]);
     events.push(["rpm", this.rpm]);

@@ -93,7 +93,7 @@ const events = model.handle('source', ['gamepad']);
 console.log(JSON.stringify({before, after: model.snapshot(), events}));
 """
         )
-        self.assertEqual(0.75, result["before"]["throttle"])
+        self.assertEqual(0.0, result["before"]["throttle"])
         self.assertEqual(0.25, result["before"]["brake"])
         self.assertEqual(0.0, result["after"]["throttle"])
         self.assertEqual(0.0, result["after"]["brake"])
@@ -303,6 +303,142 @@ console.log(JSON.stringify({keyboard, gamepad, restored: model.snapshot()}));
         self.assertEqual(0.6, result["keyboard"]["throttle"])
         self.assertEqual(0.0, result["gamepad"]["throttle"])
         self.assertEqual(0.4, result["restored"]["throttle"])
+
+    def test_keyboard_pedals_are_immediate_and_brake_has_priority(self):
+        result = run_node(
+            """
+const input = require(process.argv[1]);
+const model = new input.ManualInputModel();
+model.handle('manual', [1]);
+model.handle('keyboard_throttle', [1]);
+const throttle = model.snapshot();
+model.handle('keyboard_brake', [0.65]);
+const overlap = model.snapshot();
+model.handle('keyboard_brake', [0]);
+const resumed = model.snapshot();
+model.handle('keyboard_throttle', [0]);
+console.log(JSON.stringify({throttle, overlap, resumed, released: model.snapshot()}));
+"""
+        )
+        self.assertEqual(1.0, result["throttle"]["throttle"])
+        self.assertEqual(0.0, result["overlap"]["throttle"])
+        self.assertEqual(0.65, result["overlap"]["brake"])
+        self.assertEqual(1.0, result["resumed"]["throttle"])
+        self.assertEqual(0.0, result["released"]["throttle"])
+        self.assertEqual(0.0, result["released"]["brake"])
+
+    def test_fast_loaded_lift_off_emits_one_bounded_overrun_event(self):
+        result = run_node(
+            """
+const drive = require(process.argv[1]);
+function trace(profile) {
+  const model = new drive.DriveModel(profile);
+  model.handle('ignition', [1]);
+  model.handle('start', [1]);
+  for (let i = 0; i < 60; i += 1) model.tick(0.02);
+  model.speed = 70;
+  model.rpm = 4200;
+  model.gear = profile === 'ev' ? 1 : 2;
+  model.handle('throttle', [1]);
+  let events = [];
+  for (let i = 0; i < 20; i += 1) events.push(...model.tick(0.02));
+  model.handle('throttle', [0]);
+  for (let i = 0; i < 20; i += 1) events.push(...model.tick(0.02));
+  return events.filter(event => event[0] === 'overrun');
+}
+console.log(JSON.stringify({v10: trace('v10'), v12: trace('v12'), ev: trace('ev')}));
+""",
+            DRIVE_MODEL_JS,
+        )
+        for profile in ("v10", "v12"):
+            self.assertEqual(1, len(result[profile]))
+            self.assertGreaterEqual(result[profile][0][1], 0.35)
+            self.assertLessEqual(result[profile][0][1], 1.0)
+        self.assertEqual([], result["ev"])
+
+    def test_overrun_rejects_slow_release_low_rpm_and_brake_only(self):
+        result = run_node(
+            """
+const drive = require(process.argv[1]);
+function prepared() {
+  const model = new drive.DriveModel('v10');
+  model.handle('ignition', [1]);
+  model.handle('start', [1]);
+  for (let i = 0; i < 60; i += 1) model.tick(0.02);
+  model.speed = 70;
+  model.rpm = 4200;
+  model.gear = 2;
+  model.handle('throttle', [1]);
+  for (let i = 0; i < 20; i += 1) model.tick(0.02);
+  return model;
+}
+function overruns(events) { return events.filter(event => event[0] === 'overrun'); }
+let slow = prepared();
+let slowEvents = [];
+for (let i = 19; i >= 0; i -= 1) {
+  slow.handle('throttle', [i / 20]);
+  slowEvents.push(...slow.tick(0.02));
+}
+let low = prepared();
+low.speed = 0;
+low.gear = 1;
+low.rpm = 1300;
+low.handle('throttle', [0]);
+let lowEvents = low.tick(0.02);
+let braking = prepared();
+braking.handle('brake', [0.65]);
+let brakeEvents = braking.tick(0.02);
+console.log(JSON.stringify({
+  slow: overruns(slowEvents),
+  low: overruns(lowEvents),
+  braking: overruns(brakeEvents)
+}));
+""",
+            DRIVE_MODEL_JS,
+        )
+        self.assertEqual([], result["slow"])
+        self.assertEqual([], result["low"])
+        self.assertEqual([], result["braking"])
+
+    def test_smoothed_gamepad_lift_off_reaches_the_same_overrun_seam(self):
+        result = run_node(
+            """
+const input = require(process.argv[1]);
+const drive = require(process.argv[2]);
+const manual = new input.ManualInputModel();
+const model = new drive.DriveModel('v10');
+model.handle('ignition', [1]);
+model.handle('start', [1]);
+for (let i = 0; i < 60; i += 1) model.tick(0.02);
+model.speed = 70;
+model.rpm = 4200;
+model.gear = 2;
+manual.handle('manual', [1]);
+manual.handle('source', ['gamepad']);
+manual.handle('dead_zone', [0]);
+manual.handle('smoothing_ms', [30]);
+function step(events) {
+  for (let j = 0; j < 2; j += 1) {
+    for (const event of manual.tick(0.01)) {
+      if (event[0] === 'throttle' || event[0] === 'brake') {
+        model.handle(event[0], [event[1]]);
+      }
+    }
+  }
+  events.push(...model.tick(0.02));
+}
+let events = [];
+manual.handle('axis_left_trigger', [1]);
+for (let i = 0; i < 50; i += 1) step(events);
+manual.handle('axis_left_trigger', [0]);
+for (let i = 0; i < 15; i += 1) step(events);
+console.log(JSON.stringify(events.filter(event => event[0] === 'overrun')));
+""",
+            MANUAL_INPUT_JS,
+            DRIVE_MODEL_JS,
+        )
+        self.assertEqual(1, len(result))
+        self.assertGreaterEqual(result[0][1], 0.35)
 
     def test_progressive_service_brake_has_realistic_monotonic_stop_times(self):
         result = run_node(

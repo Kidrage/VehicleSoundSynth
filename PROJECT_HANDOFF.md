@@ -9,15 +9,15 @@
 - Working root: `.`
 - Repository name: `VehicleSoundSynth-V5`
 - Git repository: `true`
-- Generated at: `2026-08-25T04:36:00Z`
+- Generated at: `2026-08-25T08:03:46Z`
 
 ## Current State
 
-- Branch: `codex/sound-design-modules` (isolated implementation worktree;
+- Branch: `codex/realistic-pedal-backfire` (isolated implementation worktree;
   original `main` worktree and its user-owned runtime saves are untouched)
 - Implementation fixed point: `cd6efbd22e677a8565868690a5acc46129fedef2`;
   resolve the current handoff-only descendant dynamically with `git rev-parse HEAD`.
-- Indexed paths: 151 after the six new sound-design paths are committed
+- Indexed paths: 152 including the repository-local AgentLab handoff
 - Inventory truncated: `false`
 - Inaccessible paths: 0
 - Scan mode: complete path/metadata inventory; no bulk content read; no symlink traversal.
@@ -52,6 +52,7 @@
 | `assets` | 11 |
 | `assets/raw` | 7 |
 | `.codex` | 4 |
+| `.agentlab` | 1 |
 | `code` | 4 |
 | `gen` | 3 |
 | `presets` | 3 |
@@ -64,7 +65,7 @@
 
 - audio: 41 files, 103833150 bytes
 - code: 18 files, 688992 bytes
-- literature: 15 files, 596902 bytes
+- literature: 16 files (byte totals vary with the live handoff)
 - other: 60 files, 12992034 bytes
 - structured_data: 6 files, 33194 bytes
 
@@ -73,7 +74,7 @@
 - `.maxpat`: 63
 - `.wav`: 41
 - `.py`: 15
-- `.md`: 8
+- `.md`: 9
 - `.json`: 6
 - `.docx`: 5
 - `.js`: 4
@@ -124,10 +125,12 @@
 
 ## Current Changes
 
-- None on `codex/sound-design-modules`; verify the clean status dynamically.
-- The original repository still has pre-existing user Max saves in its three
-  top-level runtimes. Their before/after hashes are unchanged; they are outside
-  this isolated branch and must not be overwritten or folded into this commit.
+- In progress on `codex/realistic-pedal-backfire`: binary W/full throttle,
+  fixed 0.65 S brake priority, analog Gamepad overlap, physical ICE lift-off
+  `overrun` events, strength-scaled BEAP hosts, and V10/V12 Backfire Solo/Test.
+- Five pre-existing Max saves in the original repository were archived exactly
+  under `VehicleSoundSynth-V5-MaxSaveBackup-20260825-pedal-backfire` before the
+  planned mainline fast-forward; they are not implementation input.
 
 ## Related Repositories
 
@@ -209,6 +212,28 @@
 ## Agent Notes
 
 <!-- AGENT_NOTES_START -->
+- 2026-08-25 realistic pedals and audible overrun backfire: Keyboard Manual now
+  sends immediate W=1/0 throttle and S=0.65/0 brake with brake priority, while
+  Gamepad LT/RT remain independent analog pedals. Source/Manual exit still
+  releases both values synchronously and the 20 ms speed/RPM/shift integrator is
+  unchanged. The shared ICE DriveModel arms only after loaded operation above
+  1600 RPM and emits one bounded `overrun 0..1` event for a sufficiently fast
+  lift; EV, slow/low-RPM/brake-only/off-state paths remain silent. V10/V12 hosts
+  map event strength to the seed-once BEAP voice, a band-limited pressure layer,
+  and a deterministic click/resonator main pop with two decaying tail impulses.
+  Both ICE pages now provide Backfire Solo and Test Pop. Real Max 8.6.5 final
+  Solo renders were non-silent and unclipped: V10 final peak/RMS -16.79/-43.66
+  dBFS and V12 -17.39/-45.14 dBFS, with 0 clipped-sample ratio. The installed
+  NonRealTime driver again wrote 44.1 kHz. All 136 tests pass, regeneration is
+  deterministic, seed-once BEAP hashes are unchanged, and `git diff --check` is
+  clean. The project and EV/V10/V12 runtimes loaded without missing-object, Gen
+  outlet, invalid category, or patchcord blockers; direct runtime opens retain
+  known search-path warnings and the optional local V10 starter falls back when
+  absent. No intentional GUI edits were made; generated files had already been
+  saved before the smoke. All task windows were closed. Max ignored normal Quit
+  and TERM only after window count reached zero, so exact task PID 31832 was
+  ended; `application "Max" is running` is false. The temporary crash-recovery
+  preference used to suppress automated probe restoration was restored to Ask.
 - 2026-08-25 sound-design modularization: EV/V10/V12 now route continuous
   synthesis through separate seed-once `*_sound_dna~` modules with persistent
   profile-local controls for air/detail, irregularity, stereo width, saturation,

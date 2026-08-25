@@ -1,8 +1,8 @@
 # Source Index
 
 Repository: /Users/saintpeter/Downloads/VehicleSoundSynth-V5
-Tracked filtered files: 107
-High-value indexed files: 31
+Tracked filtered files: 108
+High-value indexed files: 32
 
 Read this file before broad repository exploration. Prefer focused `rg`
 or `git grep` against the listed areas before opening source files.
@@ -49,6 +49,7 @@ or `git grep` against the listed areas before opening source files.
 
 ## docs
 
+- .agentlab/HandOff.md
 - .codex/MAINLINE.md
 - .codex/REPO_GUIDE.md
 - ASSET_LICENSES.md

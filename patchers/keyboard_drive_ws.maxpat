@@ -21,7 +21,7 @@
             650.0,
             22.0
           ],
-          "text": "Runtime keyboard control \u2014 hold W for throttle, hold S for brake; releases return both pedals to zero"
+          "text": "Keyboard adapter \u2014 W is immediate full throttle; S is immediate fixed service brake; releases return to zero"
         }
       },
       {
@@ -428,10 +428,10 @@
           "patching_rect": [
             25.0,
             340.0,
-            65.0,
+            35.0,
             22.0
           ],
-          "text": "1. 1800"
+          "text": "1."
         }
       },
       {
@@ -444,12 +444,12 @@
             ""
           ],
           "patching_rect": [
-            95.0,
+            70.0,
             340.0,
-            55.0,
+            35.0,
             22.0
           ],
-          "text": "0. 900"
+          "text": "0."
         }
       },
       {
@@ -464,10 +464,10 @@
           "patching_rect": [
             165.0,
             340.0,
-            65.0,
+            45.0,
             22.0
           ],
-          "text": "0.65 280"
+          "text": "0.65"
         }
       },
       {
@@ -480,12 +480,12 @@
             ""
           ],
           "patching_rect": [
-            235.0,
+            220.0,
             340.0,
-            55.0,
+            35.0,
             22.0
           ],
-          "text": "0. 240"
+          "text": "0."
         }
       },
       {

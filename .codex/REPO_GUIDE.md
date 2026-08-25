@@ -94,10 +94,16 @@ On macOS, Max writes load diagnostics to
 - Open the project first and launcher second in the same Max instance. Launcher
   selection writes/closes the prior top-level runtime before opening one unique
   replacement. In Internal Manual, choose Keyboard and focus the runtime for
-  W/S, or choose Gamepad for fixed LT throttle / RT brake. Both adapters
-  feed only throttle/brake into the existing fixed-step drivetrain interface;
+  W/S, or choose Gamepad for fixed LT throttle / RT brake. Keyboard W is an
+  immediate 1/0 pedal and S is a 0.65 brake with brake priority; Gamepad keeps
+  both pedals analog and permits overlap. Both adapters feed only
+  throttle/brake into the existing fixed-step drivetrain interface;
   its 20 ms RPM/shift integration remains unchanged while V5 uses a gentler,
-  progressive service-brake law. Save user-tuned BEAP
+  progressive service-brake law. The ICE drive model emits one bounded
+  `overrun 0..1` event for a sufficiently fast loaded lift-off; generated hosts
+  alone translate that event to the seed-once BEAP backfire voices and their
+  bounded click/resonator compatibility pop. Use the runtime Backfire Solo +
+  Test Pop controls for isolated tuning. Save user-tuned BEAP
   subpatchers, close every task-opened
   patcher, and quit Max after a smoke test.
 
@@ -110,7 +116,9 @@ On macOS, Max writes load diagnostics to
 - Persist one shared vehicle-bus four-band EQ across all three runtimes with safe default fallback.
 - Keep `main.maxpat` DSP-free and maintain one-runtime-at-a-time CPU behavior.
 - Keep Keyboard and fixed semantic macOS gamepad pedals mutually exclusive,
-  with immediate zero release on source or Manual-mode exit.
+  with immediate zero release on source or Manual-mode exit. Keyboard is a
+  binary full-throttle adapter with 0.65 brake priority; Gamepad pedals remain
+  independent continuous 0..1 values.
 - Keep natural coast inside the shared 20 ms drive model: released low-speed
   settling is stronger than high-speed coasting, blends to the original powered
   drag by 0.08 throttle, and must not alter the public throttle/brake interface.

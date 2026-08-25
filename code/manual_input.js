@@ -32,6 +32,8 @@ function ManualInputModel() {
     this.brake = 0.0;
     this.throttleTarget = 0.0;
     this.brakeTarget = 0.0;
+    this.keyboardThrottle = 0.0;
+    this.keyboardBrake = 0.0;
     this.deadZone = 0.02;
     this.smoothingMs = 30.0;
     this.leftTriggerSigned = 0;
@@ -47,7 +49,17 @@ ManualInputModel.prototype.release = function () {
     this.brake = 0.0;
     this.throttleTarget = 0.0;
     this.brakeTarget = 0.0;
+    this.keyboardThrottle = 0.0;
+    this.keyboardBrake = 0.0;
     return [["throttle", 0.0], ["brake", 0.0]];
+};
+
+ManualInputModel.prototype.applyKeyboardPedals = function () {
+    this.brake = this.keyboardBrake;
+    this.throttle = this.brake > 0.0 ? 0.0 : this.keyboardThrottle;
+    this.throttleTarget = this.throttle;
+    this.brakeTarget = this.brake;
+    return [["throttle", this.throttle], ["brake", this.brake]];
 };
 
 ManualInputModel.prototype.deviceEvents = function () {
@@ -86,13 +98,11 @@ ManualInputModel.prototype.handle = function (name, args) {
             return this.release();
         }
     } else if (name === "keyboard_throttle" && this.manual && this.source === "keyboard") {
-        this.throttle = clamp(Number(value) || 0.0, 0.0, 1.0);
-        this.throttleTarget = this.throttle;
-        return [["throttle", this.throttle]];
+        this.keyboardThrottle = clamp(Number(value) || 0.0, 0.0, 1.0);
+        return this.applyKeyboardPedals();
     } else if (name === "keyboard_brake" && this.manual && this.source === "keyboard") {
-        this.brake = clamp(Number(value) || 0.0, 0.0, 1.0);
-        this.brakeTarget = this.brake;
-        return [["brake", this.brake]];
+        this.keyboardBrake = clamp(Number(value) || 0.0, 0.0, 1.0);
+        return this.applyKeyboardPedals();
     } else if (name === "dead_zone") {
         this.deadZone = clamp(Number(value) || 0.0, 0.0, 0.25);
     } else if (name === "smoothing_ms") {

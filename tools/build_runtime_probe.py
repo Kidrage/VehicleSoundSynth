@@ -136,6 +136,24 @@ SCENARIOS = {
         "profile": "v12", "rpm": 3300.0, "lock_rpm": True,
         "event": "exhaust_pop 1", "ignition_enabled": False,
     },
+    "v10-backfire-overrun-solo": {
+        "profile": "v10", "rpm": 4200.0, "lock_rpm": True,
+        "event": (
+            "ignition 1, engine_running 1, backfire_enable 1, "
+            "backfire_intensity 1, overrun 0.95"
+        ),
+        "direct_event_to_transient": True,
+        "extra_messages": ("backfire_enable 1", "backfire_intensity 1", "backfire_solo 1"),
+    },
+    "v12-backfire-overrun-solo": {
+        "profile": "v12", "rpm": 4200.0, "lock_rpm": True,
+        "event": (
+            "ignition 1, engine_running 1, backfire_enable 1, "
+            "backfire_intensity 1, overrun 0.95"
+        ),
+        "direct_event_to_transient": True,
+        "extra_messages": ("backfire_enable 1", "backfire_intensity 1", "backfire_solo 1"),
+    },
     "v10-lifecycle-idle": {
         "profile": "v10", "rpm": 740.0, "throttle": 0.08, "load": 0.15,
         "lock_rpm": True, "lifecycle_role": "idle", "extra_messages": ("accel 0",),
@@ -225,6 +243,7 @@ def make_probe(
     tap: str = "final",
     extra_messages: tuple[str, ...] = (),
     event_message: str | None = None,
+    direct_event_to_transient: bool = False,
     drive_lifecycle: bool = False,
     direct_powertrain: bool = False,
 ) -> dict:
@@ -265,11 +284,24 @@ def make_probe(
     for controlled in (transient, road, rumble, cabin, mix):
         p.connect(controller, controlled, 0, 0)
     p.connect(controller, soundscape, 0, 0)
-    solo_router = p.new("route soundscape_solo pad_solo", 660, 300, 210, numinlets=1, numoutlets=3)
-    solo_clip = p.new("clip 0 1", 660, 335, 65, numinlets=3, numoutlets=1)
-    solo_gain = p.new("expr 1-$i1", 735, 335, 80, numinlets=1, numoutlets=1)
-    solo_pack = p.new("pack 0. 35", 825, 335, 80, numinlets=2, numoutlets=1)
-    solo_line = p.new("line~", 915, 335, 50, numinlets=2, numoutlets=2)
+    solo_router = p.new("route soundscape_solo pad_solo backfire_solo", 620, 300, 330, numinlets=1, numoutlets=4)
+    soundscape_solo_clip = p.new("clip 0 1", 620, 335, 65, numinlets=3, numoutlets=1)
+    backfire_solo_clip = p.new("clip 0 1", 695, 335, 65, numinlets=3, numoutlets=1)
+    solo_state = p.new("pak 0 0", 770, 335, 75, numinlets=2, numoutlets=1)
+    base_solo_gain = p.new("expr 1-max($i1,$i2)", 855, 305, 145, numinlets=2, numoutlets=1)
+    transient_solo_gain = p.new("expr 1-$i1*(1-$i2)", 855, 335, 145, numinlets=2, numoutlets=1)
+    pad_solo_gain = p.new("expr 1-$i2", 855, 365, 90, numinlets=2, numoutlets=1)
+
+    def make_solo_line(source: str, x: float, y: float) -> str:
+        packed = p.new("pack 0. 35", x, y, 80, numinlets=2, numoutlets=1)
+        line = p.new("line~", x + 85, y, 50, numinlets=2, numoutlets=2)
+        p.connect(source, packed)
+        p.connect(packed, line)
+        return line
+
+    base_solo_line = make_solo_line(base_solo_gain, 620, 400)
+    transient_solo_line = make_solo_line(transient_solo_gain, 755, 400)
+    pad_solo_line = make_solo_line(pad_solo_gain, 890, 400)
     solo_default = p.new("loadmess 0", 660, 370, 80, numinlets=1, numoutlets=1)
     core_l = p.new("*~", 300, 345, 40, numinlets=2, numoutlets=1)
     core_r = p.new("*~", 430, 345, 40, numinlets=2, numoutlets=1)
@@ -279,13 +311,19 @@ def make_probe(
     road_gate_r = p.new("*~", 115, 365, 40, numinlets=2, numoutlets=1)
     rumble_gate_l = p.new("*~", 555, 365, 40, numinlets=2, numoutlets=1)
     rumble_gate_r = p.new("*~", 600, 365, 40, numinlets=2, numoutlets=1)
+    pad_gate_l = p.new("*~", 205, 350, 40, numinlets=2, numoutlets=1)
+    pad_gate_r = p.new("*~", 525, 350, 40, numinlets=2, numoutlets=1)
     p.connect(controller, solo_router)
-    p.connect(solo_router, solo_clip, 0)
-    p.connect(solo_router, solo_clip, 1)
-    p.connect(solo_default, solo_clip)
-    p.connect(solo_clip, solo_gain)
-    p.connect(solo_gain, solo_pack)
-    p.connect(solo_pack, solo_line)
+    p.connect(solo_router, soundscape_solo_clip, 0)
+    p.connect(solo_router, soundscape_solo_clip, 1)
+    p.connect(solo_router, backfire_solo_clip, 2)
+    p.connect(solo_default, soundscape_solo_clip)
+    p.connect(solo_default, backfire_solo_clip)
+    p.connect(soundscape_solo_clip, solo_state, 0, 0)
+    p.connect(backfire_solo_clip, solo_state, 0, 1)
+    p.connect(solo_state, base_solo_gain)
+    p.connect(solo_state, transient_solo_gain)
+    p.connect(solo_state, pad_solo_gain)
     p.connect(powertrain, core_l, 0, 0)
     p.connect(powertrain, core_r, 1, 0)
     p.connect(transient, transient_gate_l, 0, 0)
@@ -294,11 +332,14 @@ def make_probe(
     p.connect(road, road_gate_r, 1, 0)
     p.connect(rumble, rumble_gate_l, 0, 0)
     p.connect(rumble, rumble_gate_r, 1, 0)
-    for stem_gain in (
-        core_l, core_r, transient_gate_l, transient_gate_r,
-        road_gate_l, road_gate_r, rumble_gate_l, rumble_gate_r,
-    ):
-        p.connect(solo_line, stem_gain, 0, 1)
+    for stem_gain in (core_l, core_r, road_gate_l, road_gate_r, rumble_gate_l, rumble_gate_r):
+        p.connect(base_solo_line, stem_gain, 0, 1)
+    for stem_gain in (transient_gate_l, transient_gate_r):
+        p.connect(transient_solo_line, stem_gain, 0, 1)
+    p.connect(soundscape, pad_gate_l, 0, 0)
+    p.connect(soundscape, pad_gate_r, 1, 0)
+    p.connect(pad_solo_line, pad_gate_l, 0, 1)
+    p.connect(pad_solo_line, pad_gate_r, 0, 1)
     p.connect(core_l, add_l, 0, 0)
     p.connect(transient_gate_l, add_l, 0, 1)
     p.connect(core_l, rumble, 0, 1)
@@ -306,7 +347,7 @@ def make_probe(
     sum_l = p.new("+~", 300, 420, 40, numinlets=2, numoutlets=1)
     pad_sum_l = p.new("+~", 205, 375, 40, numinlets=2, numoutlets=1)
     p.connect(add_l, pad_sum_l, 0, 0)
-    p.connect(soundscape, pad_sum_l, 0, 1)
+    p.connect(pad_gate_l, pad_sum_l, 0, 1)
     engine_l = pad_sum_l
     p.connect(engine_l, road_l, 0, 0)
     p.connect(road_gate_l, road_l, 0, 1)
@@ -319,7 +360,7 @@ def make_probe(
     sum_r = p.new("+~", 430, 420, 40, numinlets=2, numoutlets=1)
     pad_sum_r = p.new("+~", 525, 375, 40, numinlets=2, numoutlets=1)
     p.connect(add_r, pad_sum_r, 0, 0)
-    p.connect(soundscape, pad_sum_r, 1, 1)
+    p.connect(pad_gate_r, pad_sum_r, 0, 1)
     engine_r = pad_sum_r
     p.connect(engine_r, road_r, 0, 0)
     p.connect(road_gate_r, road_r, 0, 1)
@@ -371,7 +412,7 @@ def make_probe(
     event = None
     if event_message is not None:
         event = p.message(event_message, 790, 190, 190)
-        p.connect(event, drive)
+        p.connect(event, transient if direct_event_to_transient else drive)
         if driver_mode == "coreaudio":
             event_delay = p.new("delay 7800", 790, 150, 85, numinlets=2, numoutlets=1)
             p.connect(load, event_delay)
@@ -404,8 +445,15 @@ def make_probe(
     p.connect(open_file, recorder)
     p.connect(record_stop, recorder)
     p.connect(record_start, recorder)
-    record_left, record_right = (sum_l, sum_r) if tap == "pre-cabin" else (mix, mix)
-    record_left_outlet, record_right_outlet = (0, 0) if tap == "pre-cabin" else (0, 1)
+    if tap == "transient":
+        record_left, record_right = transient, transient
+        record_left_outlet, record_right_outlet = 0, 1
+    elif tap == "pre-cabin":
+        record_left, record_right = sum_l, sum_r
+        record_left_outlet, record_right_outlet = 0, 0
+    else:
+        record_left, record_right = mix, mix
+        record_left_outlet, record_right_outlet = 0, 1
     p.connect(record_left, recorder, record_left_outlet, 0)
     p.connect(record_right, recorder, record_right_outlet, 1)
 
@@ -493,7 +541,15 @@ def make_probe(
         p.connect(baseline_time, elapsed, 0, 1)
         p.connect(elapsed, rendered)
         if event is not None:
-            event_at = p.new("past 1800", 825, 700, 75, numinlets=1, numoutlets=1)
+            # Keep a deterministic tail inside short diagnostic renders. Locked
+            # RPM probes begin recording only after the one-second catch, so
+            # this remains safely behind engine_running while never falling
+            # beyond the recording stop as the previous fixed 1800 ms did.
+            event_at_ms = max(100, min(1800, render_ms - 300))
+            event_at = p.new(
+                f"past {event_at_ms}", 825, 700, 75,
+                numinlets=1, numoutlets=1,
+            )
             p.connect(elapsed, event_at)
             p.connect(event_at, event)
         p.connect(rendered, stop_trigger)
@@ -572,7 +628,9 @@ def main() -> None:
     )
     parser.add_argument("--profile", choices=sorted(PROFILE_SETTINGS), default="v12")
     parser.add_argument("--scenario", choices=sorted(SCENARIOS))
-    parser.add_argument("--tap", choices=("pre-cabin", "final"), default="final")
+    parser.add_argument(
+        "--tap", choices=("transient", "pre-cabin", "final"), default="final"
+    )
     parser.add_argument("--stem", choices=("powertrain", "transient", "road", "rumble"))
     parser.add_argument("--stem-db", type=float)
     parser.add_argument("--eq-message", action="append", default=[])
@@ -700,6 +758,9 @@ def main() -> None:
             tap=args.tap,
             extra_messages=tuple(extra_messages),
             event_message=scenario.get("event"),
+            direct_event_to_transient=bool(
+                scenario.get("direct_event_to_transient", False)
+            ),
             drive_lifecycle=bool(scenario.get("drive_lifecycle", False)),
             direct_powertrain=bool(scenario.get("direct_powertrain", False)),
         ),
