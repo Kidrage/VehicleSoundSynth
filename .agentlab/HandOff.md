@@ -31,7 +31,7 @@
 ## Local Save Archive
 
 - Five old-main Max saves were backed up byte-for-byte to
-  `/Users/saintpeter/Downloads/VehicleSoundSynth-V5-MaxSaveBackup-20260825-pedal-backfire`
+  `/Users/saintpeter/Downloads/VehicleSoundSynth-Backups-20260825/VehicleSoundSynth-V5-MaxSaveBackup-20260825-pedal-backfire`
   and mirrored to the Codex Truenas export namespace before consolidation.
 
 ## Validation

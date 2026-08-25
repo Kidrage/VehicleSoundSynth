@@ -9,7 +9,7 @@
 - Working root: `.`
 - Repository name: `VehicleSoundSynth-V5`
 - Git repository: `true`
-- Generated at: `2026-08-25T08:08:59Z`
+- Generated at: `2026-08-25T10:00:55Z`
 
 ## Current State
 
@@ -128,8 +128,8 @@
   priority, analog Gamepad overlap, physical ICE lift-off `overrun` events,
   strength-scaled BEAP hosts, and V10/V12 Backfire Solo/Test.
 - Five pre-existing Max saves in the original repository were archived exactly
-  under `VehicleSoundSynth-V5-MaxSaveBackup-20260825-pedal-backfire` before the
-  completed mainline fast-forward; they are not implementation input.
+  under `VehicleSoundSynth-Backups-20260825/VehicleSoundSynth-V5-MaxSaveBackup-20260825-pedal-backfire`
+  before the completed mainline fast-forward; they are not implementation input.
 
 ## Related Repositories
 
