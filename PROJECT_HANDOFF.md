@@ -9,14 +9,12 @@
 - Working root: `.`
 - Repository name: `VehicleSoundSynth-V5`
 - Git repository: `true`
-- Generated at: `2026-08-25T08:03:46Z`
+- Generated at: `2026-08-25T08:08:59Z`
 
 ## Current State
 
-- Branch: `codex/realistic-pedal-backfire` (isolated implementation worktree;
-  original `main` worktree and its user-owned runtime saves are untouched)
-- Implementation fixed point: `cd6efbd22e677a8565868690a5acc46129fedef2`;
-  resolve the current handoff-only descendant dynamically with `git rev-parse HEAD`.
+- Branch: canonical `main`; delivery fixed point is the current `git rev-parse HEAD`.
+- Pedal/backfire implementation commit: `136ca58511a733bd486774e38cd92e5ded73e3f8`.
 - Indexed paths: 152 including the repository-local AgentLab handoff
 - Inventory truncated: `false`
 - Inaccessible paths: 0
@@ -96,6 +94,7 @@
 
 ## Change History
 
+- `136ca58 2026-08-25 feat: refine pedals and physical overrun backfire`
 - `16ac747 2026-08-25 fix: validate throttle timbre and stereo coherence`
 - `eef6c91 2026-08-25 feat: expose modular sound design controls`
 - `0fccd1f 2026-08-24 feat: tune speed-dependent natural coasting`
@@ -125,12 +124,12 @@
 
 ## Current Changes
 
-- In progress on `codex/realistic-pedal-backfire`: binary W/full throttle,
-  fixed 0.65 S brake priority, analog Gamepad overlap, physical ICE lift-off
-  `overrun` events, strength-scaled BEAP hosts, and V10/V12 Backfire Solo/Test.
+- None. Canonical `main` contains binary W/full throttle, fixed 0.65 S brake
+  priority, analog Gamepad overlap, physical ICE lift-off `overrun` events,
+  strength-scaled BEAP hosts, and V10/V12 Backfire Solo/Test.
 - Five pre-existing Max saves in the original repository were archived exactly
   under `VehicleSoundSynth-V5-MaxSaveBackup-20260825-pedal-backfire` before the
-  planned mainline fast-forward; they are not implementation input.
+  completed mainline fast-forward; they are not implementation input.
 
 ## Related Repositories
 

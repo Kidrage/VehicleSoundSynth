@@ -4,10 +4,11 @@
 
 - Canonical remote: `git@github.com:Kidrage/VehicleSoundSynth.git`
 - Target runtime: Max 8.6.5 on macOS
-- Active implementation: `codex/realistic-pedal-backfire` based on the latest
-  modular Sound DNA fixed point `593e620`.
+- Canonical branch: `main`.
+- Pedal/backfire implementation: `136ca58511a733bd486774e38cd92e5ded73e3f8`,
+  based on the latest modular Sound DNA line.
 
-## Current Task
+## Delivered Change
 
 - Keyboard W is immediate full throttle; S is a fixed 0.65 service brake with
   brake priority. Gamepad LT/RT remain independent analog pedals.
