@@ -9,12 +9,12 @@
 - Working root: `.`
 - Repository name: `VehicleSoundSynth-V5`
 - Git repository: `true`
-- Generated at: `2026-08-25T18:45:00+08:00`
+- Generated at: `2026-08-25T19:14:55+08:00`
 
 ## Current State
 
-- Branch: isolated implementation branch `codex/backfire-pop-v2`, based on
-  canonical `main` fixed point `feba84de7e058305383236d623b99f34c6cb192b`.
+- Branch: canonical `main`; layered-backfire delivery fixed point is
+  `69312396c368f4ea674753543cdc1cf64c46b5cd`.
 - Pedal/backfire implementation commit: `136ca58511a733bd486774e38cd92e5ded73e3f8`.
 - Indexed paths: 152 including the repository-local AgentLab handoff
 - Inventory truncated: `false`
@@ -33,12 +33,12 @@
 
 ## Active Work and Pending Items
 
-- In progress: inspect Current Changes and Agent Notes.
-- Pending decisions: record durable choices in Agent Notes before handoff.
-- Pending files to modify: record intended paths in Agent Notes before dispatch.
-- Pending plans to confirm: link task/run plans in Agent Notes.
-- Pending acceptance artifacts: link deliverables and validation evidence in Agent Notes.
-- Next safe entry point: run `./agentlab.sh repository-handoff --repo <path>` before deep work.
+- In progress: none.
+- Pending decisions/files/plans/acceptance artifacts: none for the layered-Pop
+  delivery; see Agent Notes for retained acoustic evidence and known Max driver
+  limitations.
+- Next safe entry point: start from canonical `main` and inspect Current Changes
+  before any new task.
 
 ## Directory Routes
 
@@ -60,13 +60,15 @@
 
 ## Data and File Structure
 
-### Categories
+### Tracked payload
 
-- audio: 41 files, 103833150 bytes
-- code: 18 files, 688992 bytes
-- literature: 16 files (byte totals vary with the live handoff)
-- other: 60 files, 12992034 bytes
-- structured_data: 6 files, 33194 bytes
+- total: 152 files, 119933728 bytes
+- audio (`.wav`): 41 files, 103833150 bytes
+- executable sources (`.py`, `.js`, `.gendsp`): 22 files, 801774 bytes
+- Max project/patch (`.maxpat`, `.maxproj`): 64 files, 14640505 bytes
+- documentation (`.md`, `.docx`, `.pdf`): 15 files, 617920 bytes
+- structured data (`.json`): 6 files, 33939 bytes
+- other tracked text/markers: 4 files, 6440 bytes
 
 ### Common Extensions
 
@@ -95,6 +97,7 @@
 
 ## Change History
 
+- `6931239 2026-08-25 feat: deepen layered backfire pop synthesis`
 - `136ca58 2026-08-25 feat: refine pedals and physical overrun backfire`
 - `16ac747 2026-08-25 fix: validate throttle timbre and stereo coherence`
 - `eef6c91 2026-08-25 feat: expose modular sound design controls`
@@ -125,16 +128,13 @@
 
 ## Current Changes
 
-- In progress: deepen the V10/V12 procedural backfire voice without changing
-  the public messages or drivetrain trigger thresholds. The seed-once BEAP
-  voices now expose labelled Pressure Body, Exhaust Crack, and Tail
-  Color/Output panels; intensity morphs colour and tail density, while the
-  generated host supplies gating, safety saturation, and only a quiet
-  compatibility click.
-- Probe scenarios cover low/default/high intensity for both ICE profiles.
-- The canonical `main` working tree has three pre-existing user Max saves. They
-  remain untouched until exact hashes are archived immediately before a
-  verified fast-forward.
+- None. Canonical `main` contains the completed layered V10/V12 procedural
+  backfire voice, low/default/high probe coverage, and refreshed tuning docs.
+- Three pre-promotion user Max saves were hash-verified and added to the
+  existing consolidated
+  `VehicleSoundSynth-Backups-20260825/VehicleSoundSynth-V5-MaxSaveBackup-20260825-pedal-backfire`
+  directory before the clean fast-forward; no new top-level backup folder was
+  created.
 
 ## Related Repositories
 
