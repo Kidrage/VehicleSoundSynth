@@ -9,11 +9,12 @@
 - Working root: `.`
 - Repository name: `VehicleSoundSynth-V5`
 - Git repository: `true`
-- Generated at: `2026-08-25T10:00:55Z`
+- Generated at: `2026-08-25T18:45:00+08:00`
 
 ## Current State
 
-- Branch: canonical `main`; delivery fixed point is the current `git rev-parse HEAD`.
+- Branch: isolated implementation branch `codex/backfire-pop-v2`, based on
+  canonical `main` fixed point `feba84de7e058305383236d623b99f34c6cb192b`.
 - Pedal/backfire implementation commit: `136ca58511a733bd486774e38cd92e5ded73e3f8`.
 - Indexed paths: 152 including the repository-local AgentLab handoff
 - Inventory truncated: `false`
@@ -124,12 +125,16 @@
 
 ## Current Changes
 
-- None. Canonical `main` contains binary W/full throttle, fixed 0.65 S brake
-  priority, analog Gamepad overlap, physical ICE lift-off `overrun` events,
-  strength-scaled BEAP hosts, and V10/V12 Backfire Solo/Test.
-- Five pre-existing Max saves in the original repository were archived exactly
-  under `VehicleSoundSynth-Backups-20260825/VehicleSoundSynth-V5-MaxSaveBackup-20260825-pedal-backfire`
-  before the completed mainline fast-forward; they are not implementation input.
+- In progress: deepen the V10/V12 procedural backfire voice without changing
+  the public messages or drivetrain trigger thresholds. The seed-once BEAP
+  voices now expose labelled Pressure Body, Exhaust Crack, and Tail
+  Color/Output panels; intensity morphs colour and tail density, while the
+  generated host supplies gating, safety saturation, and only a quiet
+  compatibility click.
+- Probe scenarios cover low/default/high intensity for both ICE profiles.
+- The canonical `main` working tree has three pre-existing user Max saves. They
+  remain untouched until exact hashes are archived immediately before a
+  verified fast-forward.
 
 ## Related Repositories
 
@@ -211,6 +216,26 @@
 ## Agent Notes
 
 <!-- AGENT_NOTES_START -->
+- 2026-08-25 layered procedural backfire voice: V10/V12 retain the existing
+  physical `overrun` trigger and public control seam, while their seed-once BEAP
+  voices are expanded into labelled Pressure Body, Exhaust Crack, and Tail
+  Color/Output sections. Runtime Intensity now morphs layer colour and tail
+  density as well as level. V10 is shorter/brighter; V12 is lower/rounder. The
+  generated host owns only engine-state gating, event/tail scheduling, soft
+  saturation, and a roughly -15 dB compatibility click. No sample or Ferrari
+  runtime audio is used. Final Max NonRealTime default Solo renders were
+  non-silent and unclipped: V10 peak/RMS -9.90/-36.89 dBFS and V12
+  -9.44/-38.92 dBFS, with zero clipped-sample ratio. Low/default/high probes
+  were monotonic and spectrally distinct; the installed driver again produced
+  44.1 kHz. All 139 tests pass, generator determinism and seed-once preservation
+  pass, and `git diff --check` is clean. A fresh Max 8.6.5 project smoke and
+  separate EV/V10/V12 loads found no new missing-object, Gen-outlet, invalid
+  category, or patchcord blockers. Direct runtime loads retain the known
+  search-path warning; the optional local Ferrari starter cleanly falls back.
+  All task windows reached zero; Max ignored normal Quit/TERM, so exact task
+  PIDs 49806, 49928, 49996, and 50085 were ended only after closure. The
+  pre-existing user Max PID 44294 was preserved. Crash recovery was restored
+  from the temporary probe setting to `Ask`.
 - 2026-08-25 realistic pedals and audible overrun backfire: Keyboard Manual now
   sends immediate W=1/0 throttle and S=0.65/0 brake with brake priority, while
   Gamepad LT/RT remain independent analog pedals. Source/Manual exit still

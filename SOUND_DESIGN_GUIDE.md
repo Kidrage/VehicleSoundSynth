@@ -38,13 +38,22 @@ The editable sound is in `patchers/v10_backfire_beap~.maxpat` and
 `patchers/v12_backfire_beap~.maxpat`. The matching generated
 `*_backfire_host~.maxpat` files are plumbing: they require ignition, a running
 engine and Backfire Enable, scale event strength/intensity, shape the short
-tail, and route the result into the transient stem. The host also contains one
-MSP pressure-click/resonator for the guaranteed main pop plus a quiet
-band-limited pressure tail driven by the same event. These prevent short-gate
-silence on Max 8.6.x BEAP revisions but are not additional event sources.
-Change the BEAP graph for editable noise/oscillator/filter character; change
-`tools/build_project.py` only when the physical event, main-pop compatibility
-layer, or safety contract must change.
+tail, soft-saturate the combined voice, and route it into the transient stem.
+The editable patch is split into labelled `PRESSURE BODY`, `EXHAUST CRACK`,
+and `TAIL COLOR / OUTPUT` panels. Pressure Body controls the low resonant mass;
+Exhaust Crack controls the short band-limited edge; Tail Color/Output controls
+the decay colour, stereo split and final drive. A co-located Max 8.6.5-safe
+pressure envelope mirrors the visible BEAP graph so very short physical gates
+cannot disappear on BEAP revisions whose AD/VCA response differs. The
+generated host keeps only a roughly -15 dB safety click/resonator; it is not the
+dominant sound or another event source.
+
+For tone work, tune the BEAP Mixer/MMF and AD controls first, then audition low,
+default and high runtime Intensity. Intensity morphs from a compact pressure
+release through filtered crack to brighter colour and a second tail, rather
+than merely scaling the same waveform. Use transient dB last for whole-stem
+balance. Change `tools/build_project.py` only when the physical event, host
+plumbing, compatibility layer, or safety contract must change.
 
 To hear the voice alone, start V10 or V12, set `Backfire Enable`, turn on
 `Backfire Solo`, and press `Test Pop`. In normal driving, hold enough throttle

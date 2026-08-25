@@ -36,6 +36,22 @@ PROFILE_SETTINGS = {
 
 DSP_SETTLE_MS = 6000
 
+def backfire_solo_scenario(profile: str, intensity: float) -> dict:
+    message = (
+        "ignition 1, engine_running 1, backfire_enable 1, "
+        f"backfire_intensity {intensity:g}, overrun 0.95"
+    )
+    return {
+        "profile": profile, "rpm": 4200.0, "lock_rpm": True,
+        "event": message,
+        "direct_event_to_transient": True,
+        "extra_messages": (
+            "backfire_enable 1", f"backfire_intensity {intensity:g}",
+            "backfire_solo 1",
+        ),
+    }
+
+
 SCENARIOS = {
     "idle-v12": {"profile": "v12", "rpm": 780.0},
     "idle-v10": {"profile": "v10", "rpm": 740.0},
@@ -154,6 +170,12 @@ SCENARIOS = {
         "direct_event_to_transient": True,
         "extra_messages": ("backfire_enable 1", "backfire_intensity 1", "backfire_solo 1"),
     },
+    "v10-backfire-solo-low": backfire_solo_scenario("v10", 0.25),
+    "v10-backfire-solo-default": backfire_solo_scenario("v10", 0.82),
+    "v10-backfire-solo-high": backfire_solo_scenario("v10", 1.0),
+    "v12-backfire-solo-low": backfire_solo_scenario("v12", 0.25),
+    "v12-backfire-solo-default": backfire_solo_scenario("v12", 0.55),
+    "v12-backfire-solo-high": backfire_solo_scenario("v12", 1.0),
     "v10-lifecycle-idle": {
         "profile": "v10", "rpm": 740.0, "throttle": 0.08, "load": 0.15,
         "lock_rpm": True, "lifecycle_role": "idle", "extra_messages": ("accel 0",),

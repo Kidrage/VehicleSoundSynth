@@ -113,9 +113,13 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
                 + item["box"].get("varname", "")
                 for item in beap["boxes"]
             )
-            for module in ("Noise", "Osc", "AD", "MMF", "VCA"):
+            for module in (
+                "Pressure_Noise", "Pressure_Osc", "Pressure_Body",
+                "Pressure_AD", "Pressure_VCA", "Exhaust_Crack",
+                "Crack_AD", "Crack_VCA",
+            ):
                 self.assertIn(module, beap_text)
-            self.assertIn("*~ 0.06", beap_text)
+            self.assertIn("*~ 0.75" if profile == "v10" else "*~ 0.85", beap_text)
             self.assertIn("+~", beap_text)
             host = self.load_json(host_path)["patcher"]
             host_text = "\n".join(item["box"].get("text", "") for item in host["boxes"])
@@ -127,7 +131,12 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
                 self.assertIn(control, host_text)
             self.assertIn("pak 1 0 0", host_text)
             self.assertIn("($i1 != 0) && ($i2 != 0) && ($i3 != 0)", host_text)
-            self.assertIn("0.32*$f1*(0.55+0.45*$f2)", host_text)
+            expected_gain = (
+                "(0.60+0.85*$f1)*(0.55+0.45*$f2)"
+                if profile == "v10"
+                else "(0.66+0.94*$f1)*(0.55+0.45*$f2)"
+            )
+            self.assertIn(expected_gain, host_text)
             self.assertIn("noise~", host_text)
             self.assertIn("*~ 0.04", host_text)
             self.assertIn("lores~", host_text)
@@ -148,6 +157,32 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
         v10 = json.dumps(self.load_json("patchers/v10_backfire_beap~.maxpat"), sort_keys=True)
         v12 = json.dumps(self.load_json("patchers/v12_backfire_beap~.maxpat"), sort_keys=True)
         self.assertNotEqual(v10, v12)
+
+    def test_backfire_intensity_drives_layered_pressure_crack_and_tail_colour(self):
+        for profile in ("v10", "v12"):
+            beap = self.load_json(f"patchers/{profile}_backfire_beap~.maxpat")["patcher"]
+            beap_text = "\n".join(
+                item["box"].get("text", "") + " "
+                + item["box"].get("varname", "")
+                for item in beap["boxes"]
+            )
+            for layer in ("PRESSURE BODY", "EXHAUST CRACK", "TAIL COLOR / OUTPUT"):
+                self.assertIn(layer, beap_text)
+            for module in ("Pressure_Body", "Pressure_AD", "Pressure_VCA",
+                           "Exhaust_Crack", "Crack_AD", "Crack_VCA"):
+                self.assertIn(module, beap_text)
+            self.assertIn("tanh~", beap_text)
+
+            host = self.load_json(f"patchers/{profile}_backfire_host~.maxpat")["patcher"]
+            host_text = "\n".join(item["box"].get("text", "") for item in host["boxes"])
+            self.assertIn("max(0.,min(1.,($f1-0.35)/0.65))", host_text)
+            expected_gain = (
+                "(0.60+0.85*$f1)*(0.55+0.45*$f2)"
+                if profile == "v10"
+                else "(0.66+0.94*$f1)*(0.55+0.45*$f2)"
+            )
+            self.assertIn(expected_gain, host_text)
+            self.assertIn("*~ 0.18", host_text)
 
     def test_v5_all_profiles_share_one_editable_cinematic_soundscape_core(self):
         project = self.load_json("VehicleSoundSynth-V5.maxproj")
@@ -2475,6 +2510,27 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
             subprocess.run(command, check=True, cwd=ROOT, capture_output=True, text=True)
             self.assertEqual(tuned_bytes, pad_path.read_bytes())
 
+    def test_project_rebuild_preserves_user_tuned_backfire_beap_voices(self):
+        with tempfile.TemporaryDirectory() as directory:
+            destination = Path(directory)
+            command = [
+                sys.executable,
+                str(ROOT / "tools" / "build_project.py"),
+                "--output-root", str(destination),
+            ]
+            subprocess.run(command, check=True, cwd=ROOT, capture_output=True, text=True)
+            for profile in ("v10", "v12"):
+                voice_path = destination / "patchers" / f"{profile}_backfire_beap~.maxpat"
+                voice = json.loads(voice_path.read_text(encoding="utf-8"))
+                voice["patcher"]["description"] = f"{profile} user tuning sentinel"
+                voice_path.write_text(
+                    json.dumps(voice, indent=2, sort_keys=True) + "\n",
+                    encoding="utf-8",
+                )
+                tuned_bytes = voice_path.read_bytes()
+                subprocess.run(command, check=True, cwd=ROOT, capture_output=True, text=True)
+                self.assertEqual(tuned_bytes, voice_path.read_bytes())
+
     def test_runtime_probe_builder_creates_self_contained_temp_bundle(self):
         with tempfile.TemporaryDirectory() as directory:
             base = Path(directory)
@@ -2781,6 +2837,39 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
                 self.assertIn("backfire_solo 1", solo_text)
                 self.assertIn("past 700", solo_text)
                 self.assertNotIn("past 1800", solo_text)
+
+    def test_runtime_probe_exposes_low_default_and_high_backfire_intensity(self):
+        expected = {
+            "v10": {"low": 0.25, "default": 0.82, "high": 1.0},
+            "v12": {"low": 0.25, "default": 0.55, "high": 1.0},
+        }
+        for profile, levels in expected.items():
+            for label, intensity in levels.items():
+                with self.subTest(profile=profile, label=label):
+                    with tempfile.TemporaryDirectory() as directory:
+                        subprocess.run(
+                            [
+                                sys.executable,
+                                str(ROOT / "tools" / "build_runtime_probe.py"),
+                                "--bundle-root", directory,
+                                "--scenario", f"{profile}-backfire-solo-{label}",
+                                "--render-ms", "1000",
+                            ],
+                            check=True,
+                            cwd=ROOT,
+                            capture_output=True,
+                            text=True,
+                        )
+                        probe_path = Path(directory) / (
+                            f"runtime_probe_{profile}_{profile}-backfire-solo-{label}_on.maxpat"
+                        )
+                        probe = json.loads(probe_path.read_text(encoding="utf-8"))["patcher"]
+                        text = "\n".join(
+                            item["box"].get("text", "") for item in probe["boxes"]
+                        )
+                        self.assertIn(f"backfire_intensity {intensity:g}", text)
+                        self.assertIn("backfire_solo 1", text)
+                        self.assertIn("overrun 0.95", text)
 
     def test_runtime_probe_can_render_ice_soundscape_without_enabling_other_scenarios(self):
         for profile, level in (("v10", -8), ("v12", -9)):

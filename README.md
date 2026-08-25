@@ -266,7 +266,17 @@ Both ICE runtime pages expose Backfire enable/intensity, `Backfire Solo`, and a
 `Test Pop` button. For an isolated audition: start the engine, enable Backfire,
 turn on Backfire Solo, and click Test Pop. The button exercises the voice and
 engine-state gate without requiring a drive cycle. Turn Solo off before normal
-driving. The Soundscape, start and backfire BEAP `.maxpat` files are
+driving. `Backfire Intensity` is now a timbre control as well as a level
+control: low values keep one compact pressure release, the default adds a
+filtered exhaust crack, and high values progressively open the upper colour
+and a second tail. V10 is shorter, sharper and more active; V12 is lower,
+rounder and slightly longer.
+
+Open `patchers/v10_backfire_beap~.maxpat` or
+`patchers/v12_backfire_beap~.maxpat` to tune the labelled `PRESSURE BODY`,
+`EXHAUST CRACK`, and `TAIL COLOR / OUTPUT` panels. Start with the Mixer/MMF and
+AD controls, then set runtime Intensity; use transient dB only for the whole
+stem balance. The Soundscape, start and backfire BEAP `.maxpat` files are
 seed-once user-owned files: edit and save them directly in Max, and project
 regeneration will preserve your tuning.
 

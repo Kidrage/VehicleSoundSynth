@@ -1156,56 +1156,171 @@ def make_cinematic_soundscape_host(profile: str) -> dict[str, Any]:
 
 
 def make_ice_backfire_beap(profile: str) -> dict[str, Any]:
-    """Seed a user-owned pressure-release voice built from BEAP modules."""
-    p = Patcher(1540, 560)
-    p.comment(f"USER-TUNABLE {profile.upper()} PHYSICAL BACKFIRE — preserved on rebuild", 25, 15, 760)
+    """Seed one editable, layered pressure/crack backfire voice."""
+    p = Patcher(2240, 850)
+    p.comment(
+        f"USER-TUNABLE {profile.upper()} PHYSICAL BACKFIRE — preserved on rebuild",
+        25, 15, 980,
+    )
     pitch = inlet(p, 45, 65, signal=True)
     gate = inlet(p, 145, 65, signal=True)
     intensity = inlet(p, 245, 65, signal=True)
-    noise = add_beap_module(p, "Random/bp.Noise.maxpat", 25, 135, "Noise")
-    osc = add_beap_module(p, "Oscillator/bp.Oscillator.maxpat", 300, 135, "Osc", initial={"Waveform": 0})
+
+    p.comment("PRESSURE BODY — low exhaust pressure and chamber bloom", 25, 110, 620)
+    noise = add_beap_module(p, "Random/bp.Noise.maxpat", 25, 145, "Pressure_Noise")
+    osc = add_beap_module(
+        p, "Oscillator/bp.Oscillator.maxpat", 300, 145, "Pressure_Osc",
+        initial={"Waveform": 0},
+    )
     mixer = add_beap_module(
-        p, "Mixers/bp.Audio Mixer.maxpat", 625, 135, "Mixer",
-        initial={"in1": -10 if profile == "v10" else -14, "in2": -15 if profile == "v10" else -12},
+        p, "Mixers/bp.Audio Mixer.maxpat", 625, 145, "Pressure_Mixer",
+        initial={
+            "in1": -8 if profile == "v10" else -13,
+            "in2": -17 if profile == "v10" else -9,
+        },
     )
-    mmf = add_beap_module(
-        p, "Filter/bp.MMF.maxpat", 845, 135, "MMF",
-        initial={"Freq": 520 if profile == "v10" else 420, "Res": 18 if profile == "v10" else 12, "FilterType": 0},
+    body_filter = add_beap_module(
+        p, "Filter/bp.MMF.maxpat", 845, 145, "Pressure_Body",
+        initial={
+            "Freq": 470 if profile == "v10" else 350,
+            "Res": 15 if profile == "v10" else 10,
+            "FilterType": 0,
+            "power[1]": 1,
+        },
     )
-    envelope = add_beap_module(
-        p, "Envelope/bp.AD.maxpat", 1120, 135, "AD",
-        initial={"Attack": 3 if profile == "v10" else 6, "Decay": 125 if profile == "v10" else 190},
+    body_envelope = add_beap_module(
+        p, "Envelope/bp.AD.maxpat", 1120, 145, "Pressure_AD",
+        initial={
+            "Attack": 2 if profile == "v10" else 5,
+            "Decay": 155 if profile == "v10" else 230,
+        },
     )
-    vca = add_beap_module(p, "Level/bp.VCA.maxpat", 1320, 135, "VCA")
-    env_amount = p.new("*~ 0.72", 1140, 350, 65, numinlets=2, numoutlets=1)
-    # Some installed BEAP AD/VCA revisions ignore a very short external gate
-    # edge. Keep their editable path, but parallel it with a bounded pressure
-    # envelope made from the same BEAP-filtered signal so every trigger is
-    # physically audible and deterministic across Max 8.6.x installations.
-    gate_trim = p.new("*~ 0.06", 1220, 390, 65, numinlets=2, numoutlets=1)
-    pressure_vca = p.new("*~", 1300, 390, 40, numinlets=2, numoutlets=1)
-    pressure_sum = p.new("+~", 1355, 390, 40, numinlets=2, numoutlets=1)
-    left = outlet(p, 1320, 455, signal=True)
-    right_tone = p.new("lores~ 620 0.55", 1400, 400, 115, numinlets=3, numoutlets=1)
-    right = outlet(p, 1450, 455, signal=True)
+    body_vca = add_beap_module(p, "Level/bp.VCA.maxpat", 1320, 145, "Pressure_VCA")
+    body_env_amount = p.new("*~ 0.90", 1135, 360, 65, numinlets=2, numoutlets=1)
+    # The installed Max 8.6.x BEAP AD/VCA pair can miss a short external edge.
+    # This parallel envelope still uses the editable BEAP mixer/filter output,
+    # so the visible BEAP tone controls remain authoritative while triggers are
+    # deterministic on every supported installation.
+    body_gate_trim = p.new(
+        f"*~ {0.75 if profile == 'v10' else 0.85:g}",
+        1210, 400, 65, numinlets=2, numoutlets=1,
+    )
+    reliable_noise = p.new("noise~", 920, 400, 55, numinlets=1, numoutlets=1)
+    body_compat_filter = p.new(
+        f"lores~ {520 if profile == 'v10' else 390} {0.62 if profile == 'v10' else 0.68:g}",
+        985, 400, 110, numinlets=3, numoutlets=1,
+    )
+    body_mode_a = p.new(
+        f"reson~ {4.6 if profile == 'v10' else 5.4:g} {112 if profile == 'v10' else 86} {2.2 if profile == 'v10' else 2.7:g}",
+        985, 435, 130, numinlets=4, numoutlets=1,
+    )
+    body_mode_b = p.new(
+        f"reson~ {2.1 if profile == 'v10' else 2.6:g} {265 if profile == 'v10' else 190} {1.35 if profile == 'v10' else 1.7:g}",
+        1125, 435, 130, numinlets=4, numoutlets=1,
+    )
+    body_modes = p.new("+~", 1265, 435, 40, numinlets=2, numoutlets=1)
+    body_colour = p.new("+~", 1205, 400, 40, numinlets=2, numoutlets=1)
+    body_pressure_vca = p.new("*~", 1290, 400, 40, numinlets=2, numoutlets=1)
+    body_sum = p.new("+~", 1340, 390, 40, numinlets=2, numoutlets=1)
+
+    p.comment("EXHAUST CRACK — intensity-brightened broadband shell", 25, 460, 620)
+    crack_filter = add_beap_module(
+        p, "Filter/bp.MMF.maxpat", 300, 495, "Exhaust_Crack",
+        initial={
+            "Freq": 1850 if profile == "v10" else 1250,
+            "Res": 9 if profile == "v10" else 6,
+            "FilterType": 0,
+            "power[1]": 1,
+        },
+    )
+    crack_envelope = add_beap_module(
+        p, "Envelope/bp.AD.maxpat", 575, 495, "Crack_AD",
+        initial={
+            "Attack": 1 if profile == "v10" else 3,
+            "Decay": 72 if profile == "v10" else 118,
+        },
+    )
+    crack_vca = add_beap_module(p, "Level/bp.VCA.maxpat", 775, 495, "Crack_VCA")
+    crack_env_amount = p.new("*~ 0.58", 595, 710, 65, numinlets=2, numoutlets=1)
+    crack_gate_trim = p.new(
+        f"*~ {0.30 if profile == 'v10' else 0.25:g}",
+        675, 750, 72, numinlets=2, numoutlets=1,
+    )
+    crack_compat_filter = p.new(
+        f"svf~ {1850 if profile == 'v10' else 1250} 0.72",
+        545, 750, 115, numinlets=3, numoutlets=4,
+    )
+    crack_pressure_vca = p.new("*~", 755, 750, 40, numinlets=2, numoutlets=1)
+    crack_sum = p.new("+~", 815, 730, 40, numinlets=2, numoutlets=1)
+
+    p.comment("TAIL COLOR / OUTPUT — soft saturation; deep bass remains centered", 1020, 460, 700)
+    layer_sum = p.new("+~", 1070, 540, 40, numinlets=2, numoutlets=1)
+    drive = p.new("*~ 1.55", 1120, 540, 65, numinlets=2, numoutlets=1)
+    soft_clip = p.new("tanh~", 1195, 540, 50, numinlets=1, numoutlets=1)
+    split = p.new("svf~ 180 0.7", 1260, 540, 100, numinlets=3, numoutlets=4)
+    left_air = p.new(
+        f"lores~ {3600 if profile == 'v10' else 2600} 0.58",
+        1380, 535, 120, numinlets=3, numoutlets=1,
+    )
+    right_air = p.new(
+        f"lores~ {4100 if profile == 'v10' else 3050} 0.54",
+        1380, 585, 120, numinlets=3, numoutlets=1,
+    )
+    left_mix = p.new("+~", 1520, 535, 40, numinlets=2, numoutlets=1)
+    right_mix = p.new("+~", 1520, 585, 40, numinlets=2, numoutlets=1)
+    left = outlet(p, 1600, 535, signal=True)
+    right = outlet(p, 1600, 585, signal=True)
+
     p.connect(noise, mixer, 0, 0)
     p.connect(pitch, osc, 0, 0)
     p.connect(osc, mixer, 0, 1)
-    p.connect(mixer, mmf, 0, 0)
-    p.connect(intensity, mmf, 0, 1)
-    p.connect(gate, envelope, 0, 0)
-    p.connect(envelope, env_amount)
-    p.connect(intensity, env_amount, 0, 1)
-    p.connect(mmf, vca, 0, 0)
-    p.connect(env_amount, vca, 0, 1)
-    p.connect(gate, gate_trim)
-    p.connect(mmf, pressure_vca, 0, 0)
-    p.connect(gate_trim, pressure_vca, 0, 1)
-    p.connect(vca, pressure_sum, 0, 0)
-    p.connect(pressure_vca, pressure_sum, 0, 1)
-    p.connect(pressure_sum, left)
-    p.connect(pressure_sum, right_tone)
-    p.connect(right_tone, right)
+    p.connect(mixer, body_filter, 0, 0)
+    p.connect(intensity, body_filter, 0, 1)
+    p.connect(gate, body_envelope, 0, 0)
+    p.connect(body_envelope, body_env_amount)
+    p.connect(intensity, body_env_amount, 0, 1)
+    p.connect(body_filter, body_vca, 0, 0)
+    p.connect(body_env_amount, body_vca, 0, 1)
+    p.connect(gate, body_gate_trim)
+    p.connect(reliable_noise, body_compat_filter, 0, 0)
+    p.connect(reliable_noise, body_mode_a, 0, 0)
+    p.connect(reliable_noise, body_mode_b, 0, 0)
+    p.connect(body_mode_a, body_modes, 0, 0)
+    p.connect(body_mode_b, body_modes, 0, 1)
+    p.connect(body_compat_filter, body_colour, 0, 0)
+    p.connect(body_modes, body_colour, 0, 1)
+    p.connect(body_colour, body_pressure_vca, 0, 0)
+    p.connect(body_gate_trim, body_pressure_vca, 0, 1)
+    p.connect(body_vca, body_sum, 0, 0)
+    p.connect(body_pressure_vca, body_sum, 0, 1)
+
+    p.connect(noise, crack_filter, 0, 0)
+    p.connect(intensity, crack_filter, 0, 1)
+    p.connect(gate, crack_envelope, 0, 0)
+    p.connect(crack_envelope, crack_env_amount)
+    p.connect(intensity, crack_env_amount, 0, 1)
+    p.connect(crack_filter, crack_vca, 0, 0)
+    p.connect(crack_env_amount, crack_vca, 0, 1)
+    p.connect(gate, crack_gate_trim)
+    p.connect(reliable_noise, crack_compat_filter, 0, 0)
+    p.connect(crack_compat_filter, crack_pressure_vca, 2, 0)
+    p.connect(crack_gate_trim, crack_pressure_vca, 0, 1)
+    p.connect(crack_vca, crack_sum, 0, 0)
+    p.connect(crack_pressure_vca, crack_sum, 0, 1)
+
+    p.connect(body_sum, layer_sum, 0, 0)
+    p.connect(crack_sum, layer_sum, 0, 1)
+    p.connect(layer_sum, drive)
+    p.connect(drive, soft_clip)
+    p.connect(soft_clip, split)
+    p.connect(split, left_mix, 0, 0)
+    p.connect(split, right_mix, 0, 0)
+    p.connect(split, left_air, 1, 0)
+    p.connect(split, right_air, 1, 0)
+    p.connect(left_air, left_mix, 0, 1)
+    p.connect(right_air, right_mix, 0, 1)
+    p.connect(left_mix, left)
+    p.connect(right_mix, right)
     return p.document()
 
 
@@ -1307,7 +1422,7 @@ def make_ice_backfire_host(profile: str) -> dict[str, Any]:
     p.connect(intensity_pack, intensity_line)
 
     gate_message = p.message(
-        f"5. 0, 0. {150 if profile == 'v10' else 190}",
+        f"5. 0, 0. {185 if profile == 'v10' else 250}",
         805, 285, 115,
     )
     gate_line = p.new("line~", 805, 345, 50, numinlets=2, numoutlets=2)
@@ -1361,8 +1476,25 @@ def make_ice_backfire_host(profile: str) -> dict[str, Any]:
         f"delay {105 if profile == 'v10' else 135}", 35, 640, 70,
         numinlets=2, numoutlets=1,
     )
-    tail_level_1 = p.message("0.32" if profile == "v10" else "0.24", 110, 640, 40)
-    tail_level_2 = p.message("0.16" if profile == "v10" else "0.12", 155, 640, 40)
+    tail_depth = p.new(
+        "expr max(0.,min(1.,($f1-0.35)/0.65))",
+        110, 640, 245, numinlets=1, numoutlets=1,
+    )
+    tail_level_1_map = p.new(
+        f"expr {(0.22 if profile == 'v10' else 0.16):g}+{(0.24 if profile == 'v10' else 0.18):g}*$f1",
+        365, 620, 185, numinlets=1, numoutlets=1,
+    )
+    tail_level_2_map = p.new(
+        f"expr {(0.22 if profile == 'v10' else 0.16):g}*$f1",
+        365, 650, 145, numinlets=1, numoutlets=1,
+    )
+    tail_level_1 = p.new("f 0.", 560, 620, 45, numinlets=2, numoutlets=1)
+    tail_level_2 = p.new("f 0.", 560, 650, 45, numinlets=2, numoutlets=1)
+    p.connect(intensity, tail_depth)
+    p.connect(tail_depth, tail_level_1_map)
+    p.connect(tail_depth, tail_level_2_map)
+    p.connect(tail_level_1_map, tail_level_1, 0, 1)
+    p.connect(tail_level_2_map, tail_level_2, 0, 1)
     p.connect(event_gate, tail_delay_1)
     p.connect(event_gate, tail_delay_2)
     p.connect(tail_delay_1, tail_level_1)
@@ -1373,18 +1505,32 @@ def make_ice_backfire_host(profile: str) -> dict[str, Any]:
     p.connect(main_click, click_crack)
     p.connect(click_body, click_sum, 0, 0)
     p.connect(click_crack, click_sum, 0, 1)
+    safety_click = p.new("*~ 0.18", 285, 585, 65, numinlets=2, numoutlets=1)
+    p.connect(click_sum, safety_click)
     p.connect(pressure_l, pressure_click_l, 0, 0)
-    p.connect(click_sum, pressure_click_l, 0, 1)
+    p.connect(safety_click, pressure_click_l, 0, 1)
     p.connect(pressure_r, pressure_click_r, 0, 0)
-    p.connect(click_sum, pressure_click_r, 0, 1)
+    p.connect(safety_click, pressure_click_r, 0, 1)
     p.connect(beap, beap_pressure_l, 0, 0)
     p.connect(pressure_click_l, beap_pressure_l, 0, 1)
     p.connect(beap, beap_pressure_r, 1, 0)
     p.connect(pressure_click_r, beap_pressure_r, 0, 1)
-    left_filter = p.new("svf~ 35 0.7", 310, 530, 95, numinlets=3, numoutlets=4)
-    right_filter = p.new("svf~ 35 0.7", 530, 530, 95, numinlets=3, numoutlets=4)
+    left_drive = p.new("*~ 6.", 310, 515, 55, numinlets=2, numoutlets=1)
+    right_drive = p.new("*~ 6.", 530, 515, 55, numinlets=2, numoutlets=1)
+    left_sat = p.new("tanh~", 370, 515, 50, numinlets=1, numoutlets=1)
+    right_sat = p.new("tanh~", 590, 515, 50, numinlets=1, numoutlets=1)
+    left_filter = p.new("svf~ 35 0.7", 310, 545, 95, numinlets=3, numoutlets=4)
+    right_filter = p.new("svf~ 35 0.7", 530, 545, 95, numinlets=3, numoutlets=4)
     output_gain_state = p.new("pak 0.7 1.", 780, 430, 90, numinlets=2, numoutlets=1)
-    output_gain_map = p.new("expr 0.32*$f1*(0.55+0.45*$f2)", 880, 430, 235, numinlets=2, numoutlets=1)
+    output_gain_expression = (
+        "expr (0.60+0.85*$f1)*(0.55+0.45*$f2)"
+        if profile == "v10"
+        else "expr (0.66+0.94*$f1)*(0.55+0.45*$f2)"
+    )
+    output_gain_map = p.new(
+        output_gain_expression,
+        880, 430, 280, numinlets=2, numoutlets=1,
+    )
     output_gain_pack = p.new("pack 0. 20", 880, 465, 85, numinlets=2, numoutlets=1)
     output_gain_line = p.new("line~", 975, 465, 50, numinlets=2, numoutlets=2)
     p.connect(intensity, output_gain_state, 0, 0)
@@ -1399,8 +1545,12 @@ def make_ice_backfire_host(profile: str) -> dict[str, Any]:
     right_trim = p.new("*~", 530, 615, 40, numinlets=2, numoutlets=1)
     left = outlet(p, 330, 665, signal=True)
     right = outlet(p, 550, 665, signal=True)
-    p.connect(beap_pressure_l, left_filter, 0, 0)
-    p.connect(beap_pressure_r, right_filter, 0, 0)
+    p.connect(beap_pressure_l, left_drive, 0, 0)
+    p.connect(beap_pressure_r, right_drive, 0, 0)
+    p.connect(left_drive, left_sat)
+    p.connect(right_drive, right_sat)
+    p.connect(left_sat, left_filter, 0, 0)
+    p.connect(right_sat, right_filter, 0, 0)
     p.connect(left_filter, left_gain, 1, 0)
     p.connect(right_filter, right_gain, 1, 0)
     p.connect(output_gain_line, left_gain, 0, 1)
