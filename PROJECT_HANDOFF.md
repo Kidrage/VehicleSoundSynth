@@ -95,6 +95,8 @@
 
 ## Change History
 
+- `16ac747 2026-08-25 fix: validate throttle timbre and stereo coherence`
+- `eef6c91 2026-08-25 feat: expose modular sound design controls`
 - `0fccd1f 2026-08-24 feat: tune speed-dependent natural coasting`
 - `4c206bd 2026-08-24 fix: isolate gamepad state and soundscape solo`
 - `9f066e4 2026-08-24 feat: add fixed gamepad pedals and cinematic soundscape`
@@ -122,12 +124,7 @@
 
 ## Current Changes
 
-- Active feature work comprises generated runtime/project/engine/Gen updates;
-  `tools/build_project.py`, `tests/test_project.py`, `presets/sound_dna.json`;
-  the three seed-once `patchers/*_sound_dna~.maxpat` modules; the seed-once
-  `patchers/vehicle_bus_eq~.maxpat`; the seed-once shared
-  `patchers/cinematic_soundscape_beap~.maxpat`; `code/dna_state_path.js`;
-  `SOUND_DESIGN_GUIDE.md`, README and Codex indexes/guides.
+- None on `codex/sound-design-modules`; verify the clean status dynamically.
 - The original repository still has pre-existing user Max saves in its three
   top-level runtimes. Their before/after hashes are unchanged; they are outside
   this isolated branch and must not be overwritten or folded into this commit.
