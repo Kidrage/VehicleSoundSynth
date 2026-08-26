@@ -9,12 +9,12 @@
 - Working root: `.`
 - Repository name: `VehicleSoundSynth-V5`
 - Git repository: `true`
-- Generated at: `2026-08-26T17:00:00+08:00`
+- Generated at: `2026-08-26T21:25:00+08:00`
 
 ## Current State
 
-- Branch: canonical `main`; authoritative Pop/Sound-DNA control implementation
-  fixed point is `e1e0286`, with later handoff-only descendants.
+- Branch: canonical `main`; keyboard-pedal and low-pressure Pop implementation
+  fixed point is `82fca86`, with later handoff-only descendants.
 - Prior layered-backfire implementation: `9fffe195d9e3aa68678856ad880693ac6a5df63a`.
 - Indexed paths: 156 including the repository-local AgentLab handoff
 - Inventory truncated: `false`
@@ -60,11 +60,11 @@
 
 ### Tracked payload
 
-- total: 156 files, 120246345 bytes
+- total: 156 files, 120252624 bytes
 - audio (`.wav`): 41 files, 103833150 bytes
-- executable sources (`.py`, `.js`, `.gendsp`): 24 files, 873437 bytes
-- Max project/patch (`.maxpat`, `.maxproj`): 66 files, 14866366 bytes
-- documentation (`.md`, `.docx`, `.pdf`): 15 files, 633971 bytes
+- executable sources (`.py`, `.js`, `.gendsp`): 24 files, 877117 bytes
+- Max project/patch (`.maxpat`, `.maxproj`): 66 files, 14866422 bytes
+- documentation (`.md`, `.docx`, `.pdf`): 15 files, 636514 bytes
 - structured data (`.json`): 6 files, 33939 bytes
 - other tracked text/markers: 4 files, 5482 bytes
 
@@ -95,6 +95,7 @@
 
 ## Change History
 
+- `82fca86 2026-08-26 fix: restore keyboard pedals and deepen pop pressure`
 - `e1e0286 2026-08-26 fix: route pop tuning to resonant frequency inlets`
 - `d80ce18 2026-08-26 fix: tune every pop layer and cover DNA controls`
 - `10921aa 2026-08-26 fix: make pop and sound DNA controls authoritative`
@@ -133,29 +134,25 @@
 
 ## Current Changes
 
-- `10921aa` repairs two real Sound-DNA dead controls: EV `Aggression` now reaches
-  torque-ripple/gear-mesh/electrical colour, and V10 `Brightness` reaches upper
-  firing orders and air. All profiles expose `Sound DNA Solo` for unmasked live
-  audition.
-- V10/V12 `Open Pop Designer` now fronts the active audible instance. Eight
-  persistent top controls drive the generated pressure core over profile-local
-  named buses: Global Pitch, Core Presence, Body/Crack Tune, Decay, Low Pressure,
-  Body Level and Crack Level. Floating-point ramps fix the former 0--1 truncation
-  failure; saved parameter initialization fixes silent/default-zero loads.
-- `d80ce18` extends Global Pitch/Body Tune/Crack Tune through every fixed tonal
-  filter, low-pressure mode and tail-air layer, so lowering Pop no longer leaves
-  an untuned bright/fixed-frequency residue. It also generates fixed-state
-  low/high probes for every visible DNA control plus aggregate profile A/Bs.
-- Review found the four new `reson~` tuning cords on inlet 1 (gain) rather than
-  inlet 2 (frequency). `e1e0286` corrects all four and adds a patchcord-level
-  regression that requires inlet 2 and rejects inlet 1.
-- The visible BEAP Pressure Mixer remains an optional colour path. Native BEAP
-  MMF/AD/VCA modules can be subtle with short external gates, so the labelled top
-  panel is explicitly the complete authoritative Pop tuning surface.
-- Completed on canonical `main`. The code/test fixed point passed 156/156 tests,
-  deterministic generation and `git diff --check`; final project plus all three
-  runtime loads found no missing-object, Gen-outlet, patchcord or invalid-category
-  blocker. All task-owned Max PIDs reached zero windows and were closed.
+- `82fca86` corrects the generated `keyboard_drive_ws` patch: Manual enable now
+  controls each Max `gate` through inlet 1 while W/S 0/1 key state enters data
+  inlet 0. A patchcord regression prevents the former silent-keyboard wiring
+  from returning; `drive_model.js` and the public pedal seam are unchanged.
+- V10/V12 Pop defaults now favor chamber pressure instead of a snare-like Crack:
+  Global Pitch is `-7` / `-9`, Low Pressure `0.72` / `0.82`, Body Level
+  `1.22` / `1.26`, and Crack Level `0.30` / `0.24`. The physical Crack impulse,
+  native colour trim and upper decay were reduced while the existing 1--5 hit,
+  140--200 ms randomized burst scheduler remains unchanged.
+- Completed on canonical `main`. The implementation fixed point passed 157/157
+  tests, deterministic generation and `git diff --check`. Fresh Max Test Pop
+  renders were non-silent and unclipped: V10 peak/RMS `-1.24/-19.41` dBFS,
+  centroid `139` Hz, harsh ratio `0.0055`, rumble `0.724`; V12
+  `-0.28/-19.61` dBFS, `68` Hz, `0.0014`, `0.863` respectively.
+- Final project plus EV/V10/V12 headless loads found no missing-object,
+  Gen-outlet, patchcord or invalid-category blocker. Direct-open search-path and
+  application SQLite warnings remain documented/non-blocking. Every task-owned
+  PID was verified at zero windows and closed; protected pre-existing PID 25676
+  was not touched.
 
 ## Related Repositories
 
@@ -237,6 +234,16 @@
 ## Agent Notes
 
 <!-- AGENT_NOTES_START -->
+- 2026-08-26 keyboard/pressure-Pop repair: the keyboard adapter had Max `gate`
+  control and data inlets reversed, so W/S changed gate selection rather than
+  emitting pedals. `82fca86` restores binary W throttle/S brake delivery without
+  changing the 20 ms drivetrain. Pop ships substantially lower and body-led:
+  V10/V12 use -7/-9 semitone global defaults, stronger low/body layers and a
+  restrained Crack layer. Fresh real-Max transient renders have zero clipped
+  samples, 139/68 Hz centroids and 0.724/0.863 rumble ratios. All 157 tests pass;
+  generated outputs are deterministic, the project/runtime error audit is clean
+  apart from documented SQLite/search-path warnings, and every task-opened Max
+  instance reached zero windows and was closed. Protected PID 25676 remains.
 - 2026-08-26 Pop/DNA authority repair: V10 Brightness and EV Aggression were
   confirmed dead declarations and now directly reach Gen colour paths. Pop had
   three concrete control faults: the dominant generated core bypassed most BEAP

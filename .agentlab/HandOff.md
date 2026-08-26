@@ -5,11 +5,22 @@
 - Canonical remote: `git@github.com:Kidrage/VehicleSoundSynth.git`
 - Target runtime: Max 8.6.5 on macOS
 - Canonical branch: `main`.
-- Authoritative Pop/Sound-DNA control implementation fixed point: `e1e0286`,
-  now contained in canonical `main`; later descendants are handoff-only.
+- Authoritative keyboard-pedal and low-pressure Pop implementation fixed point:
+  `82fca86`, now contained in canonical `main`; later descendants are
+  handoff-only.
 
 ## Delivered Change
 
+- The keyboard adapter's Max `gate` ports are repaired: Internal Manual enable
+  selects the gate on inlet 1 and W/S binary pedal state enters inlet 0. W is
+  again immediate full throttle and S the fixed service brake; the normalized
+  public pedal seam and `drive_model.js` are unchanged.
+- V10/V12 Pop now defaults to a low exhaust-pressure explosion instead of a
+  bright snare shell. Global Pitch defaults to `-7` / `-9`, Low Pressure to
+  `0.72` / `0.82`, Body Level to `1.22` / `1.26`, and Crack Level to
+  `0.30` / `0.24`; the short Crack impulse/colour branch is also restrained.
+  The editable Pop Designer remains authoritative and the randomized 1--5 hit,
+  140--200 ms physical burst schedule is unchanged.
 - Pop Designer now opens the active audible V10/V12 backfire instance and
   exposes a persistent authoritative control surface for Global Pitch, Core
   Presence, Body/Crack Tune, Decay, Low Pressure, Body Level and Crack Level.
@@ -65,15 +76,19 @@
 
 ## Local Save Archive
 
-- The two current user Max saves were backed up byte-for-byte before final
-  consolidation under the hidden single archive
-  `/Users/saintpeter/Downloads/.VehicleSoundSynth-Backups/20260826-pop-low-burst/`.
-  V10 SHA-256 is `faf699ce...`; V12 host is `9fba2059...`.
+- The pre-task user V10 Max save was backed up byte-for-byte before deterministic
+  regeneration at
+  `/Users/saintpeter/Downloads/.VehicleSoundSynth-Backups/20260826-keyboard-pop/VehicleSoundSynth-V10.user-save.maxpat`.
 
 ## Validation
 
-- 156/156 unit tests pass; deterministic generation, seed-once preservation and
+- 157/157 unit tests pass; deterministic generation, seed-once preservation and
   `git diff --check` pass.
+- Fresh final Pop transient renders are non-silent and unclipped. V10 measured
+  `-1.24/-19.41` dBFS peak/RMS, `139` Hz centroid, `0.0055` harsh ratio and
+  `0.724` rumble ratio; V12 measured `-0.28/-19.61`, `68` Hz, `0.0014` and
+  `0.863`. These pass the new anti-snare acoustic gates and retain the 0.16 s
+  randomized-burst envelope period.
 - Fixed-state real Max low/high DNA renders cover the complete visible control
   set as aggregate A/Bs for EV/V10/V12. Low-to-high RMS changes were 8.77,
   14.26 and 14.74 dB respectively; all six renders were non-silent and had zero
@@ -99,3 +114,5 @@
   closed by their generated close path; all task-owned Max PIDs were terminated
   after confirming zero windows. Crash recovery remains `Ask`. A pre-existing
   protected background PID 25676 also has zero windows but was not force-closed.
+  This task's project/runtime instances were separately verified at zero windows
+  and closed; only the protected pre-existing PID remains.
