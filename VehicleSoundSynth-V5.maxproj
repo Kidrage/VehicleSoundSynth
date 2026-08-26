@@ -129,6 +129,10 @@
         "kind": "patcher",
         "local": 1
       },
+      "patchers/engine_start_core~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
       "patchers/engine_start_voice.maxpat": {
         "kind": "patcher",
         "local": 1

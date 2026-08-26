@@ -102,10 +102,11 @@ On macOS, Max writes load diagnostics to
   progressive service-brake law. The ICE drive model emits one bounded
   `overrun 0..1` event for a sufficiently fast loaded lift-off; generated hosts
   alone translate that event to the seed-once BEAP backfire voices and their
-  quiet bounded click/resonator compatibility layer. The editable voice has
+  click-triggered broadband pressure/crack/reflection core. The editable voice has
   labelled Pressure Body, Exhaust Crack, and Tail Color/Output sections;
   intensity morphs layer colour and tail density, not only gain. Use the
-  runtime Backfire Solo + Test Pop controls for isolated tuning. Save
+  runtime Backfire Solo + Test Pop controls for ignition-independent audition;
+  normal events remain engine-state gated. Save
   user-tuned BEAP
   subpatchers, close every task-opened
   patcher, and quit Max after a smoke test.

@@ -52,6 +52,32 @@ def backfire_solo_scenario(profile: str, intensity: float) -> dict:
     }
 
 
+def start_scenario(profile: str, style: str) -> dict:
+    return {
+        "profile": profile,
+        "event": "starter 1",
+        "event_at_ms": 200,
+        "direct_event_to_transient": True,
+        "extra_messages": (f"start_style {style}",),
+    }
+
+
+def backfire_test_scenario(profile: str) -> dict:
+    return {
+        "profile": profile,
+        "rpm": 1800.0,
+        "lock_rpm": True,
+        "event": "backfire_test 1",
+        "event_at_ms": 200,
+        "direct_event_to_transient": True,
+        "ignition_enabled": False,
+        "extra_messages": (
+            "backfire_intensity 0.82" if profile == "v10" else "backfire_intensity 0.55",
+            "backfire_solo 1",
+        ),
+    }
+
+
 SCENARIOS = {
     "idle-v12": {"profile": "v12", "rpm": 780.0},
     "idle-v10": {"profile": "v10", "rpm": 740.0},
@@ -176,6 +202,12 @@ SCENARIOS = {
     "v12-backfire-solo-low": backfire_solo_scenario("v12", 0.25),
     "v12-backfire-solo-default": backfire_solo_scenario("v12", 0.55),
     "v12-backfire-solo-high": backfire_solo_scenario("v12", 1.0),
+    "v10-backfire-test-solo": backfire_test_scenario("v10"),
+    "v12-backfire-test-solo": backfire_test_scenario("v12"),
+    "v10-start-cinematic": start_scenario("v10", "cinematic"),
+    "v10-start-realistic": start_scenario("v10", "realistic"),
+    "v12-start-cinematic": start_scenario("v12", "cinematic"),
+    "v12-start-realistic": start_scenario("v12", "realistic"),
     "v10-lifecycle-idle": {
         "profile": "v10", "rpm": 740.0, "throttle": 0.08, "load": 0.15,
         "lock_rpm": True, "lifecycle_role": "idle", "extra_messages": ("accel 0",),
@@ -265,6 +297,7 @@ def make_probe(
     tap: str = "final",
     extra_messages: tuple[str, ...] = (),
     event_message: str | None = None,
+    event_at_ms: int | None = None,
     direct_event_to_transient: bool = False,
     drive_lifecycle: bool = False,
     direct_powertrain: bool = False,
@@ -567,7 +600,11 @@ def make_probe(
             # RPM probes begin recording only after the one-second catch, so
             # this remains safely behind engine_running while never falling
             # beyond the recording stop as the previous fixed 1800 ms did.
-            event_at_ms = max(100, min(1800, render_ms - 300))
+            event_at_ms = (
+                max(100, min(event_at_ms, render_ms - 300))
+                if event_at_ms is not None
+                else max(100, min(1800, render_ms - 300))
+            )
             event_at = p.new(
                 f"past {event_at_ms}", 825, 700, 75,
                 numinlets=1, numoutlets=1,
@@ -780,6 +817,7 @@ def main() -> None:
             tap=args.tap,
             extra_messages=tuple(extra_messages),
             event_message=scenario.get("event"),
+            event_at_ms=scenario.get("event_at_ms"),
             direct_event_to_transient=bool(
                 scenario.get("direct_event_to_transient", False)
             ),
@@ -831,6 +869,7 @@ def main() -> None:
         "cabin_rumble~.maxpat",
         "cabin_master~.maxpat",
         "mix_master~.maxpat",
+        "engine_start_core~.maxpat",
         "engine_start_voice.maxpat",
         "engine_start_beap~.maxpat",
     }

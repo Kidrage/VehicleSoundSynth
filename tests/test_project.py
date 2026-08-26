@@ -127,6 +127,7 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
                 "rpm", "throttle", "accel", "shift", "shift_dir",
                 "intake_backfire", "exhaust_pop", "pop", "overrun",
                 "ignition", "engine_running", "backfire_enable", "backfire_intensity",
+                "backfire_test",
             ):
                 self.assertIn(control, host_text)
             self.assertIn("pak 1 0 0", host_text)
@@ -138,15 +139,16 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
             )
             self.assertIn(expected_gain, host_text)
             self.assertIn("noise~", host_text)
-            self.assertIn("*~ 0.04", host_text)
             self.assertIn("lores~", host_text)
             self.assertIn("click~", host_text)
-            self.assertIn("reson~", host_text)
+            self.assertIn("onepole~", host_text)
+            self.assertIn("GENERATED PRESSURE CORE", host_text)
+            self.assertNotIn("reson~", host_text)
             self.assertNotIn("($f1 < -0.18) && ($f2 > 1400.)", host_text)
             self.assertIn(f"{profile}_backfire_beap~", host_text)
             runtime = self.load_json(f"VehicleSoundSynth-{profile.upper()}.maxpat")["patcher"]
             runtime_text = "\n".join(item["box"].get("text", "") for item in runtime["boxes"])
-            for token in ("Backfire Solo / Test Pop", "prepend backfire_solo", "pop 1"):
+            for token in ("Backfire Solo / Test Pop", "prepend backfire_solo", "backfire_test 1"):
                 self.assertIn(token, runtime_text)
             engine = self.load_json(f"patchers/vehicle_engine_{profile}~.maxpat")["patcher"]
             engine_text = "\n".join(item["box"].get("text", "") for item in engine["boxes"])
@@ -197,7 +199,8 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
                 else "(0.66+0.94*$f1)*(0.55+0.45*$f2)"
             )
             self.assertIn(expected_gain, host_text)
-            self.assertIn("*~ 0.18", host_text)
+            self.assertIn("*~ 4.2", host_text)
+            self.assertIn("onepole~", host_text)
 
     def test_v5_all_profiles_share_one_editable_cinematic_soundscape_core(self):
         project = self.load_json("VehicleSoundSynth-V5.maxproj")
@@ -1088,28 +1091,88 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
     def test_ice_start_defaults_to_cinematic_beap_with_realistic_sample_option(self):
         start_beap = self.load_json("patchers/engine_start_beap~.maxpat")["patcher"]
         start_text = "\n".join(
-            item["box"].get("text", "") for item in start_beap["boxes"]
+            item["box"].get("text", "") + " " + item["box"].get("varname", "")
+            for item in start_beap["boxes"]
         )
         self.assertIn("USER-TUNABLE", start_text)
+        for token in (
+            "CRANK MOTOR", "FIRST FIRE / CATCH", "OUTPUT",
+            "Start_Mixer", "Start_Filter", "Start_AD", "Start_VCA",
+            "phasor~", "tanh~",
+        ):
+            self.assertIn(token, start_text)
+        project = self.load_json("VehicleSoundSynth-V5.maxproj")
+        self.assertIn("patchers/engine_start_core~.maxpat", project["contents"]["patchers"])
         for profile in ("v10", "v12"):
             transient = self.load_json(f"patchers/transient_{profile}~.maxpat")["patcher"]
             text = "\n".join(
-                item["box"].get("text", "") for item in transient["boxes"]
+                item["box"].get("text", "") + " " + item["box"].get("varname", "")
+                for item in transient["boxes"]
             )
             self.assertIn("route starter start_style", text)
             self.assertIn("sel cinematic realistic", text)
             self.assertIn("loadmess cinematic", text)
             self.assertIn("poly~ engine_start_voice 1", text)
+            self.assertIn("engine_start_core~", text)
+            self.assertIn("start_cinematic_gain", text)
+            self.assertIn("starter_state_gate", text)
+            self.assertIn("rampsmooth~ 64 256", text)
             self.assertIn("mute 1 0", text)
             self.assertIn("mute 1 1", text)
-            self.assertIn("delay 1200", text)
+            self.assertIn("t b b", text)
+            self.assertIn("delay 5", text)
+            self.assertIn("delay 1600", text)
+            self.assertIn("*~ 0.55", text)
+            self.assertIn("*~ 0.75", text)
+            if profile == "v10":
+                self.assertIn("*~ 0.65", text)
             self.assertIn("starter_", text)
+        start_core = self.load_json("patchers/engine_start_core~.maxpat")["patcher"]
+        start_core_text = "\n".join(
+            item["box"].get("text", "") + " " + item["box"].get("varname", "")
+            for item in start_core["boxes"]
+        )
+        self.assertEqual(
+            3,
+            sum(item["box"].get("maxclass") == "inlet" for item in start_core["boxes"]),
+        )
         ev_text = "\n".join(
             item["box"].get("text", "")
             for item in self.load_json("patchers/transient_ev~.maxpat")["patcher"]["boxes"]
         )
         self.assertIn("poly~ engine_start_voice 1", ev_text)
         self.assertNotIn("play~ starter_", ev_text)
+
+    def test_backfire_test_is_audition_only_while_physical_events_remain_gated(self):
+        for profile in ("v10", "v12"):
+            host = self.load_json(f"patchers/{profile}_backfire_host~.maxpat")["patcher"]
+            boxes = {item["box"]["id"]: item["box"] for item in host["boxes"]}
+            text = "\n".join(box.get("text", "") for box in boxes.values())
+            self.assertIn("backfire_test", text)
+            self.assertIn("AUDITION ONLY", text)
+            physical_gate = next(
+                box_id for box_id, box in boxes.items() if box.get("text") == "gate 1"
+            )
+            test_edge = next(
+                box_id for box_id, box in boxes.items()
+                if box.get("varname") == "backfire_test_edge"
+            )
+            trigger_destinations = {
+                line["patchline"]["destination"][0]
+                for line in host["lines"]
+                if line["patchline"]["source"][0] == test_edge
+            }
+            physical_destinations = {
+                line["patchline"]["destination"][0]
+                for line in host["lines"]
+                if line["patchline"]["source"][0] == physical_gate
+            }
+            self.assertTrue(trigger_destinations & physical_destinations)
+            runtime = self.load_json(f"VehicleSoundSynth-{profile.upper()}.maxpat")["patcher"]
+            runtime_text = "\n".join(
+                item["box"].get("text", "") for item in runtime["boxes"]
+            )
+            self.assertIn("backfire_test 1", runtime_text)
 
     def test_local_reference_processor_builds_deterministic_v10_state_atlas(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -2885,6 +2948,64 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
                         self.assertIn(f"backfire_intensity {intensity:g}", text)
                         self.assertIn("backfire_solo 1", text)
                         self.assertIn("overrun 0.95", text)
+
+    def test_runtime_probe_exposes_both_auditionable_ice_start_styles(self):
+        for profile in ("v10", "v12"):
+            for style in ("cinematic", "realistic"):
+                with self.subTest(profile=profile, style=style):
+                    with tempfile.TemporaryDirectory() as directory:
+                        subprocess.run(
+                            [
+                                sys.executable,
+                                str(ROOT / "tools" / "build_runtime_probe.py"),
+                                "--bundle-root", directory,
+                                "--scenario", f"{profile}-start-{style}",
+                                "--tap", "transient",
+                                "--render-ms", "1800",
+                            ],
+                            check=True,
+                            cwd=ROOT,
+                            capture_output=True,
+                            text=True,
+                        )
+                        probe_path = Path(directory) / (
+                            f"runtime_probe_{profile}_{profile}-start-{style}_on.maxpat"
+                        )
+                        probe = json.loads(probe_path.read_text(encoding="utf-8"))["patcher"]
+                        text = "\n".join(
+                            item["box"].get("text", "") for item in probe["boxes"]
+                        )
+                        self.assertIn(f"start_style {style}", text)
+                        self.assertIn("starter 1", text)
+                        self.assertIn("past 200", text)
+
+    def test_runtime_probe_exposes_ignition_independent_backfire_test(self):
+        for profile in ("v10", "v12"):
+            with tempfile.TemporaryDirectory() as directory:
+                subprocess.run(
+                    [
+                        sys.executable,
+                        str(ROOT / "tools" / "build_runtime_probe.py"),
+                        "--bundle-root", directory,
+                        "--scenario", f"{profile}-backfire-test-solo",
+                        "--tap", "transient",
+                        "--render-ms", "1200",
+                    ],
+                    check=True,
+                    cwd=ROOT,
+                    capture_output=True,
+                    text=True,
+                )
+                probe_path = Path(directory) / (
+                    f"runtime_probe_{profile}_{profile}-backfire-test-solo_on.maxpat"
+                )
+                probe = json.loads(probe_path.read_text(encoding="utf-8"))["patcher"]
+                text = "\n".join(
+                    item["box"].get("text", "") for item in probe["boxes"]
+                )
+                self.assertIn("backfire_test 1", text)
+                self.assertIn("backfire_solo 1", text)
+                self.assertIn("past 200", text)
 
     def test_runtime_probe_can_render_ice_soundscape_without_enabling_other_scenarios(self):
         for profile, level in (("v10", -8), ("v12", -9)):

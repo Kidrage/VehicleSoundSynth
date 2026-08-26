@@ -44,11 +44,13 @@ and `TAIL COLOR / OUTPUT` panels. Pressure Body controls the low resonant mass;
 Exhaust Crack controls the short band-limited edge; Tail Color/Output controls
 the decay colour, stereo split and final drive. A co-located Max 8.6.5-safe
 pressure envelope is fed from the visible BEAP Mixer/MMF output so those tone
-controls remain authoritative even when very short physical gates would vanish
-on BEAP revisions whose AD/VCA response differs. AD controls shape the native
-BEAP layer; the compatibility envelope keeps its documented profile timing. The
-generated host keeps only a roughly -15 dB safety click/resonator; it is not the
-dominant sound or another event source.
+controls remain useful even when very short physical gates would vanish on BEAP
+revisions whose AD/VCA response differs. AD controls shape the native BEAP
+layer. The generated host now owns a clearly labelled `GENERATED PRESSURE CORE`:
+a click creates smooth body/crack envelopes that excite broadband noise, not a
+naked resonator, followed by two lower-level wall reflections. This core is the
+audibility and timing authority; edit `make_ice_backfire_host()` and regenerate
+when changing its decay, crack bands or reflection spacing.
 
 For tone work, tune the BEAP Mixer/MMF first, then the native-layer AD controls,
 and audition low, default and high runtime Intensity. Intensity morphs from a compact pressure
@@ -57,13 +59,25 @@ than merely scaling the same waveform. Use transient dB last for whole-stem
 balance. Change `tools/build_project.py` only when the physical event, host
 plumbing, compatibility layer, or safety contract must change.
 
-To hear the voice alone, start V10 or V12, set `Backfire Enable`, turn on
-`Backfire Solo`, and press `Test Pop`. In normal driving, hold enough throttle
+To hear the voice alone, enable Audio, turn on `Backfire Solo`, and press
+`Test Pop`; this explicit audition event works even with the engine off. In
+normal driving, `Backfire Enable`, ignition and engine-running state remain
+mandatory. Hold enough throttle
 to load the engine above roughly 1600 RPM, then release W/trigger quickly. The
 drive model emits one strength-scaled `overrun` event; slow lift-off, braking by
 itself, low RPM, EV, or an off engine is intentionally silent. Save the BEAP
 patcher after tone edits, then disable Solo and verify the full mix below the
 final ceiling.
+
+## Engine start
+
+`Cinematic BEAP` is a hybrid procedural start, not sample playback. The
+generated `patchers/engine_start_core~.maxpat` supplies the guaranteed crank and
+first-fire pressure, and `patchers/engine_start_beap~.maxpat` is the seed-once
+editable colour layer. The generated transient host gates the core directly
+from the persistent `starter 0|1` state, avoiding a fragile bang-only envelope.
+`Realistic Sample` is the alternate sample mode and uses the tracked CC0 starter
+fallback, or the optional local-only V10 Ferrari startup when available.
 
 ## Sound DNA controls
 

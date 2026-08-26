@@ -1331,7 +1331,7 @@ def make_ice_backfire_host(profile: str) -> dict[str, Any]:
     names = (
         "rpm", "throttle", "accel", "shift", "shift_dir", "intake_backfire",
         "exhaust_pop", "pop", "ignition", "engine_running", "backfire_enable",
-        "backfire_intensity", "transient_level_db", "overrun",
+        "backfire_intensity", "transient_level_db", "overrun", "backfire_test",
     )
     router = route(p, names, 35, 105, 960)
     p.connect(control, router)
@@ -1372,6 +1372,18 @@ def make_ice_backfire_host(profile: str) -> dict[str, Any]:
     p.connect(running, physical_state, 0, 2)
     p.connect(physical_state, physical_gate)
     p.connect(physical_gate, event_gate, 0, 0)
+    p.comment("AUDITION ONLY — bypasses running-state gate; automatic events stay physical", 780, 275, 480)
+    backfire_test_edge = p.new(
+        "sel 1", 1000, 305, 45, numinlets=1, numoutlets=2,
+        varname="backfire_test_edge",
+    )
+    event_trigger = p.new(
+        "t b", 1060, 305, 40, numinlets=1, numoutlets=1,
+        varname="backfire_event_trigger",
+    )
+    p.connect(router, backfire_test_edge, 14)
+    p.connect(event_gate, event_trigger)
+    p.connect(backfire_test_edge, event_trigger, 0)
 
     event_strength = p.new("f 1.", 650, 285, 55, numinlets=2, numoutlets=1)
     event_strength_default = p.new("loadmess 1.", 710, 285, 85, numinlets=1, numoutlets=1)
@@ -1425,48 +1437,80 @@ def make_ice_backfire_host(profile: str) -> dict[str, Any]:
         805, 285, 115,
     )
     gate_line = p.new("line~", 805, 345, 50, numinlets=2, numoutlets=2)
-    p.connect(event_gate, rpm_store)
-    p.connect(event_gate, gate_message)
+    p.connect(event_trigger, rpm_store)
+    p.connect(event_trigger, gate_message)
     p.connect(gate_message, gate_line)
     beap = p.new(f"{profile}_backfire_beap~", 330, 445, 190, numinlets=3, numoutlets=2)
     p.connect(pitch_line, beap, 0, 0)
     p.connect(gate_line, beap, 0, 1)
     p.connect(intensity_line, beap, 0, 2)
     # BEAP AD/VCA revisions in some Max 8.6.x installs can miss very short
-    # external gates. Keep the editable BEAP voice as the main design, but add
-    # one quiet, band-limited pressure release driven by the exact same physical
-    # envelope so a valid event can never become digital silence.
+    # external gates. A click-derived control envelope is sample-accurate and
+    # excites broadband pressure instead of exposing a naked resonant impulse.
+    # The editable BEAP voice remains the colour layer; this generated core owns
+    # event audibility, body duration and the two exhaust-wall reflections.
+    p.comment("GENERATED PRESSURE CORE — body / crack / two wall reflections", 25, 410, 620)
     pressure_noise = p.new("noise~", 35, 445, 55, numinlets=1, numoutlets=1)
-    pressure_env = p.new("*~ 0.04", 100, 445, 65, numinlets=2, numoutlets=1)
-    pressure_burst = p.new("*~", 175, 445, 40, numinlets=2, numoutlets=1)
+    main_click = p.new("click~", 100, 445, 50, numinlets=1, numoutlets=1)
+    body_impulse = p.new(
+        f"*~ {1120 if profile == 'v10' else 1320}", 160, 445, 75,
+        numinlets=2, numoutlets=1,
+    )
+    body_decay = p.new(
+        f"onepole~ {3.2 if profile == 'v10' else 2.6:g}", 245, 445, 90,
+        numinlets=2, numoutlets=1,
+    )
+    body_env = p.new("clip~ 0. 1.", 345, 445, 85, numinlets=3, numoutlets=1)
+    crack_impulse = p.new(
+        f"*~ {115 if profile == 'v10' else 92}", 160, 480, 65,
+        numinlets=2, numoutlets=1,
+    )
+    crack_decay = p.new(
+        f"onepole~ {18 if profile == 'v10' else 12}", 235, 480, 90,
+        numinlets=2, numoutlets=1,
+    )
+    crack_env = p.new("clip~ 0. 1.", 335, 480, 85, numinlets=3, numoutlets=1)
+    body_burst = p.new("*~", 440, 445, 40, numinlets=2, numoutlets=1)
+    crack_burst = p.new("*~", 440, 480, 40, numinlets=2, numoutlets=1)
     pressure_l = p.new(
-        f"lores~ {1050 if profile == 'v10' else 760} {0.68 if profile == 'v10' else 0.72:g}",
-        175, 485, 115, numinlets=3, numoutlets=1,
+        f"lores~ {980 if profile == 'v10' else 720} {0.64 if profile == 'v10' else 0.70:g}",
+        490, 435, 115, numinlets=3, numoutlets=1,
     )
     pressure_r = p.new(
-        f"lores~ {1180 if profile == 'v10' else 860} {0.64 if profile == 'v10' else 0.69:g}",
-        35, 530, 115, numinlets=3, numoutlets=1,
+        f"lores~ {1120 if profile == 'v10' else 820} {0.60 if profile == 'v10' else 0.67:g}",
+        490, 465, 115, numinlets=3, numoutlets=1,
     )
+    crack_l_filter = p.new(
+        f"svf~ {2100 if profile == 'v10' else 1550} 0.62", 615, 435, 110,
+        numinlets=3, numoutlets=4,
+    )
+    crack_r_filter = p.new(
+        f"svf~ {2650 if profile == 'v10' else 1850} 0.58", 615, 475, 110,
+        numinlets=3, numoutlets=4,
+    )
+    pressure_crack_l = p.new("+~", 735, 445, 40, numinlets=2, numoutlets=1)
+    pressure_crack_r = p.new("+~", 735, 480, 40, numinlets=2, numoutlets=1)
     beap_pressure_l = p.new("+~", 310, 490, 40, numinlets=2, numoutlets=1)
     beap_pressure_r = p.new("+~", 530, 490, 40, numinlets=2, numoutlets=1)
-    p.connect(gate_line, pressure_env)
-    p.connect(pressure_noise, pressure_burst, 0, 0)
-    p.connect(pressure_env, pressure_burst, 0, 1)
-    p.connect(pressure_burst, pressure_l)
-    p.connect(pressure_burst, pressure_r)
-    main_click = p.new("click~", 35, 570, 50, numinlets=1, numoutlets=1)
-    click_body = p.new(
-        f"reson~ {50 if profile == 'v10' else 58} {105 if profile == 'v10' else 82} {2.4 if profile == 'v10' else 2.8:g}",
-        95, 570, 135, numinlets=4, numoutlets=1,
-    )
-    click_crack = p.new(
-        f"reson~ {10.5 if profile == 'v10' else 11.5} {920 if profile == 'v10' else 680} {1.1 if profile == 'v10' else 1.35:g}",
-        95, 605, 135, numinlets=4, numoutlets=1,
-    )
-    click_sum = p.new("+~", 240, 585, 40, numinlets=2, numoutlets=1)
-    pressure_click_l = p.new("+~", 260, 490, 40, numinlets=2, numoutlets=1)
-    pressure_click_r = p.new("+~", 480, 490, 40, numinlets=2, numoutlets=1)
-    p.connect(event_gate, main_click)
+    p.connect(main_click, body_impulse)
+    p.connect(body_impulse, body_decay)
+    p.connect(body_decay, body_env)
+    p.connect(main_click, crack_impulse)
+    p.connect(crack_impulse, crack_decay)
+    p.connect(crack_decay, crack_env)
+    p.connect(pressure_noise, body_burst, 0, 0)
+    p.connect(body_env, body_burst, 0, 1)
+    p.connect(pressure_noise, crack_burst, 0, 0)
+    p.connect(crack_env, crack_burst, 0, 1)
+    p.connect(body_burst, pressure_l)
+    p.connect(body_burst, pressure_r)
+    p.connect(crack_burst, crack_l_filter)
+    p.connect(crack_burst, crack_r_filter)
+    p.connect(pressure_l, pressure_crack_l, 0, 0)
+    p.connect(crack_l_filter, pressure_crack_l, 2, 1)
+    p.connect(pressure_r, pressure_crack_r, 0, 0)
+    p.connect(crack_r_filter, pressure_crack_r, 2, 1)
+    p.connect(event_trigger, main_click)
     tail_delay_1 = p.new(
         f"delay {55 if profile == 'v10' else 75}", 35, 610, 65,
         numinlets=2, numoutlets=1,
@@ -1480,11 +1524,11 @@ def make_ice_backfire_host(profile: str) -> dict[str, Any]:
         110, 640, 245, numinlets=1, numoutlets=1,
     )
     tail_level_1_map = p.new(
-        f"expr {(0.22 if profile == 'v10' else 0.16):g}+{(0.24 if profile == 'v10' else 0.18):g}*$f1",
+        f"expr {(0.42 if profile == 'v10' else 0.34):g}+{(0.22 if profile == 'v10' else 0.18):g}*$f1",
         365, 620, 185, numinlets=1, numoutlets=1,
     )
     tail_level_2_map = p.new(
-        f"expr {(0.22 if profile == 'v10' else 0.16):g}*$f1",
+        f"expr {(0.23 if profile == 'v10' else 0.16):g}*$f1",
         365, 650, 145, numinlets=1, numoutlets=1,
     )
     tail_level_1 = p.new("f 0.", 560, 620, 45, numinlets=2, numoutlets=1)
@@ -1494,28 +1538,18 @@ def make_ice_backfire_host(profile: str) -> dict[str, Any]:
     p.connect(tail_depth, tail_level_2_map)
     p.connect(tail_level_1_map, tail_level_1, 0, 1)
     p.connect(tail_level_2_map, tail_level_2, 0, 1)
-    p.connect(event_gate, tail_delay_1)
-    p.connect(event_gate, tail_delay_2)
+    p.connect(event_trigger, tail_delay_1)
+    p.connect(event_trigger, tail_delay_2)
     p.connect(tail_delay_1, tail_level_1)
     p.connect(tail_delay_2, tail_level_2)
     p.connect(tail_level_1, main_click)
     p.connect(tail_level_2, main_click)
-    p.connect(main_click, click_body)
-    p.connect(main_click, click_crack)
-    p.connect(click_body, click_sum, 0, 0)
-    p.connect(click_crack, click_sum, 0, 1)
-    safety_click = p.new("*~ 0.18", 285, 585, 65, numinlets=2, numoutlets=1)
-    p.connect(click_sum, safety_click)
-    p.connect(pressure_l, pressure_click_l, 0, 0)
-    p.connect(safety_click, pressure_click_l, 0, 1)
-    p.connect(pressure_r, pressure_click_r, 0, 0)
-    p.connect(safety_click, pressure_click_r, 0, 1)
     p.connect(beap, beap_pressure_l, 0, 0)
-    p.connect(pressure_click_l, beap_pressure_l, 0, 1)
+    p.connect(pressure_crack_l, beap_pressure_l, 0, 1)
     p.connect(beap, beap_pressure_r, 1, 0)
-    p.connect(pressure_click_r, beap_pressure_r, 0, 1)
-    left_drive = p.new("*~ 6.", 310, 515, 55, numinlets=2, numoutlets=1)
-    right_drive = p.new("*~ 6.", 530, 515, 55, numinlets=2, numoutlets=1)
+    p.connect(pressure_crack_r, beap_pressure_r, 0, 1)
+    left_drive = p.new("*~ 4.2", 310, 515, 55, numinlets=2, numoutlets=1)
+    right_drive = p.new("*~ 4.2", 530, 515, 55, numinlets=2, numoutlets=1)
     left_sat = p.new("tanh~", 370, 515, 50, numinlets=1, numoutlets=1)
     right_sat = p.new("tanh~", 590, 515, 50, numinlets=1, numoutlets=1)
     left_filter = p.new("svf~ 35 0.7", 310, 545, 95, numinlets=3, numoutlets=4)
@@ -3470,27 +3504,121 @@ def make_cabin_rumble() -> dict[str, Any]:
 
 
 def make_engine_start_beap() -> dict[str, Any]:
-    """Seed the user-editable cinematic starter built only from BEAP modules."""
-    document = make_ev_mode_beap("sport")
-    patcher = document["patcher"]
-    patcher["boxes"][0]["box"]["text"] = (
-        "USER-TUNABLE CINEMATIC ENGINE START — BEAP effect; preserved on rebuild"
+    """Seed one editable crank/first-fire/catch voice with a Max-safe envelope."""
+    p = Patcher(2050, 790)
+    p.comment(
+        "USER-TUNABLE CINEMATIC ENGINE START — crank / first fire / catch; preserved on rebuild",
+        25, 15, 1100,
     )
-    for item in patcher["boxes"]:
-        box = item["box"]
-        varname = box.get("varname", "")
-        if "Mixer" in varname:
-            _set_beap_initial(box, "in1", -8)
-            _set_beap_initial(box, "in2", -20)
-        elif "Ladder" in varname:
-            _set_beap_initial(box, "Freq", 1350)
-            _set_beap_initial(box, "Res", 7)
-        elif "ADSR" in varname:
-            _set_beap_initial(box, "Attack", 35)
-            _set_beap_initial(box, "Decay", 620)
-            _set_beap_initial(box, "Sustain", 32)
-            _set_beap_initial(box, "Release", 420)
-    return document
+    pitch = inlet(p, 45, 65, signal=True)
+    gate = inlet(p, 145, 65, signal=True)
+    timbre = inlet(p, 245, 65, signal=True)
+
+    p.comment("CRANK MOTOR — filtered pressure pulses; no starter sample", 25, 110, 650)
+    noise = add_beap_module(p, "Random/bp.Noise.maxpat", 25, 145, "Start_Noise")
+    osc = add_beap_module(
+        p, "Oscillator/bp.Oscillator.maxpat", 300, 145, "Start_Osc",
+        initial={"Waveform": 0},
+    )
+    mixer = add_beap_module(
+        p, "Mixers/bp.Audio Mixer.maxpat", 625, 145, "Start_Mixer",
+        initial={"in1": -8, "in2": -24},
+    )
+    start_filter = add_beap_module(
+        p, "Filter/bp.MMF.maxpat", 845, 145, "Start_Filter",
+        initial={"Freq": 900, "Res": 4, "FilterType": 0, "power[1]": 1},
+    )
+    envelope = add_beap_module(
+        p, "Envelope/bp.AD.maxpat", 1120, 145, "Start_AD",
+        initial={"Attack": 4, "Decay": 1050},
+    )
+    vca = add_beap_module(p, "Level/bp.VCA.maxpat", 1320, 145, "Start_VCA")
+    native_env = p.new("*~ 0.55", 1135, 360, 65, numinlets=2, numoutlets=1)
+
+    # The visible BEAP Mixer/MMF is the authoritative tone source. A simple
+    # signal-rate crank envelope bypasses only BEAP AD/VCA timing because some
+    # supported Max 8.6.x revisions miss a gate delivered on the first unmute
+    # vector. This guarantees audibility without hiding a second oscillator.
+    crank_rate = p.new("scale~ -1.5 0.75 8. 23.", 35, 400, 165, numinlets=6, numoutlets=1)
+    crank_phase = p.new("phasor~", 210, 400, 60, numinlets=2, numoutlets=1)
+    crank_edge = p.new(">~ 0.54", 280, 400, 65, numinlets=2, numoutlets=1)
+    crank_pulse = p.new("onepole~ 95", 355, 400, 95, numinlets=2, numoutlets=1)
+    gate_normal = p.new("*~ 0.2", 460, 400, 65, numinlets=2, numoutlets=1)
+    gate_clip = p.new("clip~ 0. 1.", 535, 400, 85, numinlets=3, numoutlets=1)
+    pulse_env = p.new("*~", 630, 400, 40, numinlets=2, numoutlets=1)
+    crank_source = p.new("*~", 680, 400, 40, numinlets=2, numoutlets=1)
+    crank_body = p.new("lores~ 620 0.68", 730, 400, 115, numinlets=3, numoutlets=1)
+    crank_mode = p.new("reson~ 3.2 92 3.8", 855, 400, 120, numinlets=4, numoutlets=1)
+    crank_sum = p.new("+~", 985, 400, 40, numinlets=2, numoutlets=1)
+
+    p.comment("FIRST FIRE / CATCH — broad exhaust bloom, restrained crack", 25, 485, 720)
+    catch_filter = p.new("svf~ 1050 0.72", 355, 520, 110, numinlets=3, numoutlets=4)
+    catch_colour = p.new("*~ 0.035", 475, 520, 70, numinlets=2, numoutlets=1)
+    catch_colour_clip = p.new("clip~ 0. 0.2", 555, 520, 100, numinlets=3, numoutlets=1)
+    catch_gate = p.new("*~", 665, 520, 40, numinlets=2, numoutlets=1)
+    catch_vca = p.new("*~", 715, 520, 40, numinlets=2, numoutlets=1)
+    native_sum = p.new("+~", 1040, 430, 40, numinlets=2, numoutlets=1)
+    body_catch_sum = p.new("+~", 1090, 450, 40, numinlets=2, numoutlets=1)
+
+    p.comment("OUTPUT — soft pressure saturation; bass centered below 160 Hz", 1050, 485, 760)
+    drive = p.new("*~ 1.8", 1160, 540, 65, numinlets=2, numoutlets=1)
+    soft_clip = p.new("tanh~", 1235, 540, 50, numinlets=1, numoutlets=1)
+    split = p.new("svf~ 160 0.7", 1295, 540, 100, numinlets=3, numoutlets=4)
+    left_air = p.new("lores~ 3600 0.58", 1410, 525, 120, numinlets=3, numoutlets=1)
+    right_air = p.new("lores~ 4100 0.54", 1410, 580, 120, numinlets=3, numoutlets=1)
+    left_mix = p.new("+~", 1540, 525, 40, numinlets=2, numoutlets=1)
+    right_mix = p.new("+~", 1540, 580, 40, numinlets=2, numoutlets=1)
+    left = outlet(p, 1610, 525, signal=True)
+    right = outlet(p, 1610, 580, signal=True)
+
+    p.connect(noise, mixer, 0, 0)
+    p.connect(pitch, osc, 0, 0)
+    p.connect(osc, mixer, 0, 1)
+    p.connect(mixer, start_filter, 0, 0)
+    p.connect(timbre, start_filter, 0, 1)
+    p.connect(gate, envelope, 0, 0)
+    p.connect(envelope, native_env)
+    p.connect(start_filter, vca, 0, 0)
+    p.connect(native_env, vca, 0, 1)
+
+    p.connect(pitch, crank_rate)
+    p.connect(crank_rate, crank_phase)
+    p.connect(crank_phase, crank_edge)
+    p.connect(crank_edge, crank_pulse)
+    p.connect(gate, gate_normal)
+    p.connect(gate_normal, gate_clip)
+    p.connect(crank_pulse, pulse_env, 0, 0)
+    p.connect(gate_clip, pulse_env, 0, 1)
+    p.connect(start_filter, crank_source, 0, 0)
+    p.connect(pulse_env, crank_source, 0, 1)
+    p.connect(crank_source, crank_body)
+    p.connect(crank_source, crank_mode)
+    p.connect(crank_body, crank_sum, 0, 0)
+    p.connect(crank_mode, crank_sum, 0, 1)
+
+    p.connect(start_filter, catch_filter, 0, 0)
+    p.connect(timbre, catch_colour)
+    p.connect(catch_colour, catch_colour_clip)
+    p.connect(catch_filter, catch_gate, 2, 0)
+    p.connect(gate_clip, catch_gate, 0, 1)
+    p.connect(catch_gate, catch_vca, 0, 0)
+    p.connect(catch_colour_clip, catch_vca, 0, 1)
+    p.connect(vca, native_sum, 0, 0)
+    p.connect(crank_sum, native_sum, 0, 1)
+    p.connect(native_sum, body_catch_sum, 0, 0)
+    p.connect(catch_vca, body_catch_sum, 0, 1)
+    p.connect(body_catch_sum, drive)
+    p.connect(drive, soft_clip)
+    p.connect(soft_clip, split)
+    p.connect(split, left_mix, 0, 0)
+    p.connect(split, right_mix, 0, 0)
+    p.connect(split, left_air, 1, 0)
+    p.connect(split, right_air, 1, 0)
+    p.connect(left_air, left_mix, 0, 1)
+    p.connect(right_air, right_mix, 0, 1)
+    p.connect(left_mix, left)
+    p.connect(right_mix, right)
+    return p.document()
 
 
 def make_engine_start_voice() -> dict[str, Any]:
@@ -3508,6 +3636,85 @@ def make_engine_start_voice() -> dict[str, Any]:
     p.connect(timbre, beap, 0, 2)
     p.connect(beap, left, 0)
     p.connect(beap, right, 1)
+    return p.document()
+
+
+def make_engine_start_core() -> dict[str, Any]:
+    """Always-audible procedural crank and first-fire core behind the start seam."""
+    p = Patcher(1120, 650)
+    p.comment(
+        "ENGINE START CORE — generated crank pressure / first fire; tone layer remains in BEAP",
+        20, 15, 820,
+    )
+    pitch = inlet(p, 35, 65, signal=True)
+    gate = inlet(p, 125, 65, signal=True)
+    timbre = inlet(p, 215, 65, signal=True)
+    rate = p.new("scale~ -1.5 0.75 8. 23.", 35, 115, 165, numinlets=6, numoutlets=1)
+    phase = p.new("phasor~", 210, 115, 60, numinlets=2, numoutlets=1)
+    edge = p.new(">~ 0.54", 280, 115, 65, numinlets=2, numoutlets=1)
+    pulse = p.new("onepole~ 95", 355, 115, 95, numinlets=2, numoutlets=1)
+    gate_clip = p.new("clip~ 0. 1.", 535, 115, 85, numinlets=3, numoutlets=1)
+    pulse_env = p.new("*~", 630, 115, 40, numinlets=2, numoutlets=1)
+    pulse_depth = p.new("*~ 0.65", 680, 115, 65, numinlets=2, numoutlets=1)
+    gate_base = p.new("*~ 0.35", 755, 115, 65, numinlets=2, numoutlets=1)
+    start_env = p.new("+~", 830, 115, 40, numinlets=2, numoutlets=1)
+    noise = p.new("noise~", 35, 180, 55, numinlets=1, numoutlets=1)
+    pressure = p.new("*~", 100, 180, 40, numinlets=2, numoutlets=1)
+    body = p.new("lores~ 620 0.68", 150, 180, 115, numinlets=3, numoutlets=1)
+    chamber = p.new("reson~ 3.2 92 3.8", 275, 180, 120, numinlets=4, numoutlets=1)
+    body_sum = p.new("+~", 405, 180, 40, numinlets=2, numoutlets=1)
+    catch_filter = p.new("svf~ 1050 0.72", 150, 235, 110, numinlets=3, numoutlets=4)
+    catch_colour = p.new("*~ 0.032", 275, 235, 70, numinlets=2, numoutlets=1)
+    catch_clip = p.new("clip~ 0. 0.18", 355, 235, 105, numinlets=3, numoutlets=1)
+    catch_gate = p.new("*~", 470, 235, 40, numinlets=2, numoutlets=1)
+    catch_vca = p.new("*~", 520, 235, 40, numinlets=2, numoutlets=1)
+    start_sum = p.new("+~", 570, 200, 40, numinlets=2, numoutlets=1)
+    drive = p.new("*~ 2.1", 620, 200, 65, numinlets=2, numoutlets=1)
+    soft_clip = p.new("tanh~", 695, 200, 50, numinlets=1, numoutlets=1)
+    split = p.new("svf~ 160 0.7", 755, 200, 100, numinlets=3, numoutlets=4)
+    left_air = p.new("lores~ 3400 0.58", 870, 185, 120, numinlets=3, numoutlets=1)
+    right_air = p.new("lores~ 3900 0.54", 870, 240, 120, numinlets=3, numoutlets=1)
+    left_mix = p.new("+~", 1000, 185, 40, numinlets=2, numoutlets=1)
+    right_mix = p.new("+~", 1000, 240, 40, numinlets=2, numoutlets=1)
+    left = outlet(p, 1060, 185, signal=True)
+    right = outlet(p, 1060, 240, signal=True)
+    p.connect(pitch, rate)
+    p.connect(rate, phase)
+    p.connect(phase, edge)
+    p.connect(edge, pulse)
+    p.connect(gate, gate_clip)
+    p.connect(pulse, pulse_env, 0, 0)
+    p.connect(gate_clip, pulse_env, 0, 1)
+    p.connect(pulse_env, pulse_depth)
+    p.connect(gate_clip, gate_base)
+    p.connect(pulse_depth, start_env, 0, 0)
+    p.connect(gate_base, start_env, 0, 1)
+    p.connect(noise, pressure, 0, 0)
+    p.connect(start_env, pressure, 0, 1)
+    p.connect(pressure, body)
+    p.connect(pressure, chamber)
+    p.connect(body, body_sum, 0, 0)
+    p.connect(chamber, body_sum, 0, 1)
+    p.connect(pressure, catch_filter)
+    p.connect(timbre, catch_colour)
+    p.connect(catch_colour, catch_clip)
+    p.connect(catch_filter, catch_gate, 2, 0)
+    p.connect(gate_clip, catch_gate, 0, 1)
+    p.connect(catch_gate, catch_vca, 0, 0)
+    p.connect(catch_clip, catch_vca, 0, 1)
+    p.connect(body_sum, start_sum, 0, 0)
+    p.connect(catch_vca, start_sum, 0, 1)
+    p.connect(start_sum, drive)
+    p.connect(drive, soft_clip)
+    p.connect(soft_clip, split)
+    p.connect(split, left_mix, 0, 0)
+    p.connect(split, right_mix, 0, 0)
+    p.connect(split, left_air, 1, 0)
+    p.connect(split, right_air, 1, 0)
+    p.connect(left_air, left_mix, 0, 1)
+    p.connect(right_air, right_mix, 0, 1)
+    p.connect(left_mix, left)
+    p.connect(right_mix, right)
     return p.document()
 
 
@@ -3540,36 +3747,80 @@ def make_profile_transient(profile: str) -> dict[str, Any]:
     p.connect(realistic_value, style_store, 0, 1)
     p.connect(starter, style_store, 0)
     p.connect(style_store, start_style_gate)
+    p.comment("starter state directly owns the procedural gate; style gain prevents cross-mode residue", 365, 155, 520)
+    starter_state_clip = p.new("clip 0. 1.", 835, 155, 75, numinlets=3, numoutlets=1)
+    starter_state_signal = p.new(
+        "sig~ 0.", 920, 155, 60, numinlets=1, numoutlets=1,
+        varname="starter_state_gate",
+    )
+    starter_state_smooth = p.new("rampsmooth~ 64 256", 990, 155, 125, numinlets=3, numoutlets=1)
+    p.connect(router, starter_state_clip, 0)
+    p.connect(starter_state_clip, starter_state_signal)
+    p.connect(starter_state_signal, starter_state_smooth)
+    cinematic_gain_value = p.message("1. 15", 365, 180, 45)
+    realistic_gain_value = p.message("0. 15", 415, 180, 45)
+    start_cinematic_gain = p.new(
+        "line~ 1.", 465, 180, 65, numinlets=2, numoutlets=2,
+        varname="start_cinematic_gain",
+    )
+    p.connect(cinematic_value, cinematic_gain_value)
+    p.connect(realistic_value, realistic_gain_value)
+    p.connect(cinematic_gain_value, start_cinematic_gain)
+    p.connect(realistic_gain_value, start_cinematic_gain)
 
     voice = p.new("poly~ engine_start_voice 1", 390, 250, 190, numinlets=3, numoutlets=2)
     unmute = p.message("mute 1 0", 390, 195, 65)
     initial_suspend = p.new("loadmess mute 1 1", 625, 195, 125, numinlets=1, numoutlets=1)
-    suspend_delay = p.new("delay 1200", 465, 195, 80, numinlets=2, numoutlets=1)
+    cinematic_order = p.new("t b b", 330, 195, 50, numinlets=1, numoutlets=2)
+    envelope_delay = p.new("delay 5", 330, 225, 55, numinlets=2, numoutlets=1)
+    suspend_delay = p.new("delay 1600", 465, 195, 80, numinlets=2, numoutlets=1)
     suspend = p.message("mute 1 1", 555, 195, 65)
     pitch_message = p.message("-1.25 0, 0.55 180, -0.35 850", 390, 295, 210)
-    pitch_line = p.new("line~", 390, 335, 50, numinlets=2, numoutlets=2)
+    pitch_line = p.new("line~ -1.25", 390, 335, 75, numinlets=2, numoutlets=2)
     gate_message = p.message("5. 0, 0. 1000", 460, 335, 105)
     gate_line = p.new("line~", 460, 375, 50, numinlets=2, numoutlets=2)
     timbre_message = p.message("4.2 0, 1.1 900", 530, 375, 115)
-    timbre_line = p.new("line~", 530, 415, 50, numinlets=2, numoutlets=2)
-    cinema_l = p.new("*~ 0.22", 390, 465, 65, numinlets=2, numoutlets=1)
-    cinema_r = p.new("*~ 0.22", 475, 465, 65, numinlets=2, numoutlets=1)
-    p.connect(start_style_gate, unmute, 0)
+    timbre_line = p.new("line~ 4.2", 530, 415, 70, numinlets=2, numoutlets=2)
+    cinema_tone_l = p.new("*~ 0.18", 390, 465, 65, numinlets=2, numoutlets=1)
+    cinema_tone_r = p.new("*~ 0.18", 475, 465, 65, numinlets=2, numoutlets=1)
+    p.connect(start_style_gate, cinematic_order, 0)
+    p.connect(cinematic_order, unmute, 1)
     p.connect(unmute, voice)
     p.connect(initial_suspend, voice)
-    p.connect(start_style_gate, suspend_delay, 0)
+    p.connect(cinematic_order, envelope_delay, 0)
+    p.connect(envelope_delay, suspend_delay)
     p.connect(suspend_delay, suspend)
     p.connect(suspend, voice)
     for destination in (pitch_message, gate_message, timbre_message):
-        p.connect(start_style_gate, destination, 0)
+        p.connect(envelope_delay, destination)
     p.connect(pitch_message, pitch_line)
     p.connect(gate_message, gate_line)
     p.connect(timbre_message, timbre_line)
     p.connect(pitch_line, voice, 0, 0)
     p.connect(gate_line, voice, 0, 1)
     p.connect(timbre_line, voice, 0, 2)
-    p.connect(voice, cinema_l, 0, 0)
-    p.connect(voice, cinema_r, 1, 0)
+    p.connect(voice, cinema_tone_l, 0, 0)
+    p.connect(voice, cinema_tone_r, 1, 0)
+    start_core = p.new("engine_start_core~", 390, 425, 145, numinlets=3, numoutlets=2)
+    core_l = p.new("*~ 0.55", 550, 445, 65, numinlets=2, numoutlets=1)
+    core_r = p.new("*~ 0.55", 550, 475, 65, numinlets=2, numoutlets=1)
+    core_style_l = p.new("*~", 625, 400, 40, numinlets=2, numoutlets=1)
+    core_style_r = p.new("*~", 675, 400, 40, numinlets=2, numoutlets=1)
+    cinema_l = p.new("+~", 625, 445, 40, numinlets=2, numoutlets=1)
+    cinema_r = p.new("+~", 625, 475, 40, numinlets=2, numoutlets=1)
+    p.connect(pitch_line, start_core, 0, 0)
+    p.connect(starter_state_smooth, start_core, 0, 1)
+    p.connect(timbre_line, start_core, 0, 2)
+    p.connect(start_core, core_l, 0, 0)
+    p.connect(start_core, core_r, 1, 0)
+    p.connect(core_l, core_style_l, 0, 0)
+    p.connect(core_r, core_style_r, 0, 0)
+    p.connect(start_cinematic_gain, core_style_l, 0, 1)
+    p.connect(start_cinematic_gain, core_style_r, 0, 1)
+    p.connect(cinema_tone_l, cinema_l, 0, 0)
+    p.connect(core_style_l, cinema_l, 0, 1)
+    p.connect(cinema_tone_r, cinema_r, 0, 0)
+    p.connect(core_style_r, cinema_r, 0, 1)
 
     sample_l = p.new("sig~ 0.", 670, 465, 55, numinlets=1, numoutlets=1)
     sample_r = p.new("sig~ 0.", 755, 465, 55, numinlets=1, numoutlets=1)
@@ -3579,7 +3830,7 @@ def make_profile_transient(profile: str) -> dict[str, Any]:
         fallback_start = p.message("start", 660, 290, 45)
         fallback_player = p.new(f"play~ {fallback_name} 1", 660, 330, 165, numinlets=1, numoutlets=2)
         fallback_filter = p.new("lores~ 1800 0.65", 660, 370, 115, numinlets=3, numoutlets=1)
-        fallback_gain = p.new("*~ 0.10", 660, 415, 65, numinlets=2, numoutlets=1)
+        fallback_gain = p.new("*~ 0.75", 660, 415, 65, numinlets=2, numoutlets=1)
         p.connect(start_style_gate, fallback_start, 1)
         p.connect(fallback_start, fallback_player)
         p.connect(fallback_player, fallback_filter)
@@ -3611,8 +3862,8 @@ def make_profile_transient(profile: str) -> dict[str, Any]:
             p.connect(local_buffer, startup_info, 1)
             local_start = p.message("start", 900, 290, 45)
             local_player = p.new("play~ ferrari_startup 2", 900, 330, 175, numinlets=1, numoutlets=3)
-            local_l = p.new("*~ 0.30", 900, 375, 65, numinlets=2, numoutlets=1)
-            local_r = p.new("*~ 0.30", 985, 375, 65, numinlets=2, numoutlets=1)
+            local_l = p.new("*~ 0.65", 900, 375, 65, numinlets=2, numoutlets=1)
+            local_r = p.new("*~ 0.65", 985, 375, 65, numinlets=2, numoutlets=1)
             p.connect(start_style_gate, local_start, 1)
             p.connect(local_start, local_player)
             p.connect(local_player, local_l, 0, 0)
@@ -5261,7 +5512,7 @@ def make_profile_main(profile: str, root: Path | None = None) -> dict[str, Any]:
         backfire_solo_named = p.new("prepend backfire_solo", 535, 340, 150, numinlets=1, numoutlets=1)
         backfire_solo_default = p.new("loadmess 0", 695, 340, 80, numinlets=1, numoutlets=1)
         backfire_test = p.add("button", None, 500, 375, 24, 24, numinlets=1, numoutlets=1)
-        backfire_test_message = p.message("pop 1", 535, 375, 50)
+        backfire_test_message = p.message("backfire_test 1", 535, 375, 105)
         p.connect(backfire_solo, backfire_solo_named)
         p.connect(backfire_solo_named, engine)
         p.connect(backfire_solo_default, backfire_solo)
@@ -6125,6 +6376,7 @@ def project_file() -> dict[str, Any]:
         "patchers/transient_v10~.maxpat",
         "patchers/transient_v12~.maxpat",
         "patchers/engine_start_beap~.maxpat",
+        "patchers/engine_start_core~.maxpat",
         "patchers/engine_start_voice.maxpat",
         "patchers/road_air~.maxpat",
         "patchers/cabin_master~.maxpat",
@@ -6212,6 +6464,7 @@ def build_project(root: Path) -> None:
         "patchers/transient_ev~.maxpat": make_profile_transient("ev"),
         "patchers/transient_v10~.maxpat": make_profile_transient("v10"),
         "patchers/transient_v12~.maxpat": make_profile_transient("v12"),
+        "patchers/engine_start_core~.maxpat": make_engine_start_core(),
         "patchers/engine_start_voice.maxpat": make_engine_start_voice(),
         "patchers/road_air~.maxpat": make_road_air(),
         "patchers/cabin_master~.maxpat": make_cabin_master(),
