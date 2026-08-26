@@ -11,6 +11,8 @@ from pathlib import Path
 
 from tools.prepare_local_reference import prepare_v10_atlas
 from tools.validate_v10_lifecycle import validate_drive_trace, validate_render
+from tools.build_project import DNA_PARAMETER_SPECS
+from tools.build_runtime_probe import SCENARIOS
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -705,6 +707,48 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
             self.assertIn('"direct_powertrain": True', block)
             self.assertIn('"lock_rpm": True', block)
             self.assertIn(f'"{message}"', block)
+
+    def test_pop_global_pitch_reaches_every_tonal_layer(self):
+        expected = {
+            "v10": ((420, 92, 220, 1350, 2800, 3200), (86, 230)),
+            "v12": ((310, 72, 160, 900, 2100, 2400), (70, 170)),
+        }
+        for profile, (editable_bases, host_bases) in expected.items():
+            editable = json.dumps(
+                self.load_json(f"patchers/{profile}_backfire_beap~.maxpat")
+            )
+            host = json.dumps(
+                self.load_json(f"patchers/{profile}_backfire_host~.maxpat")
+            )
+            self.assertIn("expr pow(2.,$f1/12.)", editable)
+            for base in editable_bases:
+                self.assertIn(
+                    f"expr {base}.*$f1*$f2", editable,
+                    f"{profile} compatibility/tail layer at {base} Hz ignores Global Pitch",
+                )
+            for base in host_bases:
+                self.assertIn(
+                    f"expr {base}.*$f1*$f2", host,
+                    f"{profile} low-pressure mode at {base} Hz ignores Global Pitch",
+                )
+
+    def test_fixed_state_probe_matrix_covers_every_visible_dna_parameter(self):
+        for profile, specs in DNA_PARAMETER_SPECS.items():
+            for parameter, _label, low, high in specs:
+                for suffix, value in (("low", low), ("high", high)):
+                    scenario = f'dna-{profile}-{parameter}-{suffix}'
+                    self.assertIn(scenario, SCENARIOS)
+                    config = SCENARIOS[scenario]
+                    self.assertTrue(config["direct_powertrain"])
+                    self.assertTrue(config["lock_rpm"])
+                    self.assertIn(f"{parameter} {value:g}", config["extra_messages"])
+            for suffix, value_index in (("all-low", 2), ("all-high", 3)):
+                aggregate = SCENARIOS[f"dna-{profile}-{suffix}"]
+                for spec in specs:
+                    self.assertIn(
+                        f"{spec[0]} {spec[value_index]:g}",
+                        aggregate["extra_messages"],
+                    )
 
     def test_shared_beap_soundscape_has_three_voice_motion_and_formant_colour(self):
         core = self.load_json("patchers/cinematic_soundscape_beap~.maxpat")["patcher"]

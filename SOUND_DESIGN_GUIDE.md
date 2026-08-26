@@ -11,8 +11,9 @@ Open a runtime and use the design controls beside the Soundscape section:
 - `Sound DNA Solo` removes Soundscape, transient, road and rumble stems while
   leaving the active procedural powertrain audible.
 - `Open Soundscape BEAP` opens the shared cinematic pad graph.
-- V10/V12 `Open Pop Designer` opens the active backfire voice, not a detached
-  duplicate patcher.
+- V10/V12 `Open Pop Designer` opens the active backfire voice in the supported
+  one-runtime-at-a-time workflow, not a detached duplicate patcher. Two copies
+  of one profile share its tuning bus and are not a supported tuning setup.
 
 The visible four-node EQ embedded at the bottom of each engine window is the
 same shared `patchers/vehicle_bus_eq~.maxpat` module. Save the patcher itself

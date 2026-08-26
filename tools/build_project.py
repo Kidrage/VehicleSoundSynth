@@ -1227,6 +1227,7 @@ def make_ice_backfire_beap(profile: str) -> dict[str, Any]:
         p.connect(tuning_emit, value)
         p.connect(value, bounded)
         tuning_sources.append((bounded, varname.removeprefix("pop_")))
+    tuning_by_name = {name: source for source, name in tuning_sources}
 
     p.comment("PRESSURE BODY — low exhaust pressure and chamber bloom", 25, 110, 620)
     p.comment(
@@ -1335,6 +1336,42 @@ def make_ice_backfire_beap(profile: str) -> dict[str, Any]:
     right_mix = p.new("+~", 1520, 585, 40, numinlets=2, numoutlets=1)
     left = outlet(p, 1600, 535, signal=True)
     right = outlet(p, 1600, 585, signal=True)
+    # Global Pitch is a whole-voice tuning control, not merely an oscillator
+    # offset. Apply it (and the relevant Body/Crack Tune multiplier) to every
+    # fixed tonal filter in the editable compatibility/tail path.
+    global_pitch_ratio = p.new(
+        "expr pow(2.,$f1/12.)", 1680, 620, 145,
+        numinlets=1, numoutlets=1,
+    )
+    p.connect(tuning_by_name["global_pitch_semitones"], global_pitch_ratio)
+
+    def tuned_frequency(base: float, tune_name: str, x: float, y: float) -> str:
+        frequency = p.new(
+            f"expr {base:g}.*$f1*$f2", x, y, 155,
+            numinlets=2, numoutlets=1,
+        )
+        p.connect(global_pitch_ratio, frequency, 0, 0)
+        p.connect(tuning_by_name[tune_name], frequency, 0, 1)
+        return frequency
+
+    body_compat_frequency = tuned_frequency(
+        420 if profile == "v10" else 310, "body_tune", 1680, 650,
+    )
+    body_mode_a_frequency = tuned_frequency(
+        92 if profile == "v10" else 72, "body_tune", 1840, 650,
+    )
+    body_mode_b_frequency = tuned_frequency(
+        220 if profile == "v10" else 160, "body_tune", 2000, 650,
+    )
+    crack_compat_frequency = tuned_frequency(
+        1350 if profile == "v10" else 900, "crack_tune", 1680, 680,
+    )
+    left_air_frequency = tuned_frequency(
+        2800 if profile == "v10" else 2100, "crack_tune", 1840, 680,
+    )
+    right_air_frequency = tuned_frequency(
+        3200 if profile == "v10" else 2400, "crack_tune", 2000, 680,
+    )
     # Keep the editable abstraction's public signal seam to stereo audio only.
     # Named profile-local buses carry saved tuning to the audible host without
     # relying on abstraction outlet ordering or load-time signal/message casts.
@@ -1350,7 +1387,12 @@ def make_ice_backfire_beap(profile: str) -> dict[str, Any]:
     p.connect(pitch, osc, 0, 0)
     p.connect(osc, mixer, 0, 1)
     p.connect(mixer, body_filter, 0, 0)
-    p.connect(intensity, body_filter, 0, 1)
+    body_filter_motion = p.new("*~ 0.18", 845, 360, 65, numinlets=2, numoutlets=1)
+    body_filter_pitch = p.new("+~", 920, 360, 40, numinlets=2, numoutlets=1)
+    p.connect(intensity, body_filter_motion)
+    p.connect(pitch, body_filter_pitch, 0, 0)
+    p.connect(body_filter_motion, body_filter_pitch, 0, 1)
+    p.connect(body_filter_pitch, body_filter, 0, 1)
     p.connect(gate, body_envelope, 0, 0)
     p.connect(body_envelope, body_env_amount)
     p.connect(intensity, body_env_amount, 0, 1)
@@ -1364,6 +1406,9 @@ def make_ice_backfire_beap(profile: str) -> dict[str, Any]:
     p.connect(mixer, body_compat_filter, 0, 0)
     p.connect(mixer, body_mode_a, 0, 0)
     p.connect(mixer, body_mode_b, 0, 0)
+    p.connect(body_compat_frequency, body_compat_filter, 0, 1)
+    p.connect(body_mode_a_frequency, body_mode_a, 0, 1)
+    p.connect(body_mode_b_frequency, body_mode_b, 0, 1)
     p.connect(body_mode_a, body_modes, 0, 0)
     p.connect(body_mode_b, body_modes, 0, 1)
     p.connect(body_compat_filter, body_colour, 0, 0)
@@ -1375,7 +1420,7 @@ def make_ice_backfire_beap(profile: str) -> dict[str, Any]:
 
     p.connect(noise, crack_filter, 0, 0)
     p.connect(pressure_excitation, crack_filter, 0, 0)
-    p.connect(intensity, crack_filter, 0, 1)
+    p.connect(pitch, crack_filter, 0, 1)
     p.connect(gate, crack_envelope, 0, 0)
     p.connect(crack_envelope, crack_env_amount)
     p.connect(intensity, crack_env_amount, 0, 1)
@@ -1383,6 +1428,7 @@ def make_ice_backfire_beap(profile: str) -> dict[str, Any]:
     p.connect(crack_env_amount, crack_vca, 0, 1)
     p.connect(gate, crack_gate_trim)
     p.connect(mixer, crack_compat_filter, 0, 0)
+    p.connect(crack_compat_frequency, crack_compat_filter, 0, 1)
     p.connect(crack_compat_filter, crack_pressure_vca, 2, 0)
     p.connect(crack_gate_trim, crack_pressure_vca, 0, 1)
     p.connect(crack_vca, crack_sum, 0, 0)
@@ -1397,6 +1443,8 @@ def make_ice_backfire_beap(profile: str) -> dict[str, Any]:
     p.connect(split, right_mix, 0, 0)
     p.connect(split, left_air, 1, 0)
     p.connect(split, right_air, 1, 0)
+    p.connect(left_air_frequency, left_air, 0, 1)
+    p.connect(right_air_frequency, right_air, 0, 1)
     p.connect(left_air, left_mix, 0, 1)
     p.connect(right_air, right_mix, 0, 1)
     p.connect(left_mix, left)
@@ -1724,6 +1772,14 @@ def make_ice_backfire_host(profile: str) -> dict[str, Any]:
         f"reson~ {2.3 if profile == 'v10' else 2.7:g} {230 if profile == 'v10' else 170} {1.5 if profile == 'v10' else 1.8:g}",
         750, 505, 130, numinlets=4, numoutlets=1,
     )
+    low_mode_a_frequency = p.new(
+        f"expr {86 if profile == 'v10' else 70}.*$f1*$f2",
+        615, 535, 145, numinlets=2, numoutlets=1,
+    )
+    low_mode_b_frequency = p.new(
+        f"expr {230 if profile == 'v10' else 170}.*$f1*$f2",
+        765, 535, 145, numinlets=2, numoutlets=1,
+    )
     low_modes = p.new("+~", 885, 505, 40, numinlets=2, numoutlets=1)
     low_trim = p.new("*~ 0.32", 930, 505, 60, numinlets=2, numoutlets=1)
     pressure_body_l = p.new("+~", 735, 425, 40, numinlets=2, numoutlets=1)
@@ -1777,14 +1833,20 @@ def make_ice_backfire_host(profile: str) -> dict[str, Any]:
     p.connect(pitch_ratio, pressure_r_frequency)
     p.connect(pitch_ratio, crack_l_frequency)
     p.connect(pitch_ratio, crack_r_frequency)
+    p.connect(pitch_ratio, low_mode_a_frequency, 0, 0)
+    p.connect(pitch_ratio, low_mode_b_frequency, 0, 0)
     p.connect(body_tune, pressure_l_frequency, 0, 1)
     p.connect(body_tune, pressure_r_frequency, 0, 1)
     p.connect(crack_tune, crack_l_frequency, 0, 1)
     p.connect(crack_tune, crack_r_frequency, 0, 1)
+    p.connect(body_tune, low_mode_a_frequency, 0, 1)
+    p.connect(body_tune, low_mode_b_frequency, 0, 1)
     p.connect(pressure_l_frequency, pressure_l, 0, 1)
     p.connect(pressure_r_frequency, pressure_r, 0, 1)
     p.connect(crack_l_frequency, crack_l_filter, 0, 1)
     p.connect(crack_r_frequency, crack_r_filter, 0, 1)
+    p.connect(low_mode_a_frequency, low_mode_a, 0, 1)
+    p.connect(low_mode_b_frequency, low_mode_b, 0, 1)
     p.connect(low_mode_a, low_modes, 0, 0)
     p.connect(low_mode_b, low_modes, 0, 1)
     p.connect(low_modes, low_trim)

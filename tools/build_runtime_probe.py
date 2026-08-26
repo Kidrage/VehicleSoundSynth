@@ -10,7 +10,10 @@ import shutil
 import subprocess
 from pathlib import Path
 
-from build_project import Patcher, write_json
+try:
+    from .build_project import DNA_PARAMETER_SPECS, Patcher, write_json
+except ImportError:  # Direct script execution from tools/.
+    from build_project import DNA_PARAMETER_SPECS, Patcher, write_json
 
 
 PROFILE_SETTINGS = {
@@ -272,6 +275,48 @@ SCENARIOS = {
         "extra_messages": ("auto 1",),
     },
 }
+
+
+def dna_parameter_scenario(profile: str, parameter: str, value: float) -> dict:
+    """Hold the acoustic state fixed while changing exactly one DNA control."""
+    if profile == "ev":
+        rpm = 3200.0
+        state = ("accel 0", "speed_kph 0")
+    else:
+        rpm = 4200.0 if profile == "v10" else 4500.0
+        state = (
+            "accel 0", "speed_kph 0", "engine_running 1",
+            "combustion_gain 1", "shift_cut 1", "starter 0",
+        )
+    return {
+        "profile": profile,
+        "rpm": rpm,
+        "throttle": 0.65,
+        "load": 0.65 if profile != "ev" else 0.55,
+        "lock_rpm": True,
+        "direct_powertrain": True,
+        "extra_messages": (*state, f"{parameter} {value:g}"),
+    }
+
+
+# One low/high fixed-state pair per visible control. These probes are deliberately
+# generated from the same authority as the editable panels, so adding a knob
+# without an acoustic A/B scenario is a test failure rather than a silent UI bug.
+for _profile, _specs in DNA_PARAMETER_SPECS.items():
+    for _parameter, _label, _low, _high in _specs:
+        SCENARIOS[f"dna-{_profile}-{_parameter}-low"] = dna_parameter_scenario(
+            _profile, _parameter, _low
+        )
+        SCENARIOS[f"dna-{_profile}-{_parameter}-high"] = dna_parameter_scenario(
+            _profile, _parameter, _high
+        )
+    for _suffix, _value_index in (("all-low", 2), ("all-high", 3)):
+        _aggregate = dna_parameter_scenario(_profile, _specs[0][0], _specs[0][_value_index])
+        _aggregate["extra_messages"] = (
+            *_aggregate["extra_messages"][:-1],
+            *(f"{item[0]} {item[_value_index]:g}" for item in _specs),
+        )
+        SCENARIOS[f"dna-{_profile}-{_suffix}"] = _aggregate
 
 
 def actual_drive_trace(model_path: Path, profile: str, render_ms: int) -> dict:

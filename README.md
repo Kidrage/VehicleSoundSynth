@@ -285,7 +285,10 @@ filtered exhaust crack, and high values progressively open the upper colour
 and a second tail. V10 is shorter, sharper and more active; V12 is lower,
 rounder and slightly longer.
 
-Use `Open Pop Designer` so edits target the active audible
+Use `Open Pop Designer` so edits target the active audible instance in the
+supported one-runtime-at-a-time workflow. Opening two copies of the same profile
+is a diagnostic-only case; their profile-local control buses intentionally move
+both copies together. The button opens the active
 `v10_backfire_beap~` or `v12_backfire_beap~` instance. The labelled
 `PRESSURE BODY`, `EXHAUST CRACK`, and `TAIL COLOR / OUTPUT` panels tune the BEAP
 colour layer. The adjacent `HOST CORE CONTROLS` tune the dominant pressure core:
