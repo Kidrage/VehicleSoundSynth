@@ -6,7 +6,7 @@
 - Target runtime: Max 8.6.5 on macOS
 - Canonical branch: `main`.
 - Start/Pop implementation fixed point: `b990974`, with later handoff-only
-  descendants resolved from canonical `main` after promotion.
+  descendants resolved from canonical `main`.
 
 ## Delivered Change
 
@@ -64,5 +64,6 @@
   invalid-category, patchcord or project blocker. Direct-open search-path
   warnings and the optional local Ferrari starter miss are fallback-safe.
 - All task-opened windows were saved/closed and the temporary recovery setting
-  was restored to `Ask`. Final executable-process state is recorded in the
-  canonical handoff at delivery time.
+  was restored to `Ask`. Max rejected normal Quit/TERM only after all windows
+  were closed and files saved; the user explicitly authorized terminating exact
+  PIDs 9109, 9300 and 44294. Final AppleScript state is `Max = false`.

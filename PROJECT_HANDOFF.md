@@ -9,13 +9,12 @@
 - Working root: `.`
 - Repository name: `VehicleSoundSynth-V5`
 - Git repository: `true`
-- Generated at: `2026-08-26T10:30:00+08:00`
+- Generated at: `2026-08-26T10:46:20+08:00`
 
 ## Current State
 
-- Branch: implementation branch `codex/start-pop-audibility`, based on
-  canonical `main`; implementation fixed point is `b990974` with later
-  handoff-only descendants.
+- Branch: canonical `main`; Start/Pop implementation fixed point is `b990974`
+  with later handoff-only descendants.
 - Prior layered-backfire implementation: `9fffe195d9e3aa68678856ad880693ac6a5df63a`.
 - Indexed paths: 153 including the repository-local AgentLab handoff
 - Inventory truncated: `false`
@@ -34,11 +33,10 @@
 
 ## Active Work and Pending Items
 
-- In progress: final documentation, canonical-main promotion and remote push.
-- Pending decision: one pre-existing windowless Max executable may require an
-  explicitly authorized force quit if normal Quit/TERM continues to be ignored.
-- Next safe entry point: finish from `codex/start-pop-audibility`; do not edit
-  the backed-up canonical runtime saves while Max remains resident.
+- In progress: none.
+- Pending decisions/files/plans/acceptance artifacts: none.
+- Next safe entry point: start from canonical `main` and inspect Current Changes
+  before any new task.
 
 ## Directory Routes
 
@@ -62,11 +60,11 @@
 
 ### Tracked payload
 
-- total: 153 files, 120019854 bytes
+- total: 153 files, 120019972 bytes
 - audio (`.wav`): 41 files, 103833150 bytes
 - executable sources (`.py`, `.js`, `.gendsp`): 22 files, 825244 bytes
 - Max project/patch (`.maxpat`, `.maxproj`): 65 files, 14699263 bytes
-- documentation (`.md`, `.docx`, `.pdf`): 15 files, 622968 bytes
+- documentation (`.md`, `.docx`, `.pdf`): 15 files, 623086 bytes
 - structured data (`.json`): 6 files, 33939 bytes
 - other tracked text/markers: 4 files, 5290 bytes
 
@@ -131,7 +129,8 @@
 
 ## Current Changes
 
-- Generated `engine_start_core~` supplies an audible procedural crank/first-fire
+- None. Canonical `main` contains the completed audible Start/Pop delivery.
+  Generated `engine_start_core~` supplies an audible procedural crank/first-fire
   pressure transient; the seed-once BEAP start patch remains untouched and
   editable. Cinematic is the hybrid synth voice; Realistic is the starter sample.
 - V10/V12 Pop now has separate pressure-body/crack envelopes, filtered stereo
@@ -237,8 +236,10 @@
   smoke found no missing-object, Gen-outlet, patchcord, invalid-category or
   project blocker. All smoke windows were saved/closed and recovery preference
   restored to Ask. All 144 tests pass; generator determinism, seed-once
-  preservation and `git diff --check` pass. Final process/promotion status is
-  recorded above at delivery.
+  preservation and `git diff --check` pass. Max rejected normal Quit/TERM only
+  after every window was closed and every task file was saved; with explicit
+  user authorization, exact PIDs 9109, 9300 and 44294 were then terminated.
+  Final AppleScript state is `application "Max" is running = false`.
 - 2026-08-25 layered procedural backfire voice: V10/V12 retain the existing
   physical `overrun` trigger and public control seam, while their seed-once BEAP
   voices are expanded into labelled Pressure Body, Exhaust Crack, and Tail
