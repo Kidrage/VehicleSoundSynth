@@ -5,9 +5,8 @@
 - Canonical remote: `git@github.com:Kidrage/VehicleSoundSynth.git`
 - Target runtime: Max 8.6.5 on macOS
 - Canonical branch: `main`.
-- Authoritative Pop/Sound-DNA control implementation fixed point: `d80ce18`,
-  currently on `codex/pop-dna-authority` pending final promotion to canonical
-  `main` after Max smoke and review closure.
+- Authoritative Pop/Sound-DNA control implementation fixed point: `e1e0286`,
+  now contained in canonical `main`; later descendants are handoff-only.
 
 ## Delivered Change
 
@@ -73,13 +72,16 @@
 
 ## Validation
 
-- 155/155 unit tests pass; deterministic generation, seed-once preservation and
+- 156/156 unit tests pass; deterministic generation, seed-once preservation and
   `git diff --check` pass.
 - Fixed-state real Max low/high DNA renders cover the complete visible control
   set as aggregate A/Bs for EV/V10/V12. Low-to-high RMS changes were 8.77,
   14.26 and 14.74 dB respectively; all six renders were non-silent and had zero
   clipped samples. Per-control low/high probe scenarios are generated from the
   same authority as each editable DNA panel.
+- Final post-review Pop renders confirm the resonant-frequency port repair:
+  V10 peak/RMS is -4.16/-25.16 dBFS and V12 is -4.81/-26.89 dBFS, both non-silent
+  with zero clipped samples.
 - Real Max 8.6.5 renders are non-silent and unclipped. Cinematic starts measured
   V10 -4.83/-16.98 dBFS peak/RMS and V12 -4.41/-16.85; the controller-driven
   start path measured -4.58/-25.79. Test Pop measured V10 -3.91/-25.70 and V12
@@ -92,7 +94,8 @@
 - Final project plus EV/V10/V12 smoke found no missing-object, Gen outlet,
   invalid-category, patchcord or project blocker. Direct-open search-path
   warnings and the optional local Ferrari starter miss are fallback-safe.
-- All final-smoke EV/V10/V12 runtime windows and the Project window were saved
-  and closed in sequence. The temporary recovery setting was restored to `Ask`,
-  the task-owned Max instance quit normally, and final AppleScript state is
-  `Max = false`.
+- Final project and EV/V10/V12 runtime loads found no missing-object, Gen outlet,
+  patchcord or invalid-category blocker. Probe/runtime windows were already
+  closed by their generated close path; all task-owned Max PIDs were terminated
+  after confirming zero windows. Crash recovery remains `Ask`. A pre-existing
+  protected background PID 25676 also has zero windows but was not force-closed.

@@ -9,13 +9,12 @@
 - Working root: `.`
 - Repository name: `VehicleSoundSynth-V5`
 - Git repository: `true`
-- Generated at: `2026-08-26T16:30:00+08:00`
+- Generated at: `2026-08-26T17:00:00+08:00`
 
 ## Current State
 
-- Branch: `codex/pop-dna-authority`; authoritative Pop/Sound-DNA control
-  implementation fixed point is `d80ce18`, pending final review/Max smoke and
-  promotion to canonical `main`.
+- Branch: canonical `main`; authoritative Pop/Sound-DNA control implementation
+  fixed point is `e1e0286`, with later handoff-only descendants.
 - Prior layered-backfire implementation: `9fffe195d9e3aa68678856ad880693ac6a5df63a`.
 - Indexed paths: 156 including the repository-local AgentLab handoff
 - Inventory truncated: `false`
@@ -34,11 +33,10 @@
 
 ## Active Work and Pending Items
 
-- In progress: final Max project/runtime smoke, handoff refresh and canonical
-  promotion of `10921aa`.
+- In progress: none.
 - Pending decisions/files/plans/acceptance artifacts: none.
-- Next safe entry point: continue from `codex/pop-dna-authority`; do not edit the
-  generated backfire hosts or vehicle engines by hand.
+- Next safe entry point: start from canonical `main`; do not edit the generated
+  backfire hosts or vehicle engines by hand.
 
 ## Directory Routes
 
@@ -62,11 +60,11 @@
 
 ### Tracked payload
 
-- total: 156 files, 120243727 bytes
+- total: 156 files, 120246345 bytes
 - audio (`.wav`): 41 files, 103833150 bytes
-- executable sources (`.py`, `.js`, `.gendsp`): 24 files, 871850 bytes
+- executable sources (`.py`, `.js`, `.gendsp`): 24 files, 873437 bytes
 - Max project/patch (`.maxpat`, `.maxproj`): 66 files, 14866366 bytes
-- documentation (`.md`, `.docx`, `.pdf`): 15 files, 632940 bytes
+- documentation (`.md`, `.docx`, `.pdf`): 15 files, 633971 bytes
 - structured data (`.json`): 6 files, 33939 bytes
 - other tracked text/markers: 4 files, 5482 bytes
 
@@ -97,6 +95,7 @@
 
 ## Change History
 
+- `e1e0286 2026-08-26 fix: route pop tuning to resonant frequency inlets`
 - `d80ce18 2026-08-26 fix: tune every pop layer and cover DNA controls`
 - `10921aa 2026-08-26 fix: make pop and sound DNA controls authoritative`
 - `fe50c57 2026-08-26 feat: deepen randomized backfire bursts`
@@ -147,11 +146,16 @@
   filter, low-pressure mode and tail-air layer, so lowering Pop no longer leaves
   an untuned bright/fixed-frequency residue. It also generates fixed-state
   low/high probes for every visible DNA control plus aggregate profile A/Bs.
+- Review found the four new `reson~` tuning cords on inlet 1 (gain) rather than
+  inlet 2 (frequency). `e1e0286` corrects all four and adds a patchcord-level
+  regression that requires inlet 2 and rejects inlet 1.
 - The visible BEAP Pressure Mixer remains an optional colour path. Native BEAP
   MMF/AD/VCA modules can be subtle with short external gates, so the labelled top
   panel is explicitly the complete authoritative Pop tuning surface.
-- Final review and Max project/runtime smoke are still pending at this checkpoint;
-  the code/test fixed point passed 155/155 tests and `git diff --check`.
+- Completed on canonical `main`. The code/test fixed point passed 156/156 tests,
+  deterministic generation and `git diff --check`; final project plus all three
+  runtime loads found no missing-object, Gen-outlet, patchcord or invalid-category
+  blocker. All task-owned Max PIDs reached zero windows and were closed.
 
 ## Related Repositories
 
@@ -244,9 +248,15 @@
   MMF/AD/VCA remains optional short-gate colour, not the chain-health authority.
   A low/high fixed-state probe pair is generated for every visible DNA control;
   complete-profile real Max A/Bs changed RMS by 8.77 dB (EV), 14.26 dB (V10)
-  and 14.74 dB (V12), with zero clipped samples. All 155 tests pass, deterministic
-  generation and `git diff --check` pass. Final project/runtime smoke and
-  canonical promotion remain pending at this checkpoint.
+  and 14.74 dB (V12), with zero clipped samples. Review then found four computed
+  resonant frequencies wired to `reson~` gain inlet 1; `e1e0286` moves them to
+  frequency inlet 2 and locks this with a patchcord regression. Fresh final Pop
+  renders are non-silent and unclipped: V10 -4.16/-25.16 dBFS peak/RMS and V12
+  -4.81/-26.89 dBFS. All 156 tests pass, deterministic
+  generation and `git diff --check` pass. Canonical promotion and final
+  project/runtime smoke are complete; every task-owned Max PID was closed after
+  reaching zero windows. The protected pre-existing background PID 25676 also
+  has zero windows and was not force-closed.
 - 2026-08-26 low/heavy randomized Pop: V10/V12 pressure bodies and coherent
   low modes were retuned below the former bright crack emphasis. A generated
   `backfire_burst_scheduler` around `code/backfire_burst.js` expands physical
