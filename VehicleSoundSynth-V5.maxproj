@@ -3,6 +3,10 @@
   "autoorganize": 0,
   "contents": {
     "code": {
+      "code/backfire_burst.js": {
+        "kind": "javascript",
+        "local": 1
+      },
       "code/dna_state_path.js": {
         "kind": "javascript",
         "local": 1
@@ -82,6 +86,10 @@
         "local": 1
       },
       "main.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/backfire_burst_scheduler.maxpat": {
         "kind": "patcher",
         "local": 1
       },

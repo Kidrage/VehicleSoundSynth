@@ -101,8 +101,10 @@ On macOS, Max writes load diagnostics to
   its 20 ms RPM/shift integration remains unchanged while V5 uses a gentler,
   progressive service-brake law. The ICE drive model emits one bounded
   `overrun 0..1` event for a sufficiently fast loaded lift-off; generated hosts
-  alone translate that event to the seed-once BEAP backfire voices and their
-  click-triggered broadband pressure/crack/reflection core. The editable voice has
+  translate that event through `code/backfire_burst.js` into 1--5 decaying hits
+  at random 140--200 ms intervals. Test Pop uses the same burst, while shifts
+  remain single-hit. Those events excite the seed-once BEAP backfire voices and
+  their pressure/crack/reflection core. The editable voice has
   labelled Pressure Body, Exhaust Crack, and Tail Color/Output sections;
   intensity morphs layer colour and tail density, not only gain. Use the
   runtime Backfire Solo + Test Pop controls for ignition-independent audition;

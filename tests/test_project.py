@@ -143,7 +143,8 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
             self.assertIn("click~", host_text)
             self.assertIn("onepole~", host_text)
             self.assertIn("GENERATED PRESSURE CORE", host_text)
-            self.assertNotIn("reson~", host_text)
+            self.assertIn("LOW PRESSURE MODES — coherent below 120 Hz", host_text)
+            self.assertIn("reson~", host_text)
             self.assertNotIn("($f1 < -0.18) && ($f2 > 1400.)", host_text)
             self.assertIn(f"{profile}_backfire_beap~", host_text)
             runtime = self.load_json(f"VehicleSoundSynth-{profile.upper()}.maxpat")["patcher"]
@@ -201,6 +202,66 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
             self.assertIn(expected_gain, host_text)
             self.assertIn("*~ 4.2", host_text)
             self.assertIn("onepole~", host_text)
+
+    def test_backfire_defaults_prioritize_low_pressure_body_over_bright_crack(self):
+        expected = {
+            "v10": {
+                "mixer": {"in1": -6, "in2": -20},
+                "body": {"Freq": 390, "Res": 10},
+                "body_ad": {"Attack": 2, "Decay": 220},
+                "crack": {"Freq": 1350, "Res": 6},
+                "crack_ad": {"Attack": 1, "Decay": 58},
+                "host": ("lores~ 560 0.68", "lores~ 680 0.64", "svf~ 1450 0.58", "svf~ 1800 0.55"),
+            },
+            "v12": {
+                "mixer": {"in1": -7, "in2": -18},
+                "body": {"Freq": 285, "Res": 8},
+                "body_ad": {"Attack": 5, "Decay": 310},
+                "crack": {"Freq": 900, "Res": 4},
+                "crack_ad": {"Attack": 3, "Decay": 92},
+                "host": ("lores~ 420 0.72", "lores~ 500 0.69", "svf~ 1050 0.6", "svf~ 1350 0.57"),
+            },
+        }
+
+        def restore_for(box):
+            matches = []
+
+            def visit(value):
+                if isinstance(value, dict):
+                    if isinstance(value.get("restore"), dict):
+                        matches.append(value["restore"])
+                    for child in value.values():
+                        visit(child)
+                elif isinstance(value, list):
+                    for child in value:
+                        visit(child)
+
+            visit(box)
+            self.assertEqual(1, len(matches))
+            return {key: values[0] for key, values in matches[0].items()}
+
+        for profile, values in expected.items():
+            beap = self.load_json(f"patchers/{profile}_backfire_beap~.maxpat")["patcher"]
+            modules = {
+                item["box"].get("varname"): item["box"] for item in beap["boxes"]
+            }
+            for module, key in (
+                ("Pressure_Mixer", "mixer"),
+                ("Pressure_Body", "body"),
+                ("Pressure_AD", "body_ad"),
+                ("Exhaust_Crack", "crack"),
+                ("Crack_AD", "crack_ad"),
+            ):
+                restored = restore_for(modules[module])
+                for parameter, target in values[key].items():
+                    self.assertEqual(target, restored[parameter])
+            host_text = "\n".join(
+                item["box"].get("text", "")
+                for item in self.load_json(f"patchers/{profile}_backfire_host~.maxpat")["patcher"]["boxes"]
+            )
+            for token in values["host"]:
+                self.assertIn(token, host_text)
+            self.assertIn("LOW PRESSURE MODES — coherent below 120 Hz", host_text)
 
     def test_v5_all_profiles_share_one_editable_cinematic_soundscape_core(self):
         project = self.load_json("VehicleSoundSynth-V5.maxproj")
@@ -1169,29 +1230,89 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
             text = "\n".join(box.get("text", "") for box in boxes.values())
             self.assertIn("backfire_test", text)
             self.assertIn("AUDITION ONLY", text)
-            physical_gate = next(
-                box_id for box_id, box in boxes.items() if box.get("text") == "gate 1"
-            )
             test_edge = next(
                 box_id for box_id, box in boxes.items()
                 if box.get("varname") == "backfire_test_edge"
+            )
+            scheduler = next(
+                box_id for box_id, box in boxes.items()
+                if box.get("varname") == "overrun_test_burst_scheduler"
             )
             trigger_destinations = {
                 line["patchline"]["destination"][0]
                 for line in host["lines"]
                 if line["patchline"]["source"][0] == test_edge
             }
-            physical_destinations = {
+            test_message = next(
+                destination for destination in trigger_destinations
+                if boxes[destination].get("text") == "burst 1."
+            )
+            test_message_destinations = {
                 line["patchline"]["destination"][0]
                 for line in host["lines"]
-                if line["patchline"]["source"][0] == physical_gate
+                if line["patchline"]["source"][0] == test_message
             }
-            self.assertTrue(trigger_destinations & physical_destinations)
+            self.assertIn(scheduler, test_message_destinations)
+            physical_burst_gates = [
+                box_id for box_id, box in boxes.items()
+                if box.get("text") == "gate 1" and scheduler in {
+                    line["patchline"]["destination"][0]
+                    for line in host["lines"]
+                    if line["patchline"]["source"][0] == box_id
+                }
+            ]
+            self.assertEqual(1, len(physical_burst_gates))
             runtime = self.load_json(f"VehicleSoundSynth-{profile.upper()}.maxpat")["patcher"]
             runtime_text = "\n".join(
                 item["box"].get("text", "") for item in runtime["boxes"]
             )
             self.assertIn("backfire_test 1", runtime_text)
+
+    def test_overrun_and_test_pop_use_burst_scheduler_while_shift_stays_single(self):
+        project = self.load_json("VehicleSoundSynth-V5.maxproj")
+        self.assertIn(
+            "patchers/backfire_burst_scheduler.maxpat",
+            project["contents"]["patchers"],
+        )
+        self.assertIn("code/backfire_burst.js", project["contents"]["code"])
+        scheduler = self.load_json("patchers/backfire_burst_scheduler.maxpat")["patcher"]
+        scheduler_text = "\n".join(
+            item["box"].get("text", "") for item in scheduler["boxes"]
+        )
+        self.assertIn("js Patcher:/code/backfire_burst.js", scheduler_text)
+        self.assertIn("pitch_semitones gain index count", scheduler_text)
+
+        for profile in ("v10", "v12"):
+            host = self.load_json(f"patchers/{profile}_backfire_host~.maxpat")["patcher"]
+            boxes = {item["box"]["id"]: item["box"] for item in host["boxes"]}
+            scheduler_id = next(
+                box_id for box_id, box in boxes.items()
+                if box.get("varname") == "overrun_test_burst_scheduler"
+            )
+            single_id = next(
+                box_id for box_id, box in boxes.items()
+                if box.get("varname") == "backfire_single_event_trigger"
+            )
+            test_edge = next(
+                box_id for box_id, box in boxes.items()
+                if box.get("varname") == "backfire_test_edge"
+            )
+            destinations = lambda source: {
+                line["patchline"]["destination"][0]
+                for line in host["lines"]
+                if line["patchline"]["source"][0] == source
+            }
+            self.assertNotIn(single_id, destinations(test_edge))
+            self.assertTrue(any(
+                boxes[destination].get("text") == "burst 1."
+                for destination in destinations(test_edge)
+            ))
+            self.assertIn("backfire_burst_scheduler", boxes[scheduler_id].get("text", ""))
+            host_text = "\n".join(box.get("text", "") for box in boxes.values())
+            self.assertIn("SHIFT / EXPLICIT EVENTS — one hit", host_text)
+            self.assertIn("OVERRUN / TEST POP — 1..5 hit burst", host_text)
+            self.assertIn("backfire_seed", host_text)
+            self.assertIn("prepend seed", host_text)
 
     def test_local_reference_processor_builds_deterministic_v10_state_atlas(self):
         with tempfile.TemporaryDirectory() as directory:

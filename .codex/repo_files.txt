@@ -24,6 +24,7 @@ assets/engine_texture_bank.json
 assets/ferrari_sf90_acoustic_target.json
 assets/ferrari_v10_lifecycle_targets.json
 assets/raw/README.md
+code/backfire_burst.js
 code/dna_state_path.js
 code/drive_model.js
 code/eq_state_path.js
@@ -32,6 +33,7 @@ gen/ev_powertrain.gendsp
 gen/v10_powertrain.gendsp
 gen/v12_powertrain.gendsp
 main.maxpat
+patchers/backfire_burst_scheduler.maxpat
 patchers/cabin_master~.maxpat
 patchers/cabin_rumble~.maxpat
 patchers/cinematic_soundscape_beap~.maxpat
@@ -95,6 +97,7 @@ patchers/vehicle_engine~.maxpat
 presets/local/.gitkeep
 presets/sound_dna.json
 presets/vehicle_bus_eq_default.json
+tests/test_backfire_burst.py
 tests/test_manual_input.py
 tests/test_project.py
 tools/analyze_reference_lifecycle.py

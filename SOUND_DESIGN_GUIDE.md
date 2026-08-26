@@ -39,6 +39,11 @@ The editable sound is in `patchers/v10_backfire_beap~.maxpat` and
 `*_backfire_host~.maxpat` files are plumbing: they require ignition, a running
 engine and Backfire Enable, scale event strength/intensity, shape the short
 tail, soft-saturate the combined voice, and route it into the transient stem.
+`backfire_burst_scheduler.maxpat` is another generated bridge around
+`code/backfire_burst.js`: a fast overrun or Test Pop becomes 1--5 decaying hits,
+each 140--200 ms after the previous one, with an overall downward pitch contour
+and small jitter. Shift and explicit physical events bypass the burst and remain
+single hits.
 The editable patch is split into labelled `PRESSURE BODY`, `EXHAUST CRACK`,
 and `TAIL COLOR / OUTPUT` panels. Pressure Body controls the low resonant mass;
 Exhaust Crack controls the short band-limited edge; Tail Color/Output controls
@@ -60,12 +65,13 @@ balance. Change `tools/build_project.py` only when the physical event, host
 plumbing, compatibility layer, or safety contract must change.
 
 To hear the voice alone, enable Audio, turn on `Backfire Solo`, and press
-`Test Pop`; this explicit audition event works even with the engine off. In
+`Test Pop`; this randomized burst audition works even with the engine off. In
 normal driving, `Backfire Enable`, ignition and engine-running state remain
 mandatory. Hold enough throttle
 to load the engine above roughly 1600 RPM, then release W/trigger quickly. The
-drive model emits one strength-scaled `overrun` event; slow lift-off, braking by
-itself, low RPM, EV, or an off engine is intentionally silent. Save the BEAP
+drive model emits one strength-scaled `overrun` event and the host expands it to
+the burst; slow lift-off, braking by itself, low RPM, EV, or an off engine is
+intentionally silent. Save the BEAP
 patcher after tone edits, then disable Solo and verify the full mix below the
 final ceiling.
 

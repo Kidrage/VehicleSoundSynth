@@ -7549,10 +7549,10 @@
                       0.0
                     ],
                     "in1": [
-                      -13
+                      -7
                     ],
                     "in2": [
-                      -9
+                      -18
                     ],
                     "in3": [
                       -72.0
@@ -7695,7 +7695,7 @@
                   "saved_attribute_attributes": {
                     "valueof": {
                       "parameter_initial": [
-                        -9
+                        -18
                       ],
                       "parameter_initial_enable": 1,
                       "parameter_longname": "2",
@@ -7780,7 +7780,7 @@
                   "saved_attribute_attributes": {
                     "valueof": {
                       "parameter_initial": [
-                        -13
+                        -7
                       ],
                       "parameter_initial_enable": 1,
                       "parameter_longname": "1",
@@ -9178,7 +9178,7 @@
                     "valueof": {
                       "parameter_exponent": 4.0,
                       "parameter_initial": [
-                        350
+                        285
                       ],
                       "parameter_initial_enable": 1,
                       "parameter_longname": "Freq",
@@ -11616,7 +11616,7 @@
                     "valueof": {
                       "parameter_exponent": 2.0,
                       "parameter_initial": [
-                        10
+                        8
                       ],
                       "parameter_initial_enable": 1,
                       "parameter_longname": "Res",
@@ -11816,7 +11816,7 @@
                       0
                     ],
                     "Freq": [
-                      350
+                      285
                     ],
                     "FreqMode": [
                       1.0
@@ -11825,7 +11825,7 @@
                       0.0
                     ],
                     "Res": [
-                      10
+                      8
                     ],
                     "ResCV": [
                       0.0
@@ -13684,7 +13684,7 @@
                     "valueof": {
                       "parameter_exponent": 5.0,
                       "parameter_initial": [
-                        230
+                        310
                       ],
                       "parameter_initial_enable": 1,
                       "parameter_longname": "Decay",
@@ -13749,7 +13749,7 @@
                       5
                     ],
                     "Decay": [
-                      230
+                      310
                     ],
                     "mute": [
                       0.0
@@ -15690,7 +15690,7 @@
             110.0,
             22.0
           ],
-          "text": "lores~ 390 0.68"
+          "text": "lores~ 310 0.72"
         }
       },
       {
@@ -15708,7 +15708,7 @@
             130.0,
             22.0
           ],
-          "text": "reson~ 5.4 86 2.7"
+          "text": "reson~ 6.2 72 3"
         }
       },
       {
@@ -15726,7 +15726,7 @@
             130.0,
             22.0
           ],
-          "text": "reson~ 2.6 190 1.7"
+          "text": "reson~ 3.1 160 1.9"
         }
       },
       {
@@ -16294,7 +16294,7 @@
                     "valueof": {
                       "parameter_exponent": 4.0,
                       "parameter_initial": [
-                        1250
+                        900
                       ],
                       "parameter_initial_enable": 1,
                       "parameter_longname": "Freq",
@@ -18732,7 +18732,7 @@
                     "valueof": {
                       "parameter_exponent": 2.0,
                       "parameter_initial": [
-                        6
+                        4
                       ],
                       "parameter_initial_enable": 1,
                       "parameter_longname": "Res",
@@ -18932,7 +18932,7 @@
                       0
                     ],
                     "Freq": [
-                      1250
+                      900
                     ],
                     "FreqMode": [
                       1.0
@@ -18941,7 +18941,7 @@
                       0.0
                     ],
                     "Res": [
-                      6
+                      4
                     ],
                     "ResCV": [
                       0.0
@@ -20800,7 +20800,7 @@
                     "valueof": {
                       "parameter_exponent": 5.0,
                       "parameter_initial": [
-                        118
+                        92
                       ],
                       "parameter_initial_enable": 1,
                       "parameter_longname": "Decay",
@@ -20865,7 +20865,7 @@
                       3
                     ],
                     "Decay": [
-                      118
+                      92
                     ],
                     "mute": [
                       0.0
@@ -22788,7 +22788,7 @@
             72.0,
             22.0
           ],
-          "text": "*~ 0.25"
+          "text": "*~ 0.2"
         }
       },
       {
@@ -22809,7 +22809,7 @@
             115.0,
             22.0
           ],
-          "text": "svf~ 1250 0.72"
+          "text": "svf~ 900 0.62"
         }
       },
       {
@@ -22953,7 +22953,7 @@
             120.0,
             22.0
           ],
-          "text": "lores~ 2600 0.58"
+          "text": "lores~ 2100 0.58"
         }
       },
       {
@@ -22971,7 +22971,7 @@
             120.0,
             22.0
           ],
-          "text": "lores~ 3050 0.54"
+          "text": "lores~ 2400 0.54"
         }
       },
       {

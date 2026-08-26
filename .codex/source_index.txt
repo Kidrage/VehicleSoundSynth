@@ -1,8 +1,8 @@
 # Source Index
 
 Repository: /Users/saintpeter/Downloads/VehicleSoundSynth-V5
-Tracked filtered files: 112
-High-value indexed files: 36
+Tracked filtered files: 115
+High-value indexed files: 39
 
 Read this file before broad repository exploration. Prefer focused `rg`
 or `git grep` against the listed areas before opening source files.
@@ -15,6 +15,7 @@ or `git grep` against the listed areas before opening source files.
 
 ## source
 
+- code/backfire_burst.js
 - code/dna_state_path.js
 - code/drive_model.js
 - code/eq_state_path.js
@@ -35,11 +36,13 @@ or `git grep` against the listed areas before opening source files.
 
 ## tests
 
+- tests/test_backfire_burst.py
 - tests/test_manual_input.py
 - tests/test_project.py
 
 ## generated audio bridge
 
+- patchers/backfire_burst_scheduler.maxpat
 - patchers/engine_start_core~.maxpat
 
 ## config

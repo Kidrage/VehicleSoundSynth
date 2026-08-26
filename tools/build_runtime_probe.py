@@ -47,7 +47,7 @@ def backfire_solo_scenario(profile: str, intensity: float) -> dict:
         "direct_event_to_transient": True,
         "extra_messages": (
             "backfire_enable 1", f"backfire_intensity {intensity:g}",
-            "backfire_solo 1",
+            "backfire_solo 1", "backfire_seed 1017" if profile == "v10" else "backfire_seed 1219",
         ),
     }
 
@@ -83,7 +83,7 @@ def backfire_test_scenario(profile: str) -> dict:
         "ignition_enabled": False,
         "extra_messages": (
             "backfire_intensity 0.82" if profile == "v10" else "backfire_intensity 0.55",
-            "backfire_solo 1",
+            "backfire_solo 1", "backfire_seed 1017" if profile == "v10" else "backfire_seed 1219",
         ),
     }
 
@@ -884,6 +884,7 @@ def main() -> None:
         "engine_start_core~.maxpat",
         "engine_start_voice.maxpat",
         "engine_start_beap~.maxpat",
+        "backfire_burst_scheduler.maxpat",
     }
     required_patchers.update({
         f"{profile}_cinematic_soundscape_host~.maxpat",
