@@ -9,12 +9,13 @@
 - Working root: `.`
 - Repository name: `VehicleSoundSynth-V5`
 - Git repository: `true`
-- Generated at: `2026-08-26T12:03:52+08:00`
+- Generated at: `2026-08-26T16:30:00+08:00`
 
 ## Current State
 
-- Branch: canonical `main`; low/heavy randomized Pop implementation fixed point is `fe50c57`
-  with later handoff-only descendants.
+- Branch: `codex/pop-dna-authority`; authoritative Pop/Sound-DNA control
+  implementation fixed point is `d80ce18`, pending final review/Max smoke and
+  promotion to canonical `main`.
 - Prior layered-backfire implementation: `9fffe195d9e3aa68678856ad880693ac6a5df63a`.
 - Indexed paths: 156 including the repository-local AgentLab handoff
 - Inventory truncated: `false`
@@ -33,10 +34,11 @@
 
 ## Active Work and Pending Items
 
-- In progress: none.
+- In progress: final Max project/runtime smoke, handoff refresh and canonical
+  promotion of `10921aa`.
 - Pending decisions/files/plans/acceptance artifacts: none.
-- Next safe entry point: start from canonical `main` and inspect Current Changes
-  before any new task.
+- Next safe entry point: continue from `codex/pop-dna-authority`; do not edit the
+  generated backfire hosts or vehicle engines by hand.
 
 ## Directory Routes
 
@@ -60,11 +62,11 @@
 
 ### Tracked payload
 
-- total: 156 files, 120077345 bytes
+- total: 156 files, 120243727 bytes
 - audio (`.wav`): 41 files, 103833150 bytes
-- executable sources (`.py`, `.js`, `.gendsp`): 24 files, 843672 bytes
-- Max project/patch (`.maxpat`, `.maxproj`): 66 files, 14735192 bytes
-- documentation (`.md`, `.docx`, `.pdf`): 15 files, 625910 bytes
+- executable sources (`.py`, `.js`, `.gendsp`): 24 files, 871850 bytes
+- Max project/patch (`.maxpat`, `.maxproj`): 66 files, 14866366 bytes
+- documentation (`.md`, `.docx`, `.pdf`): 15 files, 632940 bytes
 - structured data (`.json`): 6 files, 33939 bytes
 - other tracked text/markers: 4 files, 5482 bytes
 
@@ -95,6 +97,8 @@
 
 ## Change History
 
+- `d80ce18 2026-08-26 fix: tune every pop layer and cover DNA controls`
+- `10921aa 2026-08-26 fix: make pop and sound DNA controls authoritative`
 - `fe50c57 2026-08-26 feat: deepen randomized backfire bursts`
 - `b990974 2026-08-26 fix: preserve start BEAP and validate controller start`
 - `ba49a3f 2026-08-26 feat: restore audible start and layered pop`
@@ -130,21 +134,24 @@
 
 ## Current Changes
 
-- None. Canonical `main` contains the completed audible Start/Pop delivery and
-  the low/heavy randomized Pop refinement.
-  Generated `engine_start_core~` supplies an audible procedural crank/first-fire
-  pressure transient; the seed-once BEAP start patch remains untouched and
-  editable. Cinematic is the hybrid synth voice; Realistic is the starter sample.
-- V10/V12 Pop now has separate pressure-body/crack envelopes, filtered stereo
-  reflections and soft saturation. `backfire_test 1` auditions it independently;
-  normal events retain ignition/running/enable physical gating.
-- Fast lift-off and Test Pop produce 1--5 hits with randomized 140--200 ms
-  spacing, an overall falling pitch contour, small jitter and decaying hit gain.
-  Shift/explicit events remain single-hit, and a new scheduler cancels pending
-  hits when retriggered.
-- Canonical V10/V12 user saves are archived at
-  `/Users/saintpeter/Downloads/.VehicleSoundSynth-Backups/20260826-pop-low-burst/`
-  before promotion.
+- `10921aa` repairs two real Sound-DNA dead controls: EV `Aggression` now reaches
+  torque-ripple/gear-mesh/electrical colour, and V10 `Brightness` reaches upper
+  firing orders and air. All profiles expose `Sound DNA Solo` for unmasked live
+  audition.
+- V10/V12 `Open Pop Designer` now fronts the active audible instance. Eight
+  persistent top controls drive the generated pressure core over profile-local
+  named buses: Global Pitch, Core Presence, Body/Crack Tune, Decay, Low Pressure,
+  Body Level and Crack Level. Floating-point ramps fix the former 0--1 truncation
+  failure; saved parameter initialization fixes silent/default-zero loads.
+- `d80ce18` extends Global Pitch/Body Tune/Crack Tune through every fixed tonal
+  filter, low-pressure mode and tail-air layer, so lowering Pop no longer leaves
+  an untuned bright/fixed-frequency residue. It also generates fixed-state
+  low/high probes for every visible DNA control plus aggregate profile A/Bs.
+- The visible BEAP Pressure Mixer remains an optional colour path. Native BEAP
+  MMF/AD/VCA modules can be subtle with short external gates, so the labelled top
+  panel is explicitly the complete authoritative Pop tuning surface.
+- Final review and Max project/runtime smoke are still pending at this checkpoint;
+  the code/test fixed point passed 155/155 tests and `git diff --check`.
 
 ## Related Repositories
 
@@ -226,6 +233,20 @@
 ## Agent Notes
 
 <!-- AGENT_NOTES_START -->
+- 2026-08-26 Pop/DNA authority repair: V10 Brightness and EV Aggression were
+  confirmed dead declarations and now directly reach Gen colour paths. Pop had
+  three concrete control faults: the dominant generated core bypassed most BEAP
+  edits, saved flonums did not initialize reliably, and integer `line 1` objects
+  truncated fractional 0--1 layer levels to zero. V10/V12 Pop Designer now
+  fronts the supported live instance and exposes eight persistent authoritative
+  controls over profile-local buses. Global Pitch plus Body/Crack Tune now reach
+  every core, compatibility, low-pressure and tail-air tonal filter. Native BEAP
+  MMF/AD/VCA remains optional short-gate colour, not the chain-health authority.
+  A low/high fixed-state probe pair is generated for every visible DNA control;
+  complete-profile real Max A/Bs changed RMS by 8.77 dB (EV), 14.26 dB (V10)
+  and 14.74 dB (V12), with zero clipped samples. All 155 tests pass, deterministic
+  generation and `git diff --check` pass. Final project/runtime smoke and
+  canonical promotion remain pending at this checkpoint.
 - 2026-08-26 low/heavy randomized Pop: V10/V12 pressure bodies and coherent
   low modes were retuned below the former bright crack emphasis. A generated
   `backfire_burst_scheduler` around `code/backfire_burst.js` expands physical

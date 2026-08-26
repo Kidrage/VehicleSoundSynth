@@ -5,10 +5,26 @@
 - Canonical remote: `git@github.com:Kidrage/VehicleSoundSynth.git`
 - Target runtime: Max 8.6.5 on macOS
 - Canonical branch: `main`.
-- Low/heavy randomized Pop implementation fixed point: `fe50c57`, with later handoff-only
-  descendants resolved from canonical `main`.
+- Authoritative Pop/Sound-DNA control implementation fixed point: `d80ce18`,
+  currently on `codex/pop-dna-authority` pending final promotion to canonical
+  `main` after Max smoke and review closure.
 
 ## Delivered Change
+
+- Pop Designer now opens the active audible V10/V12 backfire instance and
+  exposes a persistent authoritative control surface for Global Pitch, Core
+  Presence, Body/Crack Tune, Decay, Low Pressure, Body Level and Crack Level.
+  Profile-local named control buses keep the editable patcher separate from the
+  generated host, and parent defaults plus floating-point message ramps prevent
+  silent loads or 0--1 values being truncated to integers.
+- `Global Pitch` reaches both randomized per-hit pitch and the generated
+  pressure-core filters. Core Presence is deliberately bounded to 0.25--1.5 so
+  it cannot become a hidden mute. The visible BEAP Pressure Mixer remains an
+  optional colour source; the top controls are the audibility/tone authority.
+- EV Aggression and V10 Brightness were repaired from declared-but-unused Sound
+  DNA values into direct Gen colour paths. All three runtimes now expose DNA
+  Solo so the live procedural powertrain can be judged without pad, transient,
+  road or rumble masking.
 
 - Default Cinematic start is now a hybrid procedural voice: a generated
   crank/first-fire pressure core guarantees the transient is audible, while the
@@ -31,10 +47,10 @@
   loaded lift-off. Generated hosts turn it into a strength-scaled BEAP event;
   drivetrain thresholds and the public message seam are unchanged.
 - Both ICE runtimes expose Backfire Solo and Test Pop for isolated audition.
-- Seed-once V10/V12 voices expose Pressure Body, Exhaust Crack, and Tail
-  Color/Output sections. Intensity morphs layer colour and tail density, not
-  only gain. The Max-safe envelope is sourced from the visible BEAP Mixer/MMF
-  outputs, so those tone controls remain authoritative.
+- Seed-once V10/V12 voices expose Pressure Body, Exhaust Crack, Tail
+  Color/Output, and the authoritative top control panel. Intensity morphs layer
+  colour and tail density, not only gain. Max-safe pressure/core controls remain
+  audible even when native BEAP MMF/AD/VCA response is subtle on short gates.
 - Public actuator inputs remain normalized `throttle 0..1` and `brake 0..1`;
   the fixed 20 ms speed/RPM/shift integration is unchanged.
 
@@ -57,8 +73,13 @@
 
 ## Validation
 
-- 149/149 unit tests pass; deterministic generation, seed-once preservation and
+- 155/155 unit tests pass; deterministic generation, seed-once preservation and
   `git diff --check` pass.
+- Fixed-state real Max low/high DNA renders cover the complete visible control
+  set as aggregate A/Bs for EV/V10/V12. Low-to-high RMS changes were 8.77,
+  14.26 and 14.74 dB respectively; all six renders were non-silent and had zero
+  clipped samples. Per-control low/high probe scenarios are generated from the
+  same authority as each editable DNA panel.
 - Real Max 8.6.5 renders are non-silent and unclipped. Cinematic starts measured
   V10 -4.83/-16.98 dBFS peak/RMS and V12 -4.41/-16.85; the controller-driven
   start path measured -4.58/-25.79. Test Pop measured V10 -3.91/-25.70 and V12
