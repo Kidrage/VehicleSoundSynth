@@ -5,7 +5,7 @@
 - Canonical remote: `git@github.com:Kidrage/VehicleSoundSynth.git`
 - Target runtime: Max 8.6.5 on macOS
 - Canonical branch: `main`.
-- Start/Pop implementation fixed point: `b990974`, with later handoff-only
+- Low/heavy randomized Pop implementation fixed point: `fe50c57`, with later handoff-only
   descendants resolved from canonical `main`.
 
 ## Delivered Change
@@ -21,6 +21,9 @@
 - The Pop voice is no longer a bare click/resonator. It uses distinct pressure
   body and exhaust-crack envelopes, profile-specific filters, two soft wall
   reflections, stereo differentiation, saturation and a higher usable level.
+- Fast lift-off and Test Pop now schedule 1--5 decaying hits with random
+  140--200 ms spacing. The pitch contour falls overall with small per-hit jitter;
+  shift/explicit events remain one hit and rapid retrigger cancels stale hits.
 
 - Keyboard W is immediate full throttle; S is a fixed 0.65 service brake with
   brake priority. Gamepad LT/RT remain independent analog pedals.
@@ -49,21 +52,26 @@
 
 - The two current user Max saves were backed up byte-for-byte before final
   consolidation under the hidden single archive
-  `/Users/saintpeter/Downloads/.VehicleSoundSynth-Backups/20260826-start-pop/`.
-  V10 SHA-256 is `c1198af...`; V12 is `4386770...`.
+  `/Users/saintpeter/Downloads/.VehicleSoundSynth-Backups/20260826-pop-low-burst/`.
+  V10 SHA-256 is `faf699ce...`; V12 host is `9fba2059...`.
 
 ## Validation
 
-- 144/144 unit tests pass; deterministic generation, seed-once preservation and
+- 149/149 unit tests pass; deterministic generation, seed-once preservation and
   `git diff --check` pass.
 - Real Max 8.6.5 renders are non-silent and unclipped. Cinematic starts measured
   V10 -4.83/-16.98 dBFS peak/RMS and V12 -4.41/-16.85; the controller-driven
   start path measured -4.58/-25.79. Test Pop measured V10 -3.91/-25.70 and V12
   -6.29/-29.03, with profile-distinct stereo tails and zero clipping.
+- Final Pop-only Max renders are unclipped. V10 measured -4.44/-25.05 dBFS
+  peak/RMS, 430 Hz centroid and 0.520 rumble ratio; V12 measured
+  -5.03/-25.88 dBFS, 241 Hz centroid and 0.577 rumble ratio. Both expose a
+  0.16-second burst-envelope period; physical overrun renders are also non-silent
+  and unclipped.
 - Final project plus EV/V10/V12 smoke found no missing-object, Gen outlet,
   invalid-category, patchcord or project blocker. Direct-open search-path
   warnings and the optional local Ferrari starter miss are fallback-safe.
-- All task-opened windows were saved/closed and the temporary recovery setting
-  was restored to `Ask`. Max rejected normal Quit/TERM only after all windows
-  were closed and files saved; the user explicitly authorized terminating exact
-  PIDs 9109, 9300 and 44294. Final AppleScript state is `Max = false`.
+- All final-smoke EV/V10/V12 runtime windows and the Project window were saved
+  and closed in sequence. The temporary recovery setting was restored to `Ask`,
+  the task-owned Max instance quit normally, and final AppleScript state is
+  `Max = false`.

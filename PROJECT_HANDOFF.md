@@ -9,14 +9,14 @@
 - Working root: `.`
 - Repository name: `VehicleSoundSynth-V5`
 - Git repository: `true`
-- Generated at: `2026-08-26T10:46:20+08:00`
+- Generated at: `2026-08-26T12:03:52+08:00`
 
 ## Current State
 
-- Branch: canonical `main`; Start/Pop implementation fixed point is `b990974`
+- Branch: canonical `main`; low/heavy randomized Pop implementation fixed point is `fe50c57`
   with later handoff-only descendants.
 - Prior layered-backfire implementation: `9fffe195d9e3aa68678856ad880693ac6a5df63a`.
-- Indexed paths: 153 including the repository-local AgentLab handoff
+- Indexed paths: 156 including the repository-local AgentLab handoff
 - Inventory truncated: `false`
 - Inaccessible paths: 0
 - Scan mode: complete path/metadata inventory; no bulk content read; no symlink traversal.
@@ -42,7 +42,7 @@
 
 | Route | Files |
 |---|---:|
-| `patchers` | 60 |
+| `patchers` | 61 |
 | `media` | 35 |
 | `.` | 17 |
 | `tools` | 13 |
@@ -50,33 +50,33 @@
 | `assets/raw` | 7 |
 | `.codex` | 4 |
 | `.agentlab` | 1 |
-| `code` | 4 |
+| `code` | 5 |
 | `gen` | 3 |
 | `presets` | 3 |
-| `tests` | 2 |
+| `tests` | 3 |
 | `presets/local` | 1 |
 
 ## Data and File Structure
 
 ### Tracked payload
 
-- total: 153 files, 120019972 bytes
+- total: 156 files, 120077345 bytes
 - audio (`.wav`): 41 files, 103833150 bytes
-- executable sources (`.py`, `.js`, `.gendsp`): 22 files, 825244 bytes
-- Max project/patch (`.maxpat`, `.maxproj`): 65 files, 14699263 bytes
-- documentation (`.md`, `.docx`, `.pdf`): 15 files, 623086 bytes
+- executable sources (`.py`, `.js`, `.gendsp`): 24 files, 843672 bytes
+- Max project/patch (`.maxpat`, `.maxproj`): 66 files, 14735192 bytes
+- documentation (`.md`, `.docx`, `.pdf`): 15 files, 625910 bytes
 - structured data (`.json`): 6 files, 33939 bytes
-- other tracked text/markers: 4 files, 5290 bytes
+- other tracked text/markers: 4 files, 5482 bytes
 
 ### Common Extensions
 
-- `.maxpat`: 64
+- `.maxpat`: 65
 - `.wav`: 41
-- `.py`: 15
+- `.py`: 16
 - `.md`: 9
 - `.json`: 6
 - `.docx`: 5
-- `.js`: 4
+- `.js`: 5
 - `.gendsp`: 3
 - `.txt`: 2
 - `[no extension]`: 2
@@ -95,6 +95,7 @@
 
 ## Change History
 
+- `fe50c57 2026-08-26 feat: deepen randomized backfire bursts`
 - `b990974 2026-08-26 fix: preserve start BEAP and validate controller start`
 - `ba49a3f 2026-08-26 feat: restore audible start and layered pop`
 - `9fffe19 2026-08-25 fix: make backfire BEAP tone controls authoritative`
@@ -129,15 +130,20 @@
 
 ## Current Changes
 
-- None. Canonical `main` contains the completed audible Start/Pop delivery.
+- None. Canonical `main` contains the completed audible Start/Pop delivery and
+  the low/heavy randomized Pop refinement.
   Generated `engine_start_core~` supplies an audible procedural crank/first-fire
   pressure transient; the seed-once BEAP start patch remains untouched and
   editable. Cinematic is the hybrid synth voice; Realistic is the starter sample.
 - V10/V12 Pop now has separate pressure-body/crack envelopes, filtered stereo
   reflections and soft saturation. `backfire_test 1` auditions it independently;
   normal events retain ignition/running/enable physical gating.
+- Fast lift-off and Test Pop produce 1--5 hits with randomized 140--200 ms
+  spacing, an overall falling pitch contour, small jitter and decaying hit gain.
+  Shift/explicit events remain single-hit, and a new scheduler cancels pending
+  hits when retriggered.
 - Canonical V10/V12 user saves are archived at
-  `/Users/saintpeter/Downloads/.VehicleSoundSynth-Backups/20260826-start-pop/`
+  `/Users/saintpeter/Downloads/.VehicleSoundSynth-Backups/20260826-pop-low-burst/`
   before promotion.
 
 ## Related Repositories
@@ -220,6 +226,20 @@
 ## Agent Notes
 
 <!-- AGENT_NOTES_START -->
+- 2026-08-26 low/heavy randomized Pop: V10/V12 pressure bodies and coherent
+  low modes were retuned below the former bright crack emphasis. A generated
+  `backfire_burst_scheduler` around `code/backfire_burst.js` expands physical
+  overrun and Test Pop into 1--5 hits, with random 140--200 ms gaps, decaying
+  gain and an overall downward pitch contour plus small jitter. Shift/explicit
+  events remain one hit, and retriggering cancels pending hits. `drive_model.js`
+  and its physical lift-off thresholds are unchanged. Final Max Test Pop renders
+  were unclipped: V10 peak/RMS -4.44/-25.05 dBFS, centroid 430 Hz, rumble ratio
+  0.520; V12 -5.03/-25.88 dBFS, centroid 241 Hz, rumble ratio 0.577. Both showed
+  a 0.16-second burst-envelope period. Physical overrun renders were also
+  non-silent and unclipped. All 149 tests pass, generated output matches a fresh
+  build, and `git diff --check` is clean. Final EV/V10/V12 and Project windows
+  were saved/closed in sequence; crash recovery was restored to Ask and Max is
+  fully exited.
 - 2026-08-26 audible start and layered Pop: the generated transient host now
   drives a persistent starter-state gate into `engine_start_core~`, removing the
   fragile short-event seam that made Cinematic start digitally silent. The core
