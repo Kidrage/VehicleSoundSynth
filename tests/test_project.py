@@ -311,6 +311,24 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
             subprocess.run(command, check=True, cwd=ROOT, capture_output=True, text=True)
             self.assertEqual(before, path.read_bytes())
 
+    def test_v5_generator_preserves_user_tuned_engine_start_beap(self):
+        with tempfile.TemporaryDirectory() as directory:
+            destination = Path(directory)
+            command = [
+                sys.executable,
+                str(ROOT / "tools" / "build_project.py"),
+                "--output-root",
+                str(destination),
+            ]
+            subprocess.run(command, check=True, cwd=ROOT, capture_output=True, text=True)
+            path = destination / "patchers" / "engine_start_beap~.maxpat"
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            payload["patcher"]["description"] = "user-start-colour-tuning"
+            path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
+            before = path.read_bytes()
+            subprocess.run(command, check=True, cwd=ROOT, capture_output=True, text=True)
+            self.assertEqual(before, path.read_bytes())
+
     def test_sound_design_is_split_into_user_owned_dna_eq_and_soundscape_modules(self):
         project = self.load_json("VehicleSoundSynth-V5.maxproj")
         declared = set(project["contents"]["patchers"])
@@ -1096,9 +1114,8 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
         )
         self.assertIn("USER-TUNABLE", start_text)
         for token in (
-            "CRANK MOTOR", "FIRST FIRE / CATCH", "OUTPUT",
-            "Start_Mixer", "Start_Filter", "Start_AD", "Start_VCA",
-            "phasor~", "tanh~",
+            "L_Mixer", "L_Ladder", "L_ADSR", "L_VCA",
+            "R_Mixer", "R_Ladder", "R_ADSR", "R_VCA",
         ):
             self.assertIn(token, start_text)
         project = self.load_json("VehicleSoundSynth-V5.maxproj")
@@ -1136,6 +1153,8 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
             3,
             sum(item["box"].get("maxclass") == "inlet" for item in start_core["boxes"]),
         )
+        for token in ("phasor~", "tanh~", "svf~ 28 0.7"):
+            self.assertIn(token, start_core_text)
         ev_text = "\n".join(
             item["box"].get("text", "")
             for item in self.load_json("patchers/transient_ev~.maxpat")["patcher"]["boxes"]
@@ -2978,6 +2997,34 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
                         self.assertIn(f"start_style {style}", text)
                         self.assertIn("starter 1", text)
                         self.assertIn("past 200", text)
+
+    def test_runtime_probe_exercises_controller_owned_start_lifecycle(self):
+        for profile in ("v10", "v12"):
+            with tempfile.TemporaryDirectory() as directory:
+                subprocess.run(
+                    [
+                        sys.executable,
+                        str(ROOT / "tools" / "build_runtime_probe.py"),
+                        "--bundle-root", directory,
+                        "--scenario", f"{profile}-start-controller-cinematic",
+                        "--tap", "transient",
+                        "--render-ms", "1800",
+                    ],
+                    check=True,
+                    cwd=ROOT,
+                    capture_output=True,
+                    text=True,
+                )
+                probe_path = Path(directory) / (
+                    f"runtime_probe_{profile}_{profile}-start-controller-cinematic_on.maxpat"
+                )
+                probe = json.loads(probe_path.read_text(encoding="utf-8"))["patcher"]
+                text = "\n".join(
+                    item["box"].get("text", "") for item in probe["boxes"]
+                )
+                self.assertIn("start_style cinematic", text)
+                self.assertIn("start 1", text)
+                self.assertNotIn("starter 1", text)
 
     def test_runtime_probe_exposes_ignition_independent_backfire_test(self):
         for profile in ("v10", "v12"):

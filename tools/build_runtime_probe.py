@@ -62,6 +62,16 @@ def start_scenario(profile: str, style: str) -> dict:
     }
 
 
+def controller_start_scenario(profile: str, style: str) -> dict:
+    return {
+        "profile": profile,
+        "event": "start 1",
+        "event_at_ms": 200,
+        "start_enabled": False,
+        "extra_messages": (f"engine_type {profile}", f"start_style {style}"),
+    }
+
+
 def backfire_test_scenario(profile: str) -> dict:
     return {
         "profile": profile,
@@ -208,6 +218,8 @@ SCENARIOS = {
     "v10-start-realistic": start_scenario("v10", "realistic"),
     "v12-start-cinematic": start_scenario("v12", "cinematic"),
     "v12-start-realistic": start_scenario("v12", "realistic"),
+    "v10-start-controller-cinematic": controller_start_scenario("v10", "cinematic"),
+    "v12-start-controller-cinematic": controller_start_scenario("v12", "cinematic"),
     "v10-lifecycle-idle": {
         "profile": "v10", "rpm": 740.0, "throttle": 0.08, "load": 0.15,
         "lock_rpm": True, "lifecycle_role": "idle", "extra_messages": ("accel 0",),
@@ -812,7 +824,7 @@ def main() -> None:
             sweep_to_rpm=sweep_to_rpm,
             render_ms=args.render_ms,
             driver_mode=args.driver,
-            start_enabled=args.start == "on",
+            start_enabled=bool(scenario.get("start_enabled", args.start == "on")),
             ignition_enabled=bool(scenario.get("ignition_enabled", args.ignition == "on")),
             tap=args.tap,
             extra_messages=tuple(extra_messages),
