@@ -1407,8 +1407,9 @@ def make_ice_backfire_beap(profile: str) -> dict[str, Any]:
     p.connect(mixer, body_mode_a, 0, 0)
     p.connect(mixer, body_mode_b, 0, 0)
     p.connect(body_compat_frequency, body_compat_filter, 0, 1)
-    p.connect(body_mode_a_frequency, body_mode_a, 0, 1)
-    p.connect(body_mode_b_frequency, body_mode_b, 0, 1)
+    # reson~ inlet 1 is gain; center frequency is inlet 2.
+    p.connect(body_mode_a_frequency, body_mode_a, 0, 2)
+    p.connect(body_mode_b_frequency, body_mode_b, 0, 2)
     p.connect(body_mode_a, body_modes, 0, 0)
     p.connect(body_mode_b, body_modes, 0, 1)
     p.connect(body_compat_filter, body_colour, 0, 0)
@@ -1845,8 +1846,9 @@ def make_ice_backfire_host(profile: str) -> dict[str, Any]:
     p.connect(pressure_r_frequency, pressure_r, 0, 1)
     p.connect(crack_l_frequency, crack_l_filter, 0, 1)
     p.connect(crack_r_frequency, crack_r_filter, 0, 1)
-    p.connect(low_mode_a_frequency, low_mode_a, 0, 1)
-    p.connect(low_mode_b_frequency, low_mode_b, 0, 1)
+    # reson~ inlet 1 is gain; center frequency is inlet 2.
+    p.connect(low_mode_a_frequency, low_mode_a, 0, 2)
+    p.connect(low_mode_b_frequency, low_mode_b, 0, 2)
     p.connect(low_mode_a, low_modes, 0, 0)
     p.connect(low_mode_b, low_modes, 0, 1)
     p.connect(low_modes, low_trim)

@@ -732,6 +732,35 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
                     f"{profile} low-pressure mode at {base} Hz ignores Global Pitch",
                 )
 
+    def test_pop_resonant_mode_tuning_targets_frequency_not_gain_inlet(self):
+        expected = {
+            "v10": ((92, 220), (86, 230)),
+            "v12": ((72, 160), (70, 170)),
+        }
+        for profile, (editable_bases, host_bases) in expected.items():
+            for relative, bases in (
+                (f"patchers/{profile}_backfire_beap~.maxpat", editable_bases),
+                (f"patchers/{profile}_backfire_host~.maxpat", host_bases),
+            ):
+                patcher = self.load_json(relative)["patcher"]
+                boxes = {item["box"]["id"]: item["box"] for item in patcher["boxes"]}
+                cords = {
+                    (line["patchline"]["source"][0], line["patchline"]["destination"][0], line["patchline"]["destination"][1])
+                    for line in patcher["lines"]
+                }
+                for base in bases:
+                    source = next(
+                        box_id for box_id, box in boxes.items()
+                        if box.get("text") == f"expr {base}.*$f1*$f2"
+                    )
+                    destination = next(
+                        box_id for box_id, box in boxes.items()
+                        if box.get("text", "").startswith("reson~ ")
+                        and f" {base} " in f" {box.get('text', '')} "
+                    )
+                    self.assertIn((source, destination, 2), cords)
+                    self.assertNotIn((source, destination, 1), cords)
+
     def test_fixed_state_probe_matrix_covers_every_visible_dna_parameter(self):
         for profile, specs in DNA_PARAMETER_SPECS.items():
             for parameter, _label, low, high in specs:
