@@ -5,10 +5,22 @@
 - Canonical remote: `git@github.com:Kidrage/VehicleSoundSynth.git`
 - Target runtime: Max 8.6.5 on macOS
 - Canonical branch: `main`.
-- Layered-backfire implementation: `9fffe195d9e3aa68678856ad880693ac6a5df63a`,
-  with later handoff-only descendants resolved from canonical `main`.
+- Start/Pop implementation fixed point: `b990974`, with later handoff-only
+  descendants resolved from canonical `main` after promotion.
 
 ## Delivered Change
+
+- Default Cinematic start is now a hybrid procedural voice: a generated
+  crank/first-fire pressure core guarantees the transient is audible, while the
+  existing seed-once `engine_start_beap~` remains the editable colour layer.
+  Realistic start remains the tracked starter one-shot (or optional ignored
+  local V10 derivative with fallback); continuous ICE remains procedural.
+- V10/V12 Test Pop now has an explicit audition route that can sound with the
+  engine off. Normal lift-off/shift backfire still requires Backfire Enable,
+  ignition and engine-running state.
+- The Pop voice is no longer a bare click/resonator. It uses distinct pressure
+  body and exhaust-crack envelopes, profile-specific filters, two soft wall
+  reflections, stereo differentiation, saturation and a higher usable level.
 
 - Keyboard W is immediate full throttle; S is a fixed 0.65 service brake with
   brake priority. Gamepad LT/RT remain independent analog pedals.
@@ -35,21 +47,22 @@
 
 ## Local Save Archive
 
-- Old-main Max saves, including the three pre-layered-Pop user saves, were
-  backed up byte-for-byte to the single existing directory
-  `/Users/saintpeter/Downloads/VehicleSoundSynth-Backups-20260825/VehicleSoundSynth-V5-MaxSaveBackup-20260825-pedal-backfire`
-  before consolidation; no new top-level backup folder was created.
+- The two current user Max saves were backed up byte-for-byte before final
+  consolidation under the hidden single archive
+  `/Users/saintpeter/Downloads/.VehicleSoundSynth-Backups/20260826-start-pop/`.
+  V10 SHA-256 is `c1198af...`; V12 is `4386770...`.
 
 ## Validation
 
-- 139/139 unit tests pass; deterministic generator and seed-once preservation
-  checks pass; `git diff --check` is clean.
-- Real Max 8.6.5 Backfire Solo final renders are non-silent and unclipped:
-  V10 peak/RMS -9.90/-41.52 dBFS, V12 -9.44/-43.41 dBFS. The profiles retain
-  distinct final centroids of about 826 Hz and 703 Hz respectively.
+- 144/144 unit tests pass; deterministic generation, seed-once preservation and
+  `git diff --check` pass.
+- Real Max 8.6.5 renders are non-silent and unclipped. Cinematic starts measured
+  V10 -4.83/-16.98 dBFS peak/RMS and V12 -4.41/-16.85; the controller-driven
+  start path measured -4.58/-25.79. Test Pop measured V10 -3.91/-25.70 and V12
+  -6.29/-29.03, with profile-distinct stereo tails and zero clipping.
 - Final project plus EV/V10/V12 smoke found no missing-object, Gen outlet,
-  invalid-category, or patchcord blocker. Direct-open search-path warnings and
-  the optional local Ferrari starter miss are documented/fallback-safe.
-- All task-opened windows are closed and every task Max PID is terminated. The
-  user's pre-existing Max PID 44294 was deliberately preserved; the temporary
-  recovery preference was restored to `Ask`.
+  invalid-category, patchcord or project blocker. Direct-open search-path
+  warnings and the optional local Ferrari starter miss are fallback-safe.
+- All task-opened windows were saved/closed and the temporary recovery setting
+  was restored to `Ask`. Final executable-process state is recorded in the
+  canonical handoff at delivery time.

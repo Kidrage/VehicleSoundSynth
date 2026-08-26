@@ -9,14 +9,15 @@
 - Working root: `.`
 - Repository name: `VehicleSoundSynth-V5`
 - Git repository: `true`
-- Generated at: `2026-08-25T19:25:20+08:00`
+- Generated at: `2026-08-26T10:30:00+08:00`
 
 ## Current State
 
-- Branch: canonical `main`; layered-backfire delivery fixed point is
-  `9fffe195d9e3aa68678856ad880693ac6a5df63a`.
-- Pedal/backfire implementation commit: `136ca58511a733bd486774e38cd92e5ded73e3f8`.
-- Indexed paths: 152 including the repository-local AgentLab handoff
+- Branch: implementation branch `codex/start-pop-audibility`, based on
+  canonical `main`; implementation fixed point is `b990974` with later
+  handoff-only descendants.
+- Prior layered-backfire implementation: `9fffe195d9e3aa68678856ad880693ac6a5df63a`.
+- Indexed paths: 153 including the repository-local AgentLab handoff
 - Inventory truncated: `false`
 - Inaccessible paths: 0
 - Scan mode: complete path/metadata inventory; no bulk content read; no symlink traversal.
@@ -33,18 +34,17 @@
 
 ## Active Work and Pending Items
 
-- In progress: none.
-- Pending decisions/files/plans/acceptance artifacts: none for the layered-Pop
-  delivery; see Agent Notes for retained acoustic evidence and known Max driver
-  limitations.
-- Next safe entry point: start from canonical `main` and inspect Current Changes
-  before any new task.
+- In progress: final documentation, canonical-main promotion and remote push.
+- Pending decision: one pre-existing windowless Max executable may require an
+  explicitly authorized force quit if normal Quit/TERM continues to be ignored.
+- Next safe entry point: finish from `codex/start-pop-audibility`; do not edit
+  the backed-up canonical runtime saves while Max remains resident.
 
 ## Directory Routes
 
 | Route | Files |
 |---|---:|
-| `patchers` | 59 |
+| `patchers` | 60 |
 | `media` | 35 |
 | `.` | 17 |
 | `tools` | 13 |
@@ -62,17 +62,17 @@
 
 ### Tracked payload
 
-- total: 152 files, 119934990 bytes
+- total: 153 files, 120019854 bytes
 - audio (`.wav`): 41 files, 103833150 bytes
-- executable sources (`.py`, `.js`, `.gendsp`): 22 files, 802595 bytes
-- Max project/patch (`.maxpat`, `.maxproj`): 64 files, 14639797 bytes
-- documentation (`.md`, `.docx`, `.pdf`): 15 files, 619069 bytes
+- executable sources (`.py`, `.js`, `.gendsp`): 22 files, 825244 bytes
+- Max project/patch (`.maxpat`, `.maxproj`): 65 files, 14699263 bytes
+- documentation (`.md`, `.docx`, `.pdf`): 15 files, 622968 bytes
 - structured data (`.json`): 6 files, 33939 bytes
-- other tracked text/markers: 4 files, 6440 bytes
+- other tracked text/markers: 4 files, 5290 bytes
 
 ### Common Extensions
 
-- `.maxpat`: 63
+- `.maxpat`: 64
 - `.wav`: 41
 - `.py`: 15
 - `.md`: 9
@@ -97,6 +97,8 @@
 
 ## Change History
 
+- `b990974 2026-08-26 fix: preserve start BEAP and validate controller start`
+- `ba49a3f 2026-08-26 feat: restore audible start and layered pop`
 - `9fffe19 2026-08-25 fix: make backfire BEAP tone controls authoritative`
 - `6931239 2026-08-25 feat: deepen layered backfire pop synthesis`
 - `136ca58 2026-08-25 feat: refine pedals and physical overrun backfire`
@@ -129,13 +131,15 @@
 
 ## Current Changes
 
-- None. Canonical `main` contains the completed layered V10/V12 procedural
-  backfire voice, low/default/high probe coverage, and refreshed tuning docs.
-- Three pre-promotion user Max saves were hash-verified and added to the
-  existing consolidated
-  `VehicleSoundSynth-Backups-20260825/VehicleSoundSynth-V5-MaxSaveBackup-20260825-pedal-backfire`
-  directory before the clean fast-forward; no new top-level backup folder was
-  created.
+- Generated `engine_start_core~` supplies an audible procedural crank/first-fire
+  pressure transient; the seed-once BEAP start patch remains untouched and
+  editable. Cinematic is the hybrid synth voice; Realistic is the starter sample.
+- V10/V12 Pop now has separate pressure-body/crack envelopes, filtered stereo
+  reflections and soft saturation. `backfire_test 1` auditions it independently;
+  normal events retain ignition/running/enable physical gating.
+- Canonical V10/V12 user saves are archived at
+  `/Users/saintpeter/Downloads/.VehicleSoundSynth-Backups/20260826-start-pop/`
+  before promotion.
 
 ## Related Repositories
 
@@ -217,6 +221,24 @@
 ## Agent Notes
 
 <!-- AGENT_NOTES_START -->
+- 2026-08-26 audible start and layered Pop: the generated transient host now
+  drives a persistent starter-state gate into `engine_start_core~`, removing the
+  fragile short-event seam that made Cinematic start digitally silent. The core
+  models crank pulses, first-fire pressure and body modes, includes a 28 Hz
+  high-pass, and layers with the unchanged seed-once BEAP colour graph. Realistic
+  still selects the starter recording/fallback and continuous engines remain
+  synthesized. `backfire_test 1` is audition-only and bypasses engine state;
+  normal overrun/shift events still require enable, ignition and running. Pop now
+  separates a longer pressure body from a short exhaust crack, adds two softer
+  wall reflections, stereo differentiation and saturation; V10 is brighter and
+  V12 rounder. Real Max renders were all unclipped: Cinematic start V10/V12
+  peak/RMS -4.83/-16.98 and -4.41/-16.85 dBFS, controller lifecycle
+  -4.58/-25.79, Test Pop V10/V12 -3.91/-25.70 and -6.29/-29.03. Final project
+  smoke found no missing-object, Gen-outlet, patchcord, invalid-category or
+  project blocker. All smoke windows were saved/closed and recovery preference
+  restored to Ask. All 144 tests pass; generator determinism, seed-once
+  preservation and `git diff --check` pass. Final process/promotion status is
+  recorded above at delivery.
 - 2026-08-25 layered procedural backfire voice: V10/V12 retain the existing
   physical `overrun` trigger and public control seam, while their seed-once BEAP
   voices are expanded into labelled Pressure Body, Exhaust Crack, and Tail
