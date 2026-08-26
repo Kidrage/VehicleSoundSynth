@@ -5,10 +5,14 @@ routing that should normally be left alone.
 
 ## Open the editable modules
 
-Open a runtime and use the two buttons beside the Soundscape controls:
+Open a runtime and use the design controls beside the Soundscape section:
 
 - `Open Sound DNA` opens the active profile's procedural engine panel.
+- `Sound DNA Solo` removes Soundscape, transient, road and rumble stems while
+  leaving the active procedural powertrain audible.
 - `Open Soundscape BEAP` opens the shared cinematic pad graph.
+- V10/V12 `Open Pop Designer` opens the active backfire voice, not a detached
+  duplicate patcher.
 
 The visible four-node EQ embedded at the bottom of each engine window is the
 same shared `patchers/vehicle_bus_eq~.maxpat` module. Save the patcher itself
@@ -37,32 +41,54 @@ interfaces must change; do not tune their generated JSON directly.
 The editable sound is in `patchers/v10_backfire_beap~.maxpat` and
 `patchers/v12_backfire_beap~.maxpat`. The matching generated
 `*_backfire_host~.maxpat` files are plumbing: they require ignition, a running
-engine and Backfire Enable, scale event strength/intensity, shape the short
-tail, soft-saturate the combined voice, and route it into the transient stem.
+engine and Backfire Enable, scale event strength/intensity, consume the Pop
+Designer controls, soft-saturate the combined voice, and route it into the
+transient stem. Do not edit the generated host JSON.
 `backfire_burst_scheduler.maxpat` is another generated bridge around
 `code/backfire_burst.js`: a fast overrun or Test Pop becomes 1--5 decaying hits,
 each 140--200 ms after the previous one, with an overall downward pitch contour
 and small jitter. Shift and explicit physical events bypass the burst and remain
 single hits.
 The editable patch is split into labelled `PRESSURE BODY`, `EXHAUST CRACK`,
-and `TAIL COLOR / OUTPUT` panels. Pressure Body controls the low resonant mass;
-Exhaust Crack controls the short band-limited edge; Tail Color/Output controls
-the decay colour, stereo split and final drive. A co-located Max 8.6.5-safe
-pressure envelope is fed from the visible BEAP Mixer/MMF output so those tone
-controls remain useful even when very short physical gates would vanish on BEAP
-revisions whose AD/VCA response differs. AD controls shape the native BEAP
-layer. The generated host now owns a clearly labelled `GENERATED PRESSURE CORE`:
+and `TAIL COLOR / OUTPUT` panels. The visible BEAP `Pressure_Mixer` feeds the
+compatibility colour path. Its native MMF/AD/VCA branch can be very subtle or
+silent under Max 8.6.5's short external gates, so it is not the authority for
+the dominant Pop. The host also contains a `GENERATED PRESSURE CORE`:
 a click creates smooth body/crack envelopes that excite broadband noise, not a
-naked resonator, followed by two lower-level wall reflections. This core is the
-audibility and timing authority; edit `make_ice_backfire_host()` and regenerate
-when changing its decay, crack bands or reflection spacing.
+naked resonator, followed by two lower-level wall reflections. Its important
+tone controls are now surfaced in the same Pop Designer, so the editable panel
+is the sound-design authority instead of a colour-only side layer. This is why
+turning an MMF or AD icon alone may still produce little change, while the
+number controls at the top always affect the actual output.
 
-For tone work, tune the BEAP Mixer/MMF first, then the native-layer AD controls,
-and audition low, default and high runtime Intensity. Intensity morphs from a compact pressure
+The `HOST CORE CONTROLS` panel is the quickest complete tuning surface:
+
+- `Global Pitch (semitones)` tunes both BEAP and Core. Use `-4` to `-8` for a
+  lower, heavier Pop; this is the main control when changing BEAP pitch appears
+  not to move the dominant sound.
+- `Core Presence` scales the guaranteed pressure core from `0.25` to `1.5`;
+  `1` is unity. It deliberately has no zero/silent position.
+- `Body Tune` and `Crack Tune` scale the Core resonant and crack bands without
+  changing burst timing.
+- `Decay Scale` lengthens or shortens both Core envelopes.
+- `Low Pressure Level` controls the coherent low modes.
+- `Core Body Level` and `Core Crack Level` set the two dominant Core layers.
+
+The visible `Pressure_Mixer` is the dependable BEAP colour control. The native
+`Pressure_Body`, `Pressure_AD`, `Exhaust_Crack`, and `Crack_AD` modules remain
+available for experimentation but should not be used to judge whether the Pop
+chain is working. Save `v10_backfire_beap~` or `v12_backfire_beap~` with Cmd+S
+after tuning; the authoritative number values and BEAP module state reload
+together.
+
+For tone work, set Global Pitch and the Core Body/Crack balance first, then
+adjust Core Presence and the BEAP Pressure Mixer. Treat native MMF/AD edits as
+optional colour experiments. Audition low, default and high runtime Intensity.
+Intensity morphs from a compact pressure
 release through filtered crack to brighter colour and a second tail, rather
 than merely scaling the same waveform. Use transient dB last for whole-stem
-balance. Change `tools/build_project.py` only when the physical event, host
-plumbing, compatibility layer, or safety contract must change.
+balance. Change `tools/build_project.py` only when the physical event, reflection
+timing, host plumbing, compatibility layer, or safety contract must change.
 
 To hear the voice alone, enable Audio, turn on `Backfire Solo`, and press
 `Test Pop`; this randomized burst audition works even with the engine off. In
@@ -110,6 +136,15 @@ Common controls:
   3.5–5.5 dB for a physical result.
 - `Saturation`: Gen soft drive before the safety compressor. Keep below 0.5
   while judging high-frequency detail.
+
+EV `Aggression` now drives torque-ripple/gear-mesh colour directly; V10
+`Brightness` now drives upper firing orders and air directly. These two controls
+were previously disconnected declarations and are now regression-tested.
+Several other controls are deliberately state-dependent: Intake/Air are
+clearest at high RPM and load, Exhaust Detail is clearest under pedal or
+lift-off, Stereo Separation is easiest to judge in stereo, and Throttle
+Loudness Depth has no effect while the pedal is at zero. Use `Sound DNA Solo`
+before deciding that a control is inactive.
 
 EV adds `Torque Ripple`, `Gear Mesh`, and `Electrical Detail`. V10/V12 add
 `Combustion Pulse`, `Intake Detail`, `Exhaust Detail`, and `Residual Detail`.

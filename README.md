@@ -29,7 +29,10 @@ is the supported low-CPU workflow.
 6. After lowering the monitoring level, enable the single `Audio + Output`
    toggle. It opens the output ramp and Max DSP together; ignition/start alone
    intentionally do not enable monitoring.
-7. Save intentional BEAP subpatcher edits. The launcher saves/closes the active
+7. Use `Open Sound DNA` plus `Sound DNA Solo` to tune the procedural engine. In
+   V10/V12 use `Open Pop Designer`, `Backfire Solo`, and `Test Pop` to tune the
+   active Pop voice without driving the car.
+8. Save intentional BEAP subpatcher edits. The launcher saves/closes the active
    top-level runtime when switching; when finished, close the runtime and Project
    windows and quit Max.
 
@@ -218,6 +221,7 @@ soundscape_level_db -60..6
 soundscape_motion 0..1
 soundscape_space 0..1
 soundscape_solo 0|1
+dna_solo 0|1
 backfire_solo 0|1
 reference_texture_level_db -60..6
 reference_texture_mute 0|1
@@ -269,8 +273,8 @@ with small jitter; slow release, low RPM, brake-only motion, EV, ignition-off,
 and engine-off states do not trigger it. The internal `overrun 0..1` message
 carries that event strength from the drivetrain to the backfire host.
 
-Both ICE runtime pages expose Backfire enable/intensity, `Backfire Solo`, and a
-`Test Pop` button. For an isolated audition, enable Audio, turn on Backfire Solo,
+Both ICE runtime pages expose Backfire enable/intensity, `Backfire Solo`,
+`Test Pop`, and `Open Pop Designer`. For an isolated audition, enable Audio, turn on Backfire Solo,
 and click Test Pop; it plays the same randomized burst and deliberately bypasses
 ignition and running-state gates. Automatic lift-off/shift events still require
 Backfire Enable, ignition and a running engine. Gear-shift events remain one hit.
@@ -281,14 +285,22 @@ filtered exhaust crack, and high values progressively open the upper colour
 and a second tail. V10 is shorter, sharper and more active; V12 is lower,
 rounder and slightly longer.
 
-Open `patchers/v10_backfire_beap~.maxpat` or
-`patchers/v12_backfire_beap~.maxpat` to tune the labelled `PRESSURE BODY`,
-`EXHAUST CRACK`, and `TAIL COLOR / OUTPUT` panels. Mixer/MMF and AD controls tune
-the BEAP colour layer. Guaranteed pressure duration, crack bands and reflection
-timings live in generated `*_backfire_host~.maxpat`; burst count, spacing,
-per-hit pitch and decay live in `code/backfire_burst.js`. Change the corresponding
-source or `make_ice_backfire_host()` rather than editing generated JSON. Then set runtime
-Intensity, and use transient dB only for whole-stem balance. The Soundscape,
+Use `Open Pop Designer` so edits target the active audible
+`v10_backfire_beap~` or `v12_backfire_beap~` instance. The labelled
+`PRESSURE BODY`, `EXHAUST CRACK`, and `TAIL COLOR / OUTPUT` panels tune the BEAP
+colour layer. The adjacent `HOST CORE CONTROLS` tune the dominant pressure core:
+Global Pitch changes all layers in semitones; Core Presence scales the guaranteed
+pressure core from 0.25 to 1.5 with unity at 1; Body/Crack Tune, Decay, Low
+Pressure, Body Level and Crack Level expose the remaining core tone balance.
+The top number controls are authoritative. `Pressure_Mixer` adds dependable
+BEAP colour, while native MMF/AD/VCA icons may be subtle under Max 8.6.5's short
+external gates and should not be used as a chain-health test. For a lower Pop
+start with Global Pitch around -4 to -8, then reduce Crack Tune or Crack Level. Burst count,
+spacing and per-hit pitch contour remain physical logic in
+`code/backfire_burst.js`; reflection timing remains generated plumbing. Do not
+edit generated `*_backfire_host~.maxpat` JSON. Save the Pop Designer patcher
+with Cmd+S, then set runtime Intensity and use transient dB only for whole-stem
+balance. The Soundscape,
 start and backfire BEAP `.maxpat` files are
 seed-once user-owned files: edit and save them directly in Max, and project
 regeneration will preserve your tuning.

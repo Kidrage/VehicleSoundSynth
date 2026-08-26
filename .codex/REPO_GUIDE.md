@@ -70,6 +70,16 @@ user-owned exceptions. The project generator preserves those files after their
 first seed. The project generator
 never overwrites curated runtime WAVs already present in `media/`.
 
+For V10/V12 Pop tuning, the top `AUTHORITATIVE POP CONTROLS` inside the
+seed-once backfire patcher are the stable interface to the generated pressure
+core. `Global Pitch`, Body/Crack Tune, Decay, layer levels, and nonzero Core
+Presence all reach real audio through profile-local named buses. The visible
+BEAP Pressure Mixer is optional colour; native BEAP MMF/AD/VCA response can be
+subtle on short Max 8.6.5 gates and must not be treated as the audibility gate.
+For continuous-engine tuning, open the active Sound DNA instance and use DNA
+Solo; EV Aggression and V10 Brightness are explicitly connected to Gen DSP,
+while several other controls are RPM/load/throttle-state dependent.
+
 Runtime smoke-check the generated project in Max 8.6.5 after structural tests.
 On macOS, Max writes load diagnostics to
 `~/Library/Application Support/Cycling '74/Max 8/Logs/Max.log`; treat

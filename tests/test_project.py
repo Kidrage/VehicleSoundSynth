@@ -153,10 +153,11 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
                 self.assertIn(token, runtime_text)
             engine = self.load_json(f"patchers/vehicle_engine_{profile}~.maxpat")["patcher"]
             engine_text = "\n".join(item["box"].get("text", "") for item in engine["boxes"])
-            self.assertIn("route soundscape_solo pad_solo backfire_solo", engine_text)
-            self.assertIn("expr 1-max($i1,$i2)", engine_text)
-            self.assertIn("expr 1-$i1*(1-$i2)", engine_text)
-            self.assertIn("expr 1-$i2", engine_text)
+            self.assertIn("route soundscape_solo pad_solo backfire_solo dna_solo", engine_text)
+            self.assertIn("expr $i3+(1-$i3)*(1-max($i1,$i2))", engine_text)
+            self.assertIn("expr (1-$i3)*(1-max($i1,$i2))", engine_text)
+            self.assertIn("expr (1-$i3)*(1-$i1*(1-$i2))", engine_text)
+            self.assertIn("expr (1-$i3)*(1-$i2)", engine_text)
         v10 = json.dumps(self.load_json("patchers/v10_backfire_beap~.maxpat"), sort_keys=True)
         v12 = json.dumps(self.load_json("patchers/v12_backfire_beap~.maxpat"), sort_keys=True)
         self.assertNotEqual(v10, v12)
@@ -188,8 +189,8 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
                 )
             body_compat = next(text for text in sources_by_text if text.startswith("lores~"))
             crack_compat = next(text for text in sources_by_text if text.startswith("svf~") and "180 " not in text)
-            self.assertIn("Pressure_Body", sources_by_text[body_compat])
-            self.assertIn("Exhaust_Crack", sources_by_text[crack_compat])
+            self.assertIn("Pressure_Mixer", sources_by_text[body_compat])
+            self.assertIn("Pressure_Mixer", sources_by_text[crack_compat])
 
             host = self.load_json(f"patchers/{profile}_backfire_host~.maxpat")["patcher"]
             host_text = "\n".join(item["box"].get("text", "") for item in host["boxes"])
@@ -202,6 +203,123 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
             self.assertIn(expected_gain, host_text)
             self.assertIn("*~ 4.2", host_text)
             self.assertIn("onepole~", host_text)
+
+    def test_pop_designer_controls_the_live_beap_and_dominant_pressure_core(self):
+        control_varnames = {
+            "pop_global_pitch_semitones",
+            "pop_core_presence",
+            "pop_body_tune",
+            "pop_crack_tune",
+            "pop_decay_scale",
+            "pop_low_pressure_level",
+            "pop_body_level",
+            "pop_crack_level",
+        }
+        for profile in ("v10", "v12"):
+            runtime = json.dumps(self.load_json(f"VehicleSoundSynth-{profile.upper()}.maxpat"))
+            address = f"open.{profile}.backfire"
+            self.assertIn("Open Pop Designer", runtime)
+            self.assertIn(f"s {address}", runtime)
+            self.assertNotIn(
+                f"loadunique Patcher:/patchers/{profile}_backfire_beap~.maxpat",
+                runtime,
+            )
+
+            beap = self.load_json(f"patchers/{profile}_backfire_beap~.maxpat")["patcher"]
+            beap_text = json.dumps(beap)
+            self.assertIn(f"r {address}", beap_text)
+            self.assertIn('"text": "front"', beap_text)
+            self.assertIn('"text": "thispatcher"', beap_text)
+            self.assertIn(
+                '"text": "delay 50"',
+                beap_text,
+                "saved Pop controls must emit after the host abstraction finishes loading",
+            )
+            varnames = {
+                item["box"].get("varname")
+                for item in beap["boxes"]
+                if item["box"].get("varname")
+            }
+            self.assertTrue(control_varnames.issubset(varnames))
+            expected_initials = {
+                "pop_global_pitch_semitones": 0.0,
+                "pop_core_presence": 1.0,
+                "pop_body_tune": 1.0,
+                "pop_crack_tune": 1.0,
+                "pop_decay_scale": 1.0,
+                "pop_low_pressure_level": 0.32,
+                "pop_body_level": 1.0,
+                "pop_crack_level": 1.0,
+            }
+            for item in beap["boxes"]:
+                box = item["box"]
+                if box.get("varname") not in expected_initials:
+                    continue
+                self.assertEqual(1, box.get("parameter_enable"))
+                self.assertEqual(
+                    [expected_initials[box["varname"]]],
+                    box["saved_attribute_attributes"]["valueof"]["parameter_initial"],
+                )
+            self.assertEqual(
+                2,
+                sum(item["box"].get("maxclass") == "outlet" for item in beap["boxes"]),
+            )
+            ordered_outlets = [
+                item["box"] for item in beap["boxes"]
+                if item["box"].get("maxclass") == "outlet"
+            ]
+            self.assertEqual(
+                ["signal", "signal"],
+                [box.get("comment") for box in ordered_outlets[:2]],
+                "the editable abstraction owns audio only; tuning uses named buses",
+            )
+
+            host = self.load_json(f"patchers/{profile}_backfire_host~.maxpat")["patcher"]
+            host_boxes = [item["box"] for item in host["boxes"]]
+            beap_host = next(
+                box for box in host_boxes
+                if box.get("text") == f"{profile}_backfire_beap~"
+            )
+            self.assertEqual(4, beap_host["numinlets"])
+            self.assertEqual(2, beap_host["numoutlets"])
+            beap_host_id = beap_host["id"]
+            pressure_noise_id = next(
+                box["id"] for box in host_boxes if box.get("text") == "noise~"
+            )
+            self.assertIn(
+                (pressure_noise_id, 0, beap_host_id, 3),
+                {
+                    (
+                        line["patchline"]["source"][0],
+                        line["patchline"]["source"][1],
+                        line["patchline"]["destination"][0],
+                        line["patchline"]["destination"][1],
+                    )
+                    for line in host["lines"]
+                },
+            )
+            host_text = "\n".join(box.get("text", "") for box in host_boxes)
+            self.assertNotIn("pak 0. 0. 0.", host_text)
+            self.assertNotIn("pak 0. 0.", host_text)
+            for varname in control_varnames:
+                control_name = varname.removeprefix("pop_")
+                self.assertIn(f"s {profile}.pop.{control_name}", beap_text)
+                self.assertIn(f"r {profile}.pop.{control_name}", host_text)
+            for default_text in (
+                "loadmess 0.", "loadmess 1.", "loadmess 0.32",
+            ):
+                self.assertIn(default_text, host_text)
+            self.assertIn("line 0.32", host_text)
+            self.assertGreaterEqual(host_text.count("line 1."), 3)
+            self.assertGreaterEqual(host_text.count("*~ 1."), 6)
+            for token in (
+                "pow(2.,($f1+$f2)/12.)",
+                "clip 0.25 1.5",
+                "expr 2.4/max(0.5,$f1)" if profile == "v10" else "expr 1.9/max(0.5,$f1)",
+            ):
+                self.assertIn(token, host_text)
+            self.assertNotIn("sqrt(max(0.,2.*(1.-$f1)))", host_text)
+            self.assertNotIn("sqrt(max(0.,2.*$f1))", host_text)
 
     def test_backfire_defaults_prioritize_low_pressure_body_over_bright_crack(self):
         expected = {
@@ -487,6 +605,28 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
                 self.assertIn("orders_r = cycle(fire)", code)
                 self.assertNotRegex(code, r"orders_r\s*=\s*cycle\(clamp\(fire\s*\*")
 
+    def test_every_visible_sound_dna_control_reaches_the_generated_dsp(self):
+        for profile in ("ev", "v10", "v12"):
+            dna = self.load_json(f"patchers/{profile}_sound_dna~.maxpat")["patcher"]
+            visible_controls = {
+                item["box"]["varname"].removeprefix("dna_")
+                for item in dna["boxes"]
+                if item["box"].get("varname", "").startswith("dna_")
+            }
+            code = "\n".join(
+                item["box"].get("code", "")
+                for item in self.load_json(f"gen/{profile}_powertrain.gendsp")["patcher"]["boxes"]
+            ).lower()
+            for parameter in visible_controls:
+                declaration = f"param {parameter}("
+                self.assertIn(declaration, code)
+                dsp_body = code.split(declaration, 1)[1].split(";", 1)[1]
+                self.assertRegex(
+                    dsp_body,
+                    rf"\b{parameter}\b",
+                    f"{profile} Sound DNA control {parameter} is declared but acoustically disconnected",
+                )
+
     def test_runtime_open_sound_dna_targets_the_audible_instance(self):
         for profile in ("ev", "v10", "v12"):
             runtime = json.dumps(self.load_json(f"VehicleSoundSynth-{profile.upper()}.maxpat"))
@@ -497,6 +637,25 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
             self.assertIn(f"r {address}", dna)
             self.assertIn('"text": "front"', dna)
             self.assertIn('"text": "thispatcher"', dna)
+
+    def test_dna_solo_isolates_the_audible_powertrain_from_every_other_stem(self):
+        for profile in ("ev", "v10", "v12"):
+            runtime_text = json.dumps(
+                self.load_json(f"VehicleSoundSynth-{profile.upper()}.maxpat")
+            )
+            self.assertIn("Sound DNA Solo", runtime_text)
+            self.assertIn("prepend dna_solo", runtime_text)
+
+            engine = self.load_json(f"patchers/vehicle_engine_{profile}~.maxpat")["patcher"]
+            text = "\n".join(item["box"].get("text", "") for item in engine["boxes"])
+            self.assertIn(
+                "route soundscape_solo pad_solo backfire_solo dna_solo",
+                text,
+            )
+            self.assertIn("$i3+(1-$i3)*(1-max($i1,$i2))", text)
+            self.assertIn("(1-$i3)*(1-max($i1,$i2))", text)
+            self.assertIn("(1-$i3)*(1-$i1*(1-$i2))", text)
+            self.assertIn("(1-$i3)*(1-$i2)", text)
 
     def test_fixed_rpm_dna_probe_bypasses_drive_only_for_acoustic_ab(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -532,6 +691,20 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
                 if box.get("text", "").startswith("ignition 1, rpm 4200, throttle 0.9")
             )
             self.assertIn((replay, powertrain), cords)
+
+    def test_fixed_state_probes_expose_low_high_pairs_for_repaired_dna_controls(self):
+        source = (ROOT / "tools" / "build_runtime_probe.py").read_text(encoding="utf-8")
+        for scenario, message in (
+            ("dna-ev-aggression-low", "aggression 0"),
+            ("dna-ev-aggression-high", "aggression 1"),
+            ("dna-v10-brightness-low", "brightness 0"),
+            ("dna-v10-brightness-high", "brightness 1"),
+        ):
+            self.assertIn(f'"{scenario}"', source)
+            block = source.split(f'"{scenario}"', 1)[1].split("},", 1)[0]
+            self.assertIn('"direct_powertrain": True', block)
+            self.assertIn('"lock_rpm": True', block)
+            self.assertIn(f'"{message}"', block)
 
     def test_shared_beap_soundscape_has_three_voice_motion_and_formant_colour(self):
         core = self.load_json("patchers/cinematic_soundscape_beap~.maxpat")["patcher"]
@@ -1077,8 +1250,8 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
         self.assertIn("mute 1 1", host_text)
         engine = self.load_json("patchers/vehicle_engine_ev~.maxpat")["patcher"]
         engine_text = "\n".join(item["box"].get("text", "") for item in engine["boxes"])
-        self.assertIn("route soundscape_solo pad_solo", engine_text)
-        self.assertIn("expr 1-max($i1,$i2)", engine_text)
+        self.assertIn("route soundscape_solo pad_solo backfire_solo dna_solo", engine_text)
+        self.assertIn("expr (1-$i3)*(1-max($i1,$i2))", engine_text)
 
     def test_soundscape_solo_isolates_every_non_soundscape_stem(self):
         for profile in ("ev", "v10", "v12"):
@@ -1105,13 +1278,21 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
                     and text_by_id[edge["destination"][0]] == "line~"
                 )
 
-            base_line = line_after("expr 1-max($i1,$i2)")
-            transient_line = line_after("expr 1-$i1*(1-$i2)")
-            pad_line = line_after("expr 1-$i2")
-            base_gains = {
+            core_line = line_after("expr $i3+(1-$i3)*(1-max($i1,$i2))")
+            aux_line = line_after("expr (1-$i3)*(1-max($i1,$i2))")
+            transient_line = line_after("expr (1-$i3)*(1-$i1*(1-$i2))")
+            pad_line = line_after("expr (1-$i3)*(1-$i2)")
+            core_gains = {
                 edge["destination"][0]
                 for edge in edges
-                if edge["source"][0] == base_line
+                if edge["source"][0] == core_line
+                and edge["destination"][1] == 1
+                and text_by_id[edge["destination"][0]] == "*~"
+            }
+            aux_gains = {
+                edge["destination"][0]
+                for edge in edges
+                if edge["source"][0] == aux_line
                 and edge["destination"][1] == 1
                 and text_by_id[edge["destination"][0]] == "*~"
             }
@@ -1129,7 +1310,8 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
                 and edge["destination"][1] == 1
                 and text_by_id[edge["destination"][0]] == "*~"
             }
-            self.assertEqual(6, len(base_gains), profile)
+            self.assertEqual(2, len(core_gains), profile)
+            self.assertEqual(4, len(aux_gains), profile)
             self.assertEqual(2, len(transient_gains), profile)
             self.assertEqual(2, len(pad_gains), profile)
             sources = (
@@ -1143,7 +1325,12 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
                 for text in sources
             }
             for source_text, source_id in source_ids.items():
-                expected_gains = transient_gains if source_text.startswith("transient_") else base_gains
+                if source_text.startswith("transient_"):
+                    expected_gains = transient_gains
+                elif source_text.endswith("_sound_dna~"):
+                    expected_gains = core_gains
+                else:
+                    expected_gains = aux_gains
                 for channel in (0, 1):
                     self.assertTrue(
                         any(

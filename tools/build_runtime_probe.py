@@ -105,6 +105,16 @@ SCENARIOS = {
         "lock_rpm": True, "direct_powertrain": True,
         "extra_messages": ("accel 0", "speed_kph 0"),
     },
+    "dna-ev-aggression-low": {
+        "profile": "ev", "rpm": 3200.0, "throttle": 0.65, "load": 0.55,
+        "lock_rpm": True, "direct_powertrain": True,
+        "extra_messages": ("accel 0", "speed_kph 0", "aggression 0"),
+    },
+    "dna-ev-aggression-high": {
+        "profile": "ev", "rpm": 3200.0, "throttle": 0.65, "load": 0.55,
+        "lock_rpm": True, "direct_powertrain": True,
+        "extra_messages": ("accel 0", "speed_kph 0", "aggression 1"),
+    },
     "dna-v10-throttle-low": {
         "profile": "v10", "rpm": 4200.0, "throttle": 0.10, "load": 0.65,
         "lock_rpm": True, "direct_powertrain": True, "extra_messages": (
@@ -116,6 +126,20 @@ SCENARIOS = {
         "profile": "v10", "rpm": 4200.0, "throttle": 0.90, "load": 0.65,
         "lock_rpm": True, "direct_powertrain": True, "extra_messages": (
             "accel 0", "speed_kph 0", "engine_running 1",
+            "combustion_gain 1", "shift_cut 1", "starter 0",
+        ),
+    },
+    "dna-v10-brightness-low": {
+        "profile": "v10", "rpm": 4200.0, "throttle": 0.65, "load": 0.65,
+        "lock_rpm": True, "direct_powertrain": True, "extra_messages": (
+            "accel 0", "speed_kph 0", "engine_running 1", "brightness 0",
+            "combustion_gain 1", "shift_cut 1", "starter 0",
+        ),
+    },
+    "dna-v10-brightness-high": {
+        "profile": "v10", "rpm": 4200.0, "throttle": 0.65, "load": 0.65,
+        "lock_rpm": True, "direct_powertrain": True, "extra_messages": (
+            "accel 0", "speed_kph 0", "engine_running 1", "brightness 1",
             "combustion_gain 1", "shift_cut 1", "starter 0",
         ),
     },
@@ -351,13 +375,15 @@ def make_probe(
     for controlled in (transient, road, rumble, cabin, mix):
         p.connect(controller, controlled, 0, 0)
     p.connect(controller, soundscape, 0, 0)
-    solo_router = p.new("route soundscape_solo pad_solo backfire_solo", 620, 300, 330, numinlets=1, numoutlets=4)
+    solo_router = p.new("route soundscape_solo pad_solo backfire_solo dna_solo", 620, 300, 390, numinlets=1, numoutlets=5)
     soundscape_solo_clip = p.new("clip 0 1", 620, 335, 65, numinlets=3, numoutlets=1)
     backfire_solo_clip = p.new("clip 0 1", 695, 335, 65, numinlets=3, numoutlets=1)
-    solo_state = p.new("pak 0 0", 770, 335, 75, numinlets=2, numoutlets=1)
-    base_solo_gain = p.new("expr 1-max($i1,$i2)", 855, 305, 145, numinlets=2, numoutlets=1)
-    transient_solo_gain = p.new("expr 1-$i1*(1-$i2)", 855, 335, 145, numinlets=2, numoutlets=1)
-    pad_solo_gain = p.new("expr 1-$i2", 855, 365, 90, numinlets=2, numoutlets=1)
+    dna_solo_clip = p.new("clip 0 1", 770, 335, 65, numinlets=3, numoutlets=1)
+    solo_state = p.new("pak 0 0 0", 845, 335, 85, numinlets=3, numoutlets=1)
+    core_solo_gain = p.new("expr $i3+(1-$i3)*(1-max($i1,$i2))", 855, 275, 250, numinlets=3, numoutlets=1)
+    aux_solo_gain = p.new("expr (1-$i3)*(1-max($i1,$i2))", 855, 305, 220, numinlets=3, numoutlets=1)
+    transient_solo_gain = p.new("expr (1-$i3)*(1-$i1*(1-$i2))", 855, 335, 230, numinlets=3, numoutlets=1)
+    pad_solo_gain = p.new("expr (1-$i3)*(1-$i2)", 855, 365, 150, numinlets=3, numoutlets=1)
 
     def make_solo_line(source: str, x: float, y: float) -> str:
         packed = p.new("pack 0. 35", x, y, 80, numinlets=2, numoutlets=1)
@@ -366,7 +392,8 @@ def make_probe(
         p.connect(packed, line)
         return line
 
-    base_solo_line = make_solo_line(base_solo_gain, 620, 400)
+    core_solo_line = make_solo_line(core_solo_gain, 620, 400)
+    aux_solo_line = make_solo_line(aux_solo_gain, 620, 430)
     transient_solo_line = make_solo_line(transient_solo_gain, 755, 400)
     pad_solo_line = make_solo_line(pad_solo_gain, 890, 400)
     solo_default = p.new("loadmess 0", 660, 370, 80, numinlets=1, numoutlets=1)
@@ -384,11 +411,15 @@ def make_probe(
     p.connect(solo_router, soundscape_solo_clip, 0)
     p.connect(solo_router, soundscape_solo_clip, 1)
     p.connect(solo_router, backfire_solo_clip, 2)
+    p.connect(solo_router, dna_solo_clip, 3)
     p.connect(solo_default, soundscape_solo_clip)
     p.connect(solo_default, backfire_solo_clip)
+    p.connect(solo_default, dna_solo_clip)
     p.connect(soundscape_solo_clip, solo_state, 0, 0)
     p.connect(backfire_solo_clip, solo_state, 0, 1)
-    p.connect(solo_state, base_solo_gain)
+    p.connect(dna_solo_clip, solo_state, 0, 2)
+    p.connect(solo_state, core_solo_gain)
+    p.connect(solo_state, aux_solo_gain)
     p.connect(solo_state, transient_solo_gain)
     p.connect(solo_state, pad_solo_gain)
     p.connect(powertrain, core_l, 0, 0)
@@ -399,8 +430,10 @@ def make_probe(
     p.connect(road, road_gate_r, 1, 0)
     p.connect(rumble, rumble_gate_l, 0, 0)
     p.connect(rumble, rumble_gate_r, 1, 0)
-    for stem_gain in (core_l, core_r, road_gate_l, road_gate_r, rumble_gate_l, rumble_gate_r):
-        p.connect(base_solo_line, stem_gain, 0, 1)
+    for stem_gain in (core_l, core_r):
+        p.connect(core_solo_line, stem_gain, 0, 1)
+    for stem_gain in (road_gate_l, road_gate_r, rumble_gate_l, rumble_gate_r):
+        p.connect(aux_solo_line, stem_gain, 0, 1)
     for stem_gain in (transient_gate_l, transient_gate_r):
         p.connect(transient_solo_line, stem_gain, 0, 1)
     p.connect(soundscape, pad_gate_l, 0, 0)

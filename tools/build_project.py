@@ -108,6 +108,7 @@ MACRO_NAMES = (
     "soundscape_motion",
     "soundscape_space",
     "soundscape_solo",
+    "dna_solo",
     "backfire_enable",
     "backfire_intensity",
     "backfire_solo",
@@ -1157,7 +1158,7 @@ def make_cinematic_soundscape_host(profile: str) -> dict[str, Any]:
 
 def make_ice_backfire_beap(profile: str) -> dict[str, Any]:
     """Seed one editable, layered pressure/crack backfire voice."""
-    p = Patcher(2240, 850)
+    p = Patcher(2580, 980)
     p.comment(
         f"USER-TUNABLE {profile.upper()} PHYSICAL BACKFIRE — preserved on rebuild",
         25, 15, 980,
@@ -1165,8 +1166,73 @@ def make_ice_backfire_beap(profile: str) -> dict[str, Any]:
     pitch = inlet(p, 45, 65, signal=True)
     gate = inlet(p, 145, 65, signal=True)
     intensity = inlet(p, 245, 65, signal=True)
+    pressure_excitation = inlet(p, 345, 65, signal=True)
+    open_request = p.new(
+        f"r open.{profile}.backfire", 1680, 15, 175,
+        numinlets=0, numoutlets=1,
+    )
+    front = p.message("front", 1865, 15, 45)
+    patcher_window = p.new("thispatcher", 1920, 15, 75, numinlets=1, numoutlets=2)
+    p.connect(open_request, front)
+    p.connect(front, patcher_window)
+
+    p.comment(
+        "AUTHORITATIVE POP CONTROLS — tune these first; Pressure Mixer adds optional BEAP colour",
+        1680, 65, 820,
+    )
+    p.comment(
+        "Global Pitch applies to all layers. Core Presence: 0.25 = 25%, 1 = unity, 1.5 = 150%.",
+        1680, 90, 760,
+    )
+    tuning_load = p.new("loadbang", 2450, 15, 60, numinlets=1, numoutlets=1)
+    tuning_emit = p.new("delay 50", 2450, 45, 65, numinlets=2, numoutlets=1)
+    p.connect(tuning_load, tuning_emit)
+    tuning_specs = (
+        ("Global Pitch (semitones)", "pop_global_pitch_semitones", 0.0, -18.0, 6.0),
+        ("Core Presence", "pop_core_presence", 1.0, 0.25, 1.5),
+        ("Body Tune", "pop_body_tune", 1.0, 0.5, 1.5),
+        ("Crack Tune", "pop_crack_tune", 1.0, 0.5, 1.5),
+        ("Decay Scale", "pop_decay_scale", 1.0, 0.5, 2.0),
+        ("Low Pressure Level", "pop_low_pressure_level", 0.32, 0.0, 1.0),
+        ("Core Body Level", "pop_body_level", 1.0, 0.0, 1.5),
+        ("Core Crack Level", "pop_crack_level", 1.0, 0.0, 1.5),
+    )
+    tuning_sources = []
+    for index, (label, varname, default, low, high) in enumerate(tuning_specs):
+        column = index % 2
+        row = index // 2
+        x = 1680 + column * 390
+        y = 130 + row * 90
+        p.comment(label, x, y, 220)
+        value = p.add(
+            "flonum", None, x, y + 25, 95, numinlets=1, numoutlets=2,
+            minimum=low, maximum=high, value=default, varname=varname,
+            parameter_enable=1,
+            saved_attribute_attributes={
+                "valueof": {
+                    "parameter_initial": [default],
+                    "parameter_initial_enable": 1,
+                    "parameter_longname": varname,
+                    "parameter_shortname": label,
+                    "parameter_mmin": low,
+                    "parameter_mmax": high,
+                    "parameter_type": 0,
+                }
+            },
+        )
+        bounded = p.new(
+            f"clip {low:g} {high:g}", x + 105, y + 25, 95,
+            numinlets=3, numoutlets=1,
+        )
+        p.connect(tuning_emit, value)
+        p.connect(value, bounded)
+        tuning_sources.append((bounded, varname.removeprefix("pop_")))
 
     p.comment("PRESSURE BODY — low exhaust pressure and chamber bloom", 25, 110, 620)
+    p.comment(
+        "Pressure Mixer is audible; native MMF/AD/VCA can be subtle on short Max 8.6.5 gates",
+        625, 110, 720,
+    )
     noise = add_beap_module(p, "Random/bp.Noise.maxpat", 25, 145, "Pressure_Noise")
     osc = add_beap_module(
         p, "Oscillator/bp.Oscillator.maxpat", 300, 145, "Pressure_Osc",
@@ -1269,8 +1335,18 @@ def make_ice_backfire_beap(profile: str) -> dict[str, Any]:
     right_mix = p.new("+~", 1520, 585, 40, numinlets=2, numoutlets=1)
     left = outlet(p, 1600, 535, signal=True)
     right = outlet(p, 1600, 585, signal=True)
+    # Keep the editable abstraction's public signal seam to stereo audio only.
+    # Named profile-local buses carry saved tuning to the audible host without
+    # relying on abstraction outlet ordering or load-time signal/message casts.
+    for index, (source, control_name) in enumerate(tuning_sources):
+        control_send = p.new(
+            f"s {profile}.pop.{control_name}", 1680 + index * 105, 900, 120,
+            numinlets=1, numoutlets=0,
+        )
+        p.connect(source, control_send)
 
     p.connect(noise, mixer, 0, 0)
+    p.connect(pressure_excitation, mixer, 0, 0)
     p.connect(pitch, osc, 0, 0)
     p.connect(osc, mixer, 0, 1)
     p.connect(mixer, body_filter, 0, 0)
@@ -1281,9 +1357,13 @@ def make_ice_backfire_beap(profile: str) -> dict[str, Any]:
     p.connect(body_filter, body_vca, 0, 0)
     p.connect(body_env_amount, body_vca, 0, 1)
     p.connect(gate, body_gate_trim)
-    p.connect(body_filter, body_compat_filter, 0, 0)
-    p.connect(body_filter, body_mode_a, 0, 0)
-    p.connect(body_filter, body_mode_b, 0, 0)
+    # Max 8.6.5's native BEAP MMF/AD branch can remain silent on short external
+    # gates. Feed the reliable compatibility colour path from the visible BEAP
+    # Audio Mixer, so its input balance remains audibly authoritative while the
+    # explicit Host Core Body/Crack controls own filter tuning and decay.
+    p.connect(mixer, body_compat_filter, 0, 0)
+    p.connect(mixer, body_mode_a, 0, 0)
+    p.connect(mixer, body_mode_b, 0, 0)
     p.connect(body_mode_a, body_modes, 0, 0)
     p.connect(body_mode_b, body_modes, 0, 1)
     p.connect(body_compat_filter, body_colour, 0, 0)
@@ -1294,6 +1374,7 @@ def make_ice_backfire_beap(profile: str) -> dict[str, Any]:
     p.connect(body_pressure_vca, body_sum, 0, 1)
 
     p.connect(noise, crack_filter, 0, 0)
+    p.connect(pressure_excitation, crack_filter, 0, 0)
     p.connect(intensity, crack_filter, 0, 1)
     p.connect(gate, crack_envelope, 0, 0)
     p.connect(crack_envelope, crack_env_amount)
@@ -1301,7 +1382,7 @@ def make_ice_backfire_beap(profile: str) -> dict[str, Any]:
     p.connect(crack_filter, crack_vca, 0, 0)
     p.connect(crack_env_amount, crack_vca, 0, 1)
     p.connect(gate, crack_gate_trim)
-    p.connect(crack_filter, crack_compat_filter, 0, 0)
+    p.connect(mixer, crack_compat_filter, 0, 0)
     p.connect(crack_compat_filter, crack_pressure_vca, 2, 0)
     p.connect(crack_gate_trim, crack_pressure_vca, 0, 1)
     p.connect(crack_vca, crack_sum, 0, 0)
@@ -1362,12 +1443,17 @@ def make_ice_backfire_host(profile: str) -> dict[str, Any]:
     rpm_store = p.new("f 1800.", 150, 160, 65, numinlets=2, numoutlets=1)
     pitch_map = p.new("expr log(max(35.,48.+0.018*$f1)/261.625565)/log(2.)", 35, 205, 370, numinlets=1, numoutlets=1)
     pitch_sum = p.new("+ 0.", 35, 245, 55, numinlets=2, numoutlets=1)
+    pitch_offset = p.new(
+        "expr ($f1+$f2)/12.", 100, 245, 145,
+        numinlets=2, numoutlets=1,
+    )
     pitch_pack = p.new("pack 0. 4", 100, 245, 80, numinlets=2, numoutlets=1)
     pitch_line = p.new("line~", 35, 285, 50, numinlets=2, numoutlets=2)
     p.connect(router, rpm, 0)
     p.connect(rpm, rpm_store, 0, 1)
     p.connect(rpm_store, pitch_map)
-    p.connect(pitch_map, pitch_sum)
+    p.connect(pitch_map, pitch_sum, 0, 0)
+    p.connect(pitch_offset, pitch_sum, 0, 1)
     p.connect(pitch_sum, pitch_pack)
     p.connect(pitch_pack, pitch_line)
 
@@ -1438,8 +1524,10 @@ def make_ice_backfire_host(profile: str) -> dict[str, Any]:
     p.comment("OVERRUN / TEST POP — 1..5 hit burst", 840, 315, 280)
     hit_order = p.new("t b l", 870, 385, 50, numinlets=1, numoutlets=2)
     hit_values = p.new("unpack 0. 0. 0 0", 930, 385, 125, numinlets=1, numoutlets=4)
-    pitch_offset = p.new("* 0.0833333333", 930, 420, 105, numinlets=2, numoutlets=1)
-    pitch_ratio = p.new("expr pow(2.,$f1/12.)", 930, 450, 135, numinlets=1, numoutlets=1)
+    pitch_ratio = p.new(
+        "expr pow(2.,($f1+$f2)/12.)", 930, 450, 175,
+        numinlets=2, numoutlets=1,
+    )
     event_trigger = p.new(
         "t b", 870, 420, 40, numinlets=1, numoutlets=1,
         varname="backfire_event_trigger",
@@ -1450,7 +1538,6 @@ def make_ice_backfire_host(profile: str) -> dict[str, Any]:
     p.connect(hit_order, hit_values, 1, 0)
     p.connect(hit_values, pitch_offset, 0, 0)
     p.connect(hit_values, pitch_ratio, 0, 0)
-    p.connect(pitch_offset, pitch_sum, 0, 1)
     p.connect(hit_values, event_strength, 1, 1)
     p.connect(hit_order, hit_fire_order, 0, 0)
     p.connect(hit_fire_order, event_strength, 1, 0)
@@ -1506,10 +1593,55 @@ def make_ice_backfire_host(profile: str) -> dict[str, Any]:
     p.connect(event_trigger, rpm_store)
     p.connect(event_trigger, gate_message)
     p.connect(gate_message, gate_line)
-    beap = p.new(f"{profile}_backfire_beap~", 330, 445, 190, numinlets=3, numoutlets=2)
+    beap = p.new(
+        f"{profile}_backfire_beap~", 330, 445, 190,
+        numinlets=4, numoutlets=2,
+    )
     p.connect(pitch_line, beap, 0, 0)
     p.connect(gate_line, beap, 0, 1)
     p.connect(intensity_line, beap, 0, 2)
+    global_pitch = p.new("clip -18. 6.", 35, 385, 90, numinlets=3, numoutlets=1)
+    core_presence = p.new("clip 0.25 1.5", 130, 385, 95, numinlets=3, numoutlets=1)
+    body_tune = p.new("clip 0.5 1.5", 210, 385, 90, numinlets=3, numoutlets=1)
+    crack_tune = p.new("clip 0.5 1.5", 305, 385, 90, numinlets=3, numoutlets=1)
+    decay_scale = p.new("clip 0.5 2.", 400, 385, 90, numinlets=3, numoutlets=1)
+    low_pressure_level = p.new("clip 0. 1.", 495, 385, 80, numinlets=3, numoutlets=1)
+    body_level = p.new("clip 0. 1.5", 580, 385, 85, numinlets=3, numoutlets=1)
+    crack_level = p.new("clip 0. 1.5", 670, 385, 85, numinlets=3, numoutlets=1)
+    # Parent-side defaults make the host audible immediately. The editable
+    # child emits its saved values after 50 ms and therefore remains
+    # authoritative; these values only cover Max's abstraction-load window (or
+    # a damaged user patch whose message outlets no longer emit).
+    for index, (destination, default) in enumerate(
+        (
+            (global_pitch, "0."), (core_presence, "1."),
+            (body_tune, "1."), (crack_tune, "1."),
+            (decay_scale, "1."), (low_pressure_level, "0.32"),
+            (body_level, "1."), (crack_level, "1."),
+        )
+    ):
+        host_default = p.new(
+            f"loadmess {default}", 35 + index * 92, 420, 85,
+            numinlets=1, numoutlets=1,
+        )
+        p.connect(host_default, destination)
+    for index, (destination, control_name) in enumerate(
+        (
+            (global_pitch, "global_pitch_semitones"),
+            (core_presence, "core_presence"),
+            (body_tune, "body_tune"), (crack_tune, "crack_tune"),
+            (decay_scale, "decay_scale"),
+            (low_pressure_level, "low_pressure_level"),
+            (body_level, "body_level"), (crack_level, "crack_level"),
+        )
+    ):
+        control_receive = p.new(
+            f"r {profile}.pop.{control_name}", 35 + index * 92, 450, 120,
+            numinlets=0, numoutlets=1,
+        )
+        p.connect(control_receive, destination)
+    p.connect(global_pitch, pitch_offset, 0, 1)
+    p.connect(global_pitch, pitch_ratio, 0, 1)
     # BEAP AD/VCA revisions in some Max 8.6.x installs can miss very short
     # external gates. A click-derived control envelope is sample-accurate and
     # excites broadband pressure instead of exposing a naked resonant impulse.
@@ -1517,6 +1649,7 @@ def make_ice_backfire_host(profile: str) -> dict[str, Any]:
     # event audibility, body duration and the two exhaust-wall reflections.
     p.comment("GENERATED PRESSURE CORE — body / crack / two wall reflections", 25, 410, 620)
     pressure_noise = p.new("noise~", 35, 445, 55, numinlets=1, numoutlets=1)
+    p.connect(pressure_noise, beap, 0, 3)
     main_click = p.new("click~", 100, 445, 50, numinlets=1, numoutlets=1)
     body_impulse = p.new(
         f"*~ {1120 if profile == 'v10' else 1320}", 160, 445, 75,
@@ -1535,6 +1668,18 @@ def make_ice_backfire_host(profile: str) -> dict[str, Any]:
         f"onepole~ {24 if profile == 'v10' else 18}", 235, 480, 90,
         numinlets=2, numoutlets=1,
     )
+    body_decay_map = p.new(
+        f"expr {2.4 if profile == 'v10' else 1.9:g}/max(0.5,$f1)",
+        245, 520, 185, numinlets=1, numoutlets=1,
+    )
+    crack_decay_map = p.new(
+        f"expr {24 if profile == 'v10' else 18:g}/max(0.5,$f1)",
+        245, 550, 185, numinlets=1, numoutlets=1,
+    )
+    p.connect(decay_scale, body_decay_map)
+    p.connect(decay_scale, crack_decay_map)
+    p.connect(body_decay_map, body_decay, 0, 1)
+    p.connect(crack_decay_map, crack_decay, 0, 1)
     crack_env = p.new("clip~ 0. 1.", 335, 480, 85, numinlets=3, numoutlets=1)
     body_burst = p.new("*~", 440, 445, 40, numinlets=2, numoutlets=1)
     crack_burst = p.new("*~", 440, 480, 40, numinlets=2, numoutlets=1)
@@ -1555,19 +1700,19 @@ def make_ice_backfire_host(profile: str) -> dict[str, Any]:
         numinlets=3, numoutlets=4,
     )
     pressure_l_frequency = p.new(
-        f"* {560 if profile == 'v10' else 420}.", 490, 400, 65,
+        f"expr {560 if profile == 'v10' else 420}.*$f1*$f2", 490, 400, 150,
         numinlets=2, numoutlets=1,
     )
     pressure_r_frequency = p.new(
-        f"* {680 if profile == 'v10' else 500}.", 560, 400, 65,
+        f"expr {680 if profile == 'v10' else 500}.*$f1*$f2", 645, 400, 150,
         numinlets=2, numoutlets=1,
     )
     crack_l_frequency = p.new(
-        f"* {1450 if profile == 'v10' else 1050}.", 630, 400, 70,
+        f"expr {1450 if profile == 'v10' else 1050}.*$f1*$f2", 800, 400, 160,
         numinlets=2, numoutlets=1,
     )
     crack_r_frequency = p.new(
-        f"* {1800 if profile == 'v10' else 1350}.", 705, 400, 70,
+        f"expr {1800 if profile == 'v10' else 1350}.*$f1*$f2", 965, 400, 160,
         numinlets=2, numoutlets=1,
     )
     p.comment("LOW PRESSURE MODES — coherent below 120 Hz", 490, 505, 360)
@@ -1583,10 +1728,37 @@ def make_ice_backfire_host(profile: str) -> dict[str, Any]:
     low_trim = p.new("*~ 0.32", 930, 505, 60, numinlets=2, numoutlets=1)
     pressure_body_l = p.new("+~", 735, 425, 40, numinlets=2, numoutlets=1)
     pressure_body_r = p.new("+~", 735, 495, 40, numinlets=2, numoutlets=1)
+    pressure_body_gain_l = p.new("*~ 1.", 780, 425, 48, numinlets=2, numoutlets=1)
+    pressure_body_gain_r = p.new("*~ 1.", 780, 495, 48, numinlets=2, numoutlets=1)
+    pressure_crack_gain_l = p.new("*~ 1.", 735, 455, 48, numinlets=2, numoutlets=1)
+    pressure_crack_gain_r = p.new("*~ 1.", 735, 525, 48, numinlets=2, numoutlets=1)
     pressure_crack_l = p.new("+~", 735, 445, 40, numinlets=2, numoutlets=1)
     pressure_crack_r = p.new("+~", 735, 480, 40, numinlets=2, numoutlets=1)
+    core_mix_l = p.new("*~ 1.", 265, 520, 48, numinlets=2, numoutlets=1)
+    core_mix_r = p.new("*~ 1.", 485, 520, 48, numinlets=2, numoutlets=1)
     beap_pressure_l = p.new("+~", 310, 490, 40, numinlets=2, numoutlets=1)
     beap_pressure_r = p.new("+~", 530, 490, 40, numinlets=2, numoutlets=1)
+
+    def smoothed_control(source: str, x: float, y: float, initial: float) -> str:
+        packed = p.new("pack 0. 20", x, y, 80, numinlets=2, numoutlets=1)
+        initial_text = f"{initial:g}"
+        if "." not in initial_text:
+            initial_text += "."
+        line = p.new(
+            f"line {initial_text}", x + 85, y, 60,
+            numinlets=2, numoutlets=2,
+        )
+        p.connect(source, packed)
+        p.connect(packed, line)
+        return line
+
+    # A signal-rate line~ does not advance while the probe/runtime DSP is
+    # stopped. Message-rate line keeps saved controls deterministic and feeds
+    # float gains that persist across DSP restarts without loading Pop silent.
+    low_level_line = smoothed_control(low_pressure_level, 835, 545, 0.32)
+    body_level_line = smoothed_control(body_level, 970, 545, 1.0)
+    crack_level_line = smoothed_control(crack_level, 1105, 545, 1.0)
+    core_presence_line = smoothed_control(core_presence, 1050, 605, 1.0)
     p.connect(main_click, body_impulse)
     p.connect(body_impulse, body_decay)
     p.connect(body_decay, body_env)
@@ -1605,6 +1777,10 @@ def make_ice_backfire_host(profile: str) -> dict[str, Any]:
     p.connect(pitch_ratio, pressure_r_frequency)
     p.connect(pitch_ratio, crack_l_frequency)
     p.connect(pitch_ratio, crack_r_frequency)
+    p.connect(body_tune, pressure_l_frequency, 0, 1)
+    p.connect(body_tune, pressure_r_frequency, 0, 1)
+    p.connect(crack_tune, crack_l_frequency, 0, 1)
+    p.connect(crack_tune, crack_r_frequency, 0, 1)
     p.connect(pressure_l_frequency, pressure_l, 0, 1)
     p.connect(pressure_r_frequency, pressure_r, 0, 1)
     p.connect(crack_l_frequency, crack_l_filter, 0, 1)
@@ -1612,16 +1788,25 @@ def make_ice_backfire_host(profile: str) -> dict[str, Any]:
     p.connect(low_mode_a, low_modes, 0, 0)
     p.connect(low_mode_b, low_modes, 0, 1)
     p.connect(low_modes, low_trim)
+    p.connect(low_level_line, low_trim, 0, 1)
     p.connect(crack_burst, crack_l_filter)
     p.connect(crack_burst, crack_r_filter)
     p.connect(pressure_l, pressure_body_l, 0, 0)
     p.connect(low_trim, pressure_body_l, 0, 1)
     p.connect(pressure_r, pressure_body_r, 0, 0)
     p.connect(low_trim, pressure_body_r, 0, 1)
-    p.connect(pressure_body_l, pressure_crack_l, 0, 0)
-    p.connect(crack_l_filter, pressure_crack_l, 2, 1)
-    p.connect(pressure_body_r, pressure_crack_r, 0, 0)
-    p.connect(crack_r_filter, pressure_crack_r, 2, 1)
+    p.connect(pressure_body_l, pressure_body_gain_l, 0, 0)
+    p.connect(pressure_body_r, pressure_body_gain_r, 0, 0)
+    p.connect(body_level_line, pressure_body_gain_l, 0, 1)
+    p.connect(body_level_line, pressure_body_gain_r, 0, 1)
+    p.connect(crack_l_filter, pressure_crack_gain_l, 2, 0)
+    p.connect(crack_r_filter, pressure_crack_gain_r, 2, 0)
+    p.connect(crack_level_line, pressure_crack_gain_l, 0, 1)
+    p.connect(crack_level_line, pressure_crack_gain_r, 0, 1)
+    p.connect(pressure_body_gain_l, pressure_crack_l, 0, 0)
+    p.connect(pressure_crack_gain_l, pressure_crack_l, 0, 1)
+    p.connect(pressure_body_gain_r, pressure_crack_r, 0, 0)
+    p.connect(pressure_crack_gain_r, pressure_crack_r, 0, 1)
     p.connect(event_trigger, main_click)
     tail_delay_1 = p.new(
         f"delay {55 if profile == 'v10' else 75}", 35, 610, 65,
@@ -1656,10 +1841,14 @@ def make_ice_backfire_host(profile: str) -> dict[str, Any]:
     p.connect(tail_delay_2, tail_level_2)
     p.connect(tail_level_1, main_click)
     p.connect(tail_level_2, main_click)
+    p.connect(pressure_crack_l, core_mix_l, 0, 0)
+    p.connect(pressure_crack_r, core_mix_r, 0, 0)
+    p.connect(core_presence_line, core_mix_l, 0, 1)
+    p.connect(core_presence_line, core_mix_r, 0, 1)
     p.connect(beap, beap_pressure_l, 0, 0)
-    p.connect(pressure_crack_l, beap_pressure_l, 0, 1)
+    p.connect(core_mix_l, beap_pressure_l, 0, 1)
     p.connect(beap, beap_pressure_r, 1, 0)
-    p.connect(pressure_crack_r, beap_pressure_r, 0, 1)
+    p.connect(core_mix_r, beap_pressure_r, 0, 1)
     left_drive = p.new("*~ 4.2", 310, 515, 55, numinlets=2, numoutlets=1)
     right_drive = p.new("*~ 4.2", 530, 515, 55, numinlets=2, numoutlets=1)
     left_sat = p.new("tanh~", 370, 515, 50, numinlets=1, numoutlets=1)
@@ -2140,13 +2329,30 @@ def make_profile_engine(profile: str) -> dict[str, Any]:
     p.connect(fan, cabin, 1, 0)
     p.connect(fan, mix, 0, 0)
     p.connect(fan, eq, 0, 0)
-    solo_router = route(p, ("soundscape_solo", "pad_solo", "backfire_solo"), 1010, 210, 330)
+    solo_router = route(
+        p, ("soundscape_solo", "pad_solo", "backfire_solo", "dna_solo"),
+        980, 210, 410,
+    )
     soundscape_solo_clip = p.new("clip 0 1", 1010, 250, 65, numinlets=3, numoutlets=1)
     backfire_solo_clip = p.new("clip 0 1", 1085, 250, 65, numinlets=3, numoutlets=1)
-    solo_state = p.new("pak 0 0", 1160, 250, 75, numinlets=2, numoutlets=1)
-    base_solo_gain = p.new("expr 1-max($i1,$i2)", 1245, 220, 145, numinlets=2, numoutlets=1)
-    transient_solo_gain = p.new("expr 1-$i1*(1-$i2)", 1245, 250, 145, numinlets=2, numoutlets=1)
-    pad_solo_gain = p.new("expr 1-$i2", 1245, 280, 90, numinlets=2, numoutlets=1)
+    dna_solo_clip = p.new("clip 0 1", 1160, 250, 65, numinlets=3, numoutlets=1)
+    solo_state = p.new("pak 0 0 0", 1235, 250, 90, numinlets=3, numoutlets=1)
+    core_solo_gain = p.new(
+        "expr $i3+(1-$i3)*(1-max($i1,$i2))", 1180, 220, 245,
+        numinlets=3, numoutlets=1,
+    )
+    aux_solo_gain = p.new(
+        "expr (1-$i3)*(1-max($i1,$i2))", 1180, 280, 215,
+        numinlets=3, numoutlets=1,
+    )
+    transient_solo_gain = p.new(
+        "expr (1-$i3)*(1-$i1*(1-$i2))", 1180, 310, 225,
+        numinlets=3, numoutlets=1,
+    )
+    pad_solo_gain = p.new(
+        "expr (1-$i3)*(1-$i2)", 1180, 340, 155,
+        numinlets=3, numoutlets=1,
+    )
 
     def solo_line(source: str, x: float, y: float) -> str:
         packed = p.new("pack 0. 35", x, y, 85, numinlets=2, numoutlets=1)
@@ -2155,9 +2361,10 @@ def make_profile_engine(profile: str) -> dict[str, Any]:
         p.connect(packed, line)
         return line
 
-    base_solo_line = solo_line(base_solo_gain, 1010, 320)
-    transient_solo_line = solo_line(transient_solo_gain, 1160, 320)
-    pad_solo_line = solo_line(pad_solo_gain, 1310, 320)
+    core_solo_line = solo_line(core_solo_gain, 970, 370)
+    aux_solo_line = solo_line(aux_solo_gain, 1115, 370)
+    transient_solo_line = solo_line(transient_solo_gain, 1260, 370)
+    pad_solo_line = solo_line(pad_solo_gain, 1260, 400)
     solo_default = p.new("loadmess 0", 1090, 285, 80, numinlets=1, numoutlets=1)
     core_l = p.new("*~", 95, 300, 40, numinlets=2, numoutlets=1)
     core_r = p.new("*~", 390, 300, 40, numinlets=2, numoutlets=1)
@@ -2173,11 +2380,15 @@ def make_profile_engine(profile: str) -> dict[str, Any]:
     p.connect(solo_router, soundscape_solo_clip, 0)
     p.connect(solo_router, soundscape_solo_clip, 1)
     p.connect(solo_router, backfire_solo_clip, 2)
+    p.connect(solo_router, dna_solo_clip, 3)
     p.connect(solo_default, soundscape_solo_clip)
     p.connect(solo_default, backfire_solo_clip)
+    p.connect(solo_default, dna_solo_clip)
     p.connect(soundscape_solo_clip, solo_state, 0, 0)
     p.connect(backfire_solo_clip, solo_state, 0, 1)
-    p.connect(solo_state, base_solo_gain)
+    p.connect(dna_solo_clip, solo_state, 0, 2)
+    p.connect(solo_state, core_solo_gain)
+    p.connect(solo_state, aux_solo_gain)
     p.connect(solo_state, transient_solo_gain)
     p.connect(solo_state, pad_solo_gain)
     p.connect(power, core_l, 0, 0)
@@ -2188,8 +2399,10 @@ def make_profile_engine(profile: str) -> dict[str, Any]:
     p.connect(road, road_r, 1, 0)
     p.connect(rumble, rumble_l, 0, 0)
     p.connect(rumble, rumble_r, 1, 0)
-    for stem_gain in (core_l, core_r, road_l, road_r, rumble_l, rumble_r):
-        p.connect(base_solo_line, stem_gain, 0, 1)
+    for stem_gain in (core_l, core_r):
+        p.connect(core_solo_line, stem_gain, 0, 1)
+    for stem_gain in (road_l, road_r, rumble_l, rumble_r):
+        p.connect(aux_solo_line, stem_gain, 0, 1)
     for stem_gain in (transient_l, transient_r):
         p.connect(transient_solo_line, stem_gain, 0, 1)
     p.connect(pad, pad_l, 0, 0)
@@ -5557,11 +5770,18 @@ def make_profile_main(profile: str, root: Path | None = None) -> dict[str, Any]:
         f"s open.{profile}.sound_dna", 1180, 260, 180,
         numinlets=1, numoutlets=0,
     )
-    design_windows = p.new("pcontrol", 1410, 330, 70, numinlets=1, numoutlets=0)
-    open_soundscape = p.message("Open Soundscape BEAP", 1180, 300, 160)
+    p.comment("Sound DNA Solo", 1180, 290, 115)
+    dna_solo = p.add("toggle", None, 1180, 315, 24, 24, numinlets=1, numoutlets=1)
+    dna_solo_named = p.new("prepend dna_solo", 1210, 315, 140, numinlets=1, numoutlets=1)
+    dna_solo_default = p.new("loadmess 0", 1210, 342, 80, numinlets=1, numoutlets=1)
+    p.connect(dna_solo, dna_solo_named)
+    p.connect(dna_solo_named, engine)
+    p.connect(dna_solo_default, dna_solo)
+    design_windows = p.new("pcontrol", 1410, 400, 70, numinlets=1, numoutlets=0)
+    open_soundscape = p.message("Open Soundscape BEAP", 1180, 370, 160)
     open_soundscape_file = p.message(
         "loadunique Patcher:/patchers/cinematic_soundscape_beap~.maxpat",
-        1180, 330, 260,
+        1180, 400, 260,
     )
     p.connect(open_dna, open_dna_instance)
     p.connect(open_soundscape, open_soundscape_file)
@@ -5632,6 +5852,12 @@ def make_profile_main(profile: str, root: Path | None = None) -> dict[str, Any]:
         p.connect(backfire_solo_default, backfire_solo)
         p.connect(backfire_test, backfire_test_message)
         p.connect(backfire_test_message, engine)
+        open_pop = p.message("Open Pop Designer", 800, 340, 130)
+        open_pop_instance = p.new(
+            f"s open.{profile}.backfire", 800, 375, 180,
+            numinlets=1, numoutlets=0,
+        )
+        p.connect(open_pop, open_pop_instance)
 
     p.comment("Audio + Output", 760, 105, 120)
     audio_toggle = p.add("toggle", None, 760, 135, 24, 24, numinlets=1, numoutlets=1)
@@ -6014,20 +6240,22 @@ body_t = 1 - t * 0.12;
 a = clamp((0.045 + l * 0.028) * throttle_gain, 0, 0.16);
 slow_motion = cycle(clamp(r / 240, 0.35, 30)) * cycle_irregularity;
 electrical_motion = 0.985 + slow_motion * 0.018;
-torque_ripple = cycle(clamp(f * 0.5, 27.5, 380)) * (0.035 + l * 0.035) * torque_ripple_level;
+aggression_colour = 0.6 + aggression * 1.6;
+aggression_air = 0.8 + aggression * 0.8;
+torque_ripple = cycle(clamp(f * 0.5, 27.5, 380)) * (0.035 + l * 0.035) * torque_ripple_level * aggression_colour;
 gear_l = cycle(clamp(f * 1.49, 82, 1140)) * 0.045 + cycle(clamp(f * 2.23, 124, 1710)) * 0.026;
 gear_r = cycle(clamp(f * 1.53, 84, 1160)) * 0.045 + cycle(clamp(f * 2.29, 126, 1750)) * 0.026;
 coherent_low = cycle(f) * (0.58 + body * 0.18);
 h2 = cycle(clamp(f * 2, 110, 1520)) * (0.08 + body * 0.05);
 h3_l = cycle(clamp(f * 3.03, 165, 2320)) * (0.035 + texture * 0.055);
 h3_r = cycle(clamp(f * 2.97, 165, 2260)) * (0.035 + texture * 0.055);
-inverter_l = cycle(clamp(f * (2.81 + brightness), 150, 4400)) * (0.08 + electrical_detail * 0.16) * tone_t;
-inverter_r = cycle(clamp(f * (2.93 + brightness), 155, 4600)) * (0.08 + electrical_detail * 0.16) * tone_t;
+inverter_l = cycle(clamp(f * (2.65 + brightness + aggression * 0.64), 150, 4400)) * (0.08 + electrical_detail * 0.16) * tone_t;
+inverter_r = cycle(clamp(f * (2.77 + brightness + aggression * 0.64), 155, 4600)) * (0.08 + electrical_detail * 0.16) * tone_t;
 air_l = (cycle(clamp(f * 5.37, 300, 7800)) + cycle(clamp(f * 7.11, 420, 11200)) * 0.55) * air_detail * 0.035 * tone_t;
 air_r = (cycle(clamp(f * 5.61, 320, 8100)) + cycle(clamp(f * 6.83, 400, 10800)) * 0.55) * air_detail * 0.035 * tone_t;
 shared = (coherent_low + torque_ripple + h2) * body_t;
-side_l = h3_l * (0.82 + t * 0.18) + gear_l * gear_mesh_level * (0.76 + t * 0.24) + inverter_l + air_l;
-side_r = h3_r * (0.82 + t * 0.18) + gear_r * gear_mesh_level * (0.76 + t * 0.24) + inverter_r + air_r;
+side_l = (h3_l * (0.82 + t * 0.18) + gear_l * gear_mesh_level * (0.76 + t * 0.24)) * aggression_colour + (inverter_l + air_l) * aggression_air;
+side_r = (h3_r * (0.82 + t * 0.18) + gear_r * gear_mesh_level * (0.76 + t * 0.24)) * aggression_colour + (inverter_r + air_r) * aggression_air;
 left_drive = (shared + side_l * (0.45 + stereo_width * 0.55)) * electrical_motion * a;
 right_drive = (shared + side_r * (0.45 + stereo_width * 0.55)) * electrical_motion * a;
 sat_drive = 1 + saturation * 0.85;
@@ -6084,10 +6312,11 @@ manifold_l = cycle(clamp(fire * 0.38, 32, 980)) * (0.022 + l * 0.026) * (0.68 + 
 manifold_r = cycle(clamp(fire * 0.405, 34, 1030)) * (0.022 + l * 0.026) * (0.68 + idle_weight * 0.32);
 manifold = (manifold_l + manifold_r) * 0.5;
 shared_low = cycle(clamp(fire * 0.5, 24, 460)) * (0.075 + body * 0.060) * (1-speedmix*0.50) + idle_body;
-orders_l = cycle(fire) * 0.18 + cycle(clamp(fire * 1.5, 45, 1800)) * 0.072 + cycle(clamp(fire * 2.5, 65, 5200)) * (0.065 + texture * 0.070);
-orders_r = cycle(fire) * 0.17 + cycle(clamp(fire * 1.5, 45, 1800)) * 0.076 + cycle(clamp(fire * 2.5, 65, 5200)) * (0.061 + texture * 0.074);
-bright_l = (cycle(clamp(fire * 3.17, 90, 7200)) * 0.055 + cycle(clamp(fire * 5.13, 140, 11800)) * 0.032) * air_detail * (0.35 + speedmix * 0.65) * tone_t;
-bright_r = (cycle(clamp(fire * 3.31, 95, 7500)) * 0.055 + cycle(clamp(fire * 4.87, 135, 11500)) * 0.032) * air_detail * (0.35 + speedmix * 0.65) * tone_t;
+brightness_colour = 0.25 + brightness * 1.13636;
+orders_l = cycle(fire) * 0.18 + cycle(clamp(fire * 1.5, 45, 1800)) * 0.072 * (0.65 + brightness * 0.53) + cycle(clamp(fire * 2.5, 65, 5200)) * (0.025 + texture * 0.070 + brightness * 0.060);
+orders_r = cycle(fire) * 0.17 + cycle(clamp(fire * 1.5, 45, 1800)) * 0.076 * (0.65 + brightness * 0.53) + cycle(clamp(fire * 2.5, 65, 5200)) * (0.021 + texture * 0.074 + brightness * 0.060);
+bright_l = (cycle(clamp(fire * 3.17, 90, 7200)) * 0.055 + cycle(clamp(fire * 5.13, 140, 11800)) * 0.032) * air_detail * (0.35 + speedmix * 0.65) * tone_t * brightness_colour;
+bright_r = (cycle(clamp(fire * 3.31, 95, 7500)) * 0.055 + cycle(clamp(fire * 4.87, 135, 11500)) * 0.032) * air_detail * (0.35 + speedmix * 0.65) * tone_t * brightness_colour;
 intake_l = cycle(clamp(fire * 1.23, 45, 2700)) * intake_detail * (0.020 + t * 0.030 + accel_drive * 0.038);
 intake_r = cycle(clamp(fire * 1.29, 45, 2800)) * intake_detail * (0.020 + t * 0.030 + accel_drive * 0.038);
 exhaust_l = cycle(clamp(fire * 0.67, 32, 1500)) * exhaust_detail * (t * 0.030 + accel_drive * 0.032 + decel_drive * 0.032);
