@@ -250,7 +250,7 @@
           "saved_attribute_attributes": {
             "valueof": {
               "parameter_initial": [
-                0.0
+                -9.0
               ],
               "parameter_initial_enable": 1,
               "parameter_longname": "pop_global_pitch_semitones",
@@ -260,7 +260,7 @@
               "parameter_type": 0
             }
           },
-          "value": 0.0,
+          "value": -9.0,
           "varname": "pop_global_pitch_semitones"
         }
       },
@@ -319,7 +319,7 @@
           "saved_attribute_attributes": {
             "valueof": {
               "parameter_initial": [
-                1.0
+                1.16
               ],
               "parameter_initial_enable": 1,
               "parameter_longname": "pop_core_presence",
@@ -329,7 +329,7 @@
               "parameter_type": 0
             }
           },
-          "value": 1.0,
+          "value": 1.16,
           "varname": "pop_core_presence"
         }
       },
@@ -388,7 +388,7 @@
           "saved_attribute_attributes": {
             "valueof": {
               "parameter_initial": [
-                1.0
+                0.8
               ],
               "parameter_initial_enable": 1,
               "parameter_longname": "pop_body_tune",
@@ -398,7 +398,7 @@
               "parameter_type": 0
             }
           },
-          "value": 1.0,
+          "value": 0.8,
           "varname": "pop_body_tune"
         }
       },
@@ -457,7 +457,7 @@
           "saved_attribute_attributes": {
             "valueof": {
               "parameter_initial": [
-                1.0
+                0.58
               ],
               "parameter_initial_enable": 1,
               "parameter_longname": "pop_crack_tune",
@@ -467,7 +467,7 @@
               "parameter_type": 0
             }
           },
-          "value": 1.0,
+          "value": 0.58,
           "varname": "pop_crack_tune"
         }
       },
@@ -526,7 +526,7 @@
           "saved_attribute_attributes": {
             "valueof": {
               "parameter_initial": [
-                1.0
+                1.55
               ],
               "parameter_initial_enable": 1,
               "parameter_longname": "pop_decay_scale",
@@ -536,7 +536,7 @@
               "parameter_type": 0
             }
           },
-          "value": 1.0,
+          "value": 1.55,
           "varname": "pop_decay_scale"
         }
       },
@@ -595,7 +595,7 @@
           "saved_attribute_attributes": {
             "valueof": {
               "parameter_initial": [
-                0.32
+                0.82
               ],
               "parameter_initial_enable": 1,
               "parameter_longname": "pop_low_pressure_level",
@@ -605,7 +605,7 @@
               "parameter_type": 0
             }
           },
-          "value": 0.32,
+          "value": 0.82,
           "varname": "pop_low_pressure_level"
         }
       },
@@ -664,7 +664,7 @@
           "saved_attribute_attributes": {
             "valueof": {
               "parameter_initial": [
-                1.0
+                1.26
               ],
               "parameter_initial_enable": 1,
               "parameter_longname": "pop_body_level",
@@ -674,7 +674,7 @@
               "parameter_type": 0
             }
           },
-          "value": 1.0,
+          "value": 1.26,
           "varname": "pop_body_level"
         }
       },
@@ -733,7 +733,7 @@
           "saved_attribute_attributes": {
             "valueof": {
               "parameter_initial": [
-                1.0
+                0.24
               ],
               "parameter_initial_enable": 1,
               "parameter_longname": "pop_crack_level",
@@ -743,7 +743,7 @@
               "parameter_type": 0
             }
           },
-          "value": 1.0,
+          "value": 0.24,
           "varname": "pop_crack_level"
         }
       },
@@ -23475,7 +23475,7 @@
             65.0,
             22.0
           ],
-          "text": "*~ 0.58"
+          "text": "*~ 0.28"
         }
       },
       {
@@ -23493,7 +23493,7 @@
             72.0,
             22.0
           ],
-          "text": "*~ 0.2"
+          "text": "*~ 0.08"
         }
       },
       {

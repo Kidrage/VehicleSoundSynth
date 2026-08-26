@@ -568,6 +568,35 @@ console.log(JSON.stringify(speeds));
         self.assertIn("patchers/manual_input.maxpat", project["contents"]["patchers"])
         self.assertIn("code/manual_input.js", project["contents"]["code"])
 
+    def test_keyboard_enable_drives_gate_control_while_key_state_is_gate_data(self):
+        keyboard = json.loads(
+            (ROOT / "patchers" / "keyboard_drive_ws.maxpat").read_text()
+        )["patcher"]
+        boxes = {item["box"]["id"]: item["box"] for item in keyboard["boxes"]}
+        inlet_id = next(
+            box_id for box_id, box in boxes.items()
+            if box.get("maxclass") == "inlet"
+        )
+        gate_ids = {
+            box_id for box_id, box in boxes.items()
+            if box.get("text") == "gate 1"
+        }
+        cords = {
+            (line["patchline"]["source"][0], line["patchline"]["destination"][0], line["patchline"]["destination"][1])
+            for line in keyboard["lines"]
+        }
+        self.assertEqual(2, len(gate_ids))
+        for gate_id in gate_ids:
+            self.assertIn((inlet_id, gate_id, 1), cords)
+            self.assertNotIn((inlet_id, gate_id, 0), cords)
+            self.assertTrue(
+                any(
+                    source != inlet_id and destination == gate_id and inlet_index == 0
+                    for source, destination, inlet_index in cords
+                ),
+                "W/S key state must enter gate's data inlet",
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

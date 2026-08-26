@@ -297,8 +297,11 @@ pressure core from 0.25 to 1.5 with unity at 1; Body/Crack Tune, Decay, Low
 Pressure, Body Level and Crack Level expose the remaining core tone balance.
 The top number controls are authoritative. `Pressure_Mixer` adds dependable
 BEAP colour, while native MMF/AD/VCA icons may be subtle under Max 8.6.5's short
-external gates and should not be used as a chain-health test. For a lower Pop
-start with Global Pitch around -4 to -8, then reduce Crack Tune or Crack Level. Burst count,
+external gates and should not be used as a chain-health test. The shipped
+V10/V12 defaults use Global Pitch `-7` / `-9`, strong Low Pressure/Body, and a
+restrained Crack Level so the result reads as an exhaust-pressure explosion
+rather than a snare. For an even lower Pop, make Global Pitch more negative,
+then reduce Crack Tune or Crack Level. Burst count,
 spacing and per-hit pitch contour remain physical logic in
 `code/backfire_burst.js`; reflection timing remains generated plumbing. Do not
 edit generated `*_backfire_host~.maxpat` JSON. Save the Pop Designer patcher
@@ -307,6 +310,11 @@ balance. The Soundscape,
 start and backfire BEAP `.maxpat` files are
 seed-once user-owned files: edit and save them directly in Max, and project
 regeneration will preserve your tuning.
+
+Keyboard Manual uses binary pedals: W sends full `throttle 1` while held and S
+sends the fixed service-brake command. The `keyboard_drive_ws` adapter owns the
+key-state gates; `manual_input` only selects Keyboard versus Gamepad and forwards
+normalized pedals into the existing 20 ms drive integration.
 
 ## Persistent vehicle-bus EQ
 

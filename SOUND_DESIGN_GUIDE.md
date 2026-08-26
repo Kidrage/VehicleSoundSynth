@@ -64,9 +64,10 @@ number controls at the top always affect the actual output.
 
 The `HOST CORE CONTROLS` panel is the quickest complete tuning surface:
 
-- `Global Pitch (semitones)` tunes both BEAP and Core. Use `-4` to `-8` for a
-  lower, heavier Pop; this is the main control when changing BEAP pitch appears
-  not to move the dominant sound.
+- `Global Pitch (semitones)` tunes both BEAP and Core. The shipped V10/V12
+  defaults are `-7` / `-9`; move farther negative for an even lower boom. This
+  is the main control when changing a BEAP oscillator alone appears not to move
+  the dominant sound.
 - `Core Presence` scales the guaranteed pressure core from `0.25` to `1.5`;
   `1` is unity. It deliberately has no zero/silent position.
 - `Body Tune` and `Crack Tune` scale the Core resonant and crack bands without
@@ -82,9 +83,13 @@ chain is working. Save `v10_backfire_beap~` or `v12_backfire_beap~` with Cmd+S
 after tuning; the authoritative number values and BEAP module state reload
 together.
 
-For tone work, set Global Pitch and the Core Body/Crack balance first, then
-adjust Core Presence and the BEAP Pressure Mixer. Treat native MMF/AD edits as
-optional colour experiments. Audition low, default and high runtime Intensity.
+The shipped balance deliberately favors an explosion-like pressure body:
+V10/V12 Low Pressure are `0.72` / `0.82`, Body Level `1.22` / `1.26`, and Crack
+Level only `0.30` / `0.24`. For tone work, set Global Pitch and the Core
+Body/Crack balance first, then adjust Core Presence and the BEAP Pressure Mixer.
+Raising Crack Tune or Crack Level moves back toward a short snare-like shell;
+lowering them exposes more chamber boom. Treat native MMF/AD edits as optional
+colour experiments. Audition low, default and high runtime Intensity.
 Intensity morphs from a compact pressure
 release through filtered crack to brighter colour and a second tail, rather
 than merely scaling the same waveform. Use transient dB last for whole-stem

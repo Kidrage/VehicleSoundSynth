@@ -205,6 +205,12 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
             self.assertIn(expected_gain, host_text)
             self.assertIn("*~ 4.2", host_text)
             self.assertIn("onepole~", host_text)
+            self.assertIn("*~ 58" if profile == "v10" else "*~ 44", host_text)
+            self.assertIn(
+                "onepole~ 14" if profile == "v10" else "onepole~ 11",
+                host_text,
+            )
+            self.assertNotIn("*~ 115" if profile == "v10" else "*~ 92", host_text)
 
     def test_pop_designer_controls_the_live_beap_and_dominant_pressure_core(self):
         control_varnames = {
@@ -244,15 +250,27 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
             }
             self.assertTrue(control_varnames.issubset(varnames))
             expected_initials = {
-                "pop_global_pitch_semitones": 0.0,
-                "pop_core_presence": 1.0,
-                "pop_body_tune": 1.0,
-                "pop_crack_tune": 1.0,
-                "pop_decay_scale": 1.0,
-                "pop_low_pressure_level": 0.32,
-                "pop_body_level": 1.0,
-                "pop_crack_level": 1.0,
-            }
+                "v10": {
+                    "pop_global_pitch_semitones": -7.0,
+                    "pop_core_presence": 1.12,
+                    "pop_body_tune": 0.82,
+                    "pop_crack_tune": 0.62,
+                    "pop_decay_scale": 1.45,
+                    "pop_low_pressure_level": 0.72,
+                    "pop_body_level": 1.22,
+                    "pop_crack_level": 0.30,
+                },
+                "v12": {
+                    "pop_global_pitch_semitones": -9.0,
+                    "pop_core_presence": 1.16,
+                    "pop_body_tune": 0.80,
+                    "pop_crack_tune": 0.58,
+                    "pop_decay_scale": 1.55,
+                    "pop_low_pressure_level": 0.82,
+                    "pop_body_level": 1.26,
+                    "pop_crack_level": 0.24,
+                },
+            }[profile]
             for item in beap["boxes"]:
                 box = item["box"]
                 if box.get("varname") not in expected_initials:
@@ -308,11 +326,12 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
                 self.assertIn(f"s {profile}.pop.{control_name}", beap_text)
                 self.assertIn(f"r {profile}.pop.{control_name}", host_text)
             for default_text in (
-                "loadmess 0.", "loadmess 1.", "loadmess 0.32",
+                "loadmess -7" if profile == "v10" else "loadmess -9",
+                "loadmess 0.72" if profile == "v10" else "loadmess 0.82",
+                "loadmess 0.3" if profile == "v10" else "loadmess 0.24",
             ):
                 self.assertIn(default_text, host_text)
-            self.assertIn("line 0.32", host_text)
-            self.assertGreaterEqual(host_text.count("line 1."), 3)
+            self.assertIn("line 0.72" if profile == "v10" else "line 0.82", host_text)
             self.assertGreaterEqual(host_text.count("*~ 1."), 6)
             for token in (
                 "pow(2.,($f1+$f2)/12.)",

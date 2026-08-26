@@ -159,6 +159,32 @@ PROFILE_CONFIG = {
     },
 }
 
+# Editable Pop Designer defaults.  Keep these in one authority because the
+# seed-once BEAP panel and its generated audible host both need the same values
+# during Max's abstraction-load window.
+POP_TUNING_DEFAULTS = {
+    "v10": {
+        "global_pitch_semitones": -7.0,
+        "core_presence": 1.12,
+        "body_tune": 0.82,
+        "crack_tune": 0.62,
+        "decay_scale": 1.45,
+        "low_pressure_level": 0.72,
+        "body_level": 1.22,
+        "crack_level": 0.30,
+    },
+    "v12": {
+        "global_pitch_semitones": -9.0,
+        "core_presence": 1.16,
+        "body_tune": 0.80,
+        "crack_tune": 0.58,
+        "decay_scale": 1.55,
+        "low_pressure_level": 0.82,
+        "body_level": 1.26,
+        "crack_level": 0.24,
+    },
+}
+
 DNA_PARAMETER_SPECS = {
     "ev": (
         ("aggression", "Aggression", 0.0, 1.0),
@@ -1187,15 +1213,16 @@ def make_ice_backfire_beap(profile: str) -> dict[str, Any]:
     tuning_load = p.new("loadbang", 2450, 15, 60, numinlets=1, numoutlets=1)
     tuning_emit = p.new("delay 50", 2450, 45, 65, numinlets=2, numoutlets=1)
     p.connect(tuning_load, tuning_emit)
+    defaults = POP_TUNING_DEFAULTS[profile]
     tuning_specs = (
-        ("Global Pitch (semitones)", "pop_global_pitch_semitones", 0.0, -18.0, 6.0),
-        ("Core Presence", "pop_core_presence", 1.0, 0.25, 1.5),
-        ("Body Tune", "pop_body_tune", 1.0, 0.5, 1.5),
-        ("Crack Tune", "pop_crack_tune", 1.0, 0.5, 1.5),
-        ("Decay Scale", "pop_decay_scale", 1.0, 0.5, 2.0),
-        ("Low Pressure Level", "pop_low_pressure_level", 0.32, 0.0, 1.0),
-        ("Core Body Level", "pop_body_level", 1.0, 0.0, 1.5),
-        ("Core Crack Level", "pop_crack_level", 1.0, 0.0, 1.5),
+        ("Global Pitch (semitones)", "pop_global_pitch_semitones", defaults["global_pitch_semitones"], -18.0, 6.0),
+        ("Core Presence", "pop_core_presence", defaults["core_presence"], 0.25, 1.5),
+        ("Body Tune", "pop_body_tune", defaults["body_tune"], 0.5, 1.5),
+        ("Crack Tune", "pop_crack_tune", defaults["crack_tune"], 0.5, 1.5),
+        ("Decay Scale", "pop_decay_scale", defaults["decay_scale"], 0.5, 2.0),
+        ("Low Pressure Level", "pop_low_pressure_level", defaults["low_pressure_level"], 0.0, 1.0),
+        ("Core Body Level", "pop_body_level", defaults["body_level"], 0.0, 1.5),
+        ("Core Crack Level", "pop_crack_level", defaults["crack_level"], 0.0, 1.5),
     )
     tuning_sources = []
     for index, (label, varname, default, low, high) in enumerate(tuning_specs):
@@ -1307,9 +1334,12 @@ def make_ice_backfire_beap(profile: str) -> dict[str, Any]:
         },
     )
     crack_vca = add_beap_module(p, "Level/bp.VCA.maxpat", 775, 495, "Crack_VCA")
-    crack_env_amount = p.new("*~ 0.58", 595, 710, 65, numinlets=2, numoutlets=1)
+    crack_env_amount = p.new(
+        f"*~ {0.34 if profile == 'v10' else 0.28:g}",
+        595, 710, 65, numinlets=2, numoutlets=1,
+    )
     crack_gate_trim = p.new(
-        f"*~ {0.24 if profile == 'v10' else 0.20:g}",
+        f"*~ {0.10 if profile == 'v10' else 0.08:g}",
         675, 750, 72, numinlets=2, numoutlets=1,
     )
     crack_compat_filter = p.new(
@@ -1661,16 +1691,21 @@ def make_ice_backfire_host(profile: str) -> dict[str, Any]:
     # child emits its saved values after 50 ms and therefore remains
     # authoritative; these values only cover Max's abstraction-load window (or
     # a damaged user patch whose message outlets no longer emit).
+    defaults = POP_TUNING_DEFAULTS[profile]
     for index, (destination, default) in enumerate(
         (
-            (global_pitch, "0."), (core_presence, "1."),
-            (body_tune, "1."), (crack_tune, "1."),
-            (decay_scale, "1."), (low_pressure_level, "0.32"),
-            (body_level, "1."), (crack_level, "1."),
+            (global_pitch, defaults["global_pitch_semitones"]),
+            (core_presence, defaults["core_presence"]),
+            (body_tune, defaults["body_tune"]),
+            (crack_tune, defaults["crack_tune"]),
+            (decay_scale, defaults["decay_scale"]),
+            (low_pressure_level, defaults["low_pressure_level"]),
+            (body_level, defaults["body_level"]),
+            (crack_level, defaults["crack_level"]),
         )
     ):
         host_default = p.new(
-            f"loadmess {default}", 35 + index * 92, 420, 85,
+            f"loadmess {default:g}", 35 + index * 92, 420, 85,
             numinlets=1, numoutlets=1,
         )
         p.connect(host_default, destination)
@@ -1710,11 +1745,11 @@ def make_ice_backfire_host(profile: str) -> dict[str, Any]:
     )
     body_env = p.new("clip~ 0. 1.", 345, 445, 85, numinlets=3, numoutlets=1)
     crack_impulse = p.new(
-        f"*~ {115 if profile == 'v10' else 92}", 160, 480, 65,
+        f"*~ {58 if profile == 'v10' else 44}", 160, 480, 65,
         numinlets=2, numoutlets=1,
     )
     crack_decay = p.new(
-        f"onepole~ {24 if profile == 'v10' else 18}", 235, 480, 90,
+        f"onepole~ {14 if profile == 'v10' else 11}", 235, 480, 90,
         numinlets=2, numoutlets=1,
     )
     body_decay_map = p.new(
@@ -1722,7 +1757,7 @@ def make_ice_backfire_host(profile: str) -> dict[str, Any]:
         245, 520, 185, numinlets=1, numoutlets=1,
     )
     crack_decay_map = p.new(
-        f"expr {24 if profile == 'v10' else 18:g}/max(0.5,$f1)",
+        f"expr {14 if profile == 'v10' else 11:g}/max(0.5,$f1)",
         245, 550, 185, numinlets=1, numoutlets=1,
     )
     p.connect(decay_scale, body_decay_map)
@@ -1812,10 +1847,18 @@ def make_ice_backfire_host(profile: str) -> dict[str, Any]:
     # A signal-rate line~ does not advance while the probe/runtime DSP is
     # stopped. Message-rate line keeps saved controls deterministic and feeds
     # float gains that persist across DSP restarts without loading Pop silent.
-    low_level_line = smoothed_control(low_pressure_level, 835, 545, 0.32)
-    body_level_line = smoothed_control(body_level, 970, 545, 1.0)
-    crack_level_line = smoothed_control(crack_level, 1105, 545, 1.0)
-    core_presence_line = smoothed_control(core_presence, 1050, 605, 1.0)
+    low_level_line = smoothed_control(
+        low_pressure_level, 835, 545, defaults["low_pressure_level"],
+    )
+    body_level_line = smoothed_control(
+        body_level, 970, 545, defaults["body_level"],
+    )
+    crack_level_line = smoothed_control(
+        crack_level, 1105, 545, defaults["crack_level"],
+    )
+    core_presence_line = smoothed_control(
+        core_presence, 1050, 605, defaults["core_presence"],
+    )
     p.connect(main_click, body_impulse)
     p.connect(body_impulse, body_decay)
     p.connect(body_decay, body_env)
@@ -5538,16 +5581,17 @@ def make_keyboard_drive_ws() -> dict[str, Any]:
     for outlet_index in (2, 3):
         p.connect(down_select, s_pressed, outlet_index)
         p.connect(up_select, s_released, outlet_index)
-    p.connect(manual, w_gate, 0, 0)
-    p.connect(manual, s_gate, 0, 0)
+    # Max gate: left inlet carries data, right inlet selects open/closed.
+    p.connect(manual, w_gate, 0, 1)
+    p.connect(manual, s_gate, 0, 1)
     p.connect(manual, manual_off)
     p.connect(default_off, w_gate, 0, 0)
     p.connect(default_off, s_gate, 0, 0)
     p.connect(default_off, manual_off)
-    p.connect(w_pressed, w_gate, 0, 1)
-    p.connect(w_released, w_gate, 0, 1)
-    p.connect(s_pressed, s_gate, 0, 1)
-    p.connect(s_released, s_gate, 0, 1)
+    p.connect(w_pressed, w_gate, 0, 0)
+    p.connect(w_released, w_gate, 0, 0)
+    p.connect(s_pressed, s_gate, 0, 0)
+    p.connect(s_released, s_gate, 0, 0)
     p.connect(manual_off, disable_order, 0)
     p.connect(disable_order, reset_key_state, 1)
     p.connect(reset_key_state, w_change)
