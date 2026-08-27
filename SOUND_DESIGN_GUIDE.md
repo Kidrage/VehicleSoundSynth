@@ -32,6 +32,11 @@ values for the next launch.
 | `patchers/engine_start_beap~.maxpat` | Cinematic start effect | Seed-once |
 | `patchers/v10_backfire_beap~.maxpat`, `v12_backfire_beap~.maxpat` | Physical pressure-release voices | Seed-once |
 
+`patchers/module_mixer.maxpat` is generated routing/UI, not a synthesis patch.
+Use its seven main-page faders to balance Sound DNA, Start, Pop/Event,
+Soundscape, Road/Air, Cabin Rumble and Master. The values themselves are
+human-owned per-profile state in ignored `presets/local/*_module_mixer.json`.
+
 `patchers/{profile}_powertrain~.maxpat`, the matching `gen/*.gendsp`, the
 Soundscape hosts, cabin, road, transient and `mix_master~` are generated bridge
 or safety modules. Edit `tools/build_project.py` and regenerate when those
@@ -65,7 +70,7 @@ number controls at the top always affect the actual output.
 The `HOST CORE CONTROLS` panel is the quickest complete tuning surface:
 
 - `Global Pitch (semitones)` tunes both BEAP and Core. The shipped V10/V12
-  defaults are `-7` / `-9`; move farther negative for an even lower boom. This
+  defaults are `-5` / `-6`; move farther negative for an even lower boom. This
   is the main control when changing a BEAP oscillator alone appears not to move
   the dominant sound.
 - `Core Presence` scales the guaranteed pressure core from `0.25` to `1.5`;
@@ -83,9 +88,11 @@ chain is working. Save `v10_backfire_beap~` or `v12_backfire_beap~` with Cmd+S
 after tuning; the authoritative number values and BEAP module state reload
 together.
 
-The shipped balance deliberately favors an explosion-like pressure body:
-V10/V12 Low Pressure are `0.72` / `0.82`, Body Level `1.22` / `1.26`, and Crack
-Level only `0.30` / `0.24`. For tone work, set Global Pitch and the Core
+The shipped balance deliberately favors a short kick-like pressure body:
+V10/V12 Low Pressure are both `1.0`, Body Level `1.30` / `1.35`, Crack
+Level only `0.008` / `0.006`, and Decay Scale `0.75` / `0.62`. A generated
+600 / 520 Hz output air ceiling suppresses the former snare-like top without
+removing the editable Crack layer. For tone work, set Global Pitch and the Core
 Body/Crack balance first, then adjust Core Presence and the BEAP Pressure Mixer.
 Raising Crack Tune or Crack Level moves back toward a short snare-like shell;
 lowering them exposes more chamber boom. Treat native MMF/AD edits as optional
@@ -95,6 +102,11 @@ release through filtered crack to brighter colour and a second tail, rather
 than merely scaling the same waveform. Use transient dB last for whole-stem
 balance. Change `tools/build_project.py` only when the physical event, reflection
 timing, host plumbing, compatibility layer, or safety contract must change.
+
+For one repeatable hit, click `Audition One Hit` at the top of the active Pop
+Designer. `Test Pop` remains the randomized 1--5-hit burst. After the timbre is
+correct, use the main-page `Pop / Event` fader for total level; that fader is
+post-voice and therefore does not change pitch, decay or Crack/Body balance.
 
 To hear the voice alone, enable Audio, turn on `Backfire Solo`, and press
 `Test Pop`; this randomized burst audition works even with the engine off. In

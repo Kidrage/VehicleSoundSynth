@@ -97,6 +97,7 @@ MACRO_NAMES = (
     "structure_vibration",
     "cabin_ir_mix",
     "powertrain_level_db",
+    "start_level_db",
     "transient_level_db",
     "road_level_db",
     "rumble_level_db",
@@ -164,25 +165,33 @@ PROFILE_CONFIG = {
 # during Max's abstraction-load window.
 POP_TUNING_DEFAULTS = {
     "v10": {
-        "global_pitch_semitones": -7.0,
-        "core_presence": 1.12,
-        "body_tune": 0.82,
-        "crack_tune": 0.62,
-        "decay_scale": 1.45,
-        "low_pressure_level": 0.72,
-        "body_level": 1.22,
-        "crack_level": 0.30,
+        "global_pitch_semitones": -5.0,
+        "impact_drop_octaves": 0.85,
+        "core_presence": 1.10,
+        "body_tune": 1.0,
+        "crack_tune": 1.0,
+        "decay_scale": 0.75,
+        "low_pressure_level": 1.0,
+        "body_level": 1.30,
+        "crack_level": 0.008,
     },
     "v12": {
-        "global_pitch_semitones": -9.0,
-        "core_presence": 1.16,
-        "body_tune": 0.80,
-        "crack_tune": 0.58,
-        "decay_scale": 1.55,
-        "low_pressure_level": 0.82,
-        "body_level": 1.26,
-        "crack_level": 0.24,
+        "global_pitch_semitones": -6.0,
+        "impact_drop_octaves": 0.75,
+        "core_presence": 1.15,
+        "body_tune": 1.0,
+        "crack_tune": 1.0,
+        "decay_scale": 0.62,
+        "low_pressure_level": 1.0,
+        "body_level": 1.35,
+        "crack_level": 0.006,
     },
+}
+
+MODULE_MIX_DEFAULTS = {
+    "ev": (-2.0, -8.0, -9.0, -14.0, -14.0, -60.0, -8.0),
+    "v10": (-3.0, -5.0, -7.0, -14.0, -16.0, -4.0, -8.0),
+    "v12": (-3.0, -5.0, -8.0, -15.0, -16.0, -5.0, -8.0),
 }
 
 DNA_PARAMETER_SPECS = {
@@ -1216,6 +1225,7 @@ def make_ice_backfire_beap(profile: str) -> dict[str, Any]:
     defaults = POP_TUNING_DEFAULTS[profile]
     tuning_specs = (
         ("Global Pitch (semitones)", "pop_global_pitch_semitones", defaults["global_pitch_semitones"], -18.0, 6.0),
+        ("Impact Drop (octaves)", "pop_impact_drop_octaves", defaults["impact_drop_octaves"], 0.0, 1.5),
         ("Core Presence", "pop_core_presence", defaults["core_presence"], 0.25, 1.5),
         ("Body Tune", "pop_body_tune", defaults["body_tune"], 0.5, 1.5),
         ("Crack Tune", "pop_crack_tune", defaults["crack_tune"], 0.5, 1.5),
@@ -1255,6 +1265,16 @@ def make_ice_backfire_beap(profile: str) -> dict[str, Any]:
         p.connect(value, bounded)
         tuning_sources.append((bounded, varname.removeprefix("pop_")))
     tuning_by_name = {name: source for source, name in tuning_sources}
+    p.comment("Audition One Hit", 2070, 585, 125)
+    audition_one = p.add(
+        "button", None, 2200, 585, 24, 24,
+        numinlets=1, numoutlets=1, varname="pop_audition_one_hit",
+    )
+    audition_send = p.new(
+        f"s {profile}.pop.audition_one_hit", 2235, 585, 190,
+        numinlets=1, numoutlets=0,
+    )
+    p.connect(audition_one, audition_send)
 
     p.comment("PRESSURE BODY — low exhaust pressure and chamber bloom", 25, 110, 620)
     p.comment(
@@ -1269,15 +1289,15 @@ def make_ice_backfire_beap(profile: str) -> dict[str, Any]:
     mixer = add_beap_module(
         p, "Mixers/bp.Audio Mixer.maxpat", 625, 145, "Pressure_Mixer",
         initial={
-            "in1": -6 if profile == "v10" else -7,
-            "in2": -20 if profile == "v10" else -18,
+            "in1": -20 if profile == "v10" else -22,
+            "in2": -4 if profile == "v10" else -5,
         },
     )
     body_filter = add_beap_module(
         p, "Filter/bp.MMF.maxpat", 845, 145, "Pressure_Body",
         initial={
-            "Freq": 390 if profile == "v10" else 285,
-            "Res": 10 if profile == "v10" else 8,
+            "Freq": 180 if profile == "v10" else 150,
+            "Res": 6,
             "FilterType": 0,
             "power[1]": 1,
         },
@@ -1286,7 +1306,7 @@ def make_ice_backfire_beap(profile: str) -> dict[str, Any]:
         p, "Envelope/bp.AD.maxpat", 1120, 145, "Pressure_AD",
         initial={
             "Attack": 2 if profile == "v10" else 5,
-            "Decay": 220 if profile == "v10" else 310,
+            "Decay": 80 if profile == "v10" else 90,
         },
     )
     body_vca = add_beap_module(p, "Level/bp.VCA.maxpat", 1320, 145, "Pressure_VCA")
@@ -1296,19 +1316,19 @@ def make_ice_backfire_beap(profile: str) -> dict[str, Any]:
     # so the visible BEAP tone controls remain authoritative while triggers are
     # deterministic on every supported installation.
     body_gate_trim = p.new(
-        f"*~ {0.75 if profile == 'v10' else 0.85:g}",
+        "*~ 0.95",
         1210, 400, 65, numinlets=2, numoutlets=1,
     )
     body_compat_filter = p.new(
-        f"lores~ {420 if profile == 'v10' else 310} {0.68 if profile == 'v10' else 0.72:g}",
+        f"lores~ {180 if profile == 'v10' else 150} {0.74 if profile == 'v10' else 0.76:g}",
         985, 400, 110, numinlets=3, numoutlets=1,
     )
     body_mode_a = p.new(
-        f"reson~ {5.6 if profile == 'v10' else 6.2:g} {92 if profile == 'v10' else 72} {2.5 if profile == 'v10' else 3.0:g}",
+        f"reson~ {5.6 if profile == 'v10' else 6.0:g} {54 if profile == 'v10' else 48} {2.5 if profile == 'v10' else 2.8:g}",
         985, 435, 130, numinlets=4, numoutlets=1,
     )
     body_mode_b = p.new(
-        f"reson~ {2.6 if profile == 'v10' else 3.1:g} {220 if profile == 'v10' else 160} {1.6 if profile == 'v10' else 1.9:g}",
+        f"reson~ {2.8 if profile == 'v10' else 3.0:g} {120 if profile == 'v10' else 105} {1.6 if profile == 'v10' else 1.8:g}",
         1125, 435, 130, numinlets=4, numoutlets=1,
     )
     body_modes = p.new("+~", 1265, 435, 40, numinlets=2, numoutlets=1)
@@ -1320,8 +1340,8 @@ def make_ice_backfire_beap(profile: str) -> dict[str, Any]:
     crack_filter = add_beap_module(
         p, "Filter/bp.MMF.maxpat", 300, 495, "Exhaust_Crack",
         initial={
-            "Freq": 1350 if profile == "v10" else 900,
-            "Res": 6 if profile == "v10" else 4,
+            "Freq": 420 if profile == "v10" else 360,
+            "Res": 2,
             "FilterType": 0,
             "power[1]": 1,
         },
@@ -1329,21 +1349,21 @@ def make_ice_backfire_beap(profile: str) -> dict[str, Any]:
     crack_envelope = add_beap_module(
         p, "Envelope/bp.AD.maxpat", 575, 495, "Crack_AD",
         initial={
-            "Attack": 1 if profile == "v10" else 3,
-            "Decay": 58 if profile == "v10" else 92,
+            "Attack": 1 if profile == "v10" else 2,
+            "Decay": 8 if profile == "v10" else 10,
         },
     )
     crack_vca = add_beap_module(p, "Level/bp.VCA.maxpat", 775, 495, "Crack_VCA")
     crack_env_amount = p.new(
-        f"*~ {0.34 if profile == 'v10' else 0.28:g}",
+        f"*~ {0.05 if profile == 'v10' else 0.04:g}",
         595, 710, 65, numinlets=2, numoutlets=1,
     )
     crack_gate_trim = p.new(
-        f"*~ {0.10 if profile == 'v10' else 0.08:g}",
+        f"*~ {0.012 if profile == 'v10' else 0.01:g}",
         675, 750, 72, numinlets=2, numoutlets=1,
     )
     crack_compat_filter = p.new(
-        f"svf~ {1350 if profile == 'v10' else 900} {0.66 if profile == 'v10' else 0.62:g}",
+        f"svf~ {420 if profile == 'v10' else 360} {0.66 if profile == 'v10' else 0.68:g}",
         545, 750, 115, numinlets=3, numoutlets=4,
     )
     crack_pressure_vca = p.new("*~", 755, 750, 40, numinlets=2, numoutlets=1)
@@ -1353,13 +1373,16 @@ def make_ice_backfire_beap(profile: str) -> dict[str, Any]:
     layer_sum = p.new("+~", 1070, 540, 40, numinlets=2, numoutlets=1)
     drive = p.new("*~ 1.55", 1120, 540, 65, numinlets=2, numoutlets=1)
     soft_clip = p.new("tanh~", 1195, 540, 50, numinlets=1, numoutlets=1)
-    split = p.new("svf~ 180 0.7", 1260, 540, 100, numinlets=3, numoutlets=4)
+    split = p.new(
+        f"svf~ {140 if profile == 'v10' else 120} 0.72",
+        1260, 540, 100, numinlets=3, numoutlets=4,
+    )
     left_air = p.new(
-        f"lores~ {2800 if profile == 'v10' else 2100} 0.58",
+        f"lores~ {650 if profile == 'v10' else 550} 0.62",
         1380, 535, 120, numinlets=3, numoutlets=1,
     )
     right_air = p.new(
-        f"lores~ {3200 if profile == 'v10' else 2400} 0.54",
+        f"lores~ {750 if profile == 'v10' else 650} 0.60",
         1380, 585, 120, numinlets=3, numoutlets=1,
     )
     left_mix = p.new("+~", 1520, 535, 40, numinlets=2, numoutlets=1)
@@ -1385,22 +1408,22 @@ def make_ice_backfire_beap(profile: str) -> dict[str, Any]:
         return frequency
 
     body_compat_frequency = tuned_frequency(
-        420 if profile == "v10" else 310, "body_tune", 1680, 650,
+        180 if profile == "v10" else 150, "body_tune", 1680, 650,
     )
     body_mode_a_frequency = tuned_frequency(
-        92 if profile == "v10" else 72, "body_tune", 1840, 650,
+        54 if profile == "v10" else 48, "body_tune", 1840, 650,
     )
     body_mode_b_frequency = tuned_frequency(
-        220 if profile == "v10" else 160, "body_tune", 2000, 650,
+        120 if profile == "v10" else 105, "body_tune", 2000, 650,
     )
     crack_compat_frequency = tuned_frequency(
-        1350 if profile == "v10" else 900, "crack_tune", 1680, 680,
+        420 if profile == "v10" else 360, "crack_tune", 1680, 680,
     )
     left_air_frequency = tuned_frequency(
-        2800 if profile == "v10" else 2100, "crack_tune", 1840, 680,
+        650 if profile == "v10" else 550, "crack_tune", 1840, 680,
     )
     right_air_frequency = tuned_frequency(
-        3200 if profile == "v10" else 2400, "crack_tune", 2000, 680,
+        750 if profile == "v10" else 650, "crack_tune", 2000, 680,
     )
     # Keep the editable abstraction's public signal seam to stereo audio only.
     # Named profile-local buses carry saved tuning to the audible host without
@@ -1520,21 +1543,40 @@ def make_ice_backfire_host(profile: str) -> dict[str, Any]:
     p.connect(control, router)
     rpm = p.new("clip 0. 10000.", 35, 160, 105, numinlets=3, numoutlets=1)
     rpm_store = p.new("f 1800.", 150, 160, 65, numinlets=2, numoutlets=1)
-    pitch_map = p.new("expr log(max(35.,48.+0.018*$f1)/261.625565)/log(2.)", 35, 205, 370, numinlets=1, numoutlets=1)
+    pitch_map = p.new(
+        (
+            "expr log(min(66.,max(54.,52.+0.002*$f1))/261.625565)/log(2.)"
+            if profile == "v10"
+            else "expr log(min(58.,max(48.,46.5+0.0017*$f1))/261.625565)/log(2.)"
+        ),
+        35, 205, 455, numinlets=1, numoutlets=1,
+    )
     pitch_sum = p.new("+ 0.", 35, 245, 55, numinlets=2, numoutlets=1)
     pitch_offset = p.new(
         "expr ($f1+$f2)/12.", 100, 245, 145,
         numinlets=2, numoutlets=1,
     )
-    pitch_pack = p.new("pack 0. 4", 100, 245, 80, numinlets=2, numoutlets=1)
+    pitch_start_state = p.new("pak 0. 1.", 100, 275, 80, numinlets=2, numoutlets=1)
+    pitch_start_expr = p.new("expr $f1+$f2", 190, 275, 100, numinlets=2, numoutlets=1)
+    pitch_start_store = p.new("f 0.", 300, 275, 45, numinlets=2, numoutlets=1)
+    pitch_sweep_pack = p.new("pack 0. 0.", 355, 275, 85, numinlets=2, numoutlets=1)
+    pitch_sweep_message = p.message(
+        f"$1 0, $2 {45 if profile == 'v10' else 50}",
+        450, 275, 105,
+    )
     pitch_line = p.new("line~", 35, 285, 50, numinlets=2, numoutlets=2)
     p.connect(router, rpm, 0)
     p.connect(rpm, rpm_store, 0, 1)
     p.connect(rpm_store, pitch_map)
     p.connect(pitch_map, pitch_sum, 0, 0)
     p.connect(pitch_offset, pitch_sum, 0, 1)
-    p.connect(pitch_sum, pitch_pack)
-    p.connect(pitch_pack, pitch_line)
+    p.connect(pitch_sum, pitch_start_state, 0, 0)
+    p.connect(pitch_start_state, pitch_start_expr)
+    p.connect(pitch_start_expr, pitch_start_store, 0, 1)
+    p.connect(pitch_sum, pitch_sweep_pack, 0, 1)
+    p.connect(pitch_start_store, pitch_sweep_pack, 0, 0)
+    p.connect(pitch_sweep_pack, pitch_sweep_message)
+    p.connect(pitch_sweep_message, pitch_line)
 
     throttle = p.new("clip 0. 1.", 430, 160, 75, numinlets=3, numoutlets=1)
     p.connect(router, throttle, 1)
@@ -1599,6 +1641,16 @@ def make_ice_backfire_host(profile: str) -> dict[str, Any]:
     p.connect(event_strength, single_hit, 0, 1)
     p.connect(single_event_trigger, single_pitch, 0, 0)
     p.connect(single_pitch, single_hit, 0, 0)
+    audition_receive = p.new(
+        f"r {profile}.pop.audition_one_hit", 610, 315, 190,
+        numinlets=0, numoutlets=1,
+    )
+    audition_order = p.new("t b b", 610, 345, 50, numinlets=1, numoutlets=2)
+    audition_strength = p.message("1.", 665, 345, 30)
+    p.connect(audition_receive, audition_order)
+    p.connect(audition_order, audition_strength, 1)
+    p.connect(audition_strength, event_strength)
+    p.connect(audition_order, single_event_trigger, 0)
 
     p.comment("OVERRUN / TEST POP — 1..5 hit burst", 840, 315, 280)
     hit_order = p.new("t b l", 870, 385, 50, numinlets=1, numoutlets=2)
@@ -1608,7 +1660,7 @@ def make_ice_backfire_host(profile: str) -> dict[str, Any]:
         numinlets=2, numoutlets=1,
     )
     event_trigger = p.new(
-        "t b", 870, 420, 40, numinlets=1, numoutlets=1,
+        "t b b", 870, 420, 50, numinlets=1, numoutlets=2,
         varname="backfire_event_trigger",
     )
     hit_fire_order = p.new("t b b", 820, 420, 50, numinlets=1, numoutlets=2)
@@ -1664,13 +1716,20 @@ def make_ice_backfire_host(profile: str) -> dict[str, Any]:
     p.connect(intensity_map, intensity_pack)
     p.connect(intensity_pack, intensity_line)
 
-    gate_message = p.message(
-        f"5. 0, 0. {185 if profile == 'v10' else 250}",
-        805, 285, 115,
+    gate_decay_map = p.new(
+        f"expr {110 if profile == 'v10' else 125}.*$f1",
+        760, 285, 120, numinlets=1, numoutlets=1,
     )
+    gate_decay_store = p.new(
+        f"f {110 if profile == 'v10' else 125}.",
+        885, 285, 55, numinlets=2, numoutlets=1,
+    )
+    gate_message = p.message("5. 0, 0. $1", 945, 285, 95)
     gate_line = p.new("line~", 805, 345, 50, numinlets=2, numoutlets=2)
-    p.connect(event_trigger, rpm_store)
-    p.connect(event_trigger, gate_message)
+    p.connect(event_trigger, rpm_store, 1)
+    p.connect(event_trigger, pitch_start_store, 0)
+    p.connect(event_trigger, gate_decay_store, 0)
+    p.connect(gate_decay_store, gate_message)
     p.connect(gate_message, gate_line)
     beap = p.new(
         f"{profile}_backfire_beap~", 330, 445, 190,
@@ -1680,13 +1739,14 @@ def make_ice_backfire_host(profile: str) -> dict[str, Any]:
     p.connect(gate_line, beap, 0, 1)
     p.connect(intensity_line, beap, 0, 2)
     global_pitch = p.new("clip -18. 6.", 35, 385, 90, numinlets=3, numoutlets=1)
-    core_presence = p.new("clip 0.25 1.5", 130, 385, 95, numinlets=3, numoutlets=1)
-    body_tune = p.new("clip 0.5 1.5", 210, 385, 90, numinlets=3, numoutlets=1)
-    crack_tune = p.new("clip 0.5 1.5", 305, 385, 90, numinlets=3, numoutlets=1)
-    decay_scale = p.new("clip 0.5 2.", 400, 385, 90, numinlets=3, numoutlets=1)
-    low_pressure_level = p.new("clip 0. 1.", 495, 385, 80, numinlets=3, numoutlets=1)
-    body_level = p.new("clip 0. 1.5", 580, 385, 85, numinlets=3, numoutlets=1)
-    crack_level = p.new("clip 0. 1.5", 670, 385, 85, numinlets=3, numoutlets=1)
+    impact_drop = p.new("clip 0. 1.5", 130, 385, 85, numinlets=3, numoutlets=1)
+    core_presence = p.new("clip 0.25 1.5", 220, 385, 95, numinlets=3, numoutlets=1)
+    body_tune = p.new("clip 0.5 1.5", 320, 385, 90, numinlets=3, numoutlets=1)
+    crack_tune = p.new("clip 0.5 1.5", 415, 385, 90, numinlets=3, numoutlets=1)
+    decay_scale = p.new("clip 0.5 2.", 510, 385, 90, numinlets=3, numoutlets=1)
+    low_pressure_level = p.new("clip 0. 1.", 605, 385, 80, numinlets=3, numoutlets=1)
+    body_level = p.new("clip 0. 1.5", 690, 385, 85, numinlets=3, numoutlets=1)
+    crack_level = p.new("clip 0. 1.5", 780, 385, 85, numinlets=3, numoutlets=1)
     # Parent-side defaults make the host audible immediately. The editable
     # child emits its saved values after 50 ms and therefore remains
     # authoritative; these values only cover Max's abstraction-load window (or
@@ -1695,6 +1755,7 @@ def make_ice_backfire_host(profile: str) -> dict[str, Any]:
     for index, (destination, default) in enumerate(
         (
             (global_pitch, defaults["global_pitch_semitones"]),
+            (impact_drop, defaults["impact_drop_octaves"]),
             (core_presence, defaults["core_presence"]),
             (body_tune, defaults["body_tune"]),
             (crack_tune, defaults["crack_tune"]),
@@ -1712,6 +1773,7 @@ def make_ice_backfire_host(profile: str) -> dict[str, Any]:
     for index, (destination, control_name) in enumerate(
         (
             (global_pitch, "global_pitch_semitones"),
+            (impact_drop, "impact_drop_octaves"),
             (core_presence, "core_presence"),
             (body_tune, "body_tune"), (crack_tune, "crack_tune"),
             (decay_scale, "decay_scale"),
@@ -1726,6 +1788,9 @@ def make_ice_backfire_host(profile: str) -> dict[str, Any]:
         p.connect(control_receive, destination)
     p.connect(global_pitch, pitch_offset, 0, 1)
     p.connect(global_pitch, pitch_ratio, 0, 1)
+    p.connect(impact_drop, pitch_start_state, 0, 1)
+    p.connect(decay_scale, gate_decay_map)
+    p.connect(gate_decay_map, gate_decay_store, 0, 1)
     # BEAP AD/VCA revisions in some Max 8.6.x installs can miss very short
     # external gates. A click-derived control envelope is sample-accurate and
     # excites broadband pressure instead of exposing a naked resonant impulse.
@@ -1736,28 +1801,28 @@ def make_ice_backfire_host(profile: str) -> dict[str, Any]:
     p.connect(pressure_noise, beap, 0, 3)
     main_click = p.new("click~", 100, 445, 50, numinlets=1, numoutlets=1)
     body_impulse = p.new(
-        f"*~ {1120 if profile == 'v10' else 1320}", 160, 445, 75,
+        f"*~ {1280 if profile == 'v10' else 1400}", 160, 445, 75,
         numinlets=2, numoutlets=1,
     )
     body_decay = p.new(
-        f"onepole~ {2.4 if profile == 'v10' else 1.9:g}", 245, 445, 90,
+        f"onepole~ {3.8 if profile == 'v10' else 3.4:g}", 245, 445, 90,
         numinlets=2, numoutlets=1,
     )
     body_env = p.new("clip~ 0. 1.", 345, 445, 85, numinlets=3, numoutlets=1)
     crack_impulse = p.new(
-        f"*~ {58 if profile == 'v10' else 44}", 160, 480, 65,
+        f"*~ {8 if profile == 'v10' else 6}", 160, 480, 65,
         numinlets=2, numoutlets=1,
     )
     crack_decay = p.new(
-        f"onepole~ {14 if profile == 'v10' else 11}", 235, 480, 90,
+        f"onepole~ {28 if profile == 'v10' else 24}", 235, 480, 90,
         numinlets=2, numoutlets=1,
     )
     body_decay_map = p.new(
-        f"expr {2.4 if profile == 'v10' else 1.9:g}/max(0.5,$f1)",
+        f"expr {3.8 if profile == 'v10' else 3.4:g}/max(0.5,$f1)",
         245, 520, 185, numinlets=1, numoutlets=1,
     )
     crack_decay_map = p.new(
-        f"expr {14 if profile == 'v10' else 11:g}/max(0.5,$f1)",
+        f"expr {28 if profile == 'v10' else 24:g}/max(0.5,$f1)",
         245, 550, 185, numinlets=1, numoutlets=1,
     )
     p.connect(decay_scale, body_decay_map)
@@ -1768,56 +1833,56 @@ def make_ice_backfire_host(profile: str) -> dict[str, Any]:
     body_burst = p.new("*~", 440, 445, 40, numinlets=2, numoutlets=1)
     crack_burst = p.new("*~", 440, 480, 40, numinlets=2, numoutlets=1)
     pressure_l = p.new(
-        f"lores~ {560 if profile == 'v10' else 420} {0.68 if profile == 'v10' else 0.72:g}",
+        f"lores~ {180 if profile == 'v10' else 150} {0.74 if profile == 'v10' else 0.76:g}",
         490, 435, 115, numinlets=3, numoutlets=1,
     )
     pressure_r = p.new(
-        f"lores~ {680 if profile == 'v10' else 500} {0.64 if profile == 'v10' else 0.69:g}",
+        f"lores~ {240 if profile == 'v10' else 210} {0.70 if profile == 'v10' else 0.72:g}",
         490, 465, 115, numinlets=3, numoutlets=1,
     )
     crack_l_filter = p.new(
-        f"svf~ {1450 if profile == 'v10' else 1050} {0.58 if profile == 'v10' else 0.60:g}", 615, 435, 110,
+        f"svf~ {420 if profile == 'v10' else 360} {0.66 if profile == 'v10' else 0.68:g}", 615, 435, 110,
         numinlets=3, numoutlets=4,
     )
     crack_r_filter = p.new(
-        f"svf~ {1800 if profile == 'v10' else 1350} {0.55 if profile == 'v10' else 0.57:g}", 615, 475, 110,
+        f"svf~ {520 if profile == 'v10' else 450} {0.64 if profile == 'v10' else 0.66:g}", 615, 475, 110,
         numinlets=3, numoutlets=4,
     )
     pressure_l_frequency = p.new(
-        f"expr {560 if profile == 'v10' else 420}.*$f1*$f2", 490, 400, 150,
+        f"expr {180 if profile == 'v10' else 150}.*$f1*$f2", 490, 400, 150,
         numinlets=2, numoutlets=1,
     )
     pressure_r_frequency = p.new(
-        f"expr {680 if profile == 'v10' else 500}.*$f1*$f2", 645, 400, 150,
+        f"expr {240 if profile == 'v10' else 210}.*$f1*$f2", 645, 400, 150,
         numinlets=2, numoutlets=1,
     )
     crack_l_frequency = p.new(
-        f"expr {1450 if profile == 'v10' else 1050}.*$f1*$f2", 800, 400, 160,
+        f"expr {420 if profile == 'v10' else 360}.*$f1*$f2", 800, 400, 160,
         numinlets=2, numoutlets=1,
     )
     crack_r_frequency = p.new(
-        f"expr {1800 if profile == 'v10' else 1350}.*$f1*$f2", 965, 400, 160,
+        f"expr {520 if profile == 'v10' else 450}.*$f1*$f2", 965, 400, 160,
         numinlets=2, numoutlets=1,
     )
     p.comment("LOW PRESSURE MODES — coherent below 120 Hz", 490, 505, 360)
     low_mode_a = p.new(
-        f"reson~ {5.0 if profile == 'v10' else 5.8:g} {86 if profile == 'v10' else 70} {2.4 if profile == 'v10' else 2.8:g}",
+        f"reson~ {5.6 if profile == 'v10' else 6.0:g} {54 if profile == 'v10' else 48} {2.5 if profile == 'v10' else 2.8:g}",
         615, 505, 130, numinlets=4, numoutlets=1,
     )
     low_mode_b = p.new(
-        f"reson~ {2.3 if profile == 'v10' else 2.7:g} {230 if profile == 'v10' else 170} {1.5 if profile == 'v10' else 1.8:g}",
+        f"reson~ {2.8 if profile == 'v10' else 3.0:g} {120 if profile == 'v10' else 105} {1.6 if profile == 'v10' else 1.8:g}",
         750, 505, 130, numinlets=4, numoutlets=1,
     )
     low_mode_a_frequency = p.new(
-        f"expr {86 if profile == 'v10' else 70}.*$f1*$f2",
+        f"expr {54 if profile == 'v10' else 48}.*$f1*$f2",
         615, 535, 145, numinlets=2, numoutlets=1,
     )
     low_mode_b_frequency = p.new(
-        f"expr {230 if profile == 'v10' else 170}.*$f1*$f2",
+        f"expr {120 if profile == 'v10' else 105}.*$f1*$f2",
         765, 535, 145, numinlets=2, numoutlets=1,
     )
     low_modes = p.new("+~", 885, 505, 40, numinlets=2, numoutlets=1)
-    low_trim = p.new("*~ 0.32", 930, 505, 60, numinlets=2, numoutlets=1)
+    low_trim = p.new("*~ 0.48", 930, 505, 60, numinlets=2, numoutlets=1)
     pressure_body_l = p.new("+~", 735, 425, 40, numinlets=2, numoutlets=1)
     pressure_body_r = p.new("+~", 735, 495, 40, numinlets=2, numoutlets=1)
     pressure_body_gain_l = p.new("*~ 1.", 780, 425, 48, numinlets=2, numoutlets=1)
@@ -1916,11 +1981,11 @@ def make_ice_backfire_host(profile: str) -> dict[str, Any]:
     p.connect(pressure_crack_gain_r, pressure_crack_r, 0, 1)
     p.connect(event_trigger, main_click)
     tail_delay_1 = p.new(
-        f"delay {55 if profile == 'v10' else 75}", 35, 610, 65,
+        f"delay {28 if profile == 'v10' else 32}", 35, 610, 65,
         numinlets=2, numoutlets=1,
     )
     tail_delay_2 = p.new(
-        f"delay {105 if profile == 'v10' else 135}", 35, 640, 70,
+        f"delay {58 if profile == 'v10' else 66}", 35, 640, 70,
         numinlets=2, numoutlets=1,
     )
     tail_depth = p.new(
@@ -1928,11 +1993,11 @@ def make_ice_backfire_host(profile: str) -> dict[str, Any]:
         110, 640, 245, numinlets=1, numoutlets=1,
     )
     tail_level_1_map = p.new(
-        f"expr {(0.24 if profile == 'v10' else 0.22):g}+{(0.12 if profile == 'v10' else 0.10):g}*$f1",
+        f"expr {(0.08 if profile == 'v10' else 0.07):g}+0.03*$f1",
         365, 620, 185, numinlets=1, numoutlets=1,
     )
     tail_level_2_map = p.new(
-        f"expr {(0.10 if profile == 'v10' else 0.08):g}*$f1",
+        f"expr {(0.02 if profile == 'v10' else 0.018):g}*$f1",
         365, 650, 145, numinlets=1, numoutlets=1,
     )
     tail_level_1 = p.new("f 0.", 560, 620, 45, numinlets=2, numoutlets=1)
@@ -1956,17 +2021,25 @@ def make_ice_backfire_host(profile: str) -> dict[str, Any]:
     p.connect(core_mix_l, beap_pressure_l, 0, 1)
     p.connect(beap, beap_pressure_r, 1, 0)
     p.connect(core_mix_r, beap_pressure_r, 0, 1)
-    left_drive = p.new("*~ 4.2", 310, 515, 55, numinlets=2, numoutlets=1)
-    right_drive = p.new("*~ 4.2", 530, 515, 55, numinlets=2, numoutlets=1)
+    left_drive = p.new("*~ 4.8", 310, 515, 55, numinlets=2, numoutlets=1)
+    right_drive = p.new("*~ 4.8", 530, 515, 55, numinlets=2, numoutlets=1)
     left_sat = p.new("tanh~", 370, 515, 50, numinlets=1, numoutlets=1)
     right_sat = p.new("tanh~", 590, 515, 50, numinlets=1, numoutlets=1)
-    left_filter = p.new("svf~ 35 0.7", 310, 545, 95, numinlets=3, numoutlets=4)
-    right_filter = p.new("svf~ 35 0.7", 530, 545, 95, numinlets=3, numoutlets=4)
+    left_filter = p.new("svf~ 28 0.7", 310, 545, 95, numinlets=3, numoutlets=4)
+    right_filter = p.new("svf~ 28 0.7", 530, 545, 95, numinlets=3, numoutlets=4)
+    left_air_ceiling = p.new(
+        f"lores~ {600 if profile == 'v10' else 520} {0.65 if profile == 'v10' else 0.67:g}",
+        310, 575, 110, numinlets=3, numoutlets=1,
+    )
+    right_air_ceiling = p.new(
+        f"lores~ {600 if profile == 'v10' else 520} {0.65 if profile == 'v10' else 0.67:g}",
+        530, 575, 110, numinlets=3, numoutlets=1,
+    )
     output_gain_state = p.new("pak 0.7 1.", 780, 430, 90, numinlets=2, numoutlets=1)
     output_gain_expression = (
-        "expr (0.60+0.85*$f1)*(0.55+0.45*$f2)"
+        "expr 0.68*(0.60+0.85*$f1)*(0.55+0.45*$f2)"
         if profile == "v10"
-        else "expr (0.66+0.94*$f1)*(0.55+0.45*$f2)"
+        else "expr 0.68*(0.66+0.94*$f1)*(0.55+0.45*$f2)"
     )
     output_gain_map = p.new(
         output_gain_expression,
@@ -1979,21 +2052,26 @@ def make_ice_backfire_host(profile: str) -> dict[str, Any]:
     p.connect(output_gain_state, output_gain_map)
     p.connect(output_gain_map, output_gain_pack)
     p.connect(output_gain_pack, output_gain_line)
-    left_gain = p.new("*~", 310, 575, 40, numinlets=2, numoutlets=1)
-    right_gain = p.new("*~", 530, 575, 40, numinlets=2, numoutlets=1)
-    stem_level = add_db_gain_control(p, router, 12, 780, 530, -6.0)
-    left_trim = p.new("*~", 310, 615, 40, numinlets=2, numoutlets=1)
-    right_trim = p.new("*~", 530, 615, 40, numinlets=2, numoutlets=1)
-    left = outlet(p, 330, 665, signal=True)
-    right = outlet(p, 550, 665, signal=True)
+    left_gain = p.new("*~", 310, 610, 40, numinlets=2, numoutlets=1)
+    right_gain = p.new("*~", 530, 610, 40, numinlets=2, numoutlets=1)
+    stem_level = add_db_gain_control(p, router, 12, 780, 565, -6.0)
+    left_trim = p.new("*~", 310, 650, 40, numinlets=2, numoutlets=1)
+    right_trim = p.new("*~", 530, 650, 40, numinlets=2, numoutlets=1)
+    left = outlet(p, 330, 700, signal=True)
+    right = outlet(p, 550, 700, signal=True)
     p.connect(beap_pressure_l, left_drive, 0, 0)
     p.connect(beap_pressure_r, right_drive, 0, 0)
     p.connect(left_drive, left_sat)
     p.connect(right_drive, right_sat)
     p.connect(left_sat, left_filter, 0, 0)
     p.connect(right_sat, right_filter, 0, 0)
-    p.connect(left_filter, left_gain, 1, 0)
-    p.connect(right_filter, right_gain, 1, 0)
+    # Keep the 28 Hz high-pass for subsonic safety, then cap the short crack
+    # before output so the default reads as a pressure impact rather than a
+    # snare. Crack Tune/Level still open this colour deliberately.
+    p.connect(left_filter, left_air_ceiling, 1, 0)
+    p.connect(right_filter, right_air_ceiling, 1, 0)
+    p.connect(left_air_ceiling, left_gain, 0, 0)
+    p.connect(right_air_ceiling, right_gain, 0, 0)
     p.connect(output_gain_line, left_gain, 0, 1)
     p.connect(output_gain_line, right_gain, 0, 1)
     p.connect(left_gain, left_trim)
@@ -4157,13 +4235,13 @@ def make_profile_transient(profile: str) -> dict[str, Any]:
     p = Patcher(1320, 760)
     p.comment(f"{profile.upper()} transient host — cinematic BEAP default; realistic starter option for ICE", 25, 15, 820)
     control = inlet(p, 35, 65)
-    router = route(p, ("starter", "start_style"), 35, 105, 245)
+    router = route(p, ("starter", "start_style", "start_level_db"), 35, 105, 360)
     event_renderer = p.new(
         "transient~" if profile == "ev" else f"{profile}_backfire_host~",
         35, 555, 180 if profile != "ev" else 90, numinlets=1, numoutlets=2,
     )
     p.connect(control, router)
-    p.connect(router, event_renderer, 2)
+    p.connect(router, event_renderer, 3)
 
     starter = p.new("sel 1 0", 35, 155, 55, numinlets=1, numoutlets=3)
     style_select = p.new("sel cinematic realistic", 120, 155, 170, numinlets=1, numoutlets=3)
@@ -4326,14 +4404,24 @@ def make_profile_transient(profile: str) -> dict[str, Any]:
     p.connect(sample_l, sum_start_l, 0, 1)
     p.connect(cinema_r, sum_start_r, 0, 0)
     p.connect(sample_r, sum_start_r, 0, 1)
+    start_level = add_db_gain_control(
+        p, router, 2, 1000, 500,
+        {"ev": -8.0, "v10": -5.0, "v12": -5.0}[profile],
+    )
+    start_trim_l = p.new("*~", 390, 560, 40, numinlets=2, numoutlets=1)
+    start_trim_r = p.new("*~", 540, 560, 40, numinlets=2, numoutlets=1)
+    p.connect(sum_start_l, start_trim_l, 0, 0)
+    p.connect(sum_start_r, start_trim_r, 0, 0)
+    p.connect(start_level, start_trim_l, 0, 1)
+    p.connect(start_level, start_trim_r, 0, 1)
     sum_l = p.new("+~", 390, 610, 40, numinlets=2, numoutlets=1)
     sum_r = p.new("+~", 540, 610, 40, numinlets=2, numoutlets=1)
     left = outlet(p, 390, 680, signal=True)
     right = outlet(p, 540, 680, signal=True)
     p.connect(event_renderer, sum_l, 0, 0)
-    p.connect(sum_start_l, sum_l, 0, 1)
+    p.connect(start_trim_l, sum_l, 0, 1)
     p.connect(event_renderer, sum_r, 1, 0)
-    p.connect(sum_start_r, sum_r, 0, 1)
+    p.connect(start_trim_r, sum_r, 0, 1)
     p.connect(sum_l, left)
     p.connect(sum_r, right)
     return p.document()
@@ -5581,17 +5669,18 @@ def make_keyboard_drive_ws() -> dict[str, Any]:
     for outlet_index in (2, 3):
         p.connect(down_select, s_pressed, outlet_index)
         p.connect(up_select, s_released, outlet_index)
-    # Max gate: left inlet carries data, right inlet selects open/closed.
-    p.connect(manual, w_gate, 0, 1)
-    p.connect(manual, s_gate, 0, 1)
+    # Max 8.6.5 gate: the left inlet selects open/closed and messages to pass
+    # arrive at the right inlet.
+    p.connect(manual, w_gate, 0, 0)
+    p.connect(manual, s_gate, 0, 0)
     p.connect(manual, manual_off)
     p.connect(default_off, w_gate, 0, 0)
     p.connect(default_off, s_gate, 0, 0)
     p.connect(default_off, manual_off)
-    p.connect(w_pressed, w_gate, 0, 0)
-    p.connect(w_released, w_gate, 0, 0)
-    p.connect(s_pressed, s_gate, 0, 0)
-    p.connect(s_released, s_gate, 0, 0)
+    p.connect(w_pressed, w_gate, 0, 1)
+    p.connect(w_released, w_gate, 0, 1)
+    p.connect(s_pressed, s_gate, 0, 1)
+    p.connect(s_released, s_gate, 0, 1)
     p.connect(manual_off, disable_order, 0)
     p.connect(disable_order, reset_key_state, 1)
     p.connect(reset_key_state, w_change)
@@ -5747,10 +5836,139 @@ def make_manual_input() -> dict[str, Any]:
     return p.document()
 
 
+def make_module_mixer() -> dict[str, Any]:
+    """Expose seven profile-local stem gains behind one persistent interface."""
+    p = Patcher(1030, 245)
+    p.comment(
+        "MODULE MIXER — seven post-module/pre-master gains; profile #1 saves locally",
+        15, 8, 720,
+    )
+    output = outlet(p, 985, 195)
+    p.new("autopattr @autorestore 0", 755, 8, 155, numinlets=1, numoutlets=4)
+    storage = p.new(
+        "pattrstorage module_mixer_#1 @savemode 3 @changemode 1 @autorestore 0",
+        755, 35, 265, numinlets=1, numoutlets=4,
+    )
+    state_path = p.new(
+        "js Patcher:/code/module_mixer_state_path.js #1",
+        755, 63, 255, numinlets=1, numoutlets=1,
+    )
+    load = p.new("loadbang", 755, 91, 60, numinlets=1, numoutlets=1)
+    restore_delay = p.new("delay 140", 825, 91, 70, numinlets=2, numoutlets=1)
+    restore_order = p.new("t b b", 905, 91, 50, numinlets=1, numoutlets=2)
+    restore = p.message("restore", 960, 91, 55)
+    recall_delay = p.new("delay 35", 905, 119, 65, numinlets=2, numoutlets=1)
+    recall = p.message("1", 975, 119, 30)
+    save = p.message("save", 755, 147, 45)
+    close = p.new("closebang", 805, 147, 65, numinlets=0, numoutlets=1)
+    external_save = p.new(
+        "r module_mixer.#1.save", 875, 147, 135,
+        numinlets=0, numoutlets=1,
+    )
+    p.connect(load, restore_delay)
+    p.connect(restore_delay, restore_order)
+    p.connect(restore_order, restore, 1)
+    p.connect(restore, state_path)
+    p.connect(state_path, storage)
+    p.connect(restore_order, recall_delay, 0)
+    p.connect(recall_delay, recall)
+    p.connect(recall, storage)
+    p.connect(close, save)
+    p.connect(external_save, save)
+    p.connect(save, state_path)
+
+    profile_load = p.new("loadmess #1", 15, 205, 85, numinlets=1, numoutlets=1)
+    profile_select = p.new("sel ev v10 v12", 105, 205, 105, numinlets=1, numoutlets=4)
+    reset_profile = p.message("#1", 215, 205, 35)
+    defaults_messages: list[str] = []
+    for index, profile in enumerate(("ev", "v10", "v12")):
+        values = " ".join(f"{value:g}" for value in MODULE_MIX_DEFAULTS[profile])
+        message = p.message(values, 255 + index * 165, 205, 155)
+        defaults_messages.append(message)
+        p.connect(profile_select, message, index)
+    defaults_unpack = p.new(
+        "unpack 0. 0. 0. 0. 0. 0. 0.", 755, 205, 210,
+        numinlets=1, numoutlets=7,
+    )
+    p.connect(profile_load, profile_select)
+    p.connect(reset_profile, profile_select)
+    for message in defaults_messages:
+        p.connect(message, defaults_unpack)
+
+    save_button = p.add(
+        "message", "Save Mix", 755, 175, 65, numinlets=2, numoutlets=1,
+        presentation=1, presentation_rect=[755.0, 162.0, 70.0, 22.0],
+    )
+    reload_button = p.add(
+        "message", "Reload Mix", 830, 175, 75, numinlets=2, numoutlets=1,
+        presentation=1, presentation_rect=[835.0, 162.0, 80.0, 22.0],
+    )
+    reset_button = p.add(
+        "message", "Reset Defaults", 915, 175, 90, numinlets=2, numoutlets=1,
+        presentation=1, presentation_rect=[925.0, 162.0, 95.0, 22.0],
+    )
+    p.connect(save_button, save)
+    p.connect(reload_button, restore_order)
+    p.connect(reset_button, reset_profile)
+
+    auto_save_order = p.new("t b b", 680, 175, 50, numinlets=1, numoutlets=2)
+    auto_save_stop = p.message("stop", 625, 205, 40)
+    auto_save_delay = p.new("delay 250", 680, 205, 70, numinlets=2, numoutlets=1)
+    p.connect(auto_save_order, auto_save_stop, 1)
+    p.connect(auto_save_stop, auto_save_delay)
+    p.connect(auto_save_order, auto_save_delay, 0)
+    p.connect(auto_save_delay, save)
+
+    specs = (
+        ("Sound DNA", "powertrain_level_db", -60.0, 6.0),
+        ("Start", "start_level_db", -60.0, 6.0),
+        ("Pop / Event", "transient_level_db", -60.0, 6.0),
+        ("Soundscape", "soundscape_level_db", -60.0, 6.0),
+        ("Road / Air", "road_level_db", -60.0, 6.0),
+        ("Cabin Rumble", "rumble_level_db", -60.0, 6.0),
+        ("Master", "master_trim_db", -24.0, 0.0),
+    )
+    for index, (label, name, low, high) in enumerate(specs):
+        x = 15 + index * 102
+        p.add(
+            "comment", label, x, 35, 95, 18, numinlets=1, numoutlets=0,
+            presentation=1, presentation_rect=[x, 8.0, 95.0, 18.0],
+        )
+        steps = round((high - low) * 10.0) + 1
+        slider = p.add(
+            "slider", None, x + 24, 58, 28, 102,
+            numinlets=1, numoutlets=1, min=0, size=steps,
+            floatoutput=1, varname=f"mix_{name}",
+            presentation=1, presentation_rect=[x + 24.0, 30.0, 28.0, 100.0],
+        )
+        to_db = p.new(
+            f"expr $f1/10.+({low:g})", x, 166, 96,
+            numinlets=1, numoutlets=1,
+        )
+        display = p.add(
+            "flonum", None, x + 12, 190, 62,
+            numinlets=1, numoutlets=2, ignoreclick=1,
+            presentation=1, presentation_rect=[x + 8.0, 134.0, 70.0, 22.0],
+        )
+        named = p.new(f"prepend {name}", x, 218, 130, numinlets=1, numoutlets=1)
+        from_db = p.new(
+            f"expr ($f1-({low:g}))*10.", x + 70, 190, 135,
+            numinlets=1, numoutlets=1,
+        )
+        p.connect(defaults_unpack, from_db, index)
+        p.connect(from_db, slider)
+        p.connect(slider, to_db)
+        p.connect(slider, auto_save_order)
+        p.connect(to_db, display)
+        p.connect(to_db, named)
+        p.connect(named, output)
+    return p.document(presentation=True)
+
+
 def make_profile_main(profile: str, root: Path | None = None) -> dict[str, Any]:
     """Build one self-contained, profile-fixed runnable patcher."""
     config = PROFILE_CONFIG[profile]
-    p = Patcher(1500, 1080)
+    p = Patcher(1500, 1320)
     p.comment(f"VehicleSoundSynth V5 — {config['title']} independent runtime", 25, 18, 720)
     p.comment("Audio starts OFF. This patch contains only this profile's DSP graph.", 25, 48, 620)
     active_profile = p.new("r vss.runtime.select", 850, 25, 145, numinlets=0, numoutlets=1)
@@ -5786,6 +6004,14 @@ def make_profile_main(profile: str, root: Path | None = None) -> dict[str, Any]:
     p.connect(drive, source, 0, 1)
     p.connect(external, source, 0, 2)
     p.connect(source, engine)
+
+    module_mixer = p.add(
+        "bpatcher", None, 25, 875, 1000, 190,
+        numinlets=0, numoutlets=1,
+        name="Patcher:/patchers/module_mixer.maxpat",
+        args=[profile], varname=f"{profile}_module_mixer",
+    )
+    p.connect(module_mixer, engine)
 
     p.comment("Lifecycle", 25, 105, 120)
     ignition_on = p.message("ignition 1", 25, 135, 75)
@@ -5852,9 +6078,8 @@ def make_profile_main(profile: str, root: Path | None = None) -> dict[str, Any]:
     p.connect(soundscape_enable_default, soundscape_enable)
 
     soundscape_specs = (
-        ("Soundscape dB", "soundscape_level_db", -14.0 if profile != "v12" else -15.0, -60.0, 6.0, 550),
-        ("Motion", "soundscape_motion", {"ev": 0.62, "v10": 0.52, "v12": 0.42}[profile], 0.0, 1.0, 690),
-        ("Space", "soundscape_space", {"ev": 0.42, "v10": 0.38, "v12": 0.52}[profile], 0.0, 1.0, 810),
+        ("Motion", "soundscape_motion", {"ev": 0.62, "v10": 0.52, "v12": 0.42}[profile], 0.0, 1.0, 550),
+        ("Space", "soundscape_space", {"ev": 0.42, "v10": 0.38, "v12": 0.52}[profile], 0.0, 1.0, 690),
     )
     for label, name, default, low, high, x in soundscape_specs:
         p.comment(label, x, 230, 105)
@@ -5994,7 +6219,7 @@ def make_profile_main(profile: str, root: Path | None = None) -> dict[str, Any]:
     p.connect(gain_l, spectrum_l)
     p.connect(gain_r, spectrum_r)
 
-    p.comment("Master compressor (attack/release are OMX rates: higher = faster)", 25, 900, 620)
+    p.comment("Master compressor (attack/release are OMX rates: higher = faster)", 25, 1090, 620)
     compressor_ui = (
         ("Threshold dB", "compressor_threshold_db", -12.0, -36.0, 0.0),
         ("Ratio", "compressor_ratio", 2.0, 1.0, 50.0),
@@ -6004,23 +6229,23 @@ def make_profile_main(profile: str, root: Path | None = None) -> dict[str, Any]:
     )
     for index, (label, name, default, low, high) in enumerate(compressor_ui):
         x = 25 + index * 180
-        p.comment(label, x, 928, 130)
-        number = p.add("flonum", None, x, 952, 75, numinlets=1, numoutlets=2)
-        bounded = p.new(f"clip {low:g} {high:g}", x, 984, 90, numinlets=3, numoutlets=1)
-        named = p.new(f"prepend {name}", x, 1016, 155, numinlets=1, numoutlets=1)
-        initial = p.new(f"loadmess {default:g}", x + 82, 952, 85, numinlets=1, numoutlets=1)
+        p.comment(label, x, 1118, 130)
+        number = p.add("flonum", None, x, 1142, 75, numinlets=1, numoutlets=2)
+        bounded = p.new(f"clip {low:g} {high:g}", x, 1174, 90, numinlets=3, numoutlets=1)
+        named = p.new(f"prepend {name}", x, 1206, 155, numinlets=1, numoutlets=1)
+        initial = p.new(f"loadmess {default:g}", x + 82, 1142, 85, numinlets=1, numoutlets=1)
         p.connect(number, bounded)
         p.connect(initial, number)
         p.connect(bounded, named)
         p.connect(named, engine)
-    p.comment("Bypass", 930, 928, 70)
-    compressor_bypass = p.add("toggle", None, 930, 952, 24, 24, numinlets=1, numoutlets=1)
-    compressor_bypass_named = p.new("prepend compressor_bypass", 965, 952, 175, numinlets=1, numoutlets=1)
-    compressor_bypass_default = p.new("loadmess 0", 930, 984, 80, numinlets=1, numoutlets=1)
+    p.comment("Bypass", 930, 1118, 70)
+    compressor_bypass = p.add("toggle", None, 930, 1142, 24, 24, numinlets=1, numoutlets=1)
+    compressor_bypass_named = p.new("prepend compressor_bypass", 965, 1142, 175, numinlets=1, numoutlets=1)
+    compressor_bypass_default = p.new("loadmess 0", 930, 1174, 80, numinlets=1, numoutlets=1)
     p.connect(compressor_bypass_default, compressor_bypass)
     p.connect(compressor_bypass, compressor_bypass_named)
     p.connect(compressor_bypass_named, engine)
-    p.comment(f"External control: send named messages to vss.{profile}.input", 650, 900, 480)
+    p.comment(f"External control: send named messages to vss.{profile}.input", 650, 1090, 480)
     return p.document()
 
 
@@ -6835,6 +7060,7 @@ def project_file() -> dict[str, Any]:
         "patchers/mix_master~.maxpat",
         "patchers/keyboard_drive_ws.maxpat",
         "patchers/manual_input.maxpat",
+        "patchers/module_mixer.maxpat",
     ]
     for profile in ("ev", "v10", "v12"):
         patchers.extend(
@@ -6861,6 +7087,7 @@ def project_file() -> dict[str, Any]:
     contents["code"]["code/manual_input.js"] = {"kind": "javascript", "local": 1}
     contents["code"]["code/eq_state_path.js"] = {"kind": "javascript", "local": 1}
     contents["code"]["code/dna_state_path.js"] = {"kind": "javascript", "local": 1}
+    contents["code"]["code/module_mixer_state_path.js"] = {"kind": "javascript", "local": 1}
     contents["code"]["code/backfire_burst.js"] = {"kind": "javascript", "local": 1}
     for name in MEDIA_FRAMES:
         if name.startswith(("cabin_ir_", "starter_")):
@@ -6926,6 +7153,7 @@ def build_project(root: Path) -> None:
         "patchers/drive_simulator.maxpat": make_drive_simulator(),
         "patchers/keyboard_drive_ws.maxpat": make_keyboard_drive_ws(),
         "patchers/manual_input.maxpat": make_manual_input(),
+        "patchers/module_mixer.maxpat": make_module_mixer(),
         "presets/sound_dna.json": PRESETS,
         "presets/vehicle_bus_eq_default.json": VEHICLE_BUS_EQ_DEFAULT,
         PROJECT_FILENAME: project_file(),

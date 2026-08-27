@@ -29,6 +29,7 @@ code/dna_state_path.js
 code/drive_model.js
 code/eq_state_path.js
 code/manual_input.js
+code/module_mixer_state_path.js
 gen/ev_powertrain.gendsp
 gen/v10_powertrain.gendsp
 gen/v12_powertrain.gendsp
@@ -63,6 +64,7 @@ patchers/ev_sport_voice.maxpat
 patchers/keyboard_drive_ws.maxpat
 patchers/manual_input.maxpat
 patchers/mix_master~.maxpat
+patchers/module_mixer.maxpat
 patchers/powertrain~.maxpat
 patchers/reference_texture~.maxpat
 patchers/road_air~.maxpat

@@ -31,8 +31,9 @@ events, short cabin IR, adjustable stereo compression, EQ, and peak protection.
 - `main.maxpat` — DSP-free launcher; it must never instantiate an engine.
 - `VehicleSoundSynth-{EV,V10,V12}.maxpat` — independent runnable UIs; the
   single `Audio + Output` toggle enables both DSP and the output ramp.
-- `patchers/keyboard_drive_ws.maxpat` — focus-aware Manual-mode W/S throttle
-  and brake ramps with forced release when leaving Manual.
+- `patchers/keyboard_drive_ws.maxpat` — focus-aware Manual-mode binary W/S
+  pedals with forced release when leaving Manual. Its Max `gate` control is
+  inlet 0 and key-state data is inlet 1.
 - `patchers/manual_input.maxpat` — generated deep module that selects the
   keyboard adapter or Max's built-in macOS `gamepad` adapter and exposes only
   normalized throttle/brake to the existing drivetrain.
@@ -42,6 +43,8 @@ events, short cabin IR, adjustable stereo compression, EQ, and peak protection.
 - `patchers/{ev,v10,v12}_powertrain~.maxpat` — exactly one Gen per profile.
 - `patchers/vehicle_bus_eq~.maxpat` — seed-once, user-editable shared four-band
   EQ; `patchers/mix_master~.maxpat` contains generated safety dynamics only.
+- `patchers/module_mixer.maxpat` — generated seven-stem main-page balance UI;
+  per-profile ignored state is resolved by `code/module_mixer_state_path.js`.
 - `patchers/{ev,v10,v12}_cinematic_soundscape_host~.maxpat` and
   `patchers/cinematic_soundscape_voice.maxpat` — generated profile mappings and
   cancellable voice suspension around one shared runtime Soundscape.
@@ -76,6 +79,11 @@ core. `Global Pitch`, Body/Crack Tune, Decay, layer levels, and nonzero Core
 Presence all reach real audio through profile-local named buses. The visible
 BEAP Pressure Mixer is optional colour; native BEAP MMF/AD/VCA response can be
 subtle on short Max 8.6.5 gates and must not be treated as the audibility gate.
+The shipped pressure-first defaults are Global Pitch -5/-6 semitones,
+Low Pressure 1.0/1.0, Body 1.30/1.35, Crack 0.008/0.006 and Decay 0.75/0.62.
+The generated host adds a 600/520 Hz air ceiling after subsonic protection. Use `Audition One
+Hit` for repeatable timbre work, then balance the whole result with the runtime
+Module Mixer's `Pop / Event` fader.
 For continuous-engine tuning, open the active Sound DNA instance and use DNA
 Solo; EV Aggression and V10 Brightness are explicitly connected to Gen DSP,
 while several other controls are RPM/load/throttle-state dependent.

@@ -121,7 +121,7 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
                 "Crack_AD", "Crack_VCA",
             ):
                 self.assertIn(module, beap_text)
-            self.assertIn("*~ 0.75" if profile == "v10" else "*~ 0.85", beap_text)
+            self.assertIn("*~ 0.95", beap_text)
             self.assertIn("+~", beap_text)
             host = self.load_json(host_path)["patcher"]
             host_text = "\n".join(item["box"].get("text", "") for item in host["boxes"])
@@ -135,9 +135,9 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
             self.assertIn("pak 1 0 0", host_text)
             self.assertIn("($i1 != 0) && ($i2 != 0) && ($i3 != 0)", host_text)
             expected_gain = (
-                "(0.60+0.85*$f1)*(0.55+0.45*$f2)"
+                "0.68*(0.60+0.85*$f1)*(0.55+0.45*$f2)"
                 if profile == "v10"
-                else "(0.66+0.94*$f1)*(0.55+0.45*$f2)"
+                else "0.68*(0.66+0.94*$f1)*(0.55+0.45*$f2)"
             )
             self.assertIn(expected_gain, host_text)
             self.assertIn("noise~", host_text)
@@ -198,23 +198,25 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
             host_text = "\n".join(item["box"].get("text", "") for item in host["boxes"])
             self.assertIn("max(0.,min(1.,($f1-0.35)/0.65))", host_text)
             expected_gain = (
-                "(0.60+0.85*$f1)*(0.55+0.45*$f2)"
+                "0.68*(0.60+0.85*$f1)*(0.55+0.45*$f2)"
                 if profile == "v10"
-                else "(0.66+0.94*$f1)*(0.55+0.45*$f2)"
+                else "0.68*(0.66+0.94*$f1)*(0.55+0.45*$f2)"
             )
             self.assertIn(expected_gain, host_text)
-            self.assertIn("*~ 4.2", host_text)
+            self.assertIn("*~ 4.8", host_text)
             self.assertIn("onepole~", host_text)
-            self.assertIn("*~ 58" if profile == "v10" else "*~ 44", host_text)
+            self.assertIn("*~ 8" if profile == "v10" else "*~ 6", host_text)
             self.assertIn(
-                "onepole~ 14" if profile == "v10" else "onepole~ 11",
+                "onepole~ 28" if profile == "v10" else "onepole~ 24",
                 host_text,
             )
+            self.assertNotIn("*~ 58" if profile == "v10" else "*~ 44", host_text)
             self.assertNotIn("*~ 115" if profile == "v10" else "*~ 92", host_text)
 
     def test_pop_designer_controls_the_live_beap_and_dominant_pressure_core(self):
         control_varnames = {
             "pop_global_pitch_semitones",
+            "pop_impact_drop_octaves",
             "pop_core_presence",
             "pop_body_tune",
             "pop_crack_tune",
@@ -251,24 +253,26 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
             self.assertTrue(control_varnames.issubset(varnames))
             expected_initials = {
                 "v10": {
-                    "pop_global_pitch_semitones": -7.0,
-                    "pop_core_presence": 1.12,
-                    "pop_body_tune": 0.82,
-                    "pop_crack_tune": 0.62,
-                    "pop_decay_scale": 1.45,
-                    "pop_low_pressure_level": 0.72,
-                    "pop_body_level": 1.22,
-                    "pop_crack_level": 0.30,
+                    "pop_global_pitch_semitones": -5.0,
+                    "pop_impact_drop_octaves": 0.85,
+                    "pop_core_presence": 1.10,
+                    "pop_body_tune": 1.0,
+                    "pop_crack_tune": 1.0,
+                    "pop_decay_scale": 0.75,
+                    "pop_low_pressure_level": 1.0,
+                    "pop_body_level": 1.30,
+                    "pop_crack_level": 0.008,
                 },
                 "v12": {
-                    "pop_global_pitch_semitones": -9.0,
-                    "pop_core_presence": 1.16,
-                    "pop_body_tune": 0.80,
-                    "pop_crack_tune": 0.58,
-                    "pop_decay_scale": 1.55,
-                    "pop_low_pressure_level": 0.82,
-                    "pop_body_level": 1.26,
-                    "pop_crack_level": 0.24,
+                    "pop_global_pitch_semitones": -6.0,
+                    "pop_impact_drop_octaves": 0.75,
+                    "pop_core_presence": 1.15,
+                    "pop_body_tune": 1.0,
+                    "pop_crack_tune": 1.0,
+                    "pop_decay_scale": 0.62,
+                    "pop_low_pressure_level": 1.0,
+                    "pop_body_level": 1.35,
+                    "pop_crack_level": 0.006,
                 },
             }[profile]
             for item in beap["boxes"]:
@@ -326,17 +330,17 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
                 self.assertIn(f"s {profile}.pop.{control_name}", beap_text)
                 self.assertIn(f"r {profile}.pop.{control_name}", host_text)
             for default_text in (
-                "loadmess -7" if profile == "v10" else "loadmess -9",
-                "loadmess 0.72" if profile == "v10" else "loadmess 0.82",
-                "loadmess 0.3" if profile == "v10" else "loadmess 0.24",
+                "loadmess 0.85" if profile == "v10" else "loadmess 0.75",
+                "loadmess 1",
+                "loadmess 0.008" if profile == "v10" else "loadmess 0.006",
             ):
                 self.assertIn(default_text, host_text)
-            self.assertIn("line 0.72" if profile == "v10" else "line 0.82", host_text)
+            self.assertIn("line 1.", host_text)
             self.assertGreaterEqual(host_text.count("*~ 1."), 6)
             for token in (
                 "pow(2.,($f1+$f2)/12.)",
                 "clip 0.25 1.5",
-                "expr 2.4/max(0.5,$f1)" if profile == "v10" else "expr 1.9/max(0.5,$f1)",
+                "expr 3.8/max(0.5,$f1)" if profile == "v10" else "expr 3.4/max(0.5,$f1)",
             ):
                 self.assertIn(token, host_text)
             self.assertNotIn("sqrt(max(0.,2.*(1.-$f1)))", host_text)
@@ -345,20 +349,20 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
     def test_backfire_defaults_prioritize_low_pressure_body_over_bright_crack(self):
         expected = {
             "v10": {
-                "mixer": {"in1": -6, "in2": -20},
-                "body": {"Freq": 390, "Res": 10},
-                "body_ad": {"Attack": 2, "Decay": 220},
-                "crack": {"Freq": 1350, "Res": 6},
-                "crack_ad": {"Attack": 1, "Decay": 58},
-                "host": ("lores~ 560 0.68", "lores~ 680 0.64", "svf~ 1450 0.58", "svf~ 1800 0.55"),
+                "mixer": {"in1": -20, "in2": -4},
+                "body": {"Freq": 180, "Res": 6},
+                "body_ad": {"Attack": 2, "Decay": 80},
+                "crack": {"Freq": 420, "Res": 2},
+                "crack_ad": {"Attack": 1, "Decay": 8},
+                "host": ("lores~ 180 0.74", "lores~ 240 0.7", "svf~ 420 0.66", "svf~ 520 0.64", "lores~ 600 0.65"),
             },
             "v12": {
-                "mixer": {"in1": -7, "in2": -18},
-                "body": {"Freq": 285, "Res": 8},
-                "body_ad": {"Attack": 5, "Decay": 310},
-                "crack": {"Freq": 900, "Res": 4},
-                "crack_ad": {"Attack": 3, "Decay": 92},
-                "host": ("lores~ 420 0.72", "lores~ 500 0.69", "svf~ 1050 0.6", "svf~ 1350 0.57"),
+                "mixer": {"in1": -22, "in2": -5},
+                "body": {"Freq": 150, "Res": 6},
+                "body_ad": {"Attack": 5, "Decay": 90},
+                "crack": {"Freq": 360, "Res": 2},
+                "crack_ad": {"Attack": 2, "Decay": 10},
+                "host": ("lores~ 150 0.76", "lores~ 210 0.72", "svf~ 360 0.68", "svf~ 450 0.66", "lores~ 520 0.67"),
             },
         }
 
@@ -402,6 +406,71 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
                 self.assertIn(token, host_text)
             self.assertIn("LOW PRESSURE MODES — coherent below 120 Hz", host_text)
 
+    def test_pop_uses_kick_pitch_drop_and_single_hit_audition(self):
+        expected = {
+            "v10": {
+                "pitch": "52.+0.002*$f1",
+                "sweep": "$1 0, $2 45",
+                "gate": "110.*$f1",
+                "mixer": {"in1": -20, "in2": -4},
+                "filters": ("lores~ 180 0.74", "lores~ 240 0.7", "svf~ 420 0.66", "svf~ 520 0.64", "lores~ 600 0.65"),
+                "drop": 0.85,
+            },
+            "v12": {
+                "pitch": "46.5+0.0017*$f1",
+                "sweep": "$1 0, $2 50",
+                "gate": "125.*$f1",
+                "mixer": {"in1": -22, "in2": -5},
+                "filters": ("lores~ 150 0.76", "lores~ 210 0.72", "svf~ 360 0.68", "svf~ 450 0.66", "lores~ 520 0.67"),
+                "drop": 0.75,
+            },
+        }
+
+        def restore_for(box):
+            matches = []
+
+            def visit(value):
+                if isinstance(value, dict):
+                    if isinstance(value.get("restore"), dict):
+                        matches.append(value["restore"])
+                    for child in value.values():
+                        visit(child)
+                elif isinstance(value, list):
+                    for child in value:
+                        visit(child)
+
+            visit(box)
+            self.assertEqual(1, len(matches))
+            return {key: values[0] for key, values in matches[0].items()}
+
+        for profile, values in expected.items():
+            beap = self.load_json(f"patchers/{profile}_backfire_beap~.maxpat")["patcher"]
+            modules = {item["box"].get("varname"): item["box"] for item in beap["boxes"]}
+            self.assertIn("pop_impact_drop_octaves", modules)
+            self.assertEqual(
+                [values["drop"]],
+                modules["pop_impact_drop_octaves"]["saved_attribute_attributes"]["valueof"]["parameter_initial"],
+            )
+            self.assertEqual(values["mixer"], {
+                name: restore_for(modules["Pressure_Mixer"])[name]
+                for name in ("in1", "in2")
+            })
+            beap_text = "\n".join(item["box"].get("text", "") for item in beap["boxes"])
+            self.assertIn(f"s {profile}.pop.impact_drop_octaves", beap_text)
+            self.assertIn(f"s {profile}.pop.audition_one_hit", beap_text)
+            self.assertIn("Audition One Hit", beap_text)
+
+            host = self.load_json(f"patchers/{profile}_backfire_host~.maxpat")["patcher"]
+            host_text = "\n".join(item["box"].get("text", "") for item in host["boxes"])
+            self.assertIn(values["pitch"], host_text)
+            self.assertIn(values["sweep"], host_text)
+            self.assertIn(values["gate"], host_text)
+            self.assertNotIn("48.+0.018*$f1", host_text)
+            self.assertIn(f"r {profile}.pop.impact_drop_octaves", host_text)
+            self.assertIn(f"r {profile}.pop.audition_one_hit", host_text)
+            for token in values["filters"]:
+                self.assertIn(token, host_text)
+
     def test_v5_all_profiles_share_one_editable_cinematic_soundscape_core(self):
         project = self.load_json("VehicleSoundSynth-V5.maxproj")
         declared = set(project["contents"]["patchers"])
@@ -436,8 +505,13 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
             self.assertIn(f"{profile}_cinematic_soundscape_host~", engine_text)
             runtime = self.load_json(f"VehicleSoundSynth-{profile.upper()}.maxpat")["patcher"]
             runtime_text = "\n".join(item["box"].get("text", "") for item in runtime["boxes"])
-            for label in ("Soundscape Enable", "Soundscape dB", "Motion", "Space", "Soundscape Solo"):
+            for label in ("Soundscape Enable", "Motion", "Space", "Soundscape Solo"):
                 self.assertIn(label, runtime_text)
+            self.assertNotIn("Soundscape dB", runtime_text)
+            self.assertTrue(any(
+                item["box"].get("name") == "Patcher:/patchers/module_mixer.maxpat"
+                for item in runtime["boxes"]
+            ))
 
     def test_v5_vehicle_bus_eq_has_one_shared_persistent_local_state(self):
         self.assertTrue((ROOT / "presets" / "local" / ".gitkeep").is_file())
@@ -729,8 +803,8 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
 
     def test_pop_global_pitch_reaches_every_tonal_layer(self):
         expected = {
-            "v10": ((420, 92, 220, 1350, 2800, 3200), (86, 230)),
-            "v12": ((310, 72, 160, 900, 2100, 2400), (70, 170)),
+            "v10": ((180, 54, 120, 420, 650, 750), (54, 120)),
+            "v12": ((150, 48, 105, 360, 550, 650), (48, 105)),
         }
         for profile, (editable_bases, host_bases) in expected.items():
             editable = json.dumps(
@@ -753,8 +827,8 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
 
     def test_pop_resonant_mode_tuning_targets_frequency_not_gain_inlet(self):
         expected = {
-            "v10": ((92, 220), (86, 230)),
-            "v12": ((72, 160), (70, 170)),
+            "v10": ((54, 120), (54, 120)),
+            "v12": ((48, 105), (48, 105)),
         }
         for profile, (editable_bases, host_bases) in expected.items():
             for relative, bases in (
@@ -2953,6 +3027,77 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
             for removed in ("engine_type", "ev_weight", "v10_weight", "v12_weight"):
                 self.assertNotIn(removed, text)
 
+    def test_profile_runtimes_expose_persistent_seven_stem_module_mixer(self):
+        project = self.load_json("VehicleSoundSynth-V5.maxproj")
+        self.assertIn(
+            "patchers/module_mixer.maxpat",
+            project["contents"]["patchers"],
+        )
+        self.assertIn(
+            "code/module_mixer_state_path.js",
+            project["contents"]["code"],
+        )
+        mixer = self.load_json("patchers/module_mixer.maxpat")["patcher"]
+        mixer_text = "\n".join(
+            item["box"].get("text", "") for item in mixer["boxes"]
+        )
+        for label in (
+            "Sound DNA", "Start", "Pop / Event", "Soundscape",
+            "Road / Air", "Cabin Rumble", "Master",
+        ):
+            self.assertIn(label, mixer_text)
+        for message in (
+            "powertrain_level_db", "start_level_db", "transient_level_db",
+            "soundscape_level_db", "road_level_db", "rumble_level_db",
+            "master_trim_db",
+        ):
+            self.assertIn(f"prepend {message}", mixer_text)
+        for token in (
+            "pattrstorage module_mixer_#1", "autopattr @autorestore 0",
+            "js Patcher:/code/module_mixer_state_path.js #1", "delay 250",
+            "Save Mix", "Reload Mix", "Reset Defaults",
+        ):
+            self.assertIn(token, mixer_text)
+        master_slider = next(
+            item["box"] for item in mixer["boxes"]
+            if item["box"].get("varname") == "mix_master_trim_db"
+        )
+        self.assertEqual(241, master_slider.get("size"))
+
+        for profile in ("ev", "v10", "v12"):
+            runtime = self.load_json(
+                f"VehicleSoundSynth-{profile.upper()}.maxpat"
+            )["patcher"]
+            boxes = {item["box"]["id"]: item["box"] for item in runtime["boxes"]}
+            mixer_box = next(
+                box for box in boxes.values()
+                if box.get("name") == "Patcher:/patchers/module_mixer.maxpat"
+            )
+            self.assertEqual([profile], mixer_box.get("args"))
+            engine_box = next(
+                box for box in boxes.values()
+                if box.get("name", "").endswith(
+                    f"/patchers/vehicle_engine_{profile}~.maxpat"
+                )
+            )
+            edges = {
+                (
+                    line["patchline"]["source"][0],
+                    line["patchline"]["source"][1],
+                    line["patchline"]["destination"][0],
+                    line["patchline"]["destination"][1],
+                )
+                for line in runtime["lines"]
+            }
+            self.assertIn((mixer_box["id"], 0, engine_box["id"], 0), edges)
+            transient = self.load_json(
+                f"patchers/transient_{profile}~.maxpat"
+            )["patcher"]
+            transient_text = "\n".join(
+                item["box"].get("text", "") for item in transient["boxes"]
+            )
+            self.assertIn("start_level_db", transient_text)
+
     def test_v3_demo_exposes_lifecycle_dct_rumble_and_global_eq_controls(self):
         for profile in ("ev", "v10", "v12"):
             engine = self.load_json(f"patchers/vehicle_engine_{profile}~.maxpat")["patcher"]
@@ -3335,6 +3480,33 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
                 self.assertIn("past 700", solo_text)
                 self.assertNotIn("past 1800", solo_text)
 
+    def test_runtime_probe_can_audition_one_isolated_pop_hit(self):
+        for profile in ("v10", "v12"):
+            with tempfile.TemporaryDirectory() as directory:
+                subprocess.run(
+                    [
+                        sys.executable,
+                        str(ROOT / "tools" / "build_runtime_probe.py"),
+                        "--bundle-root", directory,
+                        "--scenario", f"{profile}-backfire-single-solo",
+                        "--render-ms", "1000",
+                    ],
+                    check=True,
+                    cwd=ROOT,
+                    capture_output=True,
+                    text=True,
+                )
+                probe_path = Path(directory) / (
+                    f"runtime_probe_{profile}_{profile}-backfire-single-solo_on.maxpat"
+                )
+                probe = json.loads(probe_path.read_text(encoding="utf-8"))["patcher"]
+                boxes = [item["box"] for item in probe["boxes"]]
+                text = "\n".join(box.get("text", "") for box in boxes)
+                self.assertIn("backfire_solo 1", text)
+                self.assertIn(f"s {profile}.pop.audition_one_hit", text)
+                self.assertIn("past 200", text)
+                self.assertNotIn("backfire_test 1", text)
+
     def test_runtime_probe_exposes_low_default_and_high_backfire_intensity(self):
         expected = {
             "v10": {"low": 0.25, "default": 0.82, "high": 1.0},
@@ -3546,6 +3718,56 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
         self.assertGreater(harsh["harsh_ratio"], 0.99)
         self.assertLess(low["harsh_ratio"], 0.01)
         self.assertLess(high["harsh_ratio"], 0.01)
+
+    def test_audio_metrics_distinguish_short_kick_impact_from_snare_attack(self):
+        sys.path.insert(0, str(ROOT / "tools"))
+        from audio_metrics import analyze
+
+        def write_impact(path, snare):
+            sample_rate = 48000
+            phase = 0.0
+            noise_state = 0x12345678
+            payload = []
+            for index in range(sample_rate):
+                time = index / sample_rate
+                elapsed = time - 0.10
+                value = 0.0
+                if elapsed >= 0.0:
+                    if snare:
+                        noise_state = (1664525 * noise_state + 1013904223) & 0xFFFFFFFF
+                        noise = ((noise_state / 0xFFFFFFFF) * 2.0) - 1.0
+                        value = 0.55 * noise * math.exp(-elapsed / 0.11)
+                    else:
+                        frequency = 56.0 + 72.0 * math.exp(-elapsed / 0.035)
+                        phase += 2.0 * math.pi * frequency / sample_rate
+                        value = 0.72 * math.sin(phase) * math.exp(-elapsed / 0.075)
+                payload.append(struct.pack("<h", round(max(-1.0, min(1.0, value)) * 32767.0)))
+            with wave.open(str(path), "wb") as handle:
+                handle.setnchannels(1)
+                handle.setsampwidth(2)
+                handle.setframerate(sample_rate)
+                handle.writeframes(b"".join(payload))
+
+        with tempfile.TemporaryDirectory() as directory:
+            kick_path = Path(directory) / "kick.wav"
+            snare_path = Path(directory) / "snare.wav"
+            write_impact(kick_path, False)
+            write_impact(snare_path, True)
+            kick = analyze(kick_path)
+            snare = analyze(snare_path)
+
+        self.assertLess(kick["attack_23ms_centroid_hz"], 250.0)
+        self.assertGreater(kick["attack_23ms_low_20_180_ratio"], 0.65)
+        self.assertLess(kick["attack_23ms_snare_1200_6000_ratio"], 0.02)
+        self.assertLess(kick["impact_tail_20db_ms"], 240.0)
+        self.assertGreater(
+            snare["attack_23ms_centroid_hz"],
+            kick["attack_23ms_centroid_hz"] * 4.0,
+        )
+        self.assertGreater(
+            snare["attack_23ms_snare_1200_6000_ratio"],
+            kick["attack_23ms_snare_1200_6000_ratio"] * 10.0,
+        )
 
     def test_audio_metrics_detect_wrap_discontinuity_harmonic_comb(self):
         import math

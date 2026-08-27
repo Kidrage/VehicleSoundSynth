@@ -219,6 +219,80 @@ def envelope_modulation_metrics(
     }
 
 
+def impact_metrics(samples: list[float], sample_rate: int) -> dict[str, float]:
+    """Measure the first impact attack and its short-tail decay independently."""
+    peak = max((abs(value) for value in samples), default=0.0)
+    onset_threshold = peak * 0.08
+    onset = next(
+        (index for index, value in enumerate(samples) if abs(value) >= onset_threshold),
+        0,
+    )
+
+    def attack(duration_ms: float) -> dict[str, float]:
+        frame_count = max(16, round(sample_rate * duration_ms / 1000.0))
+        segment = samples[onset:onset + frame_count]
+        if len(segment) < frame_count:
+            segment = segment + [0.0] * (frame_count - len(segment))
+        windowed = [
+            complex(
+                value
+                * (0.5 - 0.5 * math.cos(2.0 * math.pi * index / (frame_count - 1)))
+            )
+            for index, value in enumerate(segment)
+        ]
+        fft_size = 1
+        while fft_size < frame_count:
+            fft_size *= 2
+        windowed.extend([0j] * (fft_size - frame_count))
+        power = [abs(value) ** 2 for value in fft(windowed)[: fft_size // 2]]
+
+        def band(low: float, high: float) -> float:
+            return sum(
+                value
+                for index, value in enumerate(power)
+                if low <= index * sample_rate / fft_size < high
+            )
+
+        audible = max(band(20.0, min(12000.0, sample_rate / 2.0)), 1e-30)
+        bins = [
+            index for index in range(1, len(power))
+            if 20.0 <= index * sample_rate / fft_size < min(12000.0, sample_rate / 2.0)
+        ]
+        centroid = sum(
+            index * sample_rate / fft_size * power[index] for index in bins
+        ) / audible
+        return {
+            "centroid_hz": centroid,
+            "low_20_180_ratio": band(20.0, 180.0) / audible,
+            "snare_1200_6000_ratio": band(1200.0, 6000.0) / audible,
+        }
+
+    block = max(1, round(sample_rate * 0.005))
+    envelope = [
+        math.sqrt(sum(value * value for value in samples[index:index + block]) / block)
+        for index in range(onset, len(samples) - block + 1, block)
+    ]
+    envelope_peak = max(envelope, default=0.0)
+    tail_threshold = envelope_peak * 0.1
+    last_active = max(
+        (index for index, value in enumerate(envelope) if value >= tail_threshold),
+        default=0,
+    )
+    tail_ms = (last_active + 1) * block * 1000.0 / sample_rate
+    short = attack(23.0)
+    medium = attack(46.0)
+    return {
+        "impact_onset_ms": onset * 1000.0 / sample_rate,
+        "attack_23ms_centroid_hz": short["centroid_hz"],
+        "attack_23ms_low_20_180_ratio": short["low_20_180_ratio"],
+        "attack_23ms_snare_1200_6000_ratio": short["snare_1200_6000_ratio"],
+        "attack_46ms_centroid_hz": medium["centroid_hz"],
+        "attack_46ms_low_20_180_ratio": medium["low_20_180_ratio"],
+        "attack_46ms_snare_1200_6000_ratio": medium["snare_1200_6000_ratio"],
+        "impact_tail_20db_ms": tail_ms,
+    }
+
+
 def analyze(
     path: Path,
     fft_size: int = 32768,
@@ -455,6 +529,7 @@ def analyze(
         "upper_harmonic_ratio": upper_harmonic_ratio,
         "harmonic_slope_db_per_octave": harmonic_slope,
         **envelope_modulation_metrics(samples, sample_rate),
+        **impact_metrics(samples, sample_rate),
     }
 
 
@@ -496,6 +571,10 @@ def main() -> int:
     parser.add_argument("--max-sample-delta-peak-over-rms", type=float)
     parser.add_argument("--max-upper-harmonic-ratio", type=float)
     parser.add_argument("--max-harmonic-slope-db-per-octave", type=float)
+    parser.add_argument("--max-attack-23ms-centroid-hz", type=float)
+    parser.add_argument("--min-attack-23ms-low-ratio", type=float)
+    parser.add_argument("--max-attack-23ms-snare-ratio", type=float)
+    parser.add_argument("--max-impact-tail-20db-ms", type=float)
     args = parser.parse_args()
     metrics = analyze(
         args.wav, expected_fundamental_hz=args.expected_fundamental_hz
@@ -612,6 +691,26 @@ def main() -> int:
             > args.max_harmonic_slope_db_per_octave
         ):
             failures.append("harmonic_slope_db_per_octave")
+    if (
+        args.max_attack_23ms_centroid_hz is not None
+        and metrics["attack_23ms_centroid_hz"] > args.max_attack_23ms_centroid_hz
+    ):
+        failures.append("attack_23ms_centroid_hz")
+    if (
+        args.min_attack_23ms_low_ratio is not None
+        and metrics["attack_23ms_low_20_180_ratio"] < args.min_attack_23ms_low_ratio
+    ):
+        failures.append("attack_23ms_low_20_180_ratio")
+    if (
+        args.max_attack_23ms_snare_ratio is not None
+        and metrics["attack_23ms_snare_1200_6000_ratio"] > args.max_attack_23ms_snare_ratio
+    ):
+        failures.append("attack_23ms_snare_1200_6000_ratio")
+    if (
+        args.max_impact_tail_20db_ms is not None
+        and metrics["impact_tail_20db_ms"] > args.max_impact_tail_20db_ms
+    ):
+        failures.append("impact_tail_20db_ms")
     if failures:
         print("Acceptance failed: " + ", ".join(failures))
         return 1

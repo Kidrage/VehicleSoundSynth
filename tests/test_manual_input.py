@@ -587,11 +587,13 @@ console.log(JSON.stringify(speeds));
         }
         self.assertEqual(2, len(gate_ids))
         for gate_id in gate_ids:
-            self.assertIn((inlet_id, gate_id, 1), cords)
-            self.assertNotIn((inlet_id, gate_id, 0), cords)
+            # Max 8.6.5 gate: left inlet controls open/closed state and the
+            # right inlet receives messages to pass through the selected gate.
+            self.assertIn((inlet_id, gate_id, 0), cords)
+            self.assertNotIn((inlet_id, gate_id, 1), cords)
             self.assertTrue(
                 any(
-                    source != inlet_id and destination == gate_id and inlet_index == 0
+                    source != inlet_id and destination == gate_id and inlet_index == 1
                     for source, destination, inlet_index in cords
                 ),
                 "W/S key state must enter gate's data inlet",

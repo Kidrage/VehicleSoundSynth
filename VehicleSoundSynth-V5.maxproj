@@ -23,6 +23,10 @@
         "kind": "javascript",
         "local": 1
       },
+      "code/module_mixer_state_path.js": {
+        "kind": "javascript",
+        "local": 1
+      },
       "gen/ev_powertrain.gendsp": {
         "kind": "gendsp",
         "local": 1
@@ -166,6 +170,10 @@
         "local": 1
       },
       "patchers/mix_master~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/module_mixer.maxpat": {
         "kind": "patcher",
         "local": 1
       },

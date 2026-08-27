@@ -91,11 +91,30 @@ def backfire_test_scenario(profile: str) -> dict:
     }
 
 
+def backfire_single_scenario(profile: str) -> dict:
+    """Render one host-audition hit without the physical burst scheduler."""
+    return {
+        "profile": profile,
+        "rpm": 1800.0,
+        "lock_rpm": True,
+        "global_event_address": f"{profile}.pop.audition_one_hit",
+        "event_at_ms": 200,
+        "start_enabled": False,
+        "ignition_enabled": False,
+        "extra_messages": (
+            "backfire_solo 1",
+            "transient_level_db -7" if profile == "v10" else "transient_level_db -8",
+        ),
+    }
+
+
 SCENARIOS = {
     "idle-v12": {"profile": "v12", "rpm": 780.0},
     "idle-v10": {"profile": "v10", "rpm": 740.0},
     "high-v12-3500": {"profile": "v12", "rpm": 3500.0, "throttle": 0.72, "load": 0.65, "lock_rpm": True},
     "high-v10-4200": {"profile": "v10", "rpm": 4200.0, "throttle": 0.78, "load": 0.70, "lock_rpm": True},
+    "v10-backfire-single-solo": backfire_single_scenario("v10"),
+    "v12-backfire-single-solo": backfire_single_scenario("v12"),
     # Fixed-state acoustic A/B probes: throttle may change level and spectral
     # colour, but the locked RPM keeps every engine-order frequency unchanged.
     "dna-ev-throttle-low": {
@@ -378,6 +397,7 @@ def make_probe(
     tap: str = "final",
     extra_messages: tuple[str, ...] = (),
     event_message: str | None = None,
+    global_event_address: str | None = None,
     event_at_ms: int | None = None,
     direct_event_to_transient: bool = False,
     drive_lifecycle: bool = False,
@@ -555,13 +575,20 @@ def make_probe(
     record_stop = p.message("0", 680, 190, 30)
     p.connect(load, start_delay)
     event = None
+    if event_message is not None and global_event_address is not None:
+        raise ValueError("a probe event must use either a message or a global send")
     if event_message is not None:
         event = p.message(event_message, 790, 190, 190)
         p.connect(event, transient if direct_event_to_transient else drive)
-        if driver_mode == "coreaudio":
-            event_delay = p.new("delay 7800", 790, 150, 85, numinlets=2, numoutlets=1)
-            p.connect(load, event_delay)
-            p.connect(event_delay, event)
+    elif global_event_address is not None:
+        event = p.new(
+            f"s {global_event_address}", 790, 190, 190,
+            numinlets=1, numoutlets=0,
+        )
+    if event is not None and driver_mode == "coreaudio":
+        event_delay = p.new("delay 7800", 790, 150, 85, numinlets=2, numoutlets=1)
+        p.connect(load, event_delay)
+        p.connect(event_delay, event)
     if start_enabled and not drive_lifecycle:
         start = p.message("start 1", 500, 190, 55)
         p.connect(start_delay, start)
@@ -907,6 +934,7 @@ def main() -> None:
             tap=args.tap,
             extra_messages=tuple(extra_messages),
             event_message=scenario.get("event"),
+            global_event_address=scenario.get("global_event_address"),
             event_at_ms=scenario.get("event_at_ms"),
             direct_event_to_transient=bool(
                 scenario.get("direct_event_to_transient", False)

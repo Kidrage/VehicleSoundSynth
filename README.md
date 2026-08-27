@@ -32,7 +32,10 @@ is the supported low-CPU workflow.
 7. Use `Open Sound DNA` plus `Sound DNA Solo` to tune the procedural engine. In
    V10/V12 use `Open Pop Designer`, `Backfire Solo`, and `Test Pop` to tune the
    active Pop voice without driving the car.
-8. Save intentional BEAP subpatcher edits. The launcher saves/closes the active
+8. Balance the seven audible modules in the `MODULE MIXER`: Sound DNA, Start,
+   Pop/Event, Soundscape, Road/Air, Cabin Rumble, and Master. Each profile
+   restores its own local mixer state automatically.
+9. Save intentional BEAP subpatcher edits. The launcher saves/closes the active
    top-level runtime when switching; when finished, close the runtime and Project
    windows and quit Max.
 
@@ -77,6 +80,13 @@ filtered crack and softer wall reflections replace the former naked resonant
 click, while the BEAP graph remains the editable colour layer. No backfire sample
 is used, and slowing to zero cannot trigger the former low-resolution event
 sample.
+
+Every runtime embeds one generated `patchers/module_mixer.maxpat` control
+surface. It does not synthesize sound: it converts the seven labelled faders to
+the existing public dB messages and keeps the main page readable. The six stem
+faders cover Sound DNA, Start, Pop/Event, Soundscape, Road/Air and Cabin Rumble;
+Master is the final bus trim. Values auto-save per profile under the ignored
+`presets/local/` directory, so EV, V10 and V12 may keep different balances.
 
 The signal path per runtime is:
 
@@ -213,6 +223,7 @@ exhaust_boom 0..1
 structure_vibration 0..1
 cabin_ir_mix 0..1
 powertrain_level_db -60..6
+start_level_db -60..6
 transient_level_db -60..6
 road_level_db -60..6
 rumble_level_db -60..6
@@ -298,15 +309,17 @@ Pressure, Body Level and Crack Level expose the remaining core tone balance.
 The top number controls are authoritative. `Pressure_Mixer` adds dependable
 BEAP colour, while native MMF/AD/VCA icons may be subtle under Max 8.6.5's short
 external gates and should not be used as a chain-health test. The shipped
-V10/V12 defaults use Global Pitch `-7` / `-9`, strong Low Pressure/Body, and a
-restrained Crack Level so the result reads as an exhaust-pressure explosion
+V10/V12 defaults use Global Pitch `-5` / `-6`, Low Pressure `1.0` / `1.0`,
+Body Level `1.30` / `1.35`, Crack Level `0.008` / `0.006`, and Decay Scale
+`0.75` / `0.62`, so the result reads as a short exhaust-pressure explosion
 rather than a snare. For an even lower Pop, make Global Pitch more negative,
 then reduce Crack Tune or Crack Level. Burst count,
 spacing and per-hit pitch contour remain physical logic in
 `code/backfire_burst.js`; reflection timing remains generated plumbing. Do not
 edit generated `*_backfire_host~.maxpat` JSON. Save the Pop Designer patcher
 with Cmd+S, then set runtime Intensity and use transient dB only for whole-stem
-balance. The Soundscape,
+balance. On the runtime page, `Pop / Event` is the final gain for the entire Pop
+voice; use it only after the tone is finished. The Soundscape,
 start and backfire BEAP `.maxpat` files are
 seed-once user-owned files: edit and save them directly in Max, and project
 regeneration will preserve your tuning.
@@ -315,6 +328,16 @@ Keyboard Manual uses binary pedals: W sends full `throttle 1` while held and S
 sends the fixed service-brake command. The `keyboard_drive_ws` adapter owns the
 key-state gates; `manual_input` only selects Keyboard versus Gamepad and forwards
 normalized pedals into the existing 20 ms drive integration.
+
+## Persistent module mixer
+
+The `MODULE MIXER` on each runtime is the single balance surface for every
+audible module. Move a fader in dB; its value is sent immediately and written
+after a short debounce to `presets/local/<profile>_module_mixer.json`. The state
+is profile-specific and ignored by Git. `Reload` restores the last saved values,
+`Reset` returns to the shipped profile balance, and closing/switching a runtime
+saves once more synchronously. Edit `tools/build_project.py` rather than the
+generated `patchers/module_mixer.maxpat` if the mixer interface itself changes.
 
 ## Persistent vehicle-bus EQ
 
