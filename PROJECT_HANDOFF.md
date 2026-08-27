@@ -9,14 +9,15 @@
 - Working root: `.`
 - Repository name: `VehicleSoundSynth-V5`
 - Git repository: `true`
-- Generated at: `2026-08-26T21:25:00+08:00`
+- Generated at: `2026-08-27T11:30:00+08:00`
 
 ## Current State
 
-- Branch: canonical `main`; keyboard-pedal and low-pressure Pop implementation
-  fixed point is `82fca86`, with later handoff-only descendants.
+- Branch: canonical `main`; keyboard, persistent seven-module mixer, and
+  kick-impact Pop implementation fixed point is `f85c1ca`, with later
+  handoff-only descendants.
 - Prior layered-backfire implementation: `9fffe195d9e3aa68678856ad880693ac6a5df63a`.
-- Indexed paths: 156 including the repository-local AgentLab handoff
+- Indexed paths: 158 including the repository-local AgentLab handoff
 - Inventory truncated: `false`
 - Inaccessible paths: 0
 - Scan mode: complete path/metadata inventory; no bulk content read; no symlink traversal.
@@ -42,7 +43,7 @@
 
 | Route | Files |
 |---|---:|
-| `patchers` | 61 |
+| `patchers` | 62 |
 | `media` | 35 |
 | `.` | 17 |
 | `tools` | 13 |
@@ -50,7 +51,7 @@
 | `assets/raw` | 7 |
 | `.codex` | 4 |
 | `.agentlab` | 1 |
-| `code` | 5 |
+| `code` | 6 |
 | `gen` | 3 |
 | `presets` | 3 |
 | `tests` | 3 |
@@ -60,23 +61,23 @@
 
 ### Tracked payload
 
-- total: 156 files, 120252624 bytes
+- total: 158 files, 120355938 bytes
 - audio (`.wav`): 41 files, 103833150 bytes
-- executable sources (`.py`, `.js`, `.gendsp`): 24 files, 877117 bytes
-- Max project/patch (`.maxpat`, `.maxproj`): 66 files, 14866422 bytes
-- documentation (`.md`, `.docx`, `.pdf`): 15 files, 636514 bytes
+- executable sources (`.py`, `.js`, `.gendsp`): 25 files, 902836 bytes
+- Max project/patch (`.maxpat`, `.maxproj`): 67 files, 14943032 bytes
+- documentation (`.md`, `.docx`, `.pdf`): 15 files, 637373 bytes
 - structured data (`.json`): 6 files, 33939 bytes
-- other tracked text/markers: 4 files, 5482 bytes
+- other tracked text/markers: 4 files, 5608 bytes
 
 ### Common Extensions
 
-- `.maxpat`: 65
+- `.maxpat`: 66
 - `.wav`: 41
 - `.py`: 16
 - `.md`: 9
 - `.json`: 6
 - `.docx`: 5
-- `.js`: 5
+- `.js`: 6
 - `.gendsp`: 3
 - `.txt`: 2
 - `[no extension]`: 2
@@ -95,6 +96,7 @@
 
 ## Change History
 
+- `f85c1ca 2026-08-27 feat: add persistent module mixer and impact pop`
 - `82fca86 2026-08-26 fix: restore keyboard pedals and deepen pop pressure`
 - `e1e0286 2026-08-26 fix: route pop tuning to resonant frequency inlets`
 - `d80ce18 2026-08-26 fix: tune every pop layer and cover DNA controls`
@@ -134,25 +136,35 @@
 
 ## Current Changes
 
-- `82fca86` corrects the generated `keyboard_drive_ws` patch: Manual enable now
-  controls each Max `gate` through inlet 1 while W/S 0/1 key state enters data
-  inlet 0. A patchcord regression prevents the former silent-keyboard wiring
-  from returning; `drive_model.js` and the public pedal seam are unchanged.
-- V10/V12 Pop defaults now favor chamber pressure instead of a snare-like Crack:
-  Global Pitch is `-7` / `-9`, Low Pressure `0.72` / `0.82`, Body Level
-  `1.22` / `1.26`, and Crack Level `0.30` / `0.24`. The physical Crack impulse,
-  native colour trim and upper decay were reduced while the existing 1--5 hit,
-  140--200 ms randomized burst scheduler remains unchanged.
-- Completed on canonical `main`. The implementation fixed point passed 157/157
-  tests, deterministic generation and `git diff --check`. Fresh Max Test Pop
-  renders were non-silent and unclipped: V10 peak/RMS `-1.24/-19.41` dBFS,
-  centroid `139` Hz, harsh ratio `0.0055`, rumble `0.724`; V12
-  `-0.28/-19.61` dBFS, `68` Hz, `0.0014`, `0.863` respectively.
-- Final project plus EV/V10/V12 headless loads found no missing-object,
-  Gen-outlet, patchcord or invalid-category blocker. Direct-open search-path and
-  application SQLite warnings remain documented/non-blocking. Every task-owned
-  PID was verified at zero windows and closed; protected pre-existing PID 25676
-  was not touched.
+- `f85c1ca` fixes the generated `keyboard_drive_ws` patch against Max 8.6.5's
+  documented `gate` contract: Manual enable enters control inlet 0 and W/S key
+  state enters data inlet 1. W is immediate `throttle 1/0`, S is the existing
+  fixed service brake, and `drive_model.js` plus the public normalized pedal
+  seam are unchanged.
+- Every runtime now embeds `module_mixer.maxpat`, a generated seven-fader main
+  balance surface for Sound DNA, Start, Pop/Event, Soundscape, Road/Air, Cabin
+  Rumble, and Master. EV/V10/V12 save separately to ignored
+  `presets/local/<profile>_module_mixer.json`; final Max loads created and wrote
+  all three valid profile states. Start has its own gain before the shared
+  transient/Event gain, so the Pop/Event fader is the post-voice Pop total gain.
+- V10/V12 Pop defaults are pressure-first: Global Pitch `-5/-6`, Low Pressure
+  `1.0/1.0`, Body `1.30/1.35`, Crack `0.008/0.006`, and Decay `0.75/0.62`.
+  The generated host retains the 28 Hz subsonic high-pass and adds a 600/520 Hz
+  air ceiling. One hit still exposes the editable BEAP/Core controls; Test Pop
+  and physical overrun retain the existing seeded 1--5 hits at 140--200 ms.
+- Completed on canonical `main`. All 161 tests pass, the 15 builder-owned
+  outputs and two intentionally reseeded Pop panels match an independent fresh
+  build byte-for-byte, and `git diff --check` is clean. Fresh Max single hits
+  are unclipped: V10 peak `-5.34` dBFS, attack centroid `149` Hz, 20--180 Hz
+  ratio `0.803`, snare-band ratio `0.000376`, tail `180` ms; V12 peak `-3.76`,
+  `91` Hz, `0.942`, `0.000143`, tail `170` ms. Random bursts peak at
+  `-1.69/-2.47` dBFS with zero clipped samples.
+- Final project plus independent EV/V10/V12 Max 8.6.5 loads found no
+  missing-object, Gen/function, invalid-category, or patchcord-range blocker.
+  The official crash-recovery preference was temporarily set to Never for
+  headless smoke, then restored byte-for-byte to Ask. All task processes and
+  the user-authorized former PID 25676 are exited; final AppleScript state is
+  `application "Max" is running = false`.
 
 ## Related Repositories
 
@@ -234,16 +246,18 @@
 ## Agent Notes
 
 <!-- AGENT_NOTES_START -->
-- 2026-08-26 keyboard/pressure-Pop repair: the keyboard adapter had Max `gate`
-  control and data inlets reversed, so W/S changed gate selection rather than
-  emitting pedals. `82fca86` restores binary W throttle/S brake delivery without
-  changing the 20 ms drivetrain. Pop ships substantially lower and body-led:
-  V10/V12 use -7/-9 semitone global defaults, stronger low/body layers and a
-  restrained Crack layer. Fresh real-Max transient renders have zero clipped
-  samples, 139/68 Hz centroids and 0.724/0.863 rumble ratios. All 157 tests pass;
-  generated outputs are deterministic, the project/runtime error audit is clean
-  apart from documented SQLite/search-path warnings, and every task-opened Max
-  instance reached zero windows and was closed. Protected PID 25676 remains.
+- 2026-08-27 keyboard/module-mixer/impact-Pop repair: the prior keyboard patch
+  still had Max `gate` ports reversed. `f85c1ca` now follows the installed
+  Max 8.6.5 reference exactly: inlet 0 controls the gate and inlet 1 receives
+  W/S key data. Every runtime adds one persistent profile-local seven-module
+  mixer, with separate Start and Pop/Event gains and a bounded non-boosting
+  Master. V10/V12 Pop is now a short pressure impact: Crack is 0.008/0.006,
+  Decay 0.75/0.62, and a 600/520 Hz output ceiling removes the former snare top.
+  Real-Max single hits peak at -5.34/-3.76 dBFS, have 149/91 Hz attack
+  centroids, 180/170 ms tails and zero clipping; randomized bursts also remain
+  unclipped. All 161 tests pass, generated output matches a fresh build, the
+  project/runtime blocker audit is clean, Max preferences were restored exactly,
+  and all Max instances including user-authorized PID 25676 are exited.
 - 2026-08-26 Pop/DNA authority repair: V10 Brightness and EV Aggression were
   confirmed dead declarations and now directly reach Gen colour paths. Pop had
   three concrete control faults: the dominant generated core bypassed most BEAP

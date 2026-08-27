@@ -5,64 +5,34 @@
 - Canonical remote: `git@github.com:Kidrage/VehicleSoundSynth.git`
 - Target runtime: Max 8.6.5 on macOS
 - Canonical branch: `main`.
-- Authoritative keyboard-pedal and low-pressure Pop implementation fixed point:
-  `82fca86`, now contained in canonical `main`; later descendants are
+- Authoritative keyboard, seven-module mixer, and kick-impact Pop implementation
+  fixed point: `f85c1ca`, contained in canonical `main`; later descendants are
   handoff-only.
 
 ## Delivered Change
 
-- The keyboard adapter's Max `gate` ports are repaired: Internal Manual enable
-  selects the gate on inlet 1 and W/S binary pedal state enters inlet 0. W is
-  again immediate full throttle and S the fixed service brake; the normalized
-  public pedal seam and `drive_model.js` are unchanged.
-- V10/V12 Pop now defaults to a low exhaust-pressure explosion instead of a
-  bright snare shell. Global Pitch defaults to `-7` / `-9`, Low Pressure to
-  `0.72` / `0.82`, Body Level to `1.22` / `1.26`, and Crack Level to
-  `0.30` / `0.24`; the short Crack impulse/colour branch is also restrained.
-  The editable Pop Designer remains authoritative and the randomized 1--5 hit,
-  140--200 ms physical burst schedule is unchanged.
-- Pop Designer now opens the active audible V10/V12 backfire instance and
-  exposes a persistent authoritative control surface for Global Pitch, Core
-  Presence, Body/Crack Tune, Decay, Low Pressure, Body Level and Crack Level.
-  Profile-local named control buses keep the editable patcher separate from the
-  generated host, and parent defaults plus floating-point message ramps prevent
-  silent loads or 0--1 values being truncated to integers.
-- `Global Pitch` reaches both randomized per-hit pitch and the generated
-  pressure-core filters. Core Presence is deliberately bounded to 0.25--1.5 so
-  it cannot become a hidden mute. The visible BEAP Pressure Mixer remains an
-  optional colour source; the top controls are the audibility/tone authority.
-- EV Aggression and V10 Brightness were repaired from declared-but-unused Sound
-  DNA values into direct Gen colour paths. All three runtimes now expose DNA
-  Solo so the live procedural powertrain can be judged without pad, transient,
-  road or rumble masking.
-
-- Default Cinematic start is now a hybrid procedural voice: a generated
-  crank/first-fire pressure core guarantees the transient is audible, while the
-  existing seed-once `engine_start_beap~` remains the editable colour layer.
-  Realistic start remains the tracked starter one-shot (or optional ignored
-  local V10 derivative with fallback); continuous ICE remains procedural.
-- V10/V12 Test Pop now has an explicit audition route that can sound with the
-  engine off. Normal lift-off/shift backfire still requires Backfire Enable,
-  ignition and engine-running state.
-- The Pop voice is no longer a bare click/resonator. It uses distinct pressure
-  body and exhaust-crack envelopes, profile-specific filters, two soft wall
-  reflections, stereo differentiation, saturation and a higher usable level.
-- Fast lift-off and Test Pop now schedule 1--5 decaying hits with random
-  140--200 ms spacing. The pitch contour falls overall with small per-hit jitter;
-  shift/explicit events remain one hit and rapid retrigger cancels stale hits.
-
-- Keyboard W is immediate full throttle; S is a fixed 0.65 service brake with
-  brake priority. Gamepad LT/RT remain independent analog pedals.
-- V10/V12 DriveModel emits a bounded physical `overrun` event after a fast,
-  loaded lift-off. Generated hosts turn it into a strength-scaled BEAP event;
-  drivetrain thresholds and the public message seam are unchanged.
-- Both ICE runtimes expose Backfire Solo and Test Pop for isolated audition.
-- Seed-once V10/V12 voices expose Pressure Body, Exhaust Crack, Tail
-  Color/Output, and the authoritative top control panel. Intensity morphs layer
-  colour and tail density, not only gain. Max-safe pressure/core controls remain
-  audible even when native BEAP MMF/AD/VCA response is subtle on short gates.
-- Public actuator inputs remain normalized `throttle 0..1` and `brake 0..1`;
-  the fixed 20 ms speed/RPM/shift integration is unchanged.
+- The keyboard adapter now follows the installed Max 8.6.5 `gate` reference:
+  Internal Manual enable enters control inlet 0, while W/S key state enters data
+  inlet 1. W is immediate full throttle and S remains the fixed 0.65 service
+  brake; Gamepad LT/RT, `drive_model.js`, and the normalized public pedal seam
+  are unchanged.
+- Every EV/V10/V12 main runtime embeds one generated `MODULE MIXER` with seven
+  dB faders: Sound DNA, Start, Pop/Event, Soundscape, Road/Air, Cabin Rumble,
+  and Master. Each profile auto-saves to its own ignored
+  `presets/local/<profile>_module_mixer.json`; Save/Reload/Reset are explicit.
+  Start is now independently trimmed before the shared transient/Event level,
+  and Pop/Event is the post-voice total gain requested for all Pop layers.
+- V10/V12 Pop defaults are a low, short pressure impact rather than a snare:
+  Global Pitch `-5/-6`, Low Pressure `1.0/1.0`, Body `1.30/1.35`, Crack
+  `0.008/0.006`, and Decay `0.75/0.62`. The generated host adds a 600/520 Hz
+  air ceiling after its 28 Hz subsonic high-pass. The editable Pop Designer
+  remains authoritative over pitch, drop, body/crack tuning, decay and levels.
+- `Audition One Hit` remains the repeatable tone check. `Test Pop` and physical
+  loaded lift-off retain the seeded 1--5 hit, 140--200 ms descending schedule;
+  shift/explicit events remain one hit, and physical events still require
+  Backfire Enable, ignition and engine-running state.
+- Sound DNA, cinematic start, shared Soundscape, public throttle/brake values,
+  and fixed 20 ms speed/RPM/shift integration are otherwise unchanged.
 
 ## Repository Rules
 
@@ -76,43 +46,32 @@
 
 ## Local Save Archive
 
-- The pre-task user V10 Max save was backed up byte-for-byte before deterministic
-  regeneration at
-  `/Users/saintpeter/Downloads/.VehicleSoundSynth-Backups/20260826-keyboard-pop/VehicleSoundSynth-V10.user-save.maxpat`.
+- The two intentionally reseeded Pop Designer panels were backed up before
+  replacement at
+  `/Users/saintpeter/Downloads/.VehicleSoundSynth-Backups/20260827-keyboard-pop-mixer/`.
 
 ## Validation
 
-- 157/157 unit tests pass; deterministic generation, seed-once preservation and
-  `git diff --check` pass.
-- Fresh final Pop transient renders are non-silent and unclipped. V10 measured
-  `-1.24/-19.41` dBFS peak/RMS, `139` Hz centroid, `0.0055` harsh ratio and
-  `0.724` rumble ratio; V12 measured `-0.28/-19.61`, `68` Hz, `0.0014` and
-  `0.863`. These pass the new anti-snare acoustic gates and retain the 0.16 s
-  randomized-burst envelope period.
-- Fixed-state real Max low/high DNA renders cover the complete visible control
-  set as aggregate A/Bs for EV/V10/V12. Low-to-high RMS changes were 8.77,
-  14.26 and 14.74 dB respectively; all six renders were non-silent and had zero
-  clipped samples. Per-control low/high probe scenarios are generated from the
-  same authority as each editable DNA panel.
-- Final post-review Pop renders confirm the resonant-frequency port repair:
-  V10 peak/RMS is -4.16/-25.16 dBFS and V12 is -4.81/-26.89 dBFS, both non-silent
-  with zero clipped samples.
-- Real Max 8.6.5 renders are non-silent and unclipped. Cinematic starts measured
-  V10 -4.83/-16.98 dBFS peak/RMS and V12 -4.41/-16.85; the controller-driven
-  start path measured -4.58/-25.79. Test Pop measured V10 -3.91/-25.70 and V12
-  -6.29/-29.03, with profile-distinct stereo tails and zero clipping.
-- Final Pop-only Max renders are unclipped. V10 measured -4.44/-25.05 dBFS
-  peak/RMS, 430 Hz centroid and 0.520 rumble ratio; V12 measured
-  -5.03/-25.88 dBFS, 241 Hz centroid and 0.577 rumble ratio. Both expose a
-  0.16-second burst-envelope period; physical overrun renders are also non-silent
-  and unclipped.
-- Final project plus EV/V10/V12 smoke found no missing-object, Gen outlet,
-  invalid-category, patchcord or project blocker. Direct-open search-path
-  warnings and the optional local Ferrari starter miss are fallback-safe.
-- Final project and EV/V10/V12 runtime loads found no missing-object, Gen outlet,
-  patchcord or invalid-category blocker. Probe/runtime windows were already
-  closed by their generated close path; all task-owned Max PIDs were terminated
-  after confirming zero windows. Crash recovery remains `Ask`. A pre-existing
-  protected background PID 25676 also has zero windows but was not force-closed.
-  This task's project/runtime instances were separately verified at zero windows
-  and closed; only the protected pre-existing PID remains.
+- 161/161 unit tests pass; `git diff --check` passes. Fifteen builder-owned
+  generated outputs and both intentionally reseeded Pop panels are byte-identical
+  to an independent fresh generator build. V4 remains clean and `drive_model.js`
+  has no diff.
+- Fresh real-Max single-hit renders are non-silent and unclipped. V10 measured
+  peak `-5.34` dBFS, 23 ms attack centroid `149` Hz, 20--180 Hz energy `0.803`,
+  snare-band energy `0.000376`, and a `180` ms -20 dB tail. V12 measured
+  `-3.76`, `91` Hz, `0.942`, `0.000143`, and `170` ms respectively.
+- Seeded 1--5-hit burst renders are also unclipped: V10/V12 peak at
+  `-1.69/-2.47` dBFS and retain the 140--200 ms schedule. The installed
+  NonRealTime driver again wrote 44.1 kHz, so the metrics are comparative/audio
+  safety evidence rather than a 48 kHz delivery claim.
+- Final headless Max 8.6.5 loads covered the project and EV/V10/V12 separately.
+  Current and rotated logs contain zero missing-object, Gen/function,
+  invalid-category, or patchcord-range blocker matches. The direct-open
+  search-path notices remain warning-only; abstractions loaded, and all three
+  ignored per-profile module-mixer JSON states were written with expected
+  defaults.
+- The official `crashrecovery` preference was backed up, temporarily changed
+  from Ask to Never for headless smoke, and restored byte-for-byte to Ask. Every
+  task-owned process had zero windows before exact termination. The user also
+  authorized closing former PID 25676; final process inspection and AppleScript
+  both report no Max instance running.
