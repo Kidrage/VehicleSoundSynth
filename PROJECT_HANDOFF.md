@@ -9,15 +9,16 @@
 - Working root: `.`
 - Repository name: `VehicleSoundSynth-V5`
 - Git repository: `true`
-- Generated at: `2026-08-27T11:30:00+08:00`
+- Generated at: `2026-08-27T18:59:32+08:00`
 
 ## Current State
 
-- Branch: canonical `main`; keyboard, persistent seven-module mixer, and
-  kick-impact Pop implementation fixed point is `f85c1ca`, with later
-  handoff-only descendants.
+- Branch: canonical `main`; live/persistent sound-module implementation fixed
+  point is `dc84aad`, with later handoff-only descendants.
+- Prior keyboard, persistent seven-module mixer, and kick-impact Pop fixed
+  point: `f85c1ca`.
 - Prior layered-backfire implementation: `9fffe195d9e3aa68678856ad880693ac6a5df63a`.
-- Indexed paths: 158 including the repository-local AgentLab handoff
+- Indexed paths: 159 including the repository-local AgentLab handoff
 - Inventory truncated: `false`
 - Inaccessible paths: 0
 - Scan mode: complete path/metadata inventory; no bulk content read; no symlink traversal.
@@ -51,7 +52,7 @@
 | `assets/raw` | 7 |
 | `.codex` | 4 |
 | `.agentlab` | 1 |
-| `code` | 6 |
+| `code` | 7 |
 | `gen` | 3 |
 | `presets` | 3 |
 | `tests` | 3 |
@@ -61,13 +62,13 @@
 
 ### Tracked payload
 
-- total: 158 files, 120355938 bytes
+- total: 159 files, 120973455 bytes
 - audio (`.wav`): 41 files, 103833150 bytes
-- executable sources (`.py`, `.js`, `.gendsp`): 25 files, 902836 bytes
-- Max project/patch (`.maxpat`, `.maxproj`): 67 files, 14943032 bytes
-- documentation (`.md`, `.docx`, `.pdf`): 15 files, 637373 bytes
+- executable sources (`.py`, `.js`, `.gendsp`): 26 files, 908237 bytes
+- Max project/patch (`.maxpat`, `.maxproj`): 67 files, 15554601 bytes
+- documentation (`.md`, `.docx`, `.pdf`): 15 files, 637872 bytes
 - structured data (`.json`): 6 files, 33939 bytes
-- other tracked text/markers: 4 files, 5608 bytes
+- other tracked text/markers: 4 files, 5656 bytes
 
 ### Common Extensions
 
@@ -77,7 +78,7 @@
 - `.md`: 9
 - `.json`: 6
 - `.docx`: 5
-- `.js`: 6
+- `.js`: 7
 - `.gendsp`: 3
 - `.txt`: 2
 - `[no extension]`: 2
@@ -96,6 +97,7 @@
 
 ## Change History
 
+- `dc84aad 2026-08-27 fix: make sound modules live and persistent`
 - `f85c1ca 2026-08-27 feat: add persistent module mixer and impact pop`
 - `82fca86 2026-08-26 fix: restore keyboard pedals and deepen pop pressure`
 - `e1e0286 2026-08-26 fix: route pop tuning to resonant frequency inlets`
@@ -136,34 +138,32 @@
 
 ## Current Changes
 
-- `f85c1ca` fixes the generated `keyboard_drive_ws` patch against Max 8.6.5's
-  documented `gate` contract: Manual enable enters control inlet 0 and W/S key
-  state enters data inlet 1. W is immediate `throttle 1/0`, S is the existing
-  fixed service brake, and `drive_model.js` plus the public normalized pedal
-  seam are unchanged.
-- Every runtime now embeds `module_mixer.maxpat`, a generated seven-fader main
-  balance surface for Sound DNA, Start, Pop/Event, Soundscape, Road/Air, Cabin
-  Rumble, and Master. EV/V10/V12 save separately to ignored
-  `presets/local/<profile>_module_mixer.json`; final Max loads created and wrote
-  all three valid profile states. Start has its own gain before the shared
-  transient/Event gain, so the Pop/Event fader is the post-voice Pop total gain.
-- V10/V12 Pop defaults are pressure-first: Global Pitch `-5/-6`, Low Pressure
-  `1.0/1.0`, Body `1.30/1.35`, Crack `0.008/0.006`, and Decay `0.75/0.62`.
-  The generated host retains the 28 Hz subsonic high-pass and adds a 600/520 Hz
-  air ceiling. One hit still exposes the editable BEAP/Core controls; Test Pop
-  and physical overrun retain the existing seeded 1--5 hits at 140--200 ms.
-- Completed on canonical `main`. All 161 tests pass, the 15 builder-owned
-  outputs and two intentionally reseeded Pop panels match an independent fresh
-  build byte-for-byte, and `git diff --check` is clean. Fresh Max single hits
-  are unclipped: V10 peak `-5.34` dBFS, attack centroid `149` Hz, 20--180 Hz
-  ratio `0.803`, snare-band ratio `0.000376`, tail `180` ms; V12 peak `-3.76`,
-  `91` Hz, `0.942`, `0.000143`, tail `170` ms. Random bursts peak at
-  `-1.69/-2.47` dBFS with zero clipped samples.
+- `Open Sound DNA`, `Open Soundscape BEAP`, and `Open Pop Designer` now target
+  the nested instance that is actually feeding the active runtime. Soundscape
+  no longer opens a detached copy. DNA continues to save ignored per-profile
+  JSON, Soundscape `Save Soundscape` writes the shared seed-once graph, and
+  V10/V12 Pop now save/reload ignored `presets/local/<profile>_pop.json` state
+  through `code/pop_state_path.js`.
+- The shared Soundscape factory state is restored to a restrained musical
+  root/fifth/octave voicing: 0.07/0.02 Hz drift, much smaller pitch modulation,
+  lower resonance, brighter but controlled MMF, longer pad envelope, and less
+  chorus regeneration. `Motion` is now a maximum modulation depth; throttle
+  scales it smoothly from 25% at idle to 100% at full pedal.
+- Local ignored V10/V12 DNA overrides that contained extreme stale values were
+  restored to the tracked Aggressive V10 and High-Rev V12 presets. The prior
+  user-saved V10 runtime was preserved outside the repository at
+  `/private/tmp/vss-live-tuning-backup.1CYB1C/VehicleSoundSynth-V10.maxpat`
+  (SHA-256 `41471bdc72545afac23774f2893c4c25461f42f95e400f05b4f5122437032689`).
+- Completed on canonical `main`. All 162 tests pass, the ten changed generated
+  outputs match an independent fresh build byte-for-byte, and
+  `git diff --check` is clean. Final Max Soundscape on/off renders are distinct,
+  unclipped, and below the `0.001` harshness gate. Final V10 Pop measures
+  `-2.93` dBFS peak, `121.5` Hz attack centroid, `0.875` 20--180 Hz energy,
+  `0.000216` snare-band energy, and a `170` ms tail.
 - Final project plus independent EV/V10/V12 Max 8.6.5 loads found no
   missing-object, Gen/function, invalid-category, or patchcord-range blocker.
-  The official crash-recovery preference was temporarily set to Never for
-  headless smoke, then restored byte-for-byte to Ask. All task processes and
-  the user-authorized former PID 25676 are exited; final AppleScript state is
+  The official crash-recovery preference was restored byte-for-byte to Ask;
+  all task-opened windows/processes were closed, and final AppleScript reports
   `application "Max" is running = false`.
 
 ## Related Repositories

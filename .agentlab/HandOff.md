@@ -5,34 +5,22 @@
 - Canonical remote: `git@github.com:Kidrage/VehicleSoundSynth.git`
 - Target runtime: Max 8.6.5 on macOS
 - Canonical branch: `main`.
-- Authoritative keyboard, seven-module mixer, and kick-impact Pop implementation
-  fixed point: `f85c1ca`, contained in canonical `main`; later descendants are
-  handoff-only.
+- Authoritative live/persistent sound-module implementation fixed point:
+  `dc84aad`, contained in canonical `main`; later descendants are handoff-only.
 
 ## Delivered Change
 
-- The keyboard adapter now follows the installed Max 8.6.5 `gate` reference:
-  Internal Manual enable enters control inlet 0, while W/S key state enters data
-  inlet 1. W is immediate full throttle and S remains the fixed 0.65 service
-  brake; Gamepad LT/RT, `drive_model.js`, and the normalized public pedal seam
-  are unchanged.
-- Every EV/V10/V12 main runtime embeds one generated `MODULE MIXER` with seven
-  dB faders: Sound DNA, Start, Pop/Event, Soundscape, Road/Air, Cabin Rumble,
-  and Master. Each profile auto-saves to its own ignored
-  `presets/local/<profile>_module_mixer.json`; Save/Reload/Reset are explicit.
-  Start is now independently trimmed before the shared transient/Event level,
-  and Pop/Event is the post-voice total gain requested for all Pop layers.
-- V10/V12 Pop defaults are a low, short pressure impact rather than a snare:
-  Global Pitch `-5/-6`, Low Pressure `1.0/1.0`, Body `1.30/1.35`, Crack
-  `0.008/0.006`, and Decay `0.75/0.62`. The generated host adds a 600/520 Hz
-  air ceiling after its 28 Hz subsonic high-pass. The editable Pop Designer
-  remains authoritative over pitch, drop, body/crack tuning, decay and levels.
-- `Audition One Hit` remains the repeatable tone check. `Test Pop` and physical
-  loaded lift-off retain the seeded 1--5 hit, 140--200 ms descending schedule;
-  shift/explicit events remain one hit, and physical events still require
-  Backfire Enable, ignition and engine-running state.
-- Sound DNA, cinematic start, shared Soundscape, public throttle/brake values,
-  and fixed 20 ms speed/RPM/shift integration are otherwise unchanged.
+- Main-page module buttons now address the audible nested instances. DNA remains
+  live and saves per-profile ignored JSON; Soundscape opens the active shared
+  BEAP voice and `Save Soundscape` writes that seed-once graph; V10/V12 Pop gains
+  `Save Pop`/`Reload Pop` backed by ignored `<profile>_pop.json` files.
+- The shared Soundscape factory patch is restored to a restrained
+  root/fifth/octave voicing with 0.07/0.02 Hz drift, lower pitch depth and filter
+  resonance, controlled high-frequency detail, and slower pad envelopes.
+  `Motion` is a maximum depth and throttle supplies its smooth 25--100% scaler.
+- Stale ignored V10/V12 DNA states were reset to their tracked intended presets.
+  The generated runtimes, public pedal seam, 20 ms drivetrain integration,
+  Pop event schedule, and module mixer architecture are otherwise unchanged.
 
 ## Repository Rules
 
@@ -46,24 +34,20 @@
 
 ## Local Save Archive
 
-- The two intentionally reseeded Pop Designer panels were backed up before
-  replacement at
-  `/Users/saintpeter/Downloads/.VehicleSoundSynth-Backups/20260827-keyboard-pop-mixer/`.
+- The pre-existing V10 top-level Max save was preserved at
+  `/private/tmp/vss-live-tuning-backup.1CYB1C/VehicleSoundSynth-V10.maxpat`
+  (SHA-256 `41471bdc72545afac23774f2893c4c25461f42f95e400f05b4f5122437032689`).
 
 ## Validation
 
-- 161/161 unit tests pass; `git diff --check` passes. Fifteen builder-owned
-  generated outputs and both intentionally reseeded Pop panels are byte-identical
-  to an independent fresh generator build. V4 remains clean and `drive_model.js`
-  has no diff.
-- Fresh real-Max single-hit renders are non-silent and unclipped. V10 measured
-  peak `-5.34` dBFS, 23 ms attack centroid `149` Hz, 20--180 Hz energy `0.803`,
-  snare-band energy `0.000376`, and a `180` ms -20 dB tail. V12 measured
-  `-3.76`, `91` Hz, `0.942`, `0.000143`, and `170` ms respectively.
-- Seeded 1--5-hit burst renders are also unclipped: V10/V12 peak at
-  `-1.69/-2.47` dBFS and retain the 140--200 ms schedule. The installed
-  NonRealTime driver again wrote 44.1 kHz, so the metrics are comparative/audio
-  safety evidence rather than a 48 kHz delivery claim.
+- 162/162 unit tests pass; `git diff --check` passes. The ten changed generated
+  outputs are byte-identical to an independent fresh generator build. V4 remains
+  clean and `drive_model.js` has no diff.
+- Final Soundscape on/off renders for EV/V10/V12 are distinct, non-silent and
+  unclipped. Their harshness ratios range from `5.35e-5` to `1.02e-4`, below the
+  documented `0.001` safety gate. Final V10 Pop measures `-2.93` dBFS peak,
+  `121.5` Hz attack centroid, `0.875` low-band energy, `0.000216` snare-band
+  energy, and a `170` ms tail.
 - Final headless Max 8.6.5 loads covered the project and EV/V10/V12 separately.
   Current and rotated logs contain zero missing-object, Gen/function,
   invalid-category, or patchcord-range blocker matches. The direct-open
@@ -72,6 +56,5 @@
   defaults.
 - The official `crashrecovery` preference was backed up, temporarily changed
   from Ask to Never for headless smoke, and restored byte-for-byte to Ask. Every
-  task-owned process had zero windows before exact termination. The user also
-  authorized closing former PID 25676; final process inspection and AppleScript
-  both report no Max instance running.
+  task-owned process had zero windows before exact termination; final
+  AppleScript reports no Max instance running.
