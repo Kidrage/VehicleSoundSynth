@@ -29,9 +29,11 @@ is the supported low-CPU workflow.
 6. After lowering the monitoring level, enable the single `Audio + Output`
    toggle. It opens the output ramp and Max DSP together; ignition/start alone
    intentionally do not enable monitoring.
-7. Use `Open Sound DNA` plus `Sound DNA Solo` to tune the procedural engine. In
+7. Use `Open Sound DNA` plus `Sound DNA Solo` to tune the procedural engine, or
+   `Open Soundscape BEAP` plus `Soundscape Solo` for the active shared pad. In
    V10/V12 use `Open Pop Designer`, `Backfire Solo`, and `Test Pop` to tune the
-   active Pop voice without driving the car.
+   active Pop voice without driving the car. These buttons open the audible
+   instances; use `Save DNA`, `Save Soundscape`, or `Save Pop` after an edit.
 8. Balance the seven audible modules in the `MODULE MIXER`: Sound DNA, Start,
    Pop/Event, Soundscape, Road/Air, Cabin Rumble, and Master. Each profile
    restores its own local mixer state automatically.
@@ -186,15 +188,19 @@ regeneration:
 
 Only the shared `cinematic_soundscape_beap~` is declared by the current runtime;
 the older EV and ICE pad graphs remain seed-once archives so existing user edits
-are never destroyed. The shared graph is a Prophet-style two-oscillator
-triangle/pulse pad with slow modulation, noise, ladder filtering, ADSR, VCA,
+are never destroyed. The shared graph is a Prophet-style three-oscillator
+triangle/pulse pad with a root/fifth/octave default voicing, slow modulation,
+noise, ladder filtering, ADSR, VCA,
 chorus, reverb, DC/infra filtering, and bounded output. Pitch, brightness,
-movement, and space follow RPM/load/throttle continuously. This follows the
+movement, and space follow RPM/load/throttle continuously. `Motion` sets maximum
+modulation depth and throttle scales it from 25% to 100%, avoiding forced idle
+wobble. This follows the
 layered analog-synth approach documented in the
 [Sequential Prophet-5 guide](https://sequential.com/wp-content/uploads/2021/02/Prophet-5-Users-Guide-1.3.pdf),
 without copying any score or preset. `Soundscape Enable`, dB, `Motion`, `Space`,
-and `Solo` are exposed on every runtime; edit and save this one subpatcher to
-tune all three profiles.
+and `Solo` are exposed on every runtime. `Open Soundscape BEAP` targets the
+audible poly voice and `Save Soundscape` persists this one shared patcher for
+all three profiles.
 
 ## Public control messages
 
@@ -316,8 +322,10 @@ rather than a snare. For an even lower Pop, make Global Pitch more negative,
 then reduce Crack Tune or Crack Level. Burst count,
 spacing and per-hit pitch contour remain physical logic in
 `code/backfire_burst.js`; reflection timing remains generated plumbing. Do not
-edit generated `*_backfire_host~.maxpat` JSON. Save the Pop Designer patcher
-with Cmd+S, then set runtime Intensity and use transient dB only for whole-stem
+edit generated `*_backfire_host~.maxpat` JSON. Click `Save Pop` in the active
+Pop Designer after tuning; its top controls and BEAP state go to the ignored
+`presets/local/v10_pop.json` or `v12_pop.json` and restore on the next runtime
+load. Then set runtime Intensity and use transient dB only for whole-stem
 balance. On the runtime page, `Pop / Event` is the final gain for the entire Pop
 voice; use it only after the tone is finished. The Soundscape,
 start and backfire BEAP `.maxpat` files are

@@ -893,25 +893,43 @@ def make_cinematic_soundscape_beap() -> dict[str, Any]:
     ):
         p.comment(label, x, 95, 95)
 
+    # Open and save the *loaded* abstraction instance.  The runtime used to
+    # load a detached copy of this file, so BEAP edits could not be auditioned
+    # until the whole poly voice was recreated.
+    open_request = p.new(
+        "r open.cinematic_soundscape", 1180, 15, 190,
+        numinlets=0, numoutlets=1,
+    )
+    front = p.message("front", 1380, 15, 45)
+    save_button = p.message("Save Soundscape", 1435, 15, 125)
+    save_message = p.message("write", 1570, 15, 45)
+    patcher_window = p.new(
+        "thispatcher", 1630, 15, 75, numinlets=1, numoutlets=2,
+    )
+    p.connect(open_request, front)
+    p.connect(front, patcher_window)
+    p.connect(save_button, save_message)
+    p.connect(save_message, patcher_window)
+
     lfo = add_beap_module(
         p, "LFO/bp.LFO.maxpat", 510, 55, "LFO",
-        initial={"Frequency": 0.14, "Mute": 0},
+        initial={"Frequency": 0.07, "Mute": 0},
     )
     lfo_slow = add_beap_module(
         p, "LFO/bp.LFO.maxpat", 840, 55, "LFO_Slow",
-        initial={"Frequency": 0.037, "Mute": 0},
+        initial={"Frequency": 0.02, "Mute": 0},
     )
-    lfo_scale = p.new("*~ 0.008", 510, 195, 72, numinlets=2, numoutlets=1)
+    lfo_scale = p.new("*~ 0.0025", 510, 195, 72, numinlets=2, numoutlets=1)
     motion_depth = p.new("*~", 590, 195, 40, numinlets=2, numoutlets=1)
     opposite = p.new("*~ -1.", 640, 195, 58, numinlets=2, numoutlets=1)
     pitch_a = p.new("+~", 710, 165, 40, numinlets=2, numoutlets=1)
     pitch_b_mod = p.new("+~", 710, 215, 40, numinlets=2, numoutlets=1)
-    pitch_b = p.new("+~ 0.012", 760, 215, 72, numinlets=2, numoutlets=1)
-    slow_pitch = p.new("*~ 0.006", 840, 215, 72, numinlets=2, numoutlets=1)
+    pitch_b = p.new("+~ 0.003", 760, 215, 72, numinlets=2, numoutlets=1)
+    slow_pitch = p.new("*~ 0.0015", 840, 215, 72, numinlets=2, numoutlets=1)
     slow_motion = p.new("*~", 920, 215, 40, numinlets=2, numoutlets=1)
     pitch_c_base = p.new("+~ 1.5849625", 970, 215, 100, numinlets=2, numoutlets=1)
     pitch_c = p.new("+~", 1080, 215, 40, numinlets=2, numoutlets=1)
-    tone_lfo = p.new("*~ 0.06", 510, 245, 68, numinlets=2, numoutlets=1)
+    tone_lfo = p.new("*~ 0.02", 510, 245, 68, numinlets=2, numoutlets=1)
     tone_motion = p.new("*~", 590, 245, 40, numinlets=2, numoutlets=1)
     tone_sum = p.new("+~", 640, 245, 40, numinlets=2, numoutlets=1)
     p.connect(lfo, lfo_scale, 0, 0)
@@ -937,33 +955,33 @@ def make_cinematic_soundscape_beap() -> dict[str, Any]:
 
     osc_a = add_beap_module(
         p, "Oscillator/bp.Oscillator.maxpat", 25, 310, "Osc_A",
-        initial={"Waveform": 1, "Offset": -5, "Mute": 0},
+        initial={"Waveform": 1, "Offset": -12, "Mute": 0},
     )
     osc_b = add_beap_module(
         p, "Oscillator/bp.Oscillator.maxpat", 355, 310, "Osc_B",
-        initial={"Waveform": 3, "Offset": -7, "PW": 43, "PWM": 18, "Mute": 0},
+        initial={"Waveform": 3, "Offset": -5, "PW": 48, "PWM": 7, "Mute": 0},
     )
     osc_c = add_beap_module(
         p, "Oscillator/bp.Oscillator.maxpat", 685, 310, "Osc_C",
-        initial={"Waveform": 1, "Offset": -12, "Mute": 0},
+        initial={"Waveform": 1, "Offset": -19, "Mute": 0},
     )
     noise = add_beap_module(p, "Random/bp.Noise.maxpat", 1015, 310, "Noise")
     noise_gain = p.new("*~ 0.026", 1060, 455, 75, numinlets=2, numoutlets=1)
     mixer = add_beap_module(
         p, "Mixers/bp.Audio Mixer.maxpat", 1190, 310, "Mixer",
-        initial={"in1": -7, "in2": -15, "in3": -29, "in4": -19},
+        initial={"in1": -6, "in2": -10, "in3": -34, "in4": -15},
     )
     ladder = add_beap_module(
         p, "Filter/bp.Ladder.maxpat", 1435, 310, "Ladder",
-        initial={"Freq": 1850, "Res": 7, "CV1": 72},
+        initial={"Freq": 1650, "Res": 5, "CV1": 58},
     )
     mmf = add_beap_module(
         p, "Filter/bp.MMF.maxpat", 1745, 310, "MMF",
-        initial={"Freq": 2450, "Res": 9, "FilterType": 0},
+        initial={"Freq": 3200, "Res": 4, "FilterType": 0},
     )
     envelope = add_beap_module(
         p, "Envelope/bp.ADSR.maxpat", 2020, 310, "ADSR",
-        initial={"Attack": 520, "Decay": 1350, "Sustain": 76, "Release": 2600},
+        initial={"Attack": 900, "Decay": 1600, "Sustain": 84, "Release": 3800},
     )
     vca = add_beap_module(p, "Level/bp.VCA.maxpat", 2275, 310, "VCA")
     p.connect(pitch_a, osc_a, 0, 0)
@@ -986,11 +1004,11 @@ def make_cinematic_soundscape_beap() -> dict[str, Any]:
 
     chorus = add_beap_module(
         p, "Effects/bp.Chorus.maxpat", 25, 610, "Chorus",
-        initial={"Center": 620, "Rate": 0.22, "Regen": 0.22, "Width": 28, "bypass": 0},
+        initial={"Center": 620, "Rate": 0.12, "Regen": 0.14, "Width": 24, "bypass": 0},
     )
     reverb = add_beap_module(
         p, "Effects/bp.Reverb 2.maxpat", 420, 610, "Reverb",
-        initial={"Damping": 4200, "Decay": 46, "Diffusion": 0.68, "Mix": 100, "Size": 66, "bypass": 0},
+        initial={"Damping": 4600, "Decay": 48, "Diffusion": 0.72, "Mix": 100, "Size": 72, "bypass": 0},
     )
     p.connect(vca, chorus)
     p.connect(vca, reverb)
@@ -1095,7 +1113,10 @@ def make_cinematic_soundscape_host(profile: str) -> dict[str, Any]:
     p.connect(tone_pack, tone_line)
 
     motion_state = p.new("pak 0. 0.55", 35, 345, 100, numinlets=2, numoutlets=1)
-    motion_map = p.new("expr min(1.,max(0.,0.12+0.42*$f1+0.46*$f2))", 35, 385, 335, numinlets=2, numoutlets=1)
+    motion_map = p.new(
+        "expr min(1.,max(0.,$f2*(0.25+0.75*$f1)))",
+        35, 385, 335, numinlets=2, numoutlets=1,
+    )
     motion_pack = p.new("pack 0. 180", 35, 425, 95, numinlets=2, numoutlets=1)
     motion_line = p.new("line~", 35, 465, 50, numinlets=2, numoutlets=2)
     motion_default_value = {"ev": 0.62, "v10": 0.52, "v12": 0.42}[profile]
@@ -1211,6 +1232,42 @@ def make_ice_backfire_beap(profile: str) -> dict[str, Any]:
     p.connect(open_request, front)
     p.connect(front, patcher_window)
 
+    # Keep factory initial values for an audible first launch, then recall one
+    # ignored local state after the complete BEAP graph has loaded.  This is
+    # the same explicit persistence model as Sound DNA and avoids depending on
+    # Max's parameter-initial serialization when a nested runtime closes.
+    p.new("autopattr @autorestore 0", 2010, 15, 155, numinlets=1, numoutlets=4)
+    storage = p.new(
+        f"pattrstorage {profile}_pop @savemode 3 @changemode 1 @autorestore 0",
+        2010, 45, 300, numinlets=1, numoutlets=4,
+    )
+    state_path = p.new(
+        f"js Patcher:/code/pop_state_path.js {profile}",
+        2010, 75, 275, numinlets=1, numoutlets=1,
+    )
+    restore_delay = p.new("delay 140", 2295, 75, 70, numinlets=2, numoutlets=1)
+    restore_order = p.new("t b b", 2375, 75, 50, numinlets=1, numoutlets=2)
+    restore = p.message("restore", 2435, 75, 55)
+    recall_delay = p.new("delay 35", 2375, 105, 65, numinlets=2, numoutlets=1)
+    recall = p.message("1", 2450, 105, 30)
+    save = p.message("save", 2010, 110, 45)
+    close = p.new("closebang", 2065, 110, 65, numinlets=0, numoutlets=1)
+    save_button = p.message("Save Pop", 2140, 110, 70)
+    reload_button = p.message("Reload Pop", 2220, 110, 80)
+    tuning_load = p.new("loadbang", 2450, 15, 60, numinlets=1, numoutlets=1)
+    p.connect(tuning_load, restore_delay)
+    p.connect(restore_delay, restore_order)
+    p.connect(restore_order, restore, 1)
+    p.connect(restore, state_path)
+    p.connect(state_path, storage)
+    p.connect(restore_order, recall_delay, 0)
+    p.connect(recall_delay, recall)
+    p.connect(recall, storage)
+    p.connect(close, save)
+    p.connect(save_button, save)
+    p.connect(save, state_path)
+    p.connect(reload_button, restore_order)
+
     p.comment(
         "AUTHORITATIVE POP CONTROLS — tune these first; Pressure Mixer adds optional BEAP colour",
         1680, 65, 820,
@@ -1219,7 +1276,6 @@ def make_ice_backfire_beap(profile: str) -> dict[str, Any]:
         "Global Pitch applies to all layers. Core Presence: 0.25 = 25%, 1 = unity, 1.5 = 150%.",
         1680, 90, 760,
     )
-    tuning_load = p.new("loadbang", 2450, 15, 60, numinlets=1, numoutlets=1)
     tuning_emit = p.new("delay 50", 2450, 45, 65, numinlets=2, numoutlets=1)
     p.connect(tuning_load, tuning_emit)
     defaults = POP_TUNING_DEFAULTS[profile]
@@ -6110,15 +6166,13 @@ def make_profile_main(profile: str, root: Path | None = None) -> dict[str, Any]:
     p.connect(dna_solo, dna_solo_named)
     p.connect(dna_solo_named, engine)
     p.connect(dna_solo_default, dna_solo)
-    design_windows = p.new("pcontrol", 1410, 400, 70, numinlets=1, numoutlets=0)
     open_soundscape = p.message("Open Soundscape BEAP", 1180, 370, 160)
-    open_soundscape_file = p.message(
-        "loadunique Patcher:/patchers/cinematic_soundscape_beap~.maxpat",
-        1180, 400, 260,
+    open_soundscape_instance = p.new(
+        "s open.cinematic_soundscape", 1180, 400, 205,
+        numinlets=1, numoutlets=0,
     )
     p.connect(open_dna, open_dna_instance)
-    p.connect(open_soundscape, open_soundscape_file)
-    p.connect(open_soundscape_file, design_windows)
+    p.connect(open_soundscape, open_soundscape_instance)
 
     if profile == "ev":
         p.comment("Legacy EV macro preset", 330, 315, 150)
@@ -7087,6 +7141,7 @@ def project_file() -> dict[str, Any]:
     contents["code"]["code/manual_input.js"] = {"kind": "javascript", "local": 1}
     contents["code"]["code/eq_state_path.js"] = {"kind": "javascript", "local": 1}
     contents["code"]["code/dna_state_path.js"] = {"kind": "javascript", "local": 1}
+    contents["code"]["code/pop_state_path.js"] = {"kind": "javascript", "local": 1}
     contents["code"]["code/module_mixer_state_path.js"] = {"kind": "javascript", "local": 1}
     contents["code"]["code/backfire_burst.js"] = {"kind": "javascript", "local": 1}
     for name in MEDIA_FRAMES:

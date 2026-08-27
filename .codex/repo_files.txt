@@ -30,6 +30,7 @@ code/drive_model.js
 code/eq_state_path.js
 code/manual_input.js
 code/module_mixer_state_path.js
+code/pop_state_path.js
 gen/ev_powertrain.gendsp
 gen/v10_powertrain.gendsp
 gen/v12_powertrain.gendsp

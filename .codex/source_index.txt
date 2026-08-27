@@ -1,8 +1,8 @@
 # Source Index
 
 Repository: /Users/saintpeter/Downloads/VehicleSoundSynth-V5
-Tracked filtered files: 117
-High-value indexed files: 41
+Tracked filtered files: 118
+High-value indexed files: 42
 
 Read this file before broad repository exploration. Prefer focused `rg`
 or `git grep` against the listed areas before opening source files.
@@ -21,6 +21,7 @@ or `git grep` against the listed areas before opening source files.
 - code/eq_state_path.js
 - code/manual_input.js
 - code/module_mixer_state_path.js
+- code/pop_state_path.js
 - tools/analyze_reference_lifecycle.py
 - tools/audio_metrics.py
 - tools/bind_drive_render.py

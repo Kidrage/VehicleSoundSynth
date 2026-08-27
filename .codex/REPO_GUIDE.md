@@ -82,11 +82,16 @@ subtle on short Max 8.6.5 gates and must not be treated as the audibility gate.
 The shipped pressure-first defaults are Global Pitch -5/-6 semitones,
 Low Pressure 1.0/1.0, Body 1.30/1.35, Crack 0.008/0.006 and Decay 0.75/0.62.
 The generated host adds a 600/520 Hz air ceiling after subsonic protection. Use `Audition One
-Hit` for repeatable timbre work, then balance the whole result with the runtime
+Hit` for repeatable timbre work, click `Save Pop` to persist the active controls
+and BEAP state under ignored `presets/local/{profile}_pop.json`, then balance the whole result with the runtime
 Module Mixer's `Pop / Event` fader.
 For continuous-engine tuning, open the active Sound DNA instance and use DNA
 Solo; EV Aggression and V10 Brightness are explicitly connected to Gen DSP,
 while several other controls are RPM/load/throttle-state dependent.
+`Open Soundscape BEAP` also addresses the active poly voice; `Save Soundscape`
+persists that shared seed-once graph. Its shipped voicing is root/fifth/octave
+with restrained 0.07/0.02 Hz LFO drift, and the main Motion macro is a maximum
+depth scaled smoothly by throttle.
 
 Runtime smoke-check the generated project in Max 8.6.5 after structural tests.
 On macOS, Max writes load diagnostics to

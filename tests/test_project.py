@@ -214,6 +214,14 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
             self.assertNotIn("*~ 115" if profile == "v10" else "*~ 92", host_text)
 
     def test_pop_designer_controls_the_live_beap_and_dominant_pressure_core(self):
+        project = self.load_json("VehicleSoundSynth-V5.maxproj")
+        self.assertIn("code/pop_state_path.js", project["contents"]["code"])
+        state_helper = (ROOT / "code" / "pop_state_path.js").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn('"/presets/local/" + profile + "_pop.json"', state_helper)
+        self.assertIn('outlet(0, "store", 1)', state_helper)
+        self.assertIn('outlet(0, "write", statePath())', state_helper)
         control_varnames = {
             "pop_global_pitch_semitones",
             "pop_impact_drop_octaves",
@@ -240,6 +248,14 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
             self.assertIn(f"r {address}", beap_text)
             self.assertIn('"text": "front"', beap_text)
             self.assertIn('"text": "thispatcher"', beap_text)
+            self.assertIn('"text": "Save Pop"', beap_text)
+            self.assertIn('"text": "Reload Pop"', beap_text)
+            self.assertIn('"text": "autopattr @autorestore 0"', beap_text)
+            self.assertIn(f'"text": "pattrstorage {profile}_pop ', beap_text)
+            self.assertIn(
+                f'"text": "js Patcher:/code/pop_state_path.js {profile}"',
+                beap_text,
+            )
             self.assertIn(
                 '"text": "delay 50"',
                 beap_text,
@@ -283,6 +299,13 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
                 self.assertEqual(
                     [expected_initials[box["varname"]]],
                     box["saved_attribute_attributes"]["valueof"]["parameter_initial"],
+                )
+                self.assertEqual(
+                    1,
+                    box["saved_attribute_attributes"]["valueof"][
+                        "parameter_initial_enable"
+                    ],
+                    "factory values keep first launch audible before local recall",
                 )
             self.assertEqual(
                 2,
@@ -732,6 +755,35 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
             self.assertIn(f"r {address}", dna)
             self.assertIn('"text": "front"', dna)
             self.assertIn('"text": "thispatcher"', dna)
+
+    def test_runtime_open_soundscape_targets_the_audible_poly_voice(self):
+        core = json.dumps(
+            self.load_json("patchers/cinematic_soundscape_beap~.maxpat")
+        )
+        self.assertIn("r open.cinematic_soundscape", core)
+        self.assertIn('"text": "front"', core)
+        self.assertIn('"text": "thispatcher"', core)
+        self.assertIn('"text": "Save Soundscape"', core)
+        self.assertIn('"text": "write"', core)
+        for profile in ("ev", "v10", "v12"):
+            runtime = json.dumps(
+                self.load_json(f"VehicleSoundSynth-{profile.upper()}.maxpat")
+            )
+            self.assertIn("s open.cinematic_soundscape", runtime)
+            self.assertNotIn(
+                "loadunique Patcher:/patchers/cinematic_soundscape_beap~.maxpat",
+                runtime,
+            )
+            host = json.dumps(
+                self.load_json(
+                    f"patchers/{profile}_cinematic_soundscape_host~.maxpat"
+                )
+            )
+            self.assertIn(
+                "min(1.,max(0.,$f2*(0.25+0.75*$f1)))",
+                host,
+                "Motion must be the maximum depth and throttle its smooth scaler",
+            )
 
     def test_dna_solo_isolates_the_audible_powertrain_from_every_other_stem(self):
         for profile in ("ev", "v10", "v12"):

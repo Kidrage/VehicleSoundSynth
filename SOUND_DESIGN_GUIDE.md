@@ -10,7 +10,8 @@ Open a runtime and use the design controls beside the Soundscape section:
 - `Open Sound DNA` opens the active profile's procedural engine panel.
 - `Sound DNA Solo` removes Soundscape, transient, road and rumble stems while
   leaving the active procedural powertrain audible.
-- `Open Soundscape BEAP` opens the shared cinematic pad graph.
+- `Open Soundscape BEAP` opens the shared cinematic pad graph that is actually
+  running inside the active profile; it no longer opens a detached file copy.
 - V10/V12 `Open Pop Designer` opens the active backfire voice in the supported
   one-runtime-at-a-time workflow, not a detached duplicate patcher. Two copies
   of one profile share its tuning bus and are not a supported tuning setup.
@@ -28,7 +29,7 @@ values for the next launch.
 | `patchers/v10_sound_dna~.maxpat` | V10 combustion, intake, exhaust and residual character | Same |
 | `patchers/v12_sound_dna~.maxpat` | V12 bank, air and smooth high-rev character | Same |
 | `patchers/vehicle_bus_eq~.maxpat` | Shared four-band output tone shaping | Patcher is seed-once; `Save EQ` writes one ignored shared state |
-| `patchers/cinematic_soundscape_beap~.maxpat` | Shared cinematic pad | Seed-once; save the Max patcher after BEAP edits |
+| `patchers/cinematic_soundscape_beap~.maxpat` | Shared cinematic pad | Seed-once; `Save Soundscape` writes the live graph |
 | `patchers/engine_start_beap~.maxpat` | Cinematic start effect | Seed-once |
 | `patchers/v10_backfire_beap~.maxpat`, `v12_backfire_beap~.maxpat` | Physical pressure-release voices | Seed-once |
 
@@ -84,9 +85,11 @@ The `HOST CORE CONTROLS` panel is the quickest complete tuning surface:
 The visible `Pressure_Mixer` is the dependable BEAP colour control. The native
 `Pressure_Body`, `Pressure_AD`, `Exhaust_Crack`, and `Crack_AD` modules remain
 available for experimentation but should not be used to judge whether the Pop
-chain is working. Save `v10_backfire_beap~` or `v12_backfire_beap~` with Cmd+S
-after tuning; the authoritative number values and BEAP module state reload
-together.
+chain is working. Click `Save Pop` after tuning; the authoritative number values
+and BEAP module state reload together from the ignored
+`presets/local/{profile}_pop.json`. Factory values keep the first launch audible,
+then the local saved slot wins after the complete graph has loaded. Closing the
+runtime also saves the current Pop state.
 
 The shipped balance deliberately favors a short kick-like pressure body:
 V10/V12 Low Pressure are both `1.0`, Body Level `1.30` / `1.35`, Crack
@@ -166,7 +169,7 @@ before deciding that a control is inactive.
 
 EV adds `Torque Ripple`, `Gear Mesh`, and `Electrical Detail`. V10/V12 add
 `Combustion Pulse`, `Intake Detail`, `Exhaust Detail`, and `Residual Detail`.
-`Save DNA`, `Reload DNA`, and `Reset DNA` operate per profile in
+Every DNA number is live. `Save DNA`, `Reload DNA`, and `Reset DNA` operate per profile in
 `presets/local/{profile}_sound_dna.json`; those local files are intentionally
 ignored by Git.
 
@@ -200,15 +203,21 @@ sound design: two LFOs, three oscillators, Noise, Audio Mixer, Ladder, MMF,
 ADSR, VCA, Chorus and Reverb. Small MSP objects only scale CV, blend stereo,
 high-pass at 120 Hz and provide a safety clip.
 
-The third oscillator supplies a fifth, the slow LFO adds long detune/formant
-motion, and MMF adds a second colour stage after the Ladder. Use `Soundscape
+The shipped oscillator offsets now form a stable root/fifth/octave relation.
+The fast/slow LFOs default to 0.07/0.02 Hz with restrained pitch depth, so they
+add drift rather than an audible broken-engine wobble. `Motion` is the maximum
+modulation depth; throttle scales it smoothly from 25% at idle to 100% at full
+pedal. The slow LFO adds long detune/formant motion, and MMF adds a second colour
+stage after the Ladder. Use `Soundscape
 Solo` while tuning, temporarily set the runtime Soundscape level near -8 dB,
 then return it to a mix-safe value. Keep the 120 Hz high-pass so the pad does not
 fight the centred vehicle body. The same BEAP core is shared by all profiles;
 their hosts map RPM, throttle, load, acceleration, Motion and Space differently.
 
-After tuning, save the BEAP patcher, turn Solo off, verify the final meters stay
-below the ceiling, close every patcher window, and quit Max normally.
+All BEAP controls in the active window respond immediately. Click `Save
+Soundscape` to make the current live graph the next-launch state. Then turn Solo
+off, verify the final meters stay below the ceiling, close every patcher window,
+and quit Max normally.
 
 ## Acoustic A/B validation
 
