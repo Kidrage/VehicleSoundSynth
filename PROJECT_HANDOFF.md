@@ -62,11 +62,11 @@
 
 ### Tracked payload
 
-- total: 159 files, 120973455 bytes
+- total: 159 files, 120973650 bytes
 - audio (`.wav`): 41 files, 103833150 bytes
 - executable sources (`.py`, `.js`, `.gendsp`): 26 files, 908237 bytes
 - Max project/patch (`.maxpat`, `.maxproj`): 67 files, 15554601 bytes
-- documentation (`.md`, `.docx`, `.pdf`): 15 files, 637872 bytes
+- documentation (`.md`, `.docx`, `.pdf`): 15 files, 638067 bytes
 - structured data (`.json`): 6 files, 33939 bytes
 - other tracked text/markers: 4 files, 5656 bytes
 
@@ -163,8 +163,9 @@
 - Final project plus independent EV/V10/V12 Max 8.6.5 loads found no
   missing-object, Gen/function, invalid-category, or patchcord-range blocker.
   The official crash-recovery preference was restored byte-for-byte to Ask;
-  all task-opened windows/processes were closed, and final AppleScript reports
-  `application "Max" is running = false`.
+  all task-opened windows/processes were closed. Pre-existing zero-window Max
+  PID `35660` (started before this task at 13:38) was preserved; consequently
+  final AppleScript reports `application "Max" is running = true`.
 
 ## Related Repositories
 

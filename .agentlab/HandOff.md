@@ -56,5 +56,6 @@
   defaults.
 - The official `crashrecovery` preference was backed up, temporarily changed
   from Ask to Never for headless smoke, and restored byte-for-byte to Ask. Every
-  task-owned process had zero windows before exact termination; final
-  AppleScript reports no Max instance running.
+  task-owned process had zero windows before exact termination. Pre-existing
+  zero-window Max PID `35660` (started at 13:38, before this task) was preserved;
+  final AppleScript therefore reports Max running.
