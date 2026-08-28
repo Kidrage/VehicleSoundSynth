@@ -1059,7 +1059,7 @@ def make_soundscape_control() -> dict[str, Any]:
     feedback_route = route(p, ("soundscape_state", "soundscape_status"), 690, 175, 245)
     state_route = route(
         p,
-        ("enable", "motion", "space", "pitch_follow", "transpose", "brightness"),
+        ("enable", "motion", "space", "pitch_follow", "transpose", "brightness", "solo"),
         470, 205, 465,
     )
     status_set = p.new("prepend set", 805, 205, 85, numinlets=1, numoutlets=1)
@@ -1132,9 +1132,12 @@ def make_soundscape_control() -> dict[str, Any]:
     )
     solo_named = p.new("prepend soundscape_solo", 530, 155, 160, numinlets=1, numoutlets=1)
     solo_default = p.new("loadmess 0", 530, 185, 80, numinlets=1, numoutlets=1)
+    solo_set = p.new("prepend set", 620, 185, 80, numinlets=1, numoutlets=1)
     p.connect(solo, solo_named)
     p.connect(solo_named, output)
     p.connect(solo_default, solo)
+    p.connect(state_route, solo_set, 6)
+    p.connect(solo_set, solo)
     p.add(
         "comment", "State", 735, 155, 45, 18, numinlets=1, numoutlets=0,
         presentation=1, presentation_rect=[735.0, 70.0, 45.0, 18.0],
@@ -1330,7 +1333,7 @@ def make_cinematic_soundscape_host(profile: str) -> dict[str, Any]:
     )
     active_state = p.new("pak 0 0", 955, 345, 75, numinlets=2, numoutlets=1)
     active = p.new("expr $i1*$i2", 1040, 345, 90, numinlets=2, numoutlets=1)
-    enable_default = p.new("loadmess 0", 880, 380, 80, numinlets=1, numoutlets=1)
+    enable_default = p.new("loadmess 1", 880, 380, 80, numinlets=1, numoutlets=1)
     gate_cv = p.new("expr 5.*$f1", 1040, 385, 90, numinlets=1, numoutlets=1)
     gate_pack = p.new("pack 0. 80", 1040, 425, 85, numinlets=2, numoutlets=1)
     gate_line = p.new("line~", 1040, 465, 50, numinlets=2, numoutlets=2)
@@ -2916,6 +2919,12 @@ def make_profile_engine(profile: str) -> dict[str, Any]:
     p.connect(solo_default, backfire_solo_clip)
     p.connect(solo_default, dna_solo_clip)
     p.connect(soundscape_solo_clip, solo_state, 0, 0)
+    soundscape_solo_feedback = p.new(
+        "prepend soundscape_state solo", 1010, 320, 205,
+        numinlets=1, numoutlets=1,
+    )
+    p.connect(soundscape_solo_clip, soundscape_solo_feedback)
+    p.connect(soundscape_solo_feedback, state_out)
     p.connect(backfire_solo_clip, solo_state, 0, 1)
     p.connect(dna_solo_clip, solo_state, 0, 2)
     p.connect(solo_state, core_solo_gain)
@@ -5936,7 +5945,7 @@ def add_eq_band(
 
 def make_launcher() -> dict[str, Any]:
     """Build a DSP-free project switchboard for the three independent demos."""
-    p = Patcher(720, 390)
+    p = Patcher(1040, 565)
     p.comment("VehicleSoundSynth V5 — choose one independent runtime", 30, 25, 520)
     p.comment(
         "The launcher owns no audio objects. Selecting a profile closes the previous runtime before opening one instance.",
@@ -5966,7 +5975,26 @@ def make_launcher() -> dict[str, Any]:
     close_symbol = p.message("none", 510, 315, 55)
     p.connect(close_all, close_symbol)
     p.connect(close_symbol, selection)
-    p.comment("Tip: save intentional BEAP edits before switching profiles or closing the active runtime.", 30, 350, 650)
+    main_soundscape = p.add(
+        "bpatcher", None, 30, 350, 980, 115,
+        numinlets=1, numoutlets=1,
+        name="Patcher:/patchers/soundscape_control.maxpat",
+        args=["main"], varname="main_soundscape_control",
+    )
+    runtime_control = p.new(
+        "s vss.runtime.control", 735, 490, 155,
+        numinlets=1, numoutlets=0,
+    )
+    soundscape_feedback = p.new(
+        "r vss.soundscape.feedback", 735, 520, 190,
+        numinlets=0, numoutlets=1,
+    )
+    p.connect(main_soundscape, runtime_control)
+    p.connect(soundscape_feedback, main_soundscape)
+    p.comment(
+        "Main Soundscape controls target the currently open runtime; Save writes that profile's local state.",
+        30, 520, 690,
+    )
     return p.document()
 
 
@@ -6351,10 +6379,20 @@ def make_profile_main(profile: str, root: Path | None = None) -> dict[str, Any]:
         "bpatcher", None, 1210, 470, 220, 55, numinlets=1, numoutlets=3,
         name=f"Patcher:/patchers/{config['engine']}.maxpat",
     )
+    shared_runtime_control = p.new(
+        "r vss.runtime.control", 1210, 535, 155,
+        numinlets=0, numoutlets=1,
+    )
+    shared_soundscape_feedback = p.new(
+        "s vss.soundscape.feedback", 1210, 565, 190,
+        numinlets=1, numoutlets=0,
+    )
     p.connect(source_default, source, 0, 0)
     p.connect(drive, source, 0, 1)
     p.connect(external, source, 0, 2)
     p.connect(source, engine)
+    p.connect(shared_runtime_control, engine)
+    p.connect(engine, shared_soundscape_feedback, 2, 0)
     p.connect(save_profile, engine)
 
     module_mixer = p.add(

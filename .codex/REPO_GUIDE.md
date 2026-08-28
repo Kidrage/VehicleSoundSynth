@@ -28,7 +28,8 @@ events, short cabin IR, adjustable stereo compression, EQ, and peak protection.
 - `code/manual_input.js` — ES5/Node-testable fixed LT-throttle/RT-brake
   normalization, smoothing, source exclusivity, and safe pedal-release state.
 - `assets/asset_manifest.json` / `ASSET_LICENSES.md` — runtime-audio provenance authority.
-- `main.maxpat` — DSP-free launcher; it must never instantiate an engine.
+- `main.maxpat` — DSP-free launcher; it must never instantiate an engine. Its
+  Soundscape control is only a send/receive view of the selected runtime.
 - `VehicleSoundSynth-{EV,V10,V12}.maxpat` — independent runnable UIs; the
   single `Audio + Output` toggle enables both DSP and the output ramp.
 - `patchers/keyboard_drive_ws.maxpat` — focus-aware Manual-mode binary W/S
@@ -92,7 +93,9 @@ while several other controls are RPM/load/throttle-state dependent.
 Soundscape `Open Designer` addresses the active embedded instance; `Save`
 persists profile-local state for the shared seed-once graph. Its shipped voicing
 is root/fifth/octave with restrained 0.035/0.009 Hz LFO drift, and the Main
-Motion macro is a maximum depth scaled smoothly by throttle.
+Motion macro is a maximum depth scaled smoothly by throttle. The launcher uses
+`vss.runtime.control` and `vss.soundscape.feedback` to mirror the active runtime;
+do not instantiate DSP or a second Soundscape in the launcher.
 
 Runtime smoke-check the generated project in Max 8.6.5 after structural tests.
 On macOS, Max writes load diagnostics to

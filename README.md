@@ -9,7 +9,9 @@ Max/MSP 8.6.5 vehicle-sound project with three independent runtimes:
 `main.maxpat` is a DSP-free launcher. It does not contain the three engines and
 does not keep inactive profiles running. Selecting another profile first sends
 `write` and closes the active runtime, then opens one unique replacement; this
-is the supported low-CPU workflow.
+is the supported low-CPU workflow. Its visible Soundscape strip sends controls
+to the currently open runtime and receives live state feedback; it does not add
+a second Soundscape or any launcher-side DSP.
 
 ## Quick start
 
@@ -17,7 +19,8 @@ is the supported low-CPU workflow.
    opening one of the three runtime `.maxpat` files is also supported: their
    root-level abstractions use explicit `patchers/` paths.
 2. Open `main.maxpat` from the Project window, then click one profile. Audio
-   starts off.
+   starts off. The Main Soundscape strip controls that selected runtime;
+   Soundscape itself defaults enabled and becomes audible after ignition.
 3. In V10/V12, choose `Cinematic BEAP` or `Realistic Sample`, click
    `ignition 1`, then `start 1`. Start catch settles to 740 RPM for V10 and
    780 RPM for V12; it no longer enters a high-rev default after ignition.
@@ -30,7 +33,8 @@ is the supported low-CPU workflow.
    toggle. It opens the output ramp and Max DSP together; ignition/start alone
    intentionally do not enable monitoring.
 7. Use `Open Sound DNA` plus `Sound DNA Solo` to tune the procedural engine, or
-   Soundscape `Open Designer` plus `Solo` for the active pad. In
+   use Main Soundscape `Enable`, macros, `Open Designer` and `Solo` for the
+   active pad. The same controls remain visible in the runtime page. In
    V10/V12 use `Open Pop Designer`, `Backfire Solo`, and `Test Pop` to tune the
    active Pop voice without driving the car. These buttons open the audible
    instances; use the matching `Save` control, or `Save Profile Sound` for the
@@ -90,6 +94,8 @@ the existing public dB messages and keeps the main page readable. The six stem
 faders cover Sound DNA, Start, Pop/Event, Soundscape, Road/Air and Cabin Rumble;
 Master is the final bus trim. Values auto-save per profile under the ignored
 `presets/local/` directory, so EV, V10 and V12 may keep different balances.
+The launcher Soundscape strip is a stateless remote view of those same active
+profile values; switching profile does not copy or merge their saved states.
 
 The signal path per runtime is:
 

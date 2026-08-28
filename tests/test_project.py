@@ -795,6 +795,60 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
                 "Motion must be the maximum depth and throttle its smooth scaler",
             )
 
+    def test_launcher_soundscape_controls_the_selected_audible_runtime(self):
+        launcher = self.load_json("main.maxpat")["patcher"]
+        boxes = {item["box"]["id"]: item["box"] for item in launcher["boxes"]}
+        lines = [item["patchline"] for item in launcher["lines"]]
+        control_id = next(
+            box_id for box_id, box in boxes.items()
+            if box.get("name") == "Patcher:/patchers/soundscape_control.maxpat"
+        )
+        command_bus = next(
+            box_id for box_id, box in boxes.items()
+            if box.get("text") == "s vss.runtime.control"
+        )
+        feedback_bus = next(
+            box_id for box_id, box in boxes.items()
+            if box.get("text") == "r vss.soundscape.feedback"
+        )
+        self.assertIn(
+            ((control_id, 0), (command_bus, 0)),
+            {(tuple(line["source"]), tuple(line["destination"])) for line in lines},
+        )
+        self.assertIn(
+            ((feedback_bus, 0), (control_id, 0)),
+            {(tuple(line["source"]), tuple(line["destination"])) for line in lines},
+        )
+
+        for profile in ("ev", "v10", "v12"):
+            runtime = self.load_json(
+                f"VehicleSoundSynth-{profile.upper()}.maxpat"
+            )["patcher"]
+            runtime_boxes = {
+                item["box"]["id"]: item["box"] for item in runtime["boxes"]
+            }
+            runtime_lines = [item["patchline"] for item in runtime["lines"]]
+            engine_id = next(
+                box_id for box_id, box in runtime_boxes.items()
+                if box.get("name", "").endswith(
+                    f"/patchers/vehicle_engine_{profile}~.maxpat"
+                )
+            )
+            command_receive = next(
+                box_id for box_id, box in runtime_boxes.items()
+                if box.get("text") == "r vss.runtime.control"
+            )
+            feedback_send = next(
+                box_id for box_id, box in runtime_boxes.items()
+                if box.get("text") == "s vss.soundscape.feedback"
+            )
+            cords = {
+                (tuple(line["source"]), tuple(line["destination"]))
+                for line in runtime_lines
+            }
+            self.assertIn(((command_receive, 0), (engine_id, 0)), cords)
+            self.assertIn(((engine_id, 2), (feedback_send, 0)), cords)
+
     def test_soundscape_live_instance_owns_profile_local_parameter_state(self):
         project = self.load_json("VehicleSoundSynth-V5.maxproj")["contents"]
         self.assertIn("code/soundscape_state_path.js", project["code"])
@@ -879,6 +933,30 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
         self.assertIn("/presets/local/", helper)
         self.assertIn("_soundscape.json", helper)
 
+    def test_soundscape_factory_is_audible_after_ignition_without_hidden_setup(self):
+        for profile in ("ev", "v10", "v12"):
+            host = self.load_json(
+                f"patchers/{profile}_cinematic_soundscape_host~.maxpat"
+            )["patcher"]
+            boxes = {item["box"]["id"]: item["box"] for item in host["boxes"]}
+            lines = [item["patchline"] for item in host["lines"]]
+            enable_id = next(
+                box_id for box_id, box in boxes.items()
+                if box.get("varname") == "soundscape_enable_state"
+            )
+            incoming_defaults = {
+                boxes[line["source"][0]].get("text")
+                for line in lines
+                if line["destination"] == [enable_id, 0]
+                and boxes[line["source"][0]].get("text", "").startswith("loadmess ")
+            }
+            self.assertEqual(
+                {"loadmess 1"}, incoming_defaults,
+                "a fresh profile must sound after ignition without a hidden enable step",
+            )
+            host_text = "\n".join(box.get("text", "") for box in boxes.values())
+            self.assertIn("expr $i1*$i2", host_text)
+
     def test_soundscape_control_is_a_view_of_persistent_profile_host_state(self):
         project = self.load_json("VehicleSoundSynth-V5.maxproj")["contents"]
         self.assertIn("patchers/soundscape_control.maxpat", project["patchers"])
@@ -926,6 +1004,51 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
             )
             self.assertEqual([profile], control_box.get("args"))
             self.assertNotIn("s open.cinematic_soundscape", json.dumps(runtime))
+
+    def test_soundscape_solo_feedback_keeps_main_and_runtime_views_consistent(self):
+        control_text = "\n".join(
+            item["box"].get("text", "")
+            for item in self.load_json(
+                "patchers/soundscape_control.maxpat"
+            )["patcher"]["boxes"]
+        )
+        self.assertIn(
+            "route enable motion space pitch_follow transpose brightness solo",
+            control_text,
+        )
+        self.assertIn("prepend soundscape_solo", control_text)
+
+        for profile in ("ev", "v10", "v12"):
+            engine = self.load_json(
+                f"patchers/vehicle_engine_{profile}~.maxpat"
+            )["patcher"]
+            boxes = {item["box"]["id"]: item["box"] for item in engine["boxes"]}
+            lines = [item["patchline"] for item in engine["lines"]]
+            solo_clip = next(
+                box_id for box_id, box in boxes.items()
+                if box.get("text") == "clip 0 1"
+                and any(
+                    line["source"] == [box_id, 0]
+                    and boxes[line["destination"][0]].get("text") == "pak 0 0 0"
+                    and line["destination"][1] == 0
+                    for line in lines
+                )
+            )
+            feedback = next(
+                box_id for box_id, box in boxes.items()
+                if box.get("text") == "prepend soundscape_state solo"
+            )
+            state_out = next(
+                box_id for box_id, box in boxes.items()
+                if box.get("maxclass") == "outlet"
+                and box.get("comment") == "messages"
+            )
+            cords = {
+                (tuple(line["source"]), tuple(line["destination"]))
+                for line in lines
+            }
+            self.assertIn(((solo_clip, 0), (feedback, 0)), cords)
+            self.assertIn(((feedback, 0), (state_out, 0)), cords)
 
     def test_dna_solo_isolates_the_audible_powertrain_from_every_other_stem(self):
         for profile in ("ev", "v10", "v12"):

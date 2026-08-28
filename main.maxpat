@@ -425,17 +425,72 @@
       },
       {
         "box": {
+          "args": [
+            "main"
+          ],
           "id": "obj-25",
+          "maxclass": "bpatcher",
+          "name": "Patcher:/patchers/soundscape_control.maxpat",
+          "numinlets": 1,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ],
+          "patching_rect": [
+            30.0,
+            350.0,
+            980.0,
+            115.0
+          ],
+          "varname": "main_soundscape_control"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-26",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            735.0,
+            490.0,
+            155.0,
+            22.0
+          ],
+          "text": "s vss.runtime.control"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-27",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ],
+          "patching_rect": [
+            735.0,
+            520.0,
+            190.0,
+            22.0
+          ],
+          "text": "r vss.soundscape.feedback"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-28",
           "maxclass": "comment",
           "numinlets": 1,
           "numoutlets": 0,
           "patching_rect": [
             30.0,
-            350.0,
-            650.0,
+            520.0,
+            690.0,
             22.0
           ],
-          "text": "Tip: save intentional BEAP edits before switching profiles or closing the active runtime."
+          "text": "Main Soundscape controls target the currently open runtime; Save writes that profile's local state."
         }
       }
     ],
@@ -692,6 +747,30 @@
             0
           ]
         }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-26",
+            0
+          ],
+          "source": [
+            "obj-25",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-25",
+            0
+          ],
+          "source": [
+            "obj-27",
+            0
+          ]
+        }
       }
     ],
     "objectsnaponopen": 1,
@@ -699,8 +778,8 @@
     "rect": [
       50.0,
       50.0,
-      720,
-      390
+      1040,
+      565
     ],
     "toolbarvisible": 1
   }

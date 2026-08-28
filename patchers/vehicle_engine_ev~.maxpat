@@ -1190,6 +1190,24 @@
         "box": {
           "id": "obj-61",
           "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ],
+          "patching_rect": [
+            1010.0,
+            320.0,
+            205.0,
+            22.0
+          ],
+          "text": "prepend soundscape_state solo"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-62",
+          "maxclass": "newobj",
           "numinlets": 2,
           "numoutlets": 1,
           "outlettype": [
@@ -1206,7 +1224,7 @@
       },
       {
         "box": {
-          "id": "obj-62",
+          "id": "obj-63",
           "maxclass": "newobj",
           "numinlets": 2,
           "numoutlets": 1,
@@ -1780,6 +1798,30 @@
       {
         "patchline": {
           "destination": [
+            "obj-61",
+            0
+          ],
+          "source": [
+            "obj-34",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-22",
+            0
+          ],
+          "source": [
+            "obj-61",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
             "obj-37",
             1
           ],
@@ -2092,7 +2134,7 @@
       {
         "patchline": {
           "destination": [
-            "obj-61",
+            "obj-62",
             0
           ],
           "source": [
@@ -2104,7 +2146,7 @@
       {
         "patchline": {
           "destination": [
-            "obj-61",
+            "obj-62",
             1
           ],
           "source": [
@@ -2116,7 +2158,7 @@
       {
         "patchline": {
           "destination": [
-            "obj-62",
+            "obj-63",
             0
           ],
           "source": [
@@ -2128,7 +2170,7 @@
       {
         "patchline": {
           "destination": [
-            "obj-62",
+            "obj-63",
             1
           ],
           "source": [
@@ -2144,7 +2186,7 @@
             0
           ],
           "source": [
-            "obj-61",
+            "obj-62",
             0
           ]
         }
@@ -2216,7 +2258,7 @@
             0
           ],
           "source": [
-            "obj-62",
+            "obj-63",
             0
           ]
         }

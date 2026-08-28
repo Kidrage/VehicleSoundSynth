@@ -5,7 +5,9 @@ routing that should normally be left alone.
 
 ## Open the editable modules
 
-Open a runtime and use the design controls beside the Soundscape section:
+Open `main.maxpat`, select a runtime, and use the live Soundscape strip in the
+launcher or the matching strip inside the runtime. Both views address the same
+audible instance and receive its current state:
 
 - `Open Sound DNA` opens the active profile's procedural engine panel.
 - `Sound DNA Solo` removes Soundscape, transient, road and rumble stems while
@@ -232,6 +234,11 @@ Use the Main macros first:
   harshness or resonance during acceleration.
 - `Space` 0.20–0.55: reverb send and long-tail depth. Excessive values smear
   throttle response; it is not an LFO speed.
+
+`Enable` defaults on in a fresh/factory profile but remains ignition-gated.
+Changes from either Main or the runtime view are sent directly to the current
+engine; feedback updates both views without reopening the patch. `Save` writes
+only the selected profile, while `Reload` immediately recalls its saved state.
 
 For a warmer Prophet-style pad, keep the root triangle dominant, leave the saw
 roughly 7–12 dB below it, keep Noise below 0.02, and use Chorus/Reverb for width.

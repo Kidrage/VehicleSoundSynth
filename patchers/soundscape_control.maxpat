@@ -81,8 +81,9 @@
           "id": "obj-5",
           "maxclass": "newobj",
           "numinlets": 1,
-          "numoutlets": 7,
+          "numoutlets": 8,
           "outlettype": [
+            "",
             "",
             "",
             "",
@@ -97,7 +98,7 @@
             465.0,
             22.0
           ],
-          "text": "route enable motion space pitch_follow transpose brightness"
+          "text": "route enable motion space pitch_follow transpose brightness solo"
         }
       },
       {
@@ -938,6 +939,24 @@
       {
         "box": {
           "id": "obj-49",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ],
+          "patching_rect": [
+            620.0,
+            185.0,
+            80.0,
+            22.0
+          ],
+          "text": "prepend set"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-50",
           "maxclass": "comment",
           "numinlets": 1,
           "numoutlets": 0,
@@ -1496,6 +1515,30 @@
           ],
           "source": [
             "obj-48",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-49",
+            0
+          ],
+          "source": [
+            "obj-5",
+            6
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-46",
+            0
+          ],
+          "source": [
+            "obj-49",
             0
           ]
         }
