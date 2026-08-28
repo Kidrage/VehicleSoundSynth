@@ -846,6 +846,32 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
                 ),
                 "pattrstorage output must not feed its own save debounce loop",
             )
+            text_by_id = {
+                item["box"]["id"]: item["box"].get("text", "")
+                for item in patcher["boxes"]
+            }
+            edges = [item["patchline"] for item in patcher["lines"]]
+            restore_ids = {
+                box_id for box_id, text in text_by_id.items()
+                if text == "restore"
+            }
+            restores_with_recall_delay = {
+                edge["source"][0] for edge in edges
+                if edge["source"][0] in restore_ids
+                and text_by_id.get(edge["destination"][0], "").startswith("delay ")
+            }
+            self.assertEqual(
+                restore_ids, restores_with_recall_delay,
+                "every restore path, including manual reload, must recall after read",
+            )
+            recall_ids = {
+                box_id for box_id, text in text_by_id.items() if text == "1"
+            }
+            self.assertTrue(any(
+                edge["source"][0] in recall_ids
+                and edge["destination"][0] in storage_ids
+                for edge in edges
+            ), "manual reload must recall slot 1 into live clients")
 
         helper = (ROOT / "code" / "soundscape_state_path.js").read_text(
             encoding="utf-8"
@@ -1643,7 +1669,10 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
         host = self.load_json("patchers/ev_cinematic_soundscape_host~.maxpat")["patcher"]
         host_text = "\n".join(item["box"].get("text", "") for item in host["boxes"])
         self.assertIn("cinematic_soundscape_beap~ ev", host_text)
-        self.assertIn("delay 3300", host_text)
+        self.assertIn("delay 5200", host_text)
+        self.assertIn("delay 5600", host_text)
+        self.assertIn("0. 300", host_text)
+        self.assertIn("line~ 1.", host_text)
         self.assertIn("mute~", host_text)
         engine = self.load_json("patchers/vehicle_engine_ev~.maxpat")["patcher"]
         engine_text = "\n".join(item["box"].get("text", "") for item in engine["boxes"])
