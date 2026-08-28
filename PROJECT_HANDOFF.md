@@ -9,16 +9,16 @@
 - Working root: `.`
 - Repository name: `VehicleSoundSynth-V5`
 - Git repository: `true`
-- Generated at: `2026-08-27T18:59:32+08:00`
+- Generated at: `2026-08-28T15:32:21+08:00`
 
 ## Current State
 
-- Branch: canonical `main`; live/persistent sound-module implementation fixed
-  point is `dc84aad`, with later handoff-only descendants.
+- Branch: canonical `main`; Soundscape stabilization/persistence implementation
+  fixed point is `973a2f2`, with later handoff-only descendants.
 - Prior keyboard, persistent seven-module mixer, and kick-impact Pop fixed
   point: `f85c1ca`.
 - Prior layered-backfire implementation: `9fffe195d9e3aa68678856ad880693ac6a5df63a`.
-- Indexed paths: 159 including the repository-local AgentLab handoff
+- Indexed paths: 160 including the repository-local AgentLab handoff
 - Inventory truncated: `false`
 - Inaccessible paths: 0
 - Scan mode: complete path/metadata inventory; no bulk content read; no symlink traversal.
@@ -52,7 +52,7 @@
 | `assets/raw` | 7 |
 | `.codex` | 4 |
 | `.agentlab` | 1 |
-| `code` | 7 |
+| `code` | 8 |
 | `gen` | 3 |
 | `presets` | 3 |
 | `tests` | 3 |
@@ -62,11 +62,11 @@
 
 ### Tracked payload
 
-- total: 159 files, 120973650 bytes
+- total: 160 files, 121141531 bytes
 - audio (`.wav`): 41 files, 103833150 bytes
-- executable sources (`.py`, `.js`, `.gendsp`): 26 files, 908237 bytes
-- Max project/patch (`.maxpat`, `.maxproj`): 67 files, 15554601 bytes
-- documentation (`.md`, `.docx`, `.pdf`): 15 files, 638067 bytes
+- executable sources (`.py`, `.js`, `.gendsp`): 27 files, 930765 bytes
+- Max project/patch (`.maxpat`, `.maxproj`): 67 files, 15697709 bytes
+- documentation (`.md`, `.docx`, `.pdf`): 15 files, 640221 bytes
 - structured data (`.json`): 6 files, 33939 bytes
 - other tracked text/markers: 4 files, 5656 bytes
 
@@ -78,7 +78,7 @@
 - `.md`: 9
 - `.json`: 6
 - `.docx`: 5
-- `.js`: 7
+- `.js`: 8
 - `.gendsp`: 3
 - `.txt`: 2
 - `[no extension]`: 2
@@ -97,6 +97,7 @@
 
 ## Change History
 
+- `973a2f2 2026-08-28 fix: stabilize live soundscape tuning and persistence`
 - `dc84aad 2026-08-27 fix: make sound modules live and persistent`
 - `f85c1ca 2026-08-27 feat: add persistent module mixer and impact pop`
 - `82fca86 2026-08-26 fix: restore keyboard pedals and deepen pop pressure`
@@ -138,34 +139,29 @@
 
 ## Current Changes
 
-- `Open Sound DNA`, `Open Soundscape BEAP`, and `Open Pop Designer` now target
-  the nested instance that is actually feeding the active runtime. Soundscape
-  no longer opens a detached copy. DNA continues to save ignored per-profile
-  JSON, Soundscape `Save Soundscape` writes the shared seed-once graph, and
-  V10/V12 Pop now save/reload ignored `presets/local/<profile>_pop.json` state
-  through `code/pop_state_path.js`.
-- The shared Soundscape factory state is restored to a restrained musical
-  root/fifth/octave voicing: 0.07/0.02 Hz drift, much smaller pitch modulation,
-  lower resonance, brighter but controlled MMF, longer pad envelope, and less
-  chorus regeneration. `Motion` is now a maximum modulation depth; throttle
-  scales it smoothly from 25% at idle to 100% at full pedal.
-- Local ignored V10/V12 DNA overrides that contained extreme stale values were
-  restored to the tracked Aggressive V10 and High-Rev V12 presets. The prior
-  user-saved V10 runtime was preserved outside the repository at
-  `/private/tmp/vss-live-tuning-backup.1CYB1C/VehicleSoundSynth-V10.maxpat`
-  (SHA-256 `41471bdc72545afac23774f2893c4c25461f42f95e400f05b4f5122437032689`).
-- Completed on canonical `main`. All 162 tests pass, the ten changed generated
-  outputs match an independent fresh build byte-for-byte, and
-  `git diff --check` is clean. Final Max Soundscape on/off renders are distinct,
-  unclipped, and below the `0.001` harshness gate. Final V10 Pop measures
-  `-2.93` dBFS peak, `121.5` Hz attack centroid, `0.875` 20--180 Hz energy,
-  `0.000216` snare-band energy, and a `170` ms tail.
+- Completed on canonical `main` at implementation fixed point `973a2f2`.
+  Each profile now has one directly audible embedded Soundscape instance;
+  Main-page controls and `Open Designer` address it rather than a detached
+  `poly~` copy. Live macro and nested BEAP values persist in ignored
+  `presets/local/<profile>_soundscape.json` files.
+- `Save Profile Sound`, runtime close/switch, Reload, and Factory Reset now
+  coordinate the module mixer, Soundscape, and per-profile vehicle-bus EQ.
+  The former `pattrstorage` output-to-save feedback loop was removed, eliminating
+  the 250 ms continuous state-file rewrite while preserving immediate tuning.
+- The seed-once shared Soundscape factory is a restrained root/fifth/octave pad:
+  0.035/0.009 Hz sine/triangle drift, tiny pitch depth, lower resonance, slower
+  chorus, long envelope/reverb, 70 Hz high-pass, and one `tanh~` saturation
+  stage. Direct Soundscape DSP suspends after disable to lower idle CPU.
+- All 166 tests pass; changed generated/seed outputs match an independent fresh
+  build byte-for-byte; `git diff --check` is clean; V4 remains clean and
+  `drive_model.js` is unchanged. Fresh EV/V10/V12 renders are non-silent,
+  unclipped, and far below the documented harsh/high-band limit.
 - Final project plus independent EV/V10/V12 Max 8.6.5 loads found no
   missing-object, Gen/function, invalid-category, or patchcord-range blocker.
-  The official crash-recovery preference was restored byte-for-byte to Ask;
-  all task-opened windows/processes were closed. Pre-existing zero-window Max
-  PID `35660` (started before this task at 13:38) was preserved; consequently
-  final AppleScript reports `application "Max" is running = true`.
+  All nine ignored per-profile mixer/Soundscape/EQ state files were written.
+  Crash-recovery preferences were restored byte-for-byte; all task-owned Max
+  windows/processes were closed. Pre-existing zero-window PID `35660` was
+  preserved, so AppleScript still reports the Max application running.
 
 ## Related Repositories
 
