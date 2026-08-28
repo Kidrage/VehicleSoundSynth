@@ -9,12 +9,12 @@
 - Working root: `.`
 - Repository name: `VehicleSoundSynth-V5`
 - Git repository: `true`
-- Generated at: `2026-08-28T15:54:17+08:00`
+- Generated at: `2026-08-28T17:45:00+08:00`
 
 ## Current State
 
-- Branch: canonical `main`; Soundscape stabilization/persistence implementation
-  fixed point is `cfc65aa`, with later handoff-only descendants.
+- Branch: canonical `main`; visible Main-page Soundscape control implementation
+  fixed point is `0d600c8`, with later handoff-only descendants.
 - Prior keyboard, persistent seven-module mixer, and kick-impact Pop fixed
   point: `f85c1ca`.
 - Prior layered-backfire implementation: `9fffe195d9e3aa68678856ad880693ac6a5df63a`.
@@ -62,13 +62,13 @@
 
 ### Tracked payload
 
-- total: 160 files, 121162056 bytes
+- total: 160 files, 121178154 bytes
 - audio (`.wav`): 41 files, 103833150 bytes
-- executable sources (`.py`, `.js`, `.gendsp`): 27 files, 933087 bytes
-- Max project/patch (`.maxpat`, `.maxproj`): 67 files, 15715711 bytes
-- documentation (`.md`, `.docx`, `.pdf`): 15 files, 640422 bytes
+- executable sources (`.py`, `.js`, `.gendsp`): 27 files, 939851 bytes
+- Max project/patch (`.maxpat`, `.maxproj`): 67 files, 15723602 bytes
+- documentation (`.md`, `.docx`, `.pdf`): 15 files, 641865 bytes
 - structured data (`.json`): 6 files, 33939 bytes
-- other tracked text/markers: 4 files, 5656 bytes
+- other tracked text/markers: 4 files, 5747 bytes
 
 ### Common Extensions
 
@@ -97,6 +97,7 @@
 
 ## Change History
 
+- `0d600c8 2026-08-28 fix: expose live soundscape controls in main`
 - `cfc65aa 2026-08-28 fix: recall soundscape state and preserve tails`
 - `3b14b3a 2026-08-28 docs: record soundscape stabilization handoff`
 - `973a2f2 2026-08-28 fix: stabilize live soundscape tuning and persistence`
@@ -141,33 +142,35 @@
 
 ## Current Changes
 
-- Completed on canonical `main` at implementation fixed point `cfc65aa`.
-  Each profile now has one directly audible embedded Soundscape instance;
-  Main-page controls and `Open Designer` address it rather than a detached
-  `poly~` copy. Live macro and nested BEAP values persist in ignored
-  `presets/local/<profile>_soundscape.json` files.
-- `Save Profile Sound`, runtime close/switch, Reload, and Factory Reset now
-  coordinate the module mixer, Soundscape, and per-profile vehicle-bus EQ.
-  The former `pattrstorage` output-to-save feedback loop was removed, eliminating
-  the 250 ms continuous state-file rewrite while preserving immediate tuning.
-  Reload performs a complete read-then-recall transaction, so it immediately
-  restores saved controls without requiring a runtime reopen.
-- The seed-once shared Soundscape factory is a restrained root/fifth/octave pad:
-  0.035/0.009 Hz sine/triangle drift, tiny pitch depth, lower resonance, slower
-  chorus, long envelope/reverb, 70 Hz high-pass, and one `tanh~` saturation
-  stage. Disable allows the 4.5 s release to decay, begins a 300 ms output fade
-  at 5.2 s, and only suspends direct DSP at 5.6 s, avoiding a hard-cut tail.
-- All 166 tests pass; changed generated/seed outputs match an independent fresh
-  build byte-for-byte; `git diff --check` is clean; V4 remains clean and
-  `drive_model.js` is unchanged. Fresh EV/V10/V12 renders are non-silent,
-  unclipped, and far below the documented harsh/high-band limit.
-- Final project plus independent EV/V10/V12 Max 8.6.5 loads found no
-  missing-object, Gen/function, invalid-category, or patchcord-range blocker.
-  All nine ignored per-profile mixer/Soundscape/EQ state files were written.
-  The final post-review project/EV/V10/V12 loads also passed. Crash-recovery
-  preferences were restored byte-for-byte; each task-owned PID reached zero
-  windows before termination. Pre-existing zero-window PID `35660` was
-  preserved, so AppleScript still reports the Max application running.
+- Completed on canonical `main` at implementation fixed point `0d600c8`.
+  `main.maxpat` now exposes the shared `soundscape_control` strip below the
+  profile launch buttons. It sends only control messages over
+  `vss.runtime.control`; each selected EV/V10/V12 runtime routes those messages
+  into its one actually audible embedded vehicle-engine instance and publishes
+  live state over `vss.soundscape.feedback`. The launcher therefore remains
+  DSP-free and does not duplicate the Soundscape voice.
+- Main and runtime controls now stay synchronized for Enable, Motion, Space,
+  Pitch Follow, Transpose, Brightness and Solo. `Open Designer` still fronts the
+  actual embedded BEAP instance, while Save/Reload persist the selected
+  profile's ignored local state. Factory Enable is now on; ignition remains the
+  physical gate, so a fresh profile is audible after ignition/start without a
+  hidden setup step. Soundscape stem level remains authoritative in the
+  persistent runtime Module Mixer rather than introducing a competing Main gain.
+- All 169 tests pass. The 11 changed generated Max outputs match an independent
+  fresh build byte-for-byte and `git diff --check` is clean. A real Max 8.6.5
+  control-bus smoke returned exact state for Enable plus all six live macros and
+  Solo from the active V10 engine. Final NonRealTime V10 on/off WAVs had distinct
+  SHA-256 hashes, zero clipping, and an audible RMS delta: enabled -18.32 dBFS,
+  disabled -32.73 dBFS (installed driver 44.1 kHz). The post-17:20 Max log has no
+  missing-object, invalid-category, Gen/function, outlet, or patchcord-range
+  blocker.
+- Every task-opened Max window was closed and each task-owned process exited.
+  The user's pre-existing PID `35660` and its windows were deliberately
+  preserved. Max crash-recovery preference was restored byte-for-byte to SHA-256
+  `bb8192c813e1dcdb7744a17195319161bbaf472f564ffb4980ff3e457169d529`.
+  A pre-existing uncommitted V10 Max save was backed up before deterministic
+  regeneration at `/private/tmp/vss-main-soundscape-backup.6AzVfg/`; no local
+  media, EQ state, ignored preset, backup, or temporary render entered Git.
 
 ## Related Repositories
 
