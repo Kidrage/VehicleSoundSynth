@@ -94,8 +94,10 @@ Soundscape `Open Designer` addresses the active embedded instance; `Save`
 persists profile-local state for the shared seed-once graph. Its shipped voicing
 is root/fifth/octave with restrained 0.035/0.009 Hz LFO drift, and the Main
 Motion macro is a maximum depth scaled smoothly by throttle. The launcher uses
-`vss.runtime.control` and `vss.soundscape.feedback` to mirror the active runtime;
-do not instantiate DSP or a second Soundscape in the launcher.
+profile-scoped `vss.runtime.control.<profile>` and
+`vss.soundscape.feedback.<profile>` buses selected by `vss.runtime.select`, so
+runtime-close overlap cannot edit the old profile; do not instantiate DSP or a
+second Soundscape in the launcher.
 
 Runtime smoke-check the generated project in Max 8.6.5 after structural tests.
 On macOS, Max writes load diagnostics to

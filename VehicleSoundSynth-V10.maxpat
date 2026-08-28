@@ -290,10 +290,10 @@
           "patching_rect": [
             1210.0,
             535.0,
-            155.0,
+            190.0,
             22.0
           ],
-          "text": "r vss.runtime.control"
+          "text": "r vss.runtime.control.v10"
         }
       },
       {
@@ -305,10 +305,10 @@
           "patching_rect": [
             1210.0,
             565.0,
-            190.0,
+            220.0,
             22.0
           ],
-          "text": "s vss.soundscape.feedback"
+          "text": "s vss.soundscape.feedback.v10"
         }
       },
       {

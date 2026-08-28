@@ -5945,7 +5945,7 @@ def add_eq_band(
 
 def make_launcher() -> dict[str, Any]:
     """Build a DSP-free project switchboard for the three independent demos."""
-    p = Patcher(1040, 565)
+    p = Patcher(1040, 645)
     p.comment("VehicleSoundSynth V5 — choose one independent runtime", 30, 25, 520)
     p.comment(
         "The launcher owns no audio objects. Selecting a profile closes the previous runtime before opening one instance.",
@@ -5956,6 +5956,10 @@ def make_launcher() -> dict[str, Any]:
     )
     controller = p.new("pcontrol", 570, 175, 70, numinlets=1, numoutlets=0)
     selection = p.new("s vss.runtime.select", 360, 285, 145, numinlets=1, numoutlets=0)
+    selection_map = p.new(
+        "sel ev v10 v12 none", 710, 285, 130,
+        numinlets=1, numoutlets=5,
+    )
     for index, profile in enumerate(("ev", "v10", "v12")):
         config = PROFILE_CONFIG[profile]
         y = 120 + index * 68
@@ -5968,6 +5972,7 @@ def make_launcher() -> dict[str, Any]:
         p.connect(button, order)
         p.connect(order, select_message, 1)
         p.connect(select_message, selection)
+        p.connect(select_message, selection_map)
         p.connect(order, open_delay, 0)
         p.connect(open_delay, open_message)
         p.connect(open_message, controller)
@@ -5975,25 +5980,55 @@ def make_launcher() -> dict[str, Any]:
     close_symbol = p.message("none", 510, 315, 55)
     p.connect(close_all, close_symbol)
     p.connect(close_symbol, selection)
+    p.connect(close_symbol, selection_map)
     main_soundscape = p.add(
         "bpatcher", None, 30, 350, 980, 115,
         numinlets=1, numoutlets=1,
         name="Patcher:/patchers/soundscape_control.maxpat",
         args=["main"], varname="main_soundscape_control",
     )
-    runtime_control = p.new(
-        "s vss.runtime.control", 735, 490, 155,
-        numinlets=1, numoutlets=0,
+    selected_index = [
+        p.message(str(index), 710 + index * 38, 315, 30)
+        for index in range(1, 4)
+    ]
+    selection_off = p.message("0", 710, 315, 30)
+    selection_default = p.new(
+        "loadmess 0", 710, 345, 80,
+        numinlets=1, numoutlets=1,
     )
-    soundscape_feedback = p.new(
-        "r vss.soundscape.feedback", 735, 520, 190,
-        numinlets=0, numoutlets=1,
+    command_gate = p.new(
+        "gate 3", 735, 490, 65,
+        numinlets=2, numoutlets=3,
     )
-    p.connect(main_soundscape, runtime_control)
-    p.connect(soundscape_feedback, main_soundscape)
+    feedback_selector = p.new(
+        "switch 3", 735, 565, 75,
+        numinlets=4, numoutlets=1,
+    )
+    for index, index_message in enumerate(selected_index):
+        p.connect(selection_map, index_message, index, 0)
+        p.connect(index_message, command_gate, 0, 0)
+        p.connect(index_message, feedback_selector, 0, 0)
+    p.connect(selection_map, selection_off, 3, 0)
+    p.connect(selection_off, command_gate, 0, 0)
+    p.connect(selection_off, feedback_selector, 0, 0)
+    p.connect(selection_default, command_gate, 0, 0)
+    p.connect(selection_default, feedback_selector, 0, 0)
+    p.connect(main_soundscape, command_gate, 0, 1)
+    for index, profile in enumerate(("ev", "v10", "v12")):
+        runtime_control = p.new(
+            f"s vss.runtime.control.{profile}", 815, 480 + index * 25, 190,
+            numinlets=1, numoutlets=0,
+        )
+        soundscape_feedback = p.new(
+            f"r vss.soundscape.feedback.{profile}", 420, 545 + index * 25, 220,
+            numinlets=0, numoutlets=1,
+        )
+        p.connect(command_gate, runtime_control, index, 0)
+        p.connect(soundscape_feedback, feedback_selector, 0, index + 1)
+    p.connect(feedback_selector, main_soundscape)
     p.comment(
-        "Main Soundscape controls target the currently open runtime; Save writes that profile's local state.",
-        30, 520, 690,
+        "Main Soundscape controls use profile-scoped buses; overlap during runtime switching cannot touch the old profile.",
+        30, 615, 760,
     )
     return p.document()
 
@@ -6380,11 +6415,11 @@ def make_profile_main(profile: str, root: Path | None = None) -> dict[str, Any]:
         name=f"Patcher:/patchers/{config['engine']}.maxpat",
     )
     shared_runtime_control = p.new(
-        "r vss.runtime.control", 1210, 535, 155,
+        f"r vss.runtime.control.{profile}", 1210, 535, 190,
         numinlets=0, numoutlets=1,
     )
     shared_soundscape_feedback = p.new(
-        "s vss.soundscape.feedback", 1210, 565, 190,
+        f"s vss.soundscape.feedback.{profile}", 1210, 565, 220,
         numinlets=1, numoutlets=0,
     )
     p.connect(source_default, source, 0, 0)

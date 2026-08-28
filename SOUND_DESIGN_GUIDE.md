@@ -239,6 +239,9 @@ Use the Main macros first:
 Changes from either Main or the runtime view are sent directly to the current
 engine; feedback updates both views without reopening the patch. `Save` writes
 only the selected profile, while `Reload` immediately recalls its saved state.
+The Main link uses separate EV/V10/V12 buses, so even the brief overlap while an
+old runtime closes cannot receive the new profile's tuning or overwrite its
+saved Soundscape.
 
 For a warmer Prophet-style pad, keep the root triangle dominant, leave the saw
 roughly 7–12 dB below it, keep Noise below 0.02, and use Chorus/Reverb for width.

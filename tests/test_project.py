@@ -803,21 +803,66 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
             box_id for box_id, box in boxes.items()
             if box.get("name") == "Patcher:/patchers/soundscape_control.maxpat"
         )
-        command_bus = next(
+        selection_map = next(
             box_id for box_id, box in boxes.items()
-            if box.get("text") == "s vss.runtime.control"
+            if box.get("text") == "sel ev v10 v12 none"
         )
-        feedback_bus = next(
+        command_gate = next(
             box_id for box_id, box in boxes.items()
-            if box.get("text") == "r vss.soundscape.feedback"
+            if box.get("text") == "gate 3"
         )
+        feedback_selector = next(
+            box_id for box_id, box in boxes.items()
+            if box.get("text") == "switch 3"
+        )
+        command_buses = {
+            profile: next(
+                box_id for box_id, box in boxes.items()
+                if box.get("text") == f"s vss.runtime.control.{profile}"
+            )
+            for profile in ("ev", "v10", "v12")
+        }
+        feedback_buses = {
+            profile: next(
+                box_id for box_id, box in boxes.items()
+                if box.get("text") == f"r vss.soundscape.feedback.{profile}"
+            )
+            for profile in ("ev", "v10", "v12")
+        }
+        texts = {box.get("text") for box in boxes.values()}
+        self.assertNotIn("s vss.runtime.control", texts)
+        self.assertNotIn("r vss.soundscape.feedback", texts)
         self.assertIn(
-            ((control_id, 0), (command_bus, 0)),
+            ((control_id, 0), (command_gate, 1)),
             {(tuple(line["source"]), tuple(line["destination"])) for line in lines},
         )
         self.assertIn(
-            ((feedback_bus, 0), (control_id, 0)),
+            ((feedback_selector, 0), (control_id, 0)),
             {(tuple(line["source"]), tuple(line["destination"])) for line in lines},
+        )
+        cords = {
+            (tuple(line["source"]), tuple(line["destination"])) for line in lines
+        }
+        for index, profile in enumerate(("ev", "v10", "v12"), start=1):
+            index_message = next(
+                box_id for box_id, box in boxes.items()
+                if box.get("maxclass") == "message" and box.get("text") == str(index)
+            )
+            self.assertIn(((selection_map, index - 1), (index_message, 0)), cords)
+            self.assertIn(((index_message, 0), (command_gate, 0)), cords)
+            self.assertIn(((index_message, 0), (feedback_selector, 0)), cords)
+            self.assertIn(((command_gate, index - 1), (command_buses[profile], 0)), cords)
+            self.assertIn(((feedback_buses[profile], 0), (feedback_selector, index)), cords)
+        selection_off = next(
+            box_id for box_id, box in boxes.items()
+            if box.get("maxclass") == "message" and box.get("text") == "0"
+        )
+        self.assertIn(((selection_map, 3), (selection_off, 0)), cords)
+        self.assertIn(((selection_off, 0), (command_gate, 0)), cords)
+        self.assertIn(((selection_off, 0), (feedback_selector, 0)), cords)
+        self.assertTrue(
+            any(tuple(line["destination"]) == (selection_map, 0) for line in lines),
+            "Profile selection must also drive the Main control/feedback selector",
         )
 
         for profile in ("ev", "v10", "v12"):
@@ -836,12 +881,15 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
             )
             command_receive = next(
                 box_id for box_id, box in runtime_boxes.items()
-                if box.get("text") == "r vss.runtime.control"
+                if box.get("text") == f"r vss.runtime.control.{profile}"
             )
             feedback_send = next(
                 box_id for box_id, box in runtime_boxes.items()
-                if box.get("text") == "s vss.soundscape.feedback"
+                if box.get("text") == f"s vss.soundscape.feedback.{profile}"
             )
+            runtime_texts = {box.get("text") for box in runtime_boxes.values()}
+            self.assertNotIn("r vss.runtime.control", runtime_texts)
+            self.assertNotIn("s vss.soundscape.feedback", runtime_texts)
             cords = {
                 (tuple(line["source"]), tuple(line["destination"]))
                 for line in runtime_lines
