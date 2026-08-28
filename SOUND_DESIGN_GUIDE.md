@@ -10,16 +10,16 @@ Open a runtime and use the design controls beside the Soundscape section:
 - `Open Sound DNA` opens the active profile's procedural engine panel.
 - `Sound DNA Solo` removes Soundscape, transient, road and rumble stems while
   leaving the active procedural powertrain audible.
-- `Open Soundscape BEAP` opens the shared cinematic pad graph that is actually
-  running inside the active profile; it no longer opens a detached file copy.
+- Soundscape `Open Designer` fronts the exact cinematic pad instance feeding
+  the active profile; it no longer opens a detached file or `poly~` copy.
 - V10/V12 `Open Pop Designer` opens the active backfire voice in the supported
   one-runtime-at-a-time workflow, not a detached duplicate patcher. Two copies
   of one profile share its tuning bus and are not a supported tuning setup.
 
-The visible four-node EQ embedded at the bottom of each engine window is the
-same shared `patchers/vehicle_bus_eq~.maxpat` module. Save the patcher itself
-after changing its layout or objects. Use its `Save EQ` button to save band
-values for the next launch.
+The visible four-node EQ embedded at the bottom of each engine window uses the
+same `patchers/vehicle_bus_eq~.maxpat` design, but its values are stored per
+profile. Save the patcher itself after changing its layout or objects. Use its
+`Save EQ` button to save the active EV/V10/V12 values for the next launch.
 
 ## Human-maintained sound-design modules
 
@@ -28,8 +28,8 @@ values for the next launch.
 | `patchers/ev_sound_dna~.maxpat` | EV motor, inverter, gear and stereo character | Patcher is seed-once; `Save DNA` writes ignored local values |
 | `patchers/v10_sound_dna~.maxpat` | V10 combustion, intake, exhaust and residual character | Same |
 | `patchers/v12_sound_dna~.maxpat` | V12 bank, air and smooth high-rev character | Same |
-| `patchers/vehicle_bus_eq~.maxpat` | Shared four-band output tone shaping | Patcher is seed-once; `Save EQ` writes one ignored shared state |
-| `patchers/cinematic_soundscape_beap~.maxpat` | Shared cinematic pad | Seed-once; `Save Soundscape` writes the live graph |
+| `patchers/vehicle_bus_eq~.maxpat` | Four-band output tone shaping | Patcher is seed-once; `Save EQ` writes ignored per-profile state |
+| `patchers/cinematic_soundscape_beap~.maxpat` | Shared cinematic pad topology | Seed-once; the live host writes ignored per-profile state |
 | `patchers/engine_start_beap~.maxpat` | Cinematic start effect | Seed-once |
 | `patchers/v10_backfire_beap~.maxpat`, `v12_backfire_beap~.maxpat` | Physical pressure-release voices | Seed-once |
 
@@ -194,30 +194,60 @@ For dull acceleration, first raise DNA `Air Detail` or `Intake Detail` by
 0.05–0.15. Then try +1 to +2 dB around 3–5 kHz and no more than about +1.5 dB
 at 9–11 kHz. If the result turns plastic, reduce `Saturation`, `Texture`, or the
 3–5 kHz EQ before cutting the whole high band. `Save EQ` writes
-`presets/local/vehicle_bus_eq.json`, shared by EV, V10 and V12.
+`presets/local/{profile}_vehicle_bus_eq.json`. A legacy shared EQ file is only a
+first-run migration fallback.
 
 ## Cinematic Soundscape
 
-The pad is a BEAP/MSP hybrid. The large named visual modules are the editable
-sound design: two LFOs, three oscillators, Noise, Audio Mixer, Ladder, MMF,
-ADSR, VCA, Chorus and Reverb. Small MSP objects only scale CV, blend stereo,
-high-pass at 120 Hz and provide a safety clip.
+The pad is a BEAP/MSP hybrid. The large named modules are the sound-design
+surface: two LFOs, three oscillators, Noise, Mixer, Ladder, MMF, ADSR, VCA,
+Chorus and Reverb. Small MSP objects only scale CV, blend stereo, high-pass at
+70 Hz and soft-bound the output. The generated profile host handles vehicle
+mapping, smoothing, level and DSP suspension; do not tune that plumbing JSON.
 
-The shipped oscillator offsets now form a stable root/fifth/octave relation.
-The fast/slow LFOs default to 0.07/0.02 Hz with restrained pitch depth, so they
-add drift rather than an audible broken-engine wobble. `Motion` is the maximum
-modulation depth; throttle scales it smoothly from 25% at idle to 100% at full
-pedal. The slow LFO adds long detune/formant motion, and MMF adds a second colour
-stage after the Ladder. Use `Soundscape
-Solo` while tuning, temporarily set the runtime Soundscape level near -8 dB,
-then return it to a mix-safe value. Keep the 120 Hz high-pass so the pad does not
-fight the centred vehicle body. The same BEAP core is shared by all profiles;
-their hosts map RPM, throttle, load, acceleration, Motion and Space differently.
+The factory signal path is:
 
-All BEAP controls in the active window respond immediately. Click `Save
-Soundscape` to make the current live graph the next-launch state. Then turn Solo
-off, verify the final meters stay below the ceiling, close every patcher window,
-and quit Max normally.
+```text
+root / perfect fifth / octave oscillators + very low noise
+  -> Mixer -> Ladder -> MMF -> VCA
+  -> parallel Chorus + Reverb -> stereo blend -> 70 Hz HP -> soft output
+```
+
+Osc A is the root triangle, Osc B is a quiet saw at `+0.5849625` octaves
+(exact 3:2), and Osc C is a much quieter sine at `+1` octave. The two LFOs are
+only `0.035` and `0.009` Hz. Their pitch depths are about 0.0005/0.0003 octave
+before the Motion scaler, so they create slow drift rather than audible engine-
+fault vibrato; only smooth sine/triangle outputs are connected. The Ladder and
+MMF begin at 1.4/4.5 kHz with low resonance. The 1.2 s attack and 4.5 s release
+avoid rhythmic pumping, while Chorus/Reverb supply width and tail.
+
+Use the Main macros first:
+
+- `Motion` 0.05–0.30: total drift depth. If the pad wobbles or sounds broken,
+  lower this before touching oscillator pitch.
+- `Pitch Follow` 0.35–0.70: how far RPM moves the chord; it never changes the
+  root/fifth/octave relationship.
+- `Transpose` ±12 semitones: move the whole voicing without retuning modules.
+- `Brightness` 0.25–0.70: mapped filter colour. Lower it at the first sign of
+  harshness or resonance during acceleration.
+- `Space` 0.20–0.55: reverb send and long-tail depth. Excessive values smear
+  throttle response; it is not an LFO speed.
+
+For a warmer Prophet-style pad, keep the root triangle dominant, leave the saw
+roughly 7–12 dB below it, keep Noise below 0.02, and use Chorus/Reverb for width.
+For a darker ICE bed, set Motion around 0.10–0.18, Pitch Follow 0.45–0.60,
+Brightness 0.35–0.50 and Space 0.28–0.42. Avoid high Ladder/MMF resonance and
+large LFO-to-pitch depth: those are the main routes back to metallic whistle,
+FM-like sidebands and cyclic amplitude beating.
+
+Use `Soundscape Solo`, temporarily bring its mixer level up to about -10 dB,
+and click `Open Designer`. Edits in that window affect the currently audible
+instance immediately. `Save` writes
+`presets/local/{profile}_soundscape.json`; `Reload` restores it and `Factory
+Reset` recalls the shipped state. EV, V10 and V12 share the graph but not saved
+values. `Save Profile Sound` also saves Soundscape, EQ and Mixer together.
+After tuning, turn Solo off and return the shipped balance near -18 dB for EV
+or -20 dB for V10/V12 before checking the final limiter.
 
 ## Acoustic A/B validation
 

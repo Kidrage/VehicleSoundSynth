@@ -41,13 +41,14 @@ events, short cabin IR, adjustable stereo compression, EQ, and peak protection.
 - `patchers/{ev,v10,v12}_sound_dna~.maxpat` — seed-once, user-editable profile
   sound-design panels that own synthesis macros and wrap one generated powertrain.
 - `patchers/{ev,v10,v12}_powertrain~.maxpat` — exactly one Gen per profile.
-- `patchers/vehicle_bus_eq~.maxpat` — seed-once, user-editable shared four-band
-  EQ; `patchers/mix_master~.maxpat` contains generated safety dynamics only.
+- `patchers/vehicle_bus_eq~.maxpat` — seed-once, user-editable four-band EQ
+  topology with per-profile ignored state; `patchers/mix_master~.maxpat`
+  contains generated safety dynamics only.
 - `patchers/module_mixer.maxpat` — generated seven-stem main-page balance UI;
   per-profile ignored state is resolved by `code/module_mixer_state_path.js`.
-- `patchers/{ev,v10,v12}_cinematic_soundscape_host~.maxpat` and
-  `patchers/cinematic_soundscape_voice.maxpat` — generated profile mappings and
-  cancellable voice suspension around one shared runtime Soundscape.
+- `patchers/{ev,v10,v12}_cinematic_soundscape_host~.maxpat` — generated profile
+  mapping, persistence and cancellable DSP suspension around a direct embedded
+  instance of the shared runtime Soundscape; there is no detached voice wrapper.
 - `patchers/cinematic_soundscape_beap~.maxpat` plus the engine-start, three
   legacy EV, two legacy ICE-pad, and two backfire graphs — nine seed-once,
   user-tunable BEAP files. The legacy pads are preserved but undeclared.
@@ -68,7 +69,7 @@ python3 tools/validate_v10_lifecycle.py --drive-lifecycle-wav v10_v10-lifecycle-
 
 Regenerate twice and compare hashes when generator determinism matters. Never
 hand-edit generated `.maxpat`, `.gendsp`, or `.wav` files. The three Sound DNA
-panels, shared bus EQ, and nine seed-once BEAP patchers named above are explicit
+panels, bus EQ, and nine seed-once BEAP patchers named above are explicit
 user-owned exceptions. The project generator preserves those files after their
 first seed. The project generator
 never overwrites curated runtime WAVs already present in `media/`.
@@ -88,10 +89,10 @@ Module Mixer's `Pop / Event` fader.
 For continuous-engine tuning, open the active Sound DNA instance and use DNA
 Solo; EV Aggression and V10 Brightness are explicitly connected to Gen DSP,
 while several other controls are RPM/load/throttle-state dependent.
-`Open Soundscape BEAP` also addresses the active poly voice; `Save Soundscape`
-persists that shared seed-once graph. Its shipped voicing is root/fifth/octave
-with restrained 0.07/0.02 Hz LFO drift, and the main Motion macro is a maximum
-depth scaled smoothly by throttle.
+Soundscape `Open Designer` addresses the active embedded instance; `Save`
+persists profile-local state for the shared seed-once graph. Its shipped voicing
+is root/fifth/octave with restrained 0.035/0.009 Hz LFO drift, and the Main
+Motion macro is a maximum depth scaled smoothly by throttle.
 
 Runtime smoke-check the generated project in Max 8.6.5 after structural tests.
 On macOS, Max writes load diagnostics to

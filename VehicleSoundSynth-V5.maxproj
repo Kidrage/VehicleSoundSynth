@@ -31,6 +31,10 @@
         "kind": "javascript",
         "local": 1
       },
+      "code/soundscape_state_path.js": {
+        "kind": "javascript",
+        "local": 1
+      },
       "gen/ev_powertrain.gendsp": {
         "kind": "gendsp",
         "local": 1
@@ -113,10 +117,6 @@
         "kind": "patcher",
         "local": 1
       },
-      "patchers/cinematic_soundscape_voice.maxpat": {
-        "kind": "patcher",
-        "local": 1
-      },
       "patchers/drive_simulator_ev.maxpat": {
         "kind": "patcher",
         "local": 1
@@ -182,6 +182,10 @@
         "local": 1
       },
       "patchers/road_air~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/soundscape_control.maxpat": {
         "kind": "patcher",
         "local": 1
       },

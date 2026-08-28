@@ -1,8 +1,8 @@
 # Source Index
 
 Repository: /Users/saintpeter/Downloads/VehicleSoundSynth-V5
-Tracked filtered files: 118
-High-value indexed files: 42
+Tracked filtered files: 119
+High-value indexed files: 44
 
 Read this file before broad repository exploration. Prefer focused `rg`
 or `git grep` against the listed areas before opening source files.
@@ -22,6 +22,7 @@ or `git grep` against the listed areas before opening source files.
 - code/manual_input.js
 - code/module_mixer_state_path.js
 - code/pop_state_path.js
+- code/soundscape_state_path.js
 - tools/analyze_reference_lifecycle.py
 - tools/audio_metrics.py
 - tools/bind_drive_render.py
@@ -47,6 +48,7 @@ or `git grep` against the listed areas before opening source files.
 - patchers/backfire_burst_scheduler.maxpat
 - patchers/engine_start_core~.maxpat
 - patchers/module_mixer.maxpat
+- patchers/soundscape_control.maxpat
 
 ## config
 

@@ -189,9 +189,9 @@ POP_TUNING_DEFAULTS = {
 }
 
 MODULE_MIX_DEFAULTS = {
-    "ev": (-2.0, -8.0, -9.0, -14.0, -14.0, -60.0, -8.0),
-    "v10": (-3.0, -5.0, -7.0, -14.0, -16.0, -4.0, -8.0),
-    "v12": (-3.0, -5.0, -8.0, -15.0, -16.0, -5.0, -8.0),
+    "ev": (-2.0, -8.0, -9.0, -18.0, -14.0, -60.0, -8.0),
+    "v10": (-3.0, -5.0, -7.0, -20.0, -16.0, -4.0, -8.0),
+    "v12": (-3.0, -5.0, -8.0, -20.0, -16.0, -5.0, -8.0),
 }
 
 DNA_PARAMETER_SPECS = {
@@ -887,49 +887,64 @@ def make_cinematic_soundscape_beap() -> dict[str, Any]:
     tone_cv = inlet(p, 210, 65, signal=True)
     motion_cv = inlet(p, 300, 65, signal=True)
     space_cv = inlet(p, 390, 65, signal=True)
+    control = inlet(p, 480, 65)
     for label, x in (
         ("Pitch CV", 20), ("Gate 0/5V", 110), ("Tone CV", 205),
-        ("Motion 0..1", 295), ("Space 0..1", 390),
+        ("Motion 0..1", 295), ("Space 0..1", 390), ("State commands", 480),
     ):
         p.comment(label, x, 95, 95)
 
-    # Open and save the *loaded* abstraction instance.  The runtime used to
-    # load a detached copy of this file, so BEAP edits could not be auditioned
-    # until the whole poly voice was recreated.
-    open_request = p.new(
-        "r open.cinematic_soundscape", 1180, 15, 190,
-        numinlets=0, numoutlets=1,
-    )
-    front = p.message("front", 1380, 15, 45)
-    save_button = p.message("Save Soundscape", 1435, 15, 125)
-    save_message = p.message("write", 1570, 15, 45)
+    # This is the actual loaded editor.  Parameter persistence belongs to its
+    # profile host so one state transaction covers both host macros and every
+    # nested BEAP client.  The third outlet returns editor button requests.
+    command_route = route(p, ("open", "save", "reload", "reset"), 1180, 15, 270)
+    p.connect(control, command_route)
+    front = p.message("front", 1460, 15, 45)
+    save_button = p.message("Save Parameters", 1515, 15, 115)
+    save_request = p.message("soundscape_action save", 1640, 15, 145)
+    reload_button = p.message("Reload Parameters", 1695, 15, 125)
+    reload_request = p.message("soundscape_action reload", 1830, 15, 155)
+    reset_button = p.message("Factory Reset", 1895, 15, 90)
+    reset_request = p.message("soundscape_action reset", 1995, 15, 150)
+    graph_button = p.message("Save Graph Layout", 2050, 15, 120)
+    graph_write = p.message("write", 2180, 15, 45)
     patcher_window = p.new(
-        "thispatcher", 1630, 15, 75, numinlets=1, numoutlets=2,
+        "thispatcher", 2235, 15, 75, numinlets=1, numoutlets=2,
     )
-    p.connect(open_request, front)
+    action = outlet(p, 2710, 115)
+    p.connect(command_route, front, 0)
     p.connect(front, patcher_window)
-    p.connect(save_button, save_message)
-    p.connect(save_message, patcher_window)
+    p.connect(command_route, save_request, 1)
+    p.connect(save_button, save_request)
+    p.connect(save_request, action)
+    p.connect(command_route, reload_request, 2)
+    p.connect(reload_button, reload_request)
+    p.connect(reload_request, action)
+    p.connect(command_route, reset_request, 3)
+    p.connect(reset_button, reset_request)
+    p.connect(reset_request, action)
+    p.connect(graph_button, graph_write)
+    p.connect(graph_write, patcher_window)
 
     lfo = add_beap_module(
         p, "LFO/bp.LFO.maxpat", 510, 55, "LFO",
-        initial={"Frequency": 0.07, "Mute": 0},
+        initial={"Frequency": 0.035, "Mute": 0},
     )
     lfo_slow = add_beap_module(
         p, "LFO/bp.LFO.maxpat", 840, 55, "LFO_Slow",
-        initial={"Frequency": 0.02, "Mute": 0},
+        initial={"Frequency": 0.009, "Mute": 0},
     )
-    lfo_scale = p.new("*~ 0.0025", 510, 195, 72, numinlets=2, numoutlets=1)
+    lfo_scale = p.new("*~ 0.0005", 510, 195, 72, numinlets=2, numoutlets=1)
     motion_depth = p.new("*~", 590, 195, 40, numinlets=2, numoutlets=1)
     opposite = p.new("*~ -1.", 640, 195, 58, numinlets=2, numoutlets=1)
     pitch_a = p.new("+~", 710, 165, 40, numinlets=2, numoutlets=1)
     pitch_b_mod = p.new("+~", 710, 215, 40, numinlets=2, numoutlets=1)
-    pitch_b = p.new("+~ 0.003", 760, 215, 72, numinlets=2, numoutlets=1)
-    slow_pitch = p.new("*~ 0.0015", 840, 215, 72, numinlets=2, numoutlets=1)
+    pitch_b = p.new("+~ 0.5849625", 760, 215, 92, numinlets=2, numoutlets=1)
+    slow_pitch = p.new("*~ 0.0003", 840, 215, 72, numinlets=2, numoutlets=1)
     slow_motion = p.new("*~", 920, 215, 40, numinlets=2, numoutlets=1)
-    pitch_c_base = p.new("+~ 1.5849625", 970, 215, 100, numinlets=2, numoutlets=1)
+    pitch_c_base = p.new("+~ 1.", 970, 215, 55, numinlets=2, numoutlets=1)
     pitch_c = p.new("+~", 1080, 215, 40, numinlets=2, numoutlets=1)
-    tone_lfo = p.new("*~ 0.02", 510, 245, 68, numinlets=2, numoutlets=1)
+    tone_lfo = p.new("*~ 0.006", 510, 245, 68, numinlets=2, numoutlets=1)
     tone_motion = p.new("*~", 590, 245, 40, numinlets=2, numoutlets=1)
     tone_sum = p.new("+~", 640, 245, 40, numinlets=2, numoutlets=1)
     p.connect(lfo, lfo_scale, 0, 0)
@@ -941,13 +956,13 @@ def make_cinematic_soundscape_beap() -> dict[str, Any]:
     p.connect(opposite, pitch_b_mod, 0, 1)
     p.connect(pitch_cv, pitch_b_mod, 0, 0)
     p.connect(pitch_b_mod, pitch_b)
-    p.connect(lfo_slow, slow_pitch, 1, 0)
+    p.connect(lfo_slow, slow_pitch, 3, 0)
     p.connect(slow_pitch, slow_motion, 0, 0)
     p.connect(motion_cv, slow_motion, 0, 1)
     p.connect(pitch_cv, pitch_c_base)
     p.connect(pitch_c_base, pitch_c, 0, 0)
     p.connect(slow_motion, pitch_c, 0, 1)
-    p.connect(lfo, tone_lfo, 1, 0)
+    p.connect(lfo, tone_lfo, 0, 0)
     p.connect(tone_lfo, tone_motion, 0, 0)
     p.connect(motion_cv, tone_motion, 0, 1)
     p.connect(tone_motion, tone_sum, 0, 1)
@@ -955,40 +970,38 @@ def make_cinematic_soundscape_beap() -> dict[str, Any]:
 
     osc_a = add_beap_module(
         p, "Oscillator/bp.Oscillator.maxpat", 25, 310, "Osc_A",
-        initial={"Waveform": 1, "Offset": -12, "Mute": 0},
+        initial={"Waveform": 1, "Offset": 0, "Mute": 0},
     )
     osc_b = add_beap_module(
         p, "Oscillator/bp.Oscillator.maxpat", 355, 310, "Osc_B",
-        initial={"Waveform": 3, "Offset": -5, "PW": 48, "PWM": 7, "Mute": 0},
+        initial={"Waveform": 2, "Offset": 0, "PW": 50, "PWM": 0, "Mute": 0},
     )
     osc_c = add_beap_module(
         p, "Oscillator/bp.Oscillator.maxpat", 685, 310, "Osc_C",
-        initial={"Waveform": 1, "Offset": -19, "Mute": 0},
+        initial={"Waveform": 0, "Offset": 0, "Mute": 0},
     )
     noise = add_beap_module(p, "Random/bp.Noise.maxpat", 1015, 310, "Noise")
-    noise_gain = p.new("*~ 0.026", 1060, 455, 75, numinlets=2, numoutlets=1)
+    noise_gain = p.new("*~ 0.012", 1060, 455, 75, numinlets=2, numoutlets=1)
     mixer = add_beap_module(
         p, "Mixers/bp.Audio Mixer.maxpat", 1190, 310, "Mixer",
-        initial={"in1": -6, "in2": -10, "in3": -34, "in4": -15},
+        initial={"in1": -5, "in2": -12, "in3": -36, "in4": -26},
     )
     ladder = add_beap_module(
         p, "Filter/bp.Ladder.maxpat", 1435, 310, "Ladder",
-        initial={"Freq": 1650, "Res": 5, "CV1": 58},
+        initial={"Freq": 1400, "Res": 3, "CV1": 32},
     )
     mmf = add_beap_module(
         p, "Filter/bp.MMF.maxpat", 1745, 310, "MMF",
-        initial={"Freq": 3200, "Res": 4, "FilterType": 0},
+        initial={"Freq": 4500, "Res": 1.5, "FilterType": 0},
     )
     envelope = add_beap_module(
         p, "Envelope/bp.ADSR.maxpat", 2020, 310, "ADSR",
-        initial={"Attack": 900, "Decay": 1600, "Sustain": 84, "Release": 3800},
+        initial={"Attack": 1200, "Decay": 2500, "Sustain": 88, "Release": 4500},
     )
     vca = add_beap_module(p, "Level/bp.VCA.maxpat", 2275, 310, "VCA")
     p.connect(pitch_a, osc_a, 0, 0)
     p.connect(pitch_b, osc_b, 0, 0)
     p.connect(pitch_c, osc_c, 0, 0)
-    p.connect(lfo, osc_b, 2, 4)
-    p.connect(lfo_slow, osc_c, 2, 4)
     p.connect(osc_a, mixer, 0, 0)
     p.connect(osc_b, mixer, 0, 1)
     p.connect(noise, noise_gain)
@@ -997,54 +1010,136 @@ def make_cinematic_soundscape_beap() -> dict[str, Any]:
     p.connect(mixer, ladder, 0, 0)
     p.connect(tone_sum, ladder, 0, 1)
     p.connect(ladder, mmf, 0, 0)
-    p.connect(tone_sum, mmf, 0, 1)
     p.connect(gate_cv, envelope, 0, 0)
     p.connect(mmf, vca, 0, 0)
     p.connect(envelope, vca, 0, 1)
 
     chorus = add_beap_module(
         p, "Effects/bp.Chorus.maxpat", 25, 610, "Chorus",
-        initial={"Center": 620, "Rate": 0.12, "Regen": 0.14, "Width": 24, "bypass": 0},
+        initial={"Center": 620, "Rate": 0.015, "Regen": 0.02, "Width": 10, "bypass": 0},
     )
     reverb = add_beap_module(
         p, "Effects/bp.Reverb 2.maxpat", 420, 610, "Reverb",
-        initial={"Damping": 4600, "Decay": 48, "Diffusion": 0.72, "Mix": 100, "Size": 72, "bypass": 0},
+        initial={"Damping": 3600, "Decay": 42, "Diffusion": 0.78, "Mix": 100, "Size": 68, "bypass": 0},
     )
     p.connect(vca, chorus)
     p.connect(vca, reverb)
-    space_depth = p.new("*~ 0.34", 790, 650, 72, numinlets=2, numoutlets=1)
+    space_depth = p.new("*~ 0.28", 790, 650, 72, numinlets=2, numoutlets=1)
     p.connect(space_cv, space_depth)
     for channel, x in ((0, 990), (1, 1390)):
-        chorus_gain = p.new("*~ 0.72", x, 690, 72, numinlets=2, numoutlets=1)
+        chorus_gain = p.new("*~ 0.62", x, 690, 72, numinlets=2, numoutlets=1)
         reverb_gain = p.new("*~", x + 85, 690, 40, numinlets=2, numoutlets=1)
         blend = p.new("+~", x + 45, 740, 40, numinlets=2, numoutlets=1)
-        highpass = p.new("svf~ 120 0.7", x + 45, 785, 100, numinlets=3, numoutlets=4)
-        safe = p.new("clip~ -0.8 0.8", x + 45, 825, 105, numinlets=3, numoutlets=1)
-        output = outlet(p, x + 45, 875, signal=True)
+        highpass = p.new("svf~ 70 0.7", x + 45, 785, 95, numinlets=3, numoutlets=4)
+        saturator_drive = p.new("*~ 1.15", x + 45, 825, 65, numinlets=2, numoutlets=1)
+        saturator = p.new("tanh~", x + 45, 850, 50, numinlets=1, numoutlets=1)
+        safe = p.new("*~ 1.2228615", x + 45, 875, 95, numinlets=2, numoutlets=1)
+        pass_signal = p.new("pass~", x + 45, 900, 50, numinlets=1, numoutlets=1)
+        output = outlet(p, x + 45, 925, signal=True)
         p.connect(chorus, chorus_gain, channel, 0)
         p.connect(reverb, reverb_gain, channel, 0)
         p.connect(space_depth, reverb_gain, 0, 1)
         p.connect(chorus_gain, blend, 0, 0)
         p.connect(reverb_gain, blend, 0, 1)
         p.connect(blend, highpass)
-        p.connect(highpass, safe, 1, 0)
-        p.connect(safe, output)
+        p.connect(highpass, saturator_drive, 1, 0)
+        p.connect(saturator_drive, saturator)
+        p.connect(saturator, safe)
+        p.connect(safe, pass_signal)
+        p.connect(pass_signal, output)
     return p.document()
 
 
-def make_cinematic_soundscape_voice() -> dict[str, Any]:
-    p = Patcher(760, 430)
-    p.comment("Shared cinematic soundscape poly voice", 20, 15, 480)
-    signals = [p.new(f"in~ {index}", 30 + (index - 1) * 95, 65, 48, numinlets=0, numoutlets=1) for index in range(1, 6)]
-    beap = p.new("cinematic_soundscape_beap~", 175, 145, 205, numinlets=5, numoutlets=2)
-    p.new("thispoly~", 500, 145, 70, numinlets=2, numoutlets=3)
-    left = p.new("out~ 1", 150, 335, 50, numinlets=1, numoutlets=0)
-    right = p.new("out~ 2", 350, 335, 50, numinlets=1, numoutlets=0)
-    for index, signal in enumerate(signals):
-        p.connect(signal, beap, 0, index)
-    p.connect(beap, left, 0, 0)
-    p.connect(beap, right, 1, 0)
-    return p.document()
+def make_soundscape_control() -> dict[str, Any]:
+    """Build the stateless Main-page view for one profile Soundscape host."""
+    p = Patcher(980, 235)
+    p.comment("SOUNDSCAPE CONTROL — live profile state; values below are saved by the audible host", 15, 8, 760)
+    feedback = inlet(p, 15, 205)
+    output = outlet(p, 945, 205)
+    feedback_route = route(p, ("soundscape_state", "soundscape_status"), 690, 175, 245)
+    state_route = route(
+        p,
+        ("enable", "motion", "space", "pitch_follow", "transpose", "brightness"),
+        470, 205, 465,
+    )
+    status_set = p.new("prepend set", 805, 205, 85, numinlets=1, numoutlets=1)
+    status = p.add(
+        "message", "Factory", 895, 175, 70, 22,
+        numinlets=2, numoutlets=1, presentation=1,
+        presentation_rect=[790.0, 68.0, 170.0, 22.0],
+    )
+    p.connect(feedback, feedback_route)
+    p.connect(feedback_route, state_route, 0)
+    p.connect(feedback_route, status_set, 1)
+    p.connect(status_set, status)
+
+    p.comment("Enable", 15, 38, 55)
+    enable = p.add(
+        "toggle", None, 15, 60, 22, 22, numinlets=1, numoutlets=1,
+        presentation=1, presentation_rect=[15.0, 30.0, 22.0, 22.0],
+    )
+    enable_named = p.new("prepend soundscape_enable", 15, 92, 170, numinlets=1, numoutlets=1)
+    enable_set = p.new("prepend set", 45, 60, 80, numinlets=1, numoutlets=1)
+    p.connect(enable, enable_named)
+    p.connect(enable_named, output)
+    p.connect(state_route, enable_set, 0)
+    p.connect(enable_set, enable)
+
+    specs = (
+        ("Motion", "soundscape_motion", 0.0, 1.0, 105),
+        ("Space", "soundscape_space", 0.0, 1.0, 235),
+        ("Pitch Follow", "soundscape_pitch_follow", 0.0, 1.0, 365),
+        ("Transpose", "soundscape_transpose", -12.0, 12.0, 505),
+        ("Brightness", "soundscape_brightness", 0.0, 1.0, 645),
+    )
+    controls: list[str] = []
+    for label, name, low, high, x in specs:
+        p.comment(label, x, 38, 115)
+        number = p.add(
+            "flonum", None, x, 60, 72, numinlets=1, numoutlets=2,
+            presentation=1, presentation_rect=[float(x), 30.0, 72.0, 22.0],
+        )
+        bounded = p.new(f"clip {low:g} {high:g}", x, 92, 90, numinlets=3, numoutlets=1)
+        named = p.new(f"prepend {name}", x, 122, 175, numinlets=1, numoutlets=1)
+        p.connect(number, bounded)
+        p.connect(bounded, named)
+        p.connect(named, output)
+        controls.append(number)
+    for index, target in enumerate(controls, start=1):
+        setter = p.new("prepend set", 470 + 90 * index, 205, 80, numinlets=1, numoutlets=1)
+        p.connect(state_route, setter, index)
+        p.connect(setter, target)
+
+    buttons = (
+        ("Open Designer", "soundscape_open", 15),
+        ("Save", "soundscape_save", 145),
+        ("Reload", "soundscape_reload", 225),
+        ("Factory Reset", "soundscape_reset", 315),
+    )
+    for label, command, x in buttons:
+        button = p.add(
+            "message", label, x, 155, 115 if label != "Save" else 65,
+            numinlets=2, numoutlets=1, presentation=1,
+            presentation_rect=[float(x), 68.0, 115.0 if label != "Save" else 65.0, 22.0],
+        )
+        request = p.message(command, x, 185, 120)
+        p.connect(button, request)
+        p.connect(request, output)
+    p.comment("Solo", 460, 155, 40)
+    solo = p.add(
+        "toggle", None, 500, 155, 22, 22, numinlets=1, numoutlets=1,
+        presentation=1, presentation_rect=[465.0, 68.0, 22.0, 22.0],
+    )
+    solo_named = p.new("prepend soundscape_solo", 530, 155, 160, numinlets=1, numoutlets=1)
+    solo_default = p.new("loadmess 0", 530, 185, 80, numinlets=1, numoutlets=1)
+    p.connect(solo, solo_named)
+    p.connect(solo_named, output)
+    p.connect(solo_default, solo)
+    p.add(
+        "comment", "State", 735, 155, 45, 18, numinlets=1, numoutlets=0,
+        presentation=1, presentation_rect=[735.0, 70.0, 45.0, 18.0],
+    )
+    return p.document(presentation=True)
 
 
 def make_cinematic_soundscape_host(profile: str) -> dict[str, Any]:
@@ -1052,10 +1147,13 @@ def make_cinematic_soundscape_host(profile: str) -> dict[str, Any]:
     p = Patcher(1420, 860)
     p.comment(f"{profile.upper()} CINEMATIC SOUNDSCAPE HOST — continuous vehicle-state mapping and DSP suspension", 25, 15, 980)
     control = inlet(p, 35, 65)
+    status = outlet(p, 1320, 825)
     names = (
         "rpm", "throttle", "load", "accel", "shift", "ignition", "start",
         "soundscape_enable", "soundscape_level_db", "soundscape_motion", "soundscape_space",
         "pad_level_db", "pad_mute", "ev_soundscape_level_db", "ev_soundscape_mute", "ev_mode",
+        "soundscape_pitch_follow", "soundscape_transpose", "soundscape_brightness",
+        "soundscape_open", "soundscape_save", "soundscape_reload", "soundscape_reset",
     )
     router = route(p, names, 35, 105, 1250)
     p.connect(control, router)
@@ -1083,31 +1181,94 @@ def make_cinematic_soundscape_host(profile: str) -> dict[str, Any]:
             p.connect(legacy_modes, macro_message, outlet_index)
             p.connect(macro_message, router)
 
+    idle_rpm = {"ev": 650.0, "v10": 740.0, "v12": 780.0}[profile]
+    maximum_rpm = {"ev": 9000.0, "v10": 9000.0, "v12": 9500.0}[profile]
+    base_midi = {"ev": 45.0, "v10": 43.0, "v12": 41.0}[profile]
+    pitch_span = {"ev": 7.0, "v10": 9.0, "v12": 10.0}[profile]
+    pitch_follow_default_value = {"ev": 0.55, "v10": 0.60, "v12": 0.55}[profile]
     rpm = p.new("clip 0. 10000.", 35, 170, 105, numinlets=3, numoutlets=1)
-    pitch_formula = {
-        "ev": "expr log(max(24.,55.+0.032*$f1)/261.625565)/log(2.)",
-        "v10": "expr log(max(24.,36.7+0.014*$f1)/261.625565)/log(2.)",
-        "v12": "expr log(max(24.,32.7+0.012*$f1)/261.625565)/log(2.)",
-    }[profile]
-    pitch = p.new(pitch_formula, 35, 210, 390, numinlets=1, numoutlets=1)
-    pitch_pack = p.new("pack 0. 90", 35, 250, 85, numinlets=2, numoutlets=1)
+    rpm_norm = p.new(
+        f"expr min(1.,max(0.,log(max($f1,{idle_rpm:g})/{idle_rpm:g})/"
+        f"log({maximum_rpm:g}/{idle_rpm:g})))",
+        35, 210, 460, numinlets=1, numoutlets=1,
+    )
+    rpm_curve = p.new("expr $f1*$f1*(3.-2.*$f1)", 35, 250, 185, numinlets=1, numoutlets=1)
+    pitch_follow_input = p.new("clip 0. 1.", 230, 250, 75, numinlets=3, numoutlets=1)
+    pitch_follow_state = p.add(
+        "flonum", None, 315, 250, 65, numinlets=1, numoutlets=2,
+        varname="soundscape_pitch_follow_state",
+    )
+    pitch_follow_default = p.new(
+        f"loadmess {pitch_follow_default_value:g}", 385, 250, 100,
+        numinlets=1, numoutlets=1,
+    )
+    transpose_input = p.new("clip -12. 12.", 230, 280, 85, numinlets=3, numoutlets=1)
+    transpose_state = p.add(
+        "flonum", None, 315, 280, 65, numinlets=1, numoutlets=2,
+        varname="soundscape_transpose_state",
+    )
+    transpose_default = p.new("loadmess 0.", 385, 280, 85, numinlets=1, numoutlets=1)
+    pitch_state = p.new(
+        f"pak 0. {pitch_follow_default_value:g} 0.", 500, 250, 125,
+        numinlets=3, numoutlets=1,
+    )
+    pitch = p.new(
+        f"expr (({base_midi:g}-60.)+{pitch_span:g}*$f1*$f2+$f3)/12.",
+        635, 250, 315, numinlets=3, numoutlets=1,
+    )
+    pitch_pack = p.new("pack 0. 300", 960, 250, 95, numinlets=2, numoutlets=1)
     pitch_line = p.new("line~", 35, 290, 50, numinlets=2, numoutlets=2)
     p.connect(router, rpm, 0)
-    p.connect(rpm, pitch)
+    p.connect(rpm, rpm_norm)
+    p.connect(rpm_norm, rpm_curve)
+    p.connect(rpm_curve, pitch_state, 0, 0)
+    p.connect(router, pitch_follow_input, 16)
+    p.connect(pitch_follow_input, pitch_follow_state)
+    p.connect(pitch_follow_default, pitch_follow_state)
+    p.connect(pitch_follow_state, pitch_state, 0, 1)
+    pitch_follow_feedback = p.new("prepend soundscape_state pitch_follow", 500, 280, 220, numinlets=1, numoutlets=1)
+    p.connect(pitch_follow_state, pitch_follow_feedback)
+    p.connect(pitch_follow_feedback, status)
+    p.connect(router, transpose_input, 17)
+    p.connect(transpose_input, transpose_state)
+    p.connect(transpose_default, transpose_state)
+    p.connect(transpose_state, pitch_state, 0, 2)
+    transpose_feedback = p.new("prepend soundscape_state transpose", 730, 280, 205, numinlets=1, numoutlets=1)
+    p.connect(transpose_state, transpose_feedback)
+    p.connect(transpose_feedback, status)
+    p.connect(pitch_state, pitch)
     p.connect(pitch, pitch_pack)
     p.connect(pitch_pack, pitch_line)
 
-    state = p.new("pak 0. 0. 0.", 450, 170, 100, numinlets=3, numoutlets=1)
-    base_tone = {"ev": 0.82, "v10": 0.48, "v12": 0.38}[profile]
+    state = p.new("pak 0. 0. 0. 0.5", 450, 170, 125, numinlets=4, numoutlets=1)
+    base_tone = {"ev": 0.20, "v10": 0.16, "v12": 0.14}[profile]
+    brightness_default_value = {"ev": 0.60, "v10": 0.48, "v12": 0.40}[profile]
+    brightness_input = p.new("clip 0. 1.", 580, 170, 75, numinlets=3, numoutlets=1)
+    brightness_state = p.add(
+        "flonum", None, 665, 170, 65, numinlets=1, numoutlets=2,
+        varname="soundscape_brightness_state",
+    )
+    brightness_default = p.new(
+        f"loadmess {brightness_default_value:g}", 735, 170, 100,
+        numinlets=1, numoutlets=1,
+    )
     tone = p.new(
-        f"expr min(3.5,max(0.,{base_tone:g}+1.9*$f1+0.55*max(0.,$f2)+0.25*abs($f3)))",
-        450, 210, 500, numinlets=3, numoutlets=1,
+        f"expr min(1.2,max(0.,{base_tone:g}+0.52*$f1+0.18*max(0.,$f2)+"
+        "0.08*abs($f3)+0.38*$f4))",
+        450, 210, 560, numinlets=4, numoutlets=1,
     )
     tone_pack = p.new("pack 0. 150", 450, 250, 95, numinlets=2, numoutlets=1)
     tone_line = p.new("line~", 450, 290, 50, numinlets=2, numoutlets=2)
     p.connect(router, state, 1, 0)
     p.connect(router, state, 2, 1)
     p.connect(router, state, 3, 2)
+    p.connect(router, brightness_input, 18)
+    p.connect(brightness_input, brightness_state)
+    p.connect(brightness_default, brightness_state)
+    p.connect(brightness_state, state, 0, 3)
+    brightness_feedback = p.new("prepend soundscape_state brightness", 845, 170, 205, numinlets=1, numoutlets=1)
+    p.connect(brightness_state, brightness_feedback)
+    p.connect(brightness_feedback, status)
     p.connect(state, tone)
     p.connect(tone, tone_pack)
     p.connect(tone_pack, tone_line)
@@ -1119,11 +1280,21 @@ def make_cinematic_soundscape_host(profile: str) -> dict[str, Any]:
     )
     motion_pack = p.new("pack 0. 180", 35, 425, 95, numinlets=2, numoutlets=1)
     motion_line = p.new("line~", 35, 465, 50, numinlets=2, numoutlets=2)
-    motion_default_value = {"ev": 0.62, "v10": 0.52, "v12": 0.42}[profile]
+    motion_default_value = {"ev": 0.25, "v10": 0.18, "v12": 0.14}[profile]
+    motion_input = p.new("clip 0. 1.", 145, 345, 75, numinlets=3, numoutlets=1)
+    motion_macro = p.add(
+        "flonum", None, 230, 345, 65, numinlets=1, numoutlets=2,
+        varname="soundscape_motion_state",
+    )
     motion_default = p.new(f"loadmess {motion_default_value:g}", 145, 345, 95, numinlets=1, numoutlets=1)
     p.connect(router, motion_state, 1, 0)
-    p.connect(router, motion_state, 9, 1)
-    p.connect(motion_default, motion_state, 0, 1)
+    p.connect(router, motion_input, 9)
+    p.connect(motion_input, motion_macro)
+    p.connect(motion_default, motion_macro)
+    p.connect(motion_macro, motion_state, 0, 1)
+    motion_feedback = p.new("prepend soundscape_state motion", 300, 345, 190, numinlets=1, numoutlets=1)
+    p.connect(motion_macro, motion_feedback)
+    p.connect(motion_feedback, status)
     p.connect(motion_state, motion_map)
     p.connect(motion_map, motion_pack)
     p.connect(motion_pack, motion_line)
@@ -1132,17 +1303,31 @@ def make_cinematic_soundscape_host(profile: str) -> dict[str, Any]:
     space_map = p.new("expr min(1.,max(0.,0.12+0.72*$f1+0.16*(1.-$f2)))", 420, 385, 355, numinlets=2, numoutlets=1)
     space_pack = p.new("pack 0. 220", 420, 425, 95, numinlets=2, numoutlets=1)
     space_line = p.new("line~", 420, 465, 50, numinlets=2, numoutlets=2)
-    space_default_value = {"ev": 0.42, "v10": 0.38, "v12": 0.52}[profile]
+    space_default_value = {"ev": 0.42, "v10": 0.32, "v12": 0.40}[profile]
+    space_input = p.new("clip 0. 1.", 530, 345, 75, numinlets=3, numoutlets=1)
+    space_macro = p.add(
+        "flonum", None, 615, 345, 65, numinlets=1, numoutlets=2,
+        varname="soundscape_space_state",
+    )
     space_default = p.new(f"loadmess {space_default_value:g}", 530, 345, 95, numinlets=1, numoutlets=1)
-    p.connect(router, space_state, 10, 0)
+    p.connect(router, space_input, 10)
+    p.connect(space_input, space_macro)
+    p.connect(space_default, space_macro)
+    p.connect(space_macro, space_state, 0, 0)
     p.connect(router, space_state, 1, 1)
-    p.connect(space_default, space_state, 0, 0)
+    space_feedback = p.new("prepend soundscape_state space", 685, 345, 180, numinlets=1, numoutlets=1)
+    p.connect(space_macro, space_feedback)
+    p.connect(space_feedback, status)
     p.connect(space_state, space_map)
     p.connect(space_map, space_pack)
     p.connect(space_pack, space_line)
 
     ignition = p.new("clip 0 1", 805, 345, 65, numinlets=3, numoutlets=1)
-    enable = p.new("clip 0 1", 880, 345, 65, numinlets=3, numoutlets=1)
+    enable_input = p.new("clip 0 1", 880, 345, 65, numinlets=3, numoutlets=1)
+    enable = p.add(
+        "toggle", None, 950, 345, 22, 22, numinlets=1, numoutlets=1,
+        varname="soundscape_enable_state",
+    )
     active_state = p.new("pak 0 0", 955, 345, 75, numinlets=2, numoutlets=1)
     active = p.new("expr $i1*$i2", 1040, 345, 90, numinlets=2, numoutlets=1)
     enable_default = p.new("loadmess 0", 880, 380, 80, numinlets=1, numoutlets=1)
@@ -1150,7 +1335,8 @@ def make_cinematic_soundscape_host(profile: str) -> dict[str, Any]:
     gate_pack = p.new("pack 0. 80", 1040, 425, 85, numinlets=2, numoutlets=1)
     gate_line = p.new("line~", 1040, 465, 50, numinlets=2, numoutlets=2)
     p.connect(router, ignition, 5)
-    p.connect(router, enable, 7)
+    p.connect(router, enable_input, 7)
+    p.connect(enable_input, enable)
     p.connect(enable_default, enable)
     p.connect(ignition, active_state, 0, 0)
     p.connect(enable, active_state, 0, 1)
@@ -1158,35 +1344,96 @@ def make_cinematic_soundscape_host(profile: str) -> dict[str, Any]:
     p.connect(active, gate_cv)
     p.connect(gate_cv, gate_pack)
     p.connect(gate_pack, gate_line)
+    enable_feedback = p.new("prepend soundscape_state enable", 980, 385, 185, numinlets=1, numoutlets=1)
+    p.connect(enable, enable_feedback)
+    p.connect(enable_feedback, status)
 
-    voice = p.new("poly~ cinematic_soundscape_voice 1", 370, 535, 230, numinlets=5, numoutlets=2)
+    voice = p.new(
+        f"cinematic_soundscape_beap~ {profile}", 370, 535, 235,
+        numinlets=6, numoutlets=3,
+    )
     for source, inlet_index in ((pitch_line, 0), (gate_line, 1), (tone_line, 2), (motion_line, 3), (space_line, 4)):
         p.connect(source, voice, 0, inlet_index)
+    for outlet_index, command in enumerate(("open", "save", "reload", "reset"), start=19):
+        request = p.message(command, 1180, 500 + 30 * (outlet_index - 16), 50)
+        p.connect(router, request, outlet_index)
+        p.connect(request, voice, 0, 5)
+    core_action = route(p, ("soundscape_action",), 1180, 625, 165)
+    action_route = route(p, ("save", "reload", "reset"), 1180, 660, 180)
+    p.connect(voice, core_action, 2, 0)
+    p.connect(core_action, action_route, 0)
+
+    p.new("autopattr @autorestore 0", 1180, 695, 155, numinlets=1, numoutlets=4)
+    storage = p.new(
+        f"pattrstorage soundscape_{profile} @greedy 1 @savemode 3 @changemode 1 "
+        "@outputmode 6 @backupmode 1 @autorestore 0",
+        1180, 725, 455, numinlets=1, numoutlets=1,
+    )
+    state_path = p.new(
+        f"js Patcher:/code/soundscape_state_path.js {profile}",
+        1180, 760, 285, numinlets=1, numoutlets=2,
+    )
+    save_request = p.message("save", 1370, 660, 45)
+    reload_request = p.message("restore", 1425, 660, 55)
+    reset_request = p.message("reset", 1490, 660, 45)
+    p.connect(action_route, save_request, 0)
+    p.connect(action_route, reload_request, 1)
+    p.connect(action_route, reset_request, 2)
+    p.connect(save_request, state_path)
+    p.connect(reload_request, state_path)
+    p.connect(reset_request, state_path)
+    p.connect(state_path, storage, 0, 0)
+    p.connect(state_path, status, 1, 0)
+
+    state_load = p.new("loadbang", 1180, 795, 60, numinlets=1, numoutlets=1)
+    factory_delay = p.new("delay 180", 1245, 795, 70, numinlets=2, numoutlets=1)
+    factory_order = p.new("t b b", 1320, 795, 50, numinlets=1, numoutlets=2)
+    factory_store = p.message("store 99", 1375, 785, 60)
+    local_delay = p.new("delay 30", 1375, 815, 65, numinlets=2, numoutlets=1)
+    local_restore = p.message("restore", 1445, 815, 55)
+    local_recall_delay = p.new("delay 35", 1505, 815, 65, numinlets=2, numoutlets=1)
+    local_recall = p.message("1", 1575, 815, 30)
+    p.connect(state_load, factory_delay)
+    p.connect(factory_delay, factory_order)
+    p.connect(factory_order, factory_store, 1)
+    p.connect(factory_store, storage)
+    p.connect(factory_order, local_delay, 0)
+    p.connect(local_delay, local_restore)
+    p.connect(local_restore, state_path)
+    p.connect(local_restore, local_recall_delay)
+    p.connect(local_recall_delay, local_recall)
+    p.connect(local_recall, storage)
+
+    reset_save_delay = p.new("delay 60", 1540, 660, 65, numinlets=2, numoutlets=1)
+    p.connect(reset_request, reset_save_delay)
+    p.connect(reset_save_delay, save_request)
     edges = p.new("sel 1 0", 805, 505, 55, numinlets=1, numoutlets=3)
     cancel = p.message("stop", 870, 505, 40)
-    unmute = p.message("mute 1 0", 920, 505, 65)
+    unmute = p.message("0", 920, 505, 30)
     off_order = p.new("t b b", 805, 545, 50, numinlets=1, numoutlets=2)
     suspend_delay = p.new("delay 3300", 870, 575, 80, numinlets=2, numoutlets=1)
-    suspend = p.message("mute 1 1", 960, 575, 65)
-    initial_suspend = p.new("loadmess mute 1 1", 1035, 575, 125, numinlets=1, numoutlets=1)
+    suspend = p.message("1", 960, 575, 30)
+    initial_suspend = p.new("loadmess 1", 1035, 575, 80, numinlets=1, numoutlets=1)
+    mute_voice = p.new("mute~", 1125, 575, 50, numinlets=1, numoutlets=1)
     p.connect(active, edges)
     p.connect(edges, cancel, 0)
     p.connect(cancel, suspend_delay)
     p.connect(edges, unmute, 0)
-    p.connect(unmute, voice)
+    p.connect(unmute, mute_voice)
     p.connect(edges, off_order, 1)
     p.connect(off_order, cancel, 1)
     p.connect(off_order, suspend_delay, 0)
     p.connect(suspend_delay, suspend)
-    p.connect(suspend, voice)
-    p.connect(initial_suspend, voice)
+    p.connect(suspend, mute_voice)
+    p.connect(initial_suspend, mute_voice)
+    p.connect(mute_voice, voice, 0, 5)
 
-    level = add_db_gain_control(p, router, 8, 35, 555, -14.0 if profile != "v12" else -15.0)
+    level = add_db_gain_control(p, router, 8, 35, 555, -18.0 if profile == "ev" else -20.0)
     shift_edge = p.new("sel 1", 680, 535, 45, numinlets=1, numoutlets=2)
-    shift_shape = p.message("0.72 35, 1. 300 35", 680, 575, 145)
+    shift_shape = p.message("0.92 35, 1. 300 35", 680, 575, 145)
     shift_line = p.new("line~ 1.", 680, 615, 65, numinlets=2, numoutlets=2)
     start_edge = p.new("sel 1", 835, 640, 45, numinlets=1, numoutlets=2)
-    start_shape = p.message("0.35, 1. 950", 835, 680, 105)
+    start_shape = p.message("0.65, 1. 1200", 835, 680, 115)
     start_line = p.new("line~ 1.", 835, 720, 65, numinlets=2, numoutlets=2)
     p.connect(router, shift_edge, 4)
     p.connect(shift_edge, shift_shape, 0)
@@ -1199,7 +1446,7 @@ def make_cinematic_soundscape_host(profile: str) -> dict[str, Any]:
         level_gain = p.new("*~", x, 665, 40, numinlets=2, numoutlets=1)
         shift_gain = p.new("*~", x, 705, 40, numinlets=2, numoutlets=1)
         bloom_gain = p.new("*~", x, 745, 40, numinlets=2, numoutlets=1)
-        safe = p.new("clip~ -0.65 0.65", x, 785, 120, numinlets=3, numoutlets=1)
+        safe = p.new("*~ 0.85", x, 785, 60, numinlets=2, numoutlets=1)
         output = outlet(p, x, 825, signal=True)
         p.connect(voice, level_gain, channel, 0)
         p.connect(level, level_gain, 0, 1)
@@ -2539,7 +2786,7 @@ def make_profile_engine(profile: str) -> dict[str, Any]:
     power = p.new(f"{profile}_sound_dna~", 95, 260, 145, numinlets=1, numoutlets=2)
     pad = p.new(
         f"{profile}_cinematic_soundscape_host~", 95, 305, 220,
-        numinlets=1, numoutlets=2,
+        numinlets=1, numoutlets=3,
     )
     transient = p.new(f"transient_{profile}~", 285, 260, 120, numinlets=1, numoutlets=2)
     road = p.new("road_air~", 465, 260, 85, numinlets=1, numoutlets=2)
@@ -2548,6 +2795,7 @@ def make_profile_engine(profile: str) -> dict[str, Any]:
     eq = p.add(
         "bpatcher", None, 460, 495, 970, 340,
         numinlets=3, numoutlets=2, name="vehicle_bus_eq~.maxpat",
+        args=[profile],
         presentation=1, presentation_rect=[15.0, 15.0, 970.0, 340.0],
     )
     mix = p.new("mix_master~", 1030, 500, 110, numinlets=3, numoutlets=2)
@@ -2559,6 +2807,7 @@ def make_profile_engine(profile: str) -> dict[str, Any]:
     add_r3 = p.new("+~", 600, 430, 35, numinlets=2, numoutlets=1)
     left = outlet(p, 1030, 815, signal=True)
     right = outlet(p, 1120, 815, signal=True)
+    state_out = outlet(p, 1210, 815)
     p.connect(control, controller)
     p.connect(controller, fan)
     p.connect(fan, contract, 6)
@@ -2570,6 +2819,27 @@ def make_profile_engine(profile: str) -> dict[str, Any]:
     p.connect(fan, cabin, 1, 0)
     p.connect(fan, mix, 0, 0)
     p.connect(fan, eq, 0, 0)
+    p.connect(pad, state_out, 2, 0)
+    profile_save_router = route(
+        p,
+        ("save_profile_sound", "reload_profile_sound", "reset_profile_sound"),
+        980, 175, 365,
+    )
+    p.connect(control, profile_save_router)
+    for outlet_index, action in enumerate(("save", "reload", "reset")):
+        action_order = p.new(
+            "t b b", 980 + 115 * outlet_index, 205, 50,
+            numinlets=1, numoutlets=2,
+        )
+        soundscape_action = p.message(
+            f"soundscape_{action}", 980 + 115 * outlet_index, 235, 110,
+        )
+        eq_action = p.message(f"eq_{action}", 980 + 115 * outlet_index, 265, 75)
+        p.connect(profile_save_router, action_order, outlet_index)
+        p.connect(action_order, soundscape_action, 1)
+        p.connect(action_order, eq_action, 0)
+        p.connect(soundscape_action, pad)
+        p.connect(eq_action, eq)
     solo_router = route(
         p, ("soundscape_solo", "pad_solo", "backfire_solo", "dna_solo"),
         980, 210, 410,
@@ -2885,12 +3155,13 @@ def make_vehicle_bus_eq() -> dict[str, Any]:
     right_in = inlet(p, 280, 60, signal=True)
     master_controls = (
         "eq_low", "eq_lowmid", "eq_highmid", "eq_high", "eq_bypass", "master_trim_db",
+        "eq_save", "eq_reload", "eq_reset",
     )
     router = route(p, master_controls, 35, 105, 1080)
     p.connect(control, router)
     p.new("autopattr @autorestore 0", 760, 5, 155, numinlets=1, numoutlets=4)
     storage = p.new(
-        "pattrstorage vehicle_bus_eq @savemode 3 @changemode 1 @autorestore 0",
+        "pattrstorage vehicle_bus_eq_#1 @savemode 3 @changemode 1 @backupmode 1 @autorestore 0",
         925, 5, 245, numinlets=1, numoutlets=4,
     )
     p.comment(
@@ -2899,14 +3170,13 @@ def make_vehicle_bus_eq() -> dict[str, Any]:
     )
     state_load = p.new("loadbang", 1095, 370, 60, numinlets=1, numoutlets=1)
     state_delay = p.new("delay 120", 1095, 405, 70, numinlets=2, numoutlets=1)
-    state_path = p.new("js Patcher:/code/eq_state_path.js", 760, 405, 220, numinlets=1, numoutlets=1)
+    state_path = p.new("js Patcher:/code/eq_state_path.js #1", 760, 405, 235, numinlets=1, numoutlets=1)
     local_read = p.message("restore", 990, 405, 55)
     close_save = p.new("closebang", 1095, 475, 65, numinlets=0, numoutlets=1)
     restore_trigger = p.new("t b b", 1095, 510, 50, numinlets=1, numoutlets=2)
     restore_delay = p.new("delay 30", 1035, 545, 65, numinlets=2, numoutlets=1)
     recall_slot = p.message("1", 1110, 545, 30)
     save_now = p.message("save", 850, 510, 45)
-    external_save = p.new("r vehicle_bus_eq.save", 760, 475, 135, numinlets=0, numoutlets=1)
     p.connect(state_load, state_delay)
     p.connect(state_delay, restore_trigger)
     p.connect(restore_trigger, local_read, 1)
@@ -2916,8 +3186,9 @@ def make_vehicle_bus_eq() -> dict[str, Any]:
     p.connect(local_read, state_path)
     p.connect(state_path, storage)
     p.connect(close_save, save_now)
-    p.connect(external_save, save_now)
     p.connect(save_now, state_path)
+    p.connect(router, save_now, 6)
+    p.connect(router, restore_trigger, 7)
 
     band_specs = (
         ("lowshelf", 6, 90.0, 30.0, 400.0, 0.7),
@@ -3045,6 +3316,7 @@ def make_vehicle_bus_eq() -> dict[str, Any]:
         840, 35, 300,
     )
     p.connect(reset, reset_values)
+    p.connect(router, reset_values, 8)
     p.connect(reset_values, graph)
 
     save_eq = p.add(
@@ -5899,10 +6171,17 @@ def make_module_mixer() -> dict[str, Any]:
         "MODULE MIXER — seven post-module/pre-master gains; profile #1 saves locally",
         15, 8, 720,
     )
+    control = inlet(p, 720, 8)
+    control_route = route(
+        p,
+        ("save_profile_sound", "reload_profile_sound", "reset_profile_sound"),
+        720, 35, 300,
+    )
+    p.connect(control, control_route)
     output = outlet(p, 985, 195)
     p.new("autopattr @autorestore 0", 755, 8, 155, numinlets=1, numoutlets=4)
     storage = p.new(
-        "pattrstorage module_mixer_#1 @savemode 3 @changemode 1 @autorestore 0",
+        "pattrstorage module_mixer_#1 @savemode 3 @changemode 1 @backupmode 1 @autorestore 0",
         755, 35, 265, numinlets=1, numoutlets=4,
     )
     state_path = p.new(
@@ -5917,10 +6196,6 @@ def make_module_mixer() -> dict[str, Any]:
     recall = p.message("1", 975, 119, 30)
     save = p.message("save", 755, 147, 45)
     close = p.new("closebang", 805, 147, 65, numinlets=0, numoutlets=1)
-    external_save = p.new(
-        "r module_mixer.#1.save", 875, 147, 135,
-        numinlets=0, numoutlets=1,
-    )
     p.connect(load, restore_delay)
     p.connect(restore_delay, restore_order)
     p.connect(restore_order, restore, 1)
@@ -5930,8 +6205,9 @@ def make_module_mixer() -> dict[str, Any]:
     p.connect(recall_delay, recall)
     p.connect(recall, storage)
     p.connect(close, save)
-    p.connect(external_save, save)
     p.connect(save, state_path)
+    p.connect(control_route, save, 0)
+    p.connect(control_route, restore_order, 1)
 
     profile_load = p.new("loadmess #1", 15, 205, 85, numinlets=1, numoutlets=1)
     profile_select = p.new("sel ev v10 v12", 105, 205, 105, numinlets=1, numoutlets=4)
@@ -5948,6 +6224,7 @@ def make_module_mixer() -> dict[str, Any]:
     )
     p.connect(profile_load, profile_select)
     p.connect(reset_profile, profile_select)
+    p.connect(control_route, reset_profile, 2)
     for message in defaults_messages:
         p.connect(message, defaults_unpack)
 
@@ -6030,20 +6307,18 @@ def make_profile_main(profile: str, root: Path | None = None) -> dict[str, Any]:
     active_profile = p.new("r vss.runtime.select", 850, 25, 145, numinlets=0, numoutlets=1)
     active_match = p.new(f"sel {profile}", 850, 60, 65, numinlets=1, numoutlets=2)
     save_then_close = p.new("t b b", 930, 95, 50, numinlets=1, numoutlets=2)
-    save_message = p.message("write", 990, 70, 45)
-    close_delay = p.new("delay 20", 990, 105, 65, numinlets=2, numoutlets=1)
+    save_profile = p.message("save_profile_sound", 990, 70, 125)
+    close_delay = p.new("delay 300", 990, 105, 70, numinlets=2, numoutlets=1)
     close_message = p.message("wclose", 1070, 105, 55)
     patcher_control = p.new("thispatcher", 1070, 140, 85, numinlets=1, numoutlets=2)
     close_save = p.new("closebang", 850, 140, 65, numinlets=0, numoutlets=1)
-    eq_save = p.new("s vehicle_bus_eq.save", 925, 140, 145, numinlets=1, numoutlets=0)
     p.connect(active_profile, active_match)
     p.connect(active_match, save_then_close, 1)
-    p.connect(save_then_close, save_message, 1)
-    p.connect(save_message, patcher_control)
+    p.connect(save_then_close, save_profile, 1)
     p.connect(save_then_close, close_delay, 0)
     p.connect(close_delay, close_message)
     p.connect(close_message, patcher_control)
-    p.connect(close_save, eq_save)
+    p.connect(close_save, save_profile)
 
     drive = p.add(
         "bpatcher", None, 1210, 330, 210, 55, numinlets=1, numoutlets=1,
@@ -6053,21 +6328,30 @@ def make_profile_main(profile: str, root: Path | None = None) -> dict[str, Any]:
     source = p.new("switch 2", 1210, 430, 75, numinlets=3, numoutlets=1)
     source_default = p.new("loadmess 1", 1300, 430, 80, numinlets=1, numoutlets=1)
     engine = p.add(
-        "bpatcher", None, 1210, 470, 220, 55, numinlets=1, numoutlets=2,
+        "bpatcher", None, 1210, 470, 220, 55, numinlets=1, numoutlets=3,
         name=f"Patcher:/patchers/{config['engine']}.maxpat",
     )
     p.connect(source_default, source, 0, 0)
     p.connect(drive, source, 0, 1)
     p.connect(external, source, 0, 2)
     p.connect(source, engine)
+    p.connect(save_profile, engine)
 
     module_mixer = p.add(
         "bpatcher", None, 25, 875, 1000, 190,
-        numinlets=0, numoutlets=1,
+        numinlets=1, numoutlets=1,
         name="Patcher:/patchers/module_mixer.maxpat",
         args=[profile], varname=f"{profile}_module_mixer",
     )
     p.connect(module_mixer, engine)
+    p.connect(save_profile, module_mixer)
+    save_profile_button = p.message("Save Profile Sound", 1040, 880, 125)
+    reload_profile_button = p.message("Reload Profile Sound", 1175, 880, 135)
+    reload_profile = p.message("reload_profile_sound", 1175, 910, 135)
+    p.connect(save_profile_button, save_profile)
+    p.connect(reload_profile_button, reload_profile)
+    p.connect(reload_profile, engine)
+    p.connect(reload_profile, module_mixer)
 
     p.comment("Lifecycle", 25, 105, 120)
     ignition_on = p.message("ignition 1", 25, 135, 75)
@@ -6124,36 +6408,13 @@ def make_profile_main(profile: str, root: Path | None = None) -> dict[str, Any]:
     p.connect(manual_input, pedal_numbers["throttle"], 0, 0)
     p.connect(manual_input, pedal_numbers["brake"], 1, 0)
 
-    p.comment("Cinematic Soundscape (shared editable BEAP core)", 330, 205, 310)
-    p.comment("Soundscape Enable", 330, 230, 115)
-    soundscape_enable = p.add("toggle", None, 330, 253, 24, 24, numinlets=1, numoutlets=1)
-    soundscape_enable_named = p.new("prepend soundscape_enable", 360, 253, 175, numinlets=1, numoutlets=1)
-    soundscape_enable_default = p.new("loadmess 0", 360, 280, 80, numinlets=1, numoutlets=1)
-    p.connect(soundscape_enable, soundscape_enable_named)
-    p.connect(soundscape_enable_named, engine)
-    p.connect(soundscape_enable_default, soundscape_enable)
-
-    soundscape_specs = (
-        ("Motion", "soundscape_motion", {"ev": 0.62, "v10": 0.52, "v12": 0.42}[profile], 0.0, 1.0, 550),
-        ("Space", "soundscape_space", {"ev": 0.42, "v10": 0.38, "v12": 0.52}[profile], 0.0, 1.0, 690),
+    soundscape_control = p.add(
+        "bpatcher", None, 330, 205, 800, 115, numinlets=1, numoutlets=1,
+        name="Patcher:/patchers/soundscape_control.maxpat",
+        args=[profile], varname=f"{profile}_soundscape_control",
     )
-    for label, name, default, low, high, x in soundscape_specs:
-        p.comment(label, x, 230, 105)
-        number = p.add("flonum", None, x, 253, 70, numinlets=1, numoutlets=2)
-        bounded = p.new(f"clip {low:g} {high:g}", x, 280, 85, numinlets=3, numoutlets=1)
-        named = p.new(f"prepend {name}", x + 90, 253, 170, numinlets=1, numoutlets=1)
-        initial = p.new(f"loadmess {default:g}", x + 90, 280, 95, numinlets=1, numoutlets=1)
-        p.connect(number, bounded)
-        p.connect(bounded, named)
-        p.connect(named, engine)
-        p.connect(initial, number)
-    p.comment("Soundscape Solo", 960, 230, 115)
-    soundscape_solo = p.add("toggle", None, 960, 253, 24, 24, numinlets=1, numoutlets=1)
-    soundscape_solo_named = p.new("prepend soundscape_solo", 990, 253, 170, numinlets=1, numoutlets=1)
-    soundscape_solo_default = p.new("loadmess 0", 990, 280, 80, numinlets=1, numoutlets=1)
-    p.connect(soundscape_solo, soundscape_solo_named)
-    p.connect(soundscape_solo_named, engine)
-    p.connect(soundscape_solo_default, soundscape_solo)
+    p.connect(soundscape_control, engine, 0, 0)
+    p.connect(engine, soundscape_control, 2, 0)
     open_dna = p.message("Open Sound DNA", 1180, 230, 125)
     open_dna_instance = p.new(
         f"s open.{profile}.sound_dna", 1180, 260, 180,
@@ -6166,13 +6427,7 @@ def make_profile_main(profile: str, root: Path | None = None) -> dict[str, Any]:
     p.connect(dna_solo, dna_solo_named)
     p.connect(dna_solo_named, engine)
     p.connect(dna_solo_default, dna_solo)
-    open_soundscape = p.message("Open Soundscape BEAP", 1180, 370, 160)
-    open_soundscape_instance = p.new(
-        "s open.cinematic_soundscape", 1180, 400, 205,
-        numinlets=1, numoutlets=0,
-    )
     p.connect(open_dna, open_dna_instance)
-    p.connect(open_soundscape, open_soundscape_instance)
 
     if profile == "ev":
         p.comment("Legacy EV macro preset", 330, 315, 150)
@@ -7099,7 +7354,6 @@ def project_file() -> dict[str, Any]:
         "patchers/v12_powertrain~.maxpat",
         "patchers/vehicle_bus_eq~.maxpat",
         "patchers/cinematic_soundscape_beap~.maxpat",
-        "patchers/cinematic_soundscape_voice.maxpat",
         "patchers/cabin_rumble~.maxpat",
         "patchers/transient~.maxpat",
         "patchers/transient_ev~.maxpat",
@@ -7115,6 +7369,7 @@ def project_file() -> dict[str, Any]:
         "patchers/keyboard_drive_ws.maxpat",
         "patchers/manual_input.maxpat",
         "patchers/module_mixer.maxpat",
+        "patchers/soundscape_control.maxpat",
     ]
     for profile in ("ev", "v10", "v12"):
         patchers.extend(
@@ -7143,6 +7398,7 @@ def project_file() -> dict[str, Any]:
     contents["code"]["code/dna_state_path.js"] = {"kind": "javascript", "local": 1}
     contents["code"]["code/pop_state_path.js"] = {"kind": "javascript", "local": 1}
     contents["code"]["code/module_mixer_state_path.js"] = {"kind": "javascript", "local": 1}
+    contents["code"]["code/soundscape_state_path.js"] = {"kind": "javascript", "local": 1}
     contents["code"]["code/backfire_burst.js"] = {"kind": "javascript", "local": 1}
     for name in MEDIA_FRAMES:
         if name.startswith(("cabin_ir_", "starter_")):
@@ -7192,7 +7448,6 @@ def build_project(root: Path) -> None:
         "patchers/ev_relax_voice.maxpat": make_ev_mode_voice("relax"),
         "patchers/ev_expressive_voice.maxpat": make_ev_mode_voice("expressive"),
         "patchers/ev_sport_voice.maxpat": make_ev_mode_voice("sport"),
-        "patchers/cinematic_soundscape_voice.maxpat": make_cinematic_soundscape_voice(),
         "patchers/reference_texture~.maxpat": make_reference_texture(),
         "patchers/cabin_rumble~.maxpat": make_cabin_rumble(),
         "patchers/transient~.maxpat": make_transient(),
@@ -7209,6 +7464,7 @@ def build_project(root: Path) -> None:
         "patchers/keyboard_drive_ws.maxpat": make_keyboard_drive_ws(),
         "patchers/manual_input.maxpat": make_manual_input(),
         "patchers/module_mixer.maxpat": make_module_mixer(),
+        "patchers/soundscape_control.maxpat": make_soundscape_control(),
         "presets/sound_dna.json": PRESETS,
         "presets/vehicle_bus_eq_default.json": VEHICLE_BUS_EQ_DEFAULT,
         PROJECT_FILENAME: project_file(),

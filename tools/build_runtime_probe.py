@@ -994,7 +994,6 @@ def main() -> None:
     }
     required_patchers.update({
         f"{profile}_cinematic_soundscape_host~.maxpat",
-        "cinematic_soundscape_voice.maxpat",
         "cinematic_soundscape_beap~.maxpat",
     })
     if profile != "ev":

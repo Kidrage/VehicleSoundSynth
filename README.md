@@ -30,10 +30,11 @@ is the supported low-CPU workflow.
    toggle. It opens the output ramp and Max DSP together; ignition/start alone
    intentionally do not enable monitoring.
 7. Use `Open Sound DNA` plus `Sound DNA Solo` to tune the procedural engine, or
-   `Open Soundscape BEAP` plus `Soundscape Solo` for the active shared pad. In
+   Soundscape `Open Designer` plus `Solo` for the active pad. In
    V10/V12 use `Open Pop Designer`, `Backfire Solo`, and `Test Pop` to tune the
    active Pop voice without driving the car. These buttons open the audible
-   instances; use `Save DNA`, `Save Soundscape`, or `Save Pop` after an edit.
+   instances; use the matching `Save` control, or `Save Profile Sound` for the
+   Mixer, Soundscape and EQ together, after an edit.
 8. Balance the seven audible modules in the `MODULE MIXER`: Sound DNA, Start,
    Pop/Event, Soundscape, Road/Air, Cabin Rumble, and Master. Each profile
    restores its own local mixer state automatically.
@@ -60,9 +61,9 @@ against offline Ferrari lifecycle targets; V12 remains an independent, smoother
 high-rev model. EV, V10 and V12 all feed one shared, independently editable
 cinematic BEAP Soundscape core through profile-specific continuous control maps.
 The procedural powertrain remains the speed-tracking fundamental; the shared
-layer is high-passed at 120 Hz, so it adds analog-pad width without cancelling
-or replacing the vehicle body. Its conservative default level is -14 dB for EV
-and V10, and -15 dB for V12.
+layer is high-passed at 70 Hz, then balanced well below Sound DNA so it adds
+analog-pad width without replacing the vehicle body. The factory Module Mixer
+starts it near -18 dB for EV and -20 dB for V10/V12.
 
 V5 adds visible per-profile `Open Sound DNA` panels, low-order crankcase/manifold motion to the ICE models and torque-ripple/
 gear-mesh motion to the EV model. These remain phase-continuous and are driven by
@@ -186,21 +187,23 @@ regeneration:
 - `patchers/v10_pad_beap~.maxpat` / `patchers/v12_pad_beap~.maxpat` — cinematic ICE pads
 - `patchers/v10_backfire_beap~.maxpat` / `patchers/v12_backfire_beap~.maxpat` — physical backfire voices
 
-Only the shared `cinematic_soundscape_beap~` is declared by the current runtime;
+Only the shared `cinematic_soundscape_beap~` design graph is declared by the current runtime;
 the older EV and ICE pad graphs remain seed-once archives so existing user edits
 are never destroyed. The shared graph is a Prophet-style three-oscillator
-triangle/pulse pad with a root/fifth/octave default voicing, slow modulation,
+triangle/saw/sine pad with a root/fifth/octave default voicing, very slow modulation,
 noise, ladder filtering, ADSR, VCA,
-chorus, reverb, DC/infra filtering, and bounded output. Pitch, brightness,
+chorus, reverb, a 70 Hz high-pass, and soft bounded output. Pitch, brightness,
 movement, and space follow RPM/load/throttle continuously. `Motion` sets maximum
 modulation depth and throttle scales it from 25% to 100%, avoiding forced idle
 wobble. This follows the
 layered analog-synth approach documented in the
 [Sequential Prophet-5 guide](https://sequential.com/wp-content/uploads/2021/02/Prophet-5-Users-Guide-1.3.pdf),
 without copying any score or preset. `Soundscape Enable`, dB, `Motion`, `Space`,
-and `Solo` are exposed on every runtime. `Open Soundscape BEAP` targets the
-audible poly voice and `Save Soundscape` persists this one shared patcher for
-all three profiles.
+`Pitch Follow`, `Transpose`, `Brightness`, and `Solo` are exposed on every
+runtime. `Open Designer` fronts the exact embedded instance feeding that
+runtime—there is no detached editor or `poly~` copy. `Save` stores the active
+profile to ignored `presets/local/<profile>_soundscape.json`; EV, V10 and V12
+therefore share one graph topology but keep independent parameter states.
 
 ## Public control messages
 
@@ -237,6 +240,13 @@ soundscape_enable 0|1
 soundscape_level_db -60..6
 soundscape_motion 0..1
 soundscape_space 0..1
+soundscape_pitch_follow 0..1
+soundscape_transpose -12..12
+soundscape_brightness 0..1
+soundscape_open
+soundscape_save
+soundscape_reload
+soundscape_reset
 soundscape_solo 0|1
 dna_solo 0|1
 backfire_solo 0|1
@@ -347,15 +357,17 @@ is profile-specific and ignored by Git. `Reload` restores the last saved values,
 saves once more synchronously. Edit `tools/build_project.py` rather than the
 generated `patchers/module_mixer.maxpat` if the mixer interface itself changes.
 
-## Persistent vehicle-bus EQ
+## Persistent profile sound
 
-All three runtimes share one four-band EQ state. The separate user-owned
-`patchers/vehicle_bus_eq~.maxpat` reads
-`presets/local/vehicle_bus_eq.json` when present and falls back to the tracked
-`presets/vehicle_bus_eq_default.json` when the local file is absent or cannot be
-read. Use `Save EQ`, `Reload EQ`, and `Reset EQ` in the visible bus-EQ panel.
-The local file is ignored by Git; closing or switching the active runtime stores
-slot 1 and writes the same shared file so the next EV/V10/V12 runtime recalls it.
+`Save Profile Sound` commits the active profile's Module Mixer, Soundscape and
+four-band vehicle-bus EQ. Their ignored state files are respectively
+`presets/local/<profile>_module_mixer.json`,
+`<profile>_soundscape.json`, and `<profile>_vehicle_bus_eq.json`.
+`Reload Profile Sound` recalls all three. Each panel also retains its own Save,
+Reload and Reset controls. A legacy `presets/local/vehicle_bus_eq.json` is read
+once as a migration fallback when a profile EQ file does not yet exist; the
+next save writes the new profile-local path. Closing or switching a runtime
+saves the active profile before the window closes.
 
 ## Offline Ferrari V10 lifecycle analysis
 
