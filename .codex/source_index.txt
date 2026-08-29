@@ -1,8 +1,8 @@
 # Source Index
 
 Repository: /Users/saintpeter/Downloads/VehicleSoundSynth-V5
-Tracked filtered files: 119
-High-value indexed files: 44
+Tracked filtered files: 122
+High-value indexed files: 46
 
 Read this file before broad repository exploration. Prefer focused `rg`
 or `git grep` against the listed areas before opening source files.
@@ -56,7 +56,10 @@ or `git grep` against the listed areas before opening source files.
 - assets/engine_texture_bank.json
 - assets/ferrari_sf90_acoustic_target.json
 - assets/ferrari_v10_lifecycle_targets.json
+- presets/ev_soundscape_factory.json
 - presets/sound_dna.json
+- presets/v10_soundscape_factory.json
+- presets/v12_soundscape_factory.json
 - presets/vehicle_bus_eq_default.json
 
 ## docs

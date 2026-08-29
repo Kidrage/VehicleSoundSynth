@@ -194,6 +194,148 @@ MODULE_MIX_DEFAULTS = {
     "v12": (-3.0, -5.0, -8.0, -20.0, -16.0, -5.0, -8.0),
 }
 
+# Complete, explicit defaults for every nested BEAP parameter client managed by
+# the profile host.  Factory Reset must restore the whole instrument, not just
+# the small subset that differs between the three factory voicings.
+SOUNDSCAPE_BEAP_FACTORY_DEFAULTS = {
+    "LFO": {"Frequency": 0.035, "Mute": 0.0},
+    "LFO_Slow": {"Frequency": 0.009, "Mute": 0.0},
+    "Osc_A": {
+        "CV2": 0.0, "CV3": 0.0, "Freq": 0.6, "FreqMode": 1.0,
+        "Linear": 0.0, "Mute": 0.0, "Offset": 0.0, "PW": 50.0,
+        "PWM": 0.0, "Waveform": 1.0,
+    },
+    "Osc_B": {
+        "CV2": 0.0, "CV3": 0.0, "Freq": 0.6, "FreqMode": 1.0,
+        "Linear": 0.0, "Mute": 0.0, "Offset": 0.0, "PW": 50.0,
+        "PWM": 0.0, "Waveform": 2.0,
+    },
+    "Osc_C": {
+        "CV2": 0.0, "CV3": 0.0, "Freq": 0.6, "FreqMode": 1.0,
+        "Linear": 0.0, "Mute": 0.0, "Offset": 0.0, "PW": 50.0,
+        "PWM": 0.0, "Waveform": 0.0,
+    },
+    "Noise": {"Mute": 0.0, "manCVa": 0.0},
+    "Mixer": {
+        "Mute": 0.0, "MuteCh1": 0.0, "MuteCh1[2]": 0.0,
+        "MuteCh2": 0.0, "MuteCh4": 0.0,
+        "in1": -5.0, "in2": -12.0, "in3": -36.0, "in4": -26.0,
+    },
+    "Ladder": {
+        "CV1": 32.0, "CV2": 0.0, "CV3": 0.0, "Freq": 1400.0,
+        "FreqMode": 1.0, "Offset[2]": 0.0, "Res": 3.0,
+        "ResCV": 0.0, "power[1]": 0.0,
+    },
+    "MMF": {
+        "CV1": 0.0, "CV2": 0.0, "CV3": 0.0, "FilterType": 0.0,
+        "Freq": 4500.0, "FreqMode": 1.0, "Offset[2]": 0.0,
+        "Res": 1.5, "ResCV": 0.0, "power[1]": 0.0,
+    },
+    "ADSR": {
+        "Attack": 1200.0, "Decay": 2500.0, "Legato": 0.0,
+        "Mute": 0.0, "Release": 4500.0, "Sustain": 88.0,
+    },
+    "VCA": {"Bypass": 0.0, "Quadrants": 0.0, "Response": 0.0},
+    "Chorus": {
+        "Center": 620.0, "Rate": 0.015, "Regen": 0.02,
+        "Width": 10.0, "bypass": 0.0,
+    },
+    "Reverb": {
+        "Damping": 3600.0, "Decay": 42.0, "Diffusion": 0.78,
+        "Mix": 100.0, "Size": 68.0, "bypass": 0.0,
+    },
+}
+
+SOUNDSCAPE_FACTORY = {
+    "ev": {
+        "macros": {
+            "soundscape_enable_state": 1.0,
+            "soundscape_motion_state": 0.28,
+            "soundscape_space_state": 0.46,
+            "soundscape_pitch_follow_state": 1.0,
+            "soundscape_transpose_state": 0.0,
+            "soundscape_brightness_state": 0.68,
+        },
+        "modules": {
+            "LFO": {"Frequency": 0.045, "Mute": 0.0},
+            "LFO_Slow": {"Frequency": 0.012, "Mute": 0.0},
+            "Osc_A": {"Waveform": 1.0, "Offset": 0.0, "Mute": 0.0},
+            "Osc_B": {"Waveform": 2.0, "Offset": 7.0, "PW": 50.0, "PWM": 0.0, "Mute": 0.0},
+            "Osc_C": {"Waveform": 0.0, "Offset": 12.0, "Mute": 0.0},
+            "Mixer": {"in1": -6.0, "in2": -14.0, "in3": -32.0, "in4": -18.0},
+            "Ladder": {"Freq": 1900.0, "Res": 2.2, "CV1": 38.0},
+            "MMF": {"Freq": 5200.0, "Res": 1.2, "FilterType": 0.0},
+            "ADSR": {"Attack": 900.0, "Decay": 2200.0, "Sustain": 90.0, "Release": 5000.0},
+            "Chorus": {"Center": 720.0, "Rate": 0.018, "Regen": 0.025, "Width": 18.0, "bypass": 0.0},
+            "Reverb": {"Damping": 4800.0, "Decay": 46.0, "Diffusion": 0.82, "Mix": 100.0, "Size": 74.0, "bypass": 0.0},
+        },
+    },
+    "v10": {
+        "macros": {
+            "soundscape_enable_state": 1.0,
+            "soundscape_motion_state": 0.10,
+            "soundscape_space_state": 0.32,
+            "soundscape_pitch_follow_state": 1.0,
+            "soundscape_transpose_state": 0.0,
+            "soundscape_brightness_state": 0.38,
+        },
+        "modules": {
+            "LFO": {"Frequency": 0.022, "Mute": 0.0},
+            "LFO_Slow": {"Frequency": 0.006, "Mute": 0.0},
+            "Osc_A": {"Waveform": 1.0, "Offset": -5.0, "Mute": 0.0},
+            "Osc_B": {"Waveform": 2.0, "Offset": 0.0, "PW": 50.0, "PWM": 0.0, "Mute": 0.0},
+            "Osc_C": {"Waveform": 0.0, "Offset": 7.0, "Mute": 0.0},
+            "Mixer": {"in1": -3.0, "in2": -9.0, "in3": -40.0, "in4": -5.0},
+            "Ladder": {"Freq": 1050.0, "Res": 1.6, "CV1": 22.0},
+            "MMF": {"Freq": 2800.0, "Res": 1.1, "FilterType": 0.0},
+            "ADSR": {"Attack": 650.0, "Decay": 1800.0, "Sustain": 94.0, "Release": 3800.0},
+            "Chorus": {"Center": 480.0, "Rate": 0.008, "Regen": 0.012, "Width": 7.0, "bypass": 0.0},
+            "Reverb": {"Damping": 2400.0, "Decay": 32.0, "Diffusion": 0.74, "Mix": 100.0, "Size": 58.0, "bypass": 0.0},
+        },
+    },
+    "v12": {
+        "macros": {
+            "soundscape_enable_state": 1.0,
+            "soundscape_motion_state": 0.16,
+            "soundscape_space_state": 0.46,
+            "soundscape_pitch_follow_state": 1.0,
+            "soundscape_transpose_state": 0.0,
+            "soundscape_brightness_state": 0.50,
+        },
+        "modules": {
+            "LFO": {"Frequency": 0.030, "Mute": 0.0},
+            "LFO_Slow": {"Frequency": 0.008, "Mute": 0.0},
+            "Osc_A": {"Waveform": 0.0, "Offset": 0.0, "Mute": 0.0},
+            "Osc_B": {"Waveform": 1.0, "Offset": 7.0, "PW": 50.0, "PWM": 0.0, "Mute": 0.0},
+            "Osc_C": {"Waveform": 0.0, "Offset": 12.0, "Mute": 0.0},
+            "Mixer": {"in1": -5.0, "in2": -8.0, "in3": -40.0, "in4": -13.0},
+            "Ladder": {"Freq": 1450.0, "Res": 1.8, "CV1": 28.0},
+            "MMF": {"Freq": 4200.0, "Res": 1.2, "FilterType": 0.0},
+            "ADSR": {"Attack": 1000.0, "Decay": 2500.0, "Sustain": 92.0, "Release": 5200.0},
+            "Chorus": {"Center": 650.0, "Rate": 0.012, "Regen": 0.018, "Width": 15.0, "bypass": 0.0},
+            "Reverb": {"Damping": 3800.0, "Decay": 45.0, "Diffusion": 0.84, "Mix": 100.0, "Size": 76.0, "bypass": 0.0},
+        },
+    },
+}
+
+
+def make_soundscape_factory(profile: str) -> dict[str, Any]:
+    """Return the tracked slot-99 factory state for one Soundscape profile."""
+    spec = SOUNDSCAPE_FACTORY[profile]
+    data = {name: [value] for name, value in spec["macros"].items()}
+    modules = copy.deepcopy(SOUNDSCAPE_BEAP_FACTORY_DEFAULTS)
+    for module, values in spec["modules"].items():
+        modules[module].update(values)
+    for module, values in modules.items():
+        for name, value in values.items():
+            data[f"cinematic_soundscape_beap~::{module}::{name}"] = [value]
+    return {
+        "pattrstorage": {
+            "name": f"soundscape_{profile}",
+            "slots": {"99": {"id": 99, "data": data}},
+        }
+    }
+
 DNA_PARAMETER_SPECS = {
     "ev": (
         ("aggression", "Aggression", 0.0, 1.0),
@@ -939,10 +1081,8 @@ def make_cinematic_soundscape_beap() -> dict[str, Any]:
     opposite = p.new("*~ -1.", 640, 195, 58, numinlets=2, numoutlets=1)
     pitch_a = p.new("+~", 710, 165, 40, numinlets=2, numoutlets=1)
     pitch_b_mod = p.new("+~", 710, 215, 40, numinlets=2, numoutlets=1)
-    pitch_b = p.new("+~ 0.5849625", 760, 215, 92, numinlets=2, numoutlets=1)
     slow_pitch = p.new("*~ 0.0003", 840, 215, 72, numinlets=2, numoutlets=1)
     slow_motion = p.new("*~", 920, 215, 40, numinlets=2, numoutlets=1)
-    pitch_c_base = p.new("+~ 1.", 970, 215, 55, numinlets=2, numoutlets=1)
     pitch_c = p.new("+~", 1080, 215, 40, numinlets=2, numoutlets=1)
     tone_lfo = p.new("*~ 0.006", 510, 245, 68, numinlets=2, numoutlets=1)
     tone_motion = p.new("*~", 590, 245, 40, numinlets=2, numoutlets=1)
@@ -955,12 +1095,10 @@ def make_cinematic_soundscape_beap() -> dict[str, Any]:
     p.connect(motion_depth, opposite)
     p.connect(opposite, pitch_b_mod, 0, 1)
     p.connect(pitch_cv, pitch_b_mod, 0, 0)
-    p.connect(pitch_b_mod, pitch_b)
     p.connect(lfo_slow, slow_pitch, 3, 0)
     p.connect(slow_pitch, slow_motion, 0, 0)
     p.connect(motion_cv, slow_motion, 0, 1)
-    p.connect(pitch_cv, pitch_c_base)
-    p.connect(pitch_c_base, pitch_c, 0, 0)
+    p.connect(pitch_cv, pitch_c, 0, 0)
     p.connect(slow_motion, pitch_c, 0, 1)
     p.connect(lfo, tone_lfo, 0, 0)
     p.connect(tone_lfo, tone_motion, 0, 0)
@@ -979,6 +1117,10 @@ def make_cinematic_soundscape_beap() -> dict[str, Any]:
     osc_c = add_beap_module(
         p, "Oscillator/bp.Oscillator.maxpat", 685, 310, "Osc_C",
         initial={"Waveform": 0, "Offset": 0, "Mute": 0},
+    )
+    p.comment(
+        "CHORD VOICING: tune the visible Osc_A / Osc_B / Osc_C Offset controls; no hidden interval adders",
+        25, 500, 780,
     )
     noise = add_beap_module(p, "Random/bp.Noise.maxpat", 1015, 310, "Noise")
     noise_gain = p.new("*~ 0.012", 1060, 455, 75, numinlets=2, numoutlets=1)
@@ -1000,7 +1142,7 @@ def make_cinematic_soundscape_beap() -> dict[str, Any]:
     )
     vca = add_beap_module(p, "Level/bp.VCA.maxpat", 2275, 310, "VCA")
     p.connect(pitch_a, osc_a, 0, 0)
-    p.connect(pitch_b, osc_b, 0, 0)
+    p.connect(pitch_b_mod, osc_b, 0, 0)
     p.connect(pitch_c, osc_c, 0, 0)
     p.connect(osc_a, mixer, 0, 0)
     p.connect(osc_b, mixer, 0, 1)
@@ -1184,18 +1326,13 @@ def make_cinematic_soundscape_host(profile: str) -> dict[str, Any]:
             p.connect(legacy_modes, macro_message, outlet_index)
             p.connect(macro_message, router)
 
-    idle_rpm = {"ev": 650.0, "v10": 740.0, "v12": 780.0}[profile]
-    maximum_rpm = {"ev": 9000.0, "v10": 9000.0, "v12": 9500.0}[profile]
-    base_midi = {"ev": 45.0, "v10": 43.0, "v12": 41.0}[profile]
-    pitch_span = {"ev": 7.0, "v10": 9.0, "v12": 10.0}[profile]
-    pitch_follow_default_value = {"ev": 0.55, "v10": 0.60, "v12": 0.55}[profile]
+    legacy_pitch = {
+        "ev": ("55.", "0.032"),
+        "v10": ("36.7", "0.014"),
+        "v12": ("32.7", "0.012"),
+    }[profile]
+    pitch_follow_default_value = 1.0
     rpm = p.new("clip 0. 10000.", 35, 170, 105, numinlets=3, numoutlets=1)
-    rpm_norm = p.new(
-        f"expr min(1.,max(0.,log(max($f1,{idle_rpm:g})/{idle_rpm:g})/"
-        f"log({maximum_rpm:g}/{idle_rpm:g})))",
-        35, 210, 460, numinlets=1, numoutlets=1,
-    )
-    rpm_curve = p.new("expr $f1*$f1*(3.-2.*$f1)", 35, 250, 185, numinlets=1, numoutlets=1)
     pitch_follow_input = p.new("clip 0. 1.", 230, 250, 75, numinlets=3, numoutlets=1)
     pitch_follow_state = p.add(
         "flonum", None, 315, 250, 65, numinlets=1, numoutlets=2,
@@ -1215,16 +1352,16 @@ def make_cinematic_soundscape_host(profile: str) -> dict[str, Any]:
         f"pak 0. {pitch_follow_default_value:g} 0.", 500, 250, 125,
         numinlets=3, numoutlets=1,
     )
+    base_hz, rpm_scale = legacy_pitch
     pitch = p.new(
-        f"expr (({base_midi:g}-60.)+{pitch_span:g}*$f1*$f2+$f3)/12.",
-        635, 250, 315, numinlets=3, numoutlets=1,
+        f"expr (log(max(24.,{base_hz}+{rpm_scale}*$f1)/261.625565)/log(2.)*$f2+"
+        f"log(max(24.,{base_hz})/261.625565)/log(2.)*(1.-$f2)+$f3/12.)",
+        635, 250, 590, numinlets=3, numoutlets=1,
     )
-    pitch_pack = p.new("pack 0. 300", 960, 250, 95, numinlets=2, numoutlets=1)
+    pitch_pack = p.new("pack 0. 90", 1235, 250, 95, numinlets=2, numoutlets=1)
     pitch_line = p.new("line~", 35, 290, 50, numinlets=2, numoutlets=2)
     p.connect(router, rpm, 0)
-    p.connect(rpm, rpm_norm)
-    p.connect(rpm_norm, rpm_curve)
-    p.connect(rpm_curve, pitch_state, 0, 0)
+    p.connect(rpm, pitch_state, 0, 0)
     p.connect(router, pitch_follow_input, 16)
     p.connect(pitch_follow_input, pitch_follow_state)
     p.connect(pitch_follow_default, pitch_follow_state)
@@ -1244,8 +1381,9 @@ def make_cinematic_soundscape_host(profile: str) -> dict[str, Any]:
     p.connect(pitch_pack, pitch_line)
 
     state = p.new("pak 0. 0. 0. 0.5", 450, 170, 125, numinlets=4, numoutlets=1)
-    base_tone = {"ev": 0.20, "v10": 0.16, "v12": 0.14}[profile]
-    brightness_default_value = {"ev": 0.60, "v10": 0.48, "v12": 0.40}[profile]
+    brightness_default_value = SOUNDSCAPE_FACTORY[profile]["macros"][
+        "soundscape_brightness_state"
+    ]
     brightness_input = p.new("clip 0. 1.", 580, 170, 75, numinlets=3, numoutlets=1)
     brightness_state = p.add(
         "flonum", None, 665, 170, 65, numinlets=1, numoutlets=2,
@@ -1255,11 +1393,12 @@ def make_cinematic_soundscape_host(profile: str) -> dict[str, Any]:
         f"loadmess {brightness_default_value:g}", 735, 170, 100,
         numinlets=1, numoutlets=1,
     )
-    tone = p.new(
-        f"expr min(1.2,max(0.,{base_tone:g}+0.52*$f1+0.18*max(0.,$f2)+"
-        "0.08*abs($f3)+0.38*$f4))",
-        450, 210, 560, numinlets=4, numoutlets=1,
-    )
+    tone_formula = {
+        "ev": "expr min(1.35,max(0.,0.22+0.72*$f1+0.16*max(0.,$f2)+0.08*abs($f3)+0.38*$f4))",
+        "v10": "expr min(0.85,max(0.,0.12+0.36*$f1+0.14*max(0.,$f2)+0.05*abs($f3)+0.28*$f4))",
+        "v12": "expr min(1.,max(0.,0.16+0.48*$f1+0.16*max(0.,$f2)+0.06*abs($f3)+0.32*$f4))",
+    }[profile]
+    tone = p.new(tone_formula, 450, 210, 610, numinlets=4, numoutlets=1)
     tone_pack = p.new("pack 0. 150", 450, 250, 95, numinlets=2, numoutlets=1)
     tone_line = p.new("line~", 450, 290, 50, numinlets=2, numoutlets=2)
     p.connect(router, state, 1, 0)
@@ -1283,7 +1422,9 @@ def make_cinematic_soundscape_host(profile: str) -> dict[str, Any]:
     )
     motion_pack = p.new("pack 0. 180", 35, 425, 95, numinlets=2, numoutlets=1)
     motion_line = p.new("line~", 35, 465, 50, numinlets=2, numoutlets=2)
-    motion_default_value = {"ev": 0.25, "v10": 0.18, "v12": 0.14}[profile]
+    motion_default_value = SOUNDSCAPE_FACTORY[profile]["macros"][
+        "soundscape_motion_state"
+    ]
     motion_input = p.new("clip 0. 1.", 145, 345, 75, numinlets=3, numoutlets=1)
     motion_macro = p.add(
         "flonum", None, 230, 345, 65, numinlets=1, numoutlets=2,
@@ -1306,7 +1447,9 @@ def make_cinematic_soundscape_host(profile: str) -> dict[str, Any]:
     space_map = p.new("expr min(1.,max(0.,0.12+0.72*$f1+0.16*(1.-$f2)))", 420, 385, 355, numinlets=2, numoutlets=1)
     space_pack = p.new("pack 0. 220", 420, 425, 95, numinlets=2, numoutlets=1)
     space_line = p.new("line~", 420, 465, 50, numinlets=2, numoutlets=2)
-    space_default_value = {"ev": 0.42, "v10": 0.32, "v12": 0.40}[profile]
+    space_default_value = SOUNDSCAPE_FACTORY[profile]["macros"][
+        "soundscape_space_state"
+    ]
     space_input = p.new("clip 0. 1.", 530, 345, 75, numinlets=3, numoutlets=1)
     space_macro = p.add(
         "flonum", None, 615, 345, 65, numinlets=1, numoutlets=2,
@@ -1389,31 +1532,52 @@ def make_cinematic_soundscape_host(profile: str) -> dict[str, Any]:
     p.connect(state_path, status, 1, 0)
     action_recall_delay = p.new("delay 45", 1425, 695, 65, numinlets=2, numoutlets=1)
     action_recall = p.message("1", 1495, 695, 30)
+    action_prime_delay = p.new("delay 60", 1530, 695, 65, numinlets=2, numoutlets=1)
+    action_prime = p.message("prime", 1600, 695, 45)
     p.connect(reload_request, action_recall_delay)
     p.connect(action_recall_delay, action_recall)
     p.connect(action_recall, storage)
+    p.connect(action_recall, action_prime_delay)
+    p.connect(action_prime_delay, action_prime)
+    p.connect(action_prime, state_path)
 
     state_load = p.new("loadbang", 1180, 795, 60, numinlets=1, numoutlets=1)
-    factory_delay = p.new("delay 180", 1245, 795, 70, numinlets=2, numoutlets=1)
-    factory_order = p.new("t b b", 1320, 795, 50, numinlets=1, numoutlets=2)
-    factory_store = p.message("store 99", 1375, 785, 60)
-    local_delay = p.new("delay 30", 1375, 815, 65, numinlets=2, numoutlets=1)
-    local_restore = p.message("restore", 1445, 815, 55)
-    local_recall_delay = p.new("delay 35", 1505, 815, 65, numinlets=2, numoutlets=1)
-    local_recall = p.message("1", 1575, 815, 30)
+    # The 1.4 MB nested BEAP graph registers its pattr clients after the host's
+    # loadbang.  Recalling before that point updates only host macros and leaves
+    # the audible oscillator/filter clients at seed defaults.
+    factory_delay = p.new("delay 1200", 1245, 795, 80, numinlets=2, numoutlets=1)
+    factory_request = p.message("factory", 1320, 795, 50)
+    factory_recall_delay = p.new("delay 800", 1375, 795, 70, numinlets=2, numoutlets=1)
+    factory_recall = p.message("99", 1445, 795, 30)
+    local_delay = p.new("delay 120", 1480, 795, 70, numinlets=2, numoutlets=1)
+    local_restore = p.message("restore", 1550, 795, 55)
+    local_recall_delay = p.new("delay 120", 1610, 795, 70, numinlets=2, numoutlets=1)
+    local_recall = p.message("1", 1680, 795, 30)
+    startup_prime_delay = p.new("delay 60", 1715, 795, 65, numinlets=2, numoutlets=1)
+    startup_prime = p.message("prime", 1785, 795, 45)
     p.connect(state_load, factory_delay)
-    p.connect(factory_delay, factory_order)
-    p.connect(factory_order, factory_store, 1)
-    p.connect(factory_store, storage)
-    p.connect(factory_order, local_delay, 0)
+    p.connect(factory_delay, factory_request)
+    p.connect(factory_request, state_path)
+    p.connect(factory_request, factory_recall_delay)
+    p.connect(factory_recall_delay, factory_recall)
+    p.connect(factory_recall, storage)
+    p.connect(factory_recall, local_delay)
     p.connect(local_delay, local_restore)
     p.connect(local_restore, state_path)
     p.connect(local_restore, local_recall_delay)
     p.connect(local_recall_delay, local_recall)
     p.connect(local_recall, storage)
+    p.connect(local_recall, startup_prime_delay)
+    p.connect(startup_prime_delay, startup_prime)
+    p.connect(startup_prime, state_path)
 
-    reset_save_delay = p.new("delay 60", 1540, 660, 65, numinlets=2, numoutlets=1)
-    p.connect(reset_request, reset_save_delay)
+    reset_recall_delay = p.new("delay 800", 1540, 660, 70, numinlets=2, numoutlets=1)
+    reset_recall = p.message("99", 1615, 660, 30)
+    reset_save_delay = p.new("delay 60", 1650, 660, 65, numinlets=2, numoutlets=1)
+    p.connect(reset_request, reset_recall_delay)
+    p.connect(reset_recall_delay, reset_recall)
+    p.connect(reset_recall, storage)
+    p.connect(reset_recall, reset_save_delay)
     p.connect(reset_save_delay, save_request)
     edges = p.new("sel 1 0", 805, 505, 55, numinlets=1, numoutlets=3)
     on_order = p.new("t b b b", 805, 545, 60, numinlets=1, numoutlets=3)
@@ -7498,6 +7662,11 @@ def project_file() -> dict[str, Any]:
             contents["media"][f"media/{name}.wav"] = {"kind": "mediafile", "local": 1}
     contents["data"]["presets/sound_dna.json"] = {"kind": "data", "local": 1}
     contents["data"]["presets/vehicle_bus_eq_default.json"] = {"kind": "data", "local": 1}
+    for profile in ("ev", "v10", "v12"):
+        contents["data"][f"presets/{profile}_soundscape_factory.json"] = {
+            "kind": "data",
+            "local": 1,
+        }
     contents["data"]["assets/ferrari_sf90_acoustic_target.json"] = {"kind": "data", "local": 1}
     contents["data"]["assets/ferrari_v10_lifecycle_targets.json"] = {"kind": "data", "local": 1}
     return {
@@ -7562,6 +7731,10 @@ def build_project(root: Path) -> None:
         "presets/vehicle_bus_eq_default.json": VEHICLE_BUS_EQ_DEFAULT,
         PROJECT_FILENAME: project_file(),
     }
+    for profile in ("ev", "v10", "v12"):
+        outputs[f"presets/{profile}_soundscape_factory.json"] = (
+            make_soundscape_factory(profile)
+        )
     for profile in ("v10", "v12"):
         outputs[f"patchers/{profile}_pad_voice.maxpat"] = make_ice_pad_voice(profile)
         outputs[f"patchers/{profile}_pad_host~.maxpat"] = make_ice_pad_host(profile)

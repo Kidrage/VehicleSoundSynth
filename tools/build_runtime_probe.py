@@ -853,6 +853,9 @@ def main() -> None:
         root / "presets" / "vehicle_bus_eq_default.json",
         presets / "vehicle_bus_eq_default.json",
     )
+    for profile_name in PROFILE_SETTINGS:
+        factory_name = f"{profile_name}_soundscape_factory.json"
+        shutil.copy2(root / "presets" / factory_name, presets / factory_name)
     for source in (root / "patchers").glob("*.maxpat"):
         document = json.loads(source.read_text(encoding="utf-8"))
         for item in document["patcher"]["boxes"]:
@@ -1019,7 +1022,8 @@ def main() -> None:
         for path in sorted(media.rglob("*.wav"))
     }
     data_contents = {
-        "presets/vehicle_bus_eq_default.json": {"kind": "data", "local": 1},
+        path.relative_to(bundle).as_posix(): {"kind": "data", "local": 1}
+        for path in sorted(presets.glob("*.json"))
     }
     write_json(
         bundle / f"{project_name}.maxproj",

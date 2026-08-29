@@ -98,8 +98,11 @@ patchers/vehicle_engine_ev~.maxpat
 patchers/vehicle_engine_v10~.maxpat
 patchers/vehicle_engine_v12~.maxpat
 patchers/vehicle_engine~.maxpat
+presets/ev_soundscape_factory.json
 presets/local/.gitkeep
 presets/sound_dna.json
+presets/v10_soundscape_factory.json
+presets/v12_soundscape_factory.json
 presets/vehicle_bus_eq_default.json
 tests/test_backfire_burst.py
 tests/test_manual_input.py

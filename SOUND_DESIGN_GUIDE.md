@@ -207,28 +207,53 @@ Chorus and Reverb. Small MSP objects only scale CV, blend stereo, high-pass at
 70 Hz and soft-bound the output. The generated profile host handles vehicle
 mapping, smoothing, level and DSP suspension; do not tune that plumbing JSON.
 
-The factory signal path is:
+The signal path is:
 
 ```text
-root / perfect fifth / octave oscillators + very low noise
+three visibly tuned oscillators + very low noise
   -> Mixer -> Ladder -> MMF -> VCA
   -> parallel Chorus + Reverb -> stereo blend -> 70 Hz HP -> soft output
 ```
 
-Osc A is the root triangle, Osc B is a quiet saw at `+0.5849625` octaves
-(exact 3:2), and Osc C is a much quieter sine at `+1` octave. The two LFOs are
-only `0.035` and `0.009` Hz. Their pitch depths are about 0.0005/0.0003 octave
-before the Motion scaler, so they create slow drift rather than audible engine-
-fault vibrato; only smooth sine/triangle outputs are connected. The Ladder and
-MMF begin at 1.4/4.5 kHz with low resonance. The 1.2 s attack and 4.5 s release
-avoid rhythmic pumping, while Chorus/Reverb supply width and tail.
+The three visible oscillator `Offset` controls are authoritative: there are no
+hidden fixed-interval MSP adders after them. The two LFOs run below `0.05 Hz` and
+their opposing pitch depths stay in the fine-drift range before the Motion
+scaler. They add analog life rather than engine-fault vibrato; only smooth
+sine/triangle outputs are connected. Long ADSR times avoid rhythmic pumping,
+while Chorus/Reverb supply width and tail.
+
+The tracked factory files are `presets/ev_soundscape_factory.json`,
+`presets/v10_soundscape_factory.json`, and
+`presets/v12_soundscape_factory.json`. They use the same editable BEAP graph but
+deliberately different palettes:
+
+- EV: `0 / +7 / +12` voicing, brightest filters, wider chorus, restrained long
+  space for a clean futuristic layer.
+- V10: `-5 / 0 / +7`, root-heavy mixer, darker filters and narrow chorus for
+  a compact mechanical low bed.
+- V12: `0 / +7 / +12`, smoother harmonic blend, broad chorus and the longest
+  release/reverb for a weightier orchestral pad.
+
+The tracked JSON contains explicit values for all 90 host/BEAP clients. At load,
+the helper reads slot 99 from that authority, waits for the nested BEAP clients,
+recalls it, and then
+applies the ignored `presets/local/{profile}_soundscape.json` slot 1 when it
+exists. After every local read it re-reads slot 99 from tracked JSON, so a legacy
+local slot 99 cannot shadow a newer shipped voicing. `Factory Reset` recalls the
+reloaded slot 99 and saves that complete result as the new local slot 1. Saving
+deletes slot 99 before writing; the user file therefore contains only slot 1.
+The three Osc `Freq` controls are then continuously owned by the runtime RPM
+pitch law; tune chord intervals with `Offset`, and tune global travel with
+`Pitch Follow`/`Transpose` rather than trying to hold those three dials fixed.
 
 Use the Main macros first:
 
-- `Motion` 0.05–0.30: total drift depth. If the pad wobbles or sounds broken,
+- `Motion` 0.05–0.30: analog drift depth. If the pad wobbles or sounds broken,
   lower this before touching oscillator pitch.
-- `Pitch Follow` 0.35–0.70: how far RPM moves the chord; it never changes the
-  root/fifth/octave relationship.
+- `Pitch Follow` `1.0`: exactly restores the former large RPM travel. The root
+  laws are EV `55 + 0.032*rpm`, V10 `36.7 + 0.014*rpm`, and V12
+  `32.7 + 0.012*rpm`. Values below 1 blend logarithmically toward the profile's
+  stationary root; they do not alter the visible interval relationship.
 - `Transpose` ±12 semitones: move the whole voicing without retuning modules.
 - `Brightness` 0.25–0.70: mapped filter colour. Lower it at the first sign of
   harshness or resonance during acceleration.
@@ -243,12 +268,15 @@ The Main link uses separate EV/V10/V12 buses, so even the brief overlap while an
 old runtime closes cannot receive the new profile's tuning or overwrite its
 saved Soundscape.
 
-For a warmer Prophet-style pad, keep the root triangle dominant, leave the saw
-roughly 7–12 dB below it, keep Noise below 0.02, and use Chorus/Reverb for width.
-For a darker ICE bed, set Motion around 0.10–0.18, Pitch Follow 0.45–0.60,
-Brightness 0.35–0.50 and Space 0.28–0.42. Avoid high Ladder/MMF resonance and
-large LFO-to-pitch depth: those are the main routes back to metallic whistle,
-FM-like sidebands and cyclic amplitude beating.
+For a warmer Prophet-style pad, tune the visible Osc A/B/C `Offset` controls as
+a chord, keep the root oscillator dominant, leave the brighter waveform roughly
+7–12 dB below it, keep Noise low, and use Chorus/Reverb for width. For a darker
+ICE bed, start with Motion `0.10–0.18`, Pitch Follow `1.0`, Brightness
+`0.35–0.50`, and Space `0.28–0.46`. Avoid high Ladder/MMF resonance and large
+LFO-to-pitch depth: those are the main routes back to metallic whistle, FM-like
+sidebands and cyclic amplitude beating. If the pad is too low, raise oscillator
+Offsets by 12 semitones before changing the RPM law; if it is too static, raise
+Pitch Follow toward 1 before raising Motion.
 
 Use `Soundscape Solo`, temporarily bring its mixer level up to about -10 dB,
 and click `Open Designer`. Edits in that window affect the currently audible

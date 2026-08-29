@@ -57,7 +57,19 @@
         "kind": "data",
         "local": 1
       },
+      "presets/ev_soundscape_factory.json": {
+        "kind": "data",
+        "local": 1
+      },
       "presets/sound_dna.json": {
+        "kind": "data",
+        "local": 1
+      },
+      "presets/v10_soundscape_factory.json": {
+        "kind": "data",
+        "local": 1
+      },
+      "presets/v12_soundscape_factory.json": {
         "kind": "data",
         "local": 1
       },

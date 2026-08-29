@@ -195,13 +195,23 @@ regeneration:
 
 Only the shared `cinematic_soundscape_beap~` design graph is declared by the current runtime;
 the older EV and ICE pad graphs remain seed-once archives so existing user edits
-are never destroyed. The shared graph is a Prophet-style three-oscillator
-triangle/saw/sine pad with a root/fifth/octave default voicing, very slow modulation,
-noise, ladder filtering, ADSR, VCA,
-chorus, reverb, a 70 Hz high-pass, and soft bounded output. Pitch, brightness,
-movement, and space follow RPM/load/throttle continuously. `Motion` sets maximum
-modulation depth and throttle scales it from 25% to 100%, avoiding forced idle
-wobble. This follows the
+are never destroyed. The shared graph is a Prophet-style three-oscillator analog
+pad with visible waveform/interval controls, very slow modulation, noise, ladder
+filtering, ADSR, VCA, chorus, reverb, a 70 Hz high-pass, and soft bounded output.
+There are no hidden fifth/octave adders: the visible oscillator `Offset` controls
+own the chord. EV, V10 and V12 load different tracked factory voicings from
+`presets/<profile>_soundscape_factory.json`, then apply an optional ignored local
+override. The helper re-reads the complete 90-parameter factory slot from
+tracked JSON after every local read, while Save writes only the user slot; a
+stale local preset therefore cannot overwrite Factory Reset. With `Pitch Follow = 1`,
+the restored full-travel RPM laws are exactly
+EV `55 + 0.032*rpm`, V10 `36.7 + 0.014*rpm`, and V12
+`32.7 + 0.012*rpm`; lower values blend toward each profile's stationary root.
+The three visible Osc `Freq` dials are runtime-owned by this law; use their
+`Offset` controls for chord tuning.
+Pitch smoothing is 90 ms, so RPM follows continuously without the previous
+restricted travel. `Motion` controls only tiny analog drift, and throttle scales
+that drift from 25% to 100%, avoiding forced idle wobble. This follows the
 layered analog-synth approach documented in the
 [Sequential Prophet-5 guide](https://sequential.com/wp-content/uploads/2021/02/Prophet-5-Users-Guide-1.3.pdf),
 without copying any score or preset. `Soundscape Enable`, dB, `Motion`, `Space`,
@@ -209,7 +219,7 @@ without copying any score or preset. `Soundscape Enable`, dB, `Motion`, `Space`,
 runtime. `Open Designer` fronts the exact embedded instance feeding that
 runtime—there is no detached editor or `poly~` copy. `Save` stores the active
 profile to ignored `presets/local/<profile>_soundscape.json`; EV, V10 and V12
-therefore share one graph topology but keep independent parameter states.
+therefore share one graph topology but keep independent factory and user states.
 
 ## Public control messages
 

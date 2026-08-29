@@ -50,6 +50,10 @@ events, short cabin IR, adjustable stereo compression, EQ, and peak protection.
 - `patchers/{ev,v10,v12}_cinematic_soundscape_host~.maxpat` — generated profile
   mapping, persistence and cancellable DSP suspension around a direct embedded
   instance of the shared runtime Soundscape; there is no detached voice wrapper.
+- `presets/{ev,v10,v12}_soundscape_factory.json` — tracked profile-specific,
+  complete 90-client Soundscape slot-99 authority. The state helper re-reads
+  slot 99 after every local read; local Save deletes slot 99 before writing so
+  ignored user files contain slot 1 only.
 - `patchers/cinematic_soundscape_beap~.maxpat` plus the engine-start, three
   legacy EV, two legacy ICE-pad, and two backfire graphs — nine seed-once,
   user-tunable BEAP files. The legacy pads are preserved but undeclared.
@@ -91,9 +95,12 @@ For continuous-engine tuning, open the active Sound DNA instance and use DNA
 Solo; EV Aggression and V10 Brightness are explicitly connected to Gen DSP,
 while several other controls are RPM/load/throttle-state dependent.
 Soundscape `Open Designer` addresses the active embedded instance; `Save`
-persists profile-local state for the shared seed-once graph. Its shipped voicing
-is root/fifth/octave with restrained 0.035/0.009 Hz LFO drift, and the Main
-Motion macro is a maximum depth scaled smoothly by throttle. The launcher uses
+persists profile-local state for the shared seed-once graph. The visible three
+oscillator Offsets own the chord; EV/V10/V12 use separate tracked factory
+voicings with no hidden interval adders. `Pitch Follow = 1` restores the exact
+legacy full-travel RPM laws (`55+.032*rpm`, `36.7+.014*rpm`, and
+`32.7+.012*rpm`) with 90 ms smoothing. Restrained sub-0.05 Hz LFO drift is
+owned separately by Motion and scaled smoothly by throttle. The launcher uses
 profile-scoped `vss.runtime.control.<profile>` and
 `vss.soundscape.feedback.<profile>` buses selected by `vss.runtime.select`, so
 runtime-close overlap cannot edit the old profile; do not instantiate DSP or a
