@@ -35,6 +35,10 @@
         "kind": "javascript",
         "local": 1
       },
+      "code/start_state_path.js": {
+        "kind": "javascript",
+        "local": 1
+      },
       "gen/ev_powertrain.gendsp": {
         "kind": "gendsp",
         "local": 1
@@ -61,6 +65,10 @@
         "kind": "data",
         "local": 1
       },
+      "presets/ev_soundscape_v2_factory.json": {
+        "kind": "data",
+        "local": 1
+      },
       "presets/sound_dna.json": {
         "kind": "data",
         "local": 1
@@ -69,7 +77,15 @@
         "kind": "data",
         "local": 1
       },
+      "presets/v10_soundscape_v2_factory.json": {
+        "kind": "data",
+        "local": 1
+      },
       "presets/v12_soundscape_factory.json": {
+        "kind": "data",
+        "local": 1
+      },
+      "presets/v12_soundscape_v2_factory.json": {
         "kind": "data",
         "local": 1
       },
@@ -153,19 +169,11 @@
         "kind": "patcher",
         "local": 1
       },
-      "patchers/engine_start_beap~.maxpat": {
-        "kind": "patcher",
-        "local": 1
-      },
-      "patchers/engine_start_core~.maxpat": {
-        "kind": "patcher",
-        "local": 1
-      },
-      "patchers/engine_start_voice.maxpat": {
-        "kind": "patcher",
-        "local": 1
-      },
       "patchers/ev_cinematic_soundscape_host~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/ev_engine_start_beap~.maxpat": {
         "kind": "patcher",
         "local": 1
       },
@@ -229,6 +237,10 @@
         "kind": "patcher",
         "local": 1
       },
+      "patchers/v10_engine_start_beap~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
       "patchers/v10_powertrain~.maxpat": {
         "kind": "patcher",
         "local": 1
@@ -246,6 +258,10 @@
         "local": 1
       },
       "patchers/v12_cinematic_soundscape_host~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/v12_engine_start_beap~.maxpat": {
         "kind": "patcher",
         "local": 1
       },

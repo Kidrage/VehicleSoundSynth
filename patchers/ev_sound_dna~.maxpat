@@ -46,8 +46,14 @@
           "id": "obj-3",
           "maxclass": "newobj",
           "numinlets": 1,
-          "numoutlets": 13,
+          "numoutlets": 19,
           "outlettype": [
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
             "",
             "",
             "",
@@ -68,7 +74,7 @@
             1160.0,
             22.0
           ],
-          "text": "route aggression brightness body texture air_detail cycle_irregularity stereo_width throttle_loudness_depth saturation torque_ripple_level gear_mesh_level electrical_detail"
+          "text": "route aggression brightness body texture air_detail cycle_irregularity stereo_width throttle_loudness_depth saturation idle_level idle_body idle_metal idle_irregularity idle_air idle_width torque_ripple_level gear_mesh_level electrical_detail"
         }
       },
       {
@@ -1410,7 +1416,7 @@
             220.0,
             20.0
           ],
-          "text": "Torque Ripple"
+          "text": "Idle Level"
         }
       },
       {
@@ -1438,7 +1444,7 @@
             90.0,
             22.0
           ],
-          "varname": "dna_torque_ripple_level"
+          "varname": "dna_idle_level"
         }
       },
       {
@@ -1474,7 +1480,7 @@
             100.0,
             22.0
           ],
-          "text": "prepend torque_ripple_level"
+          "text": "prepend idle_level"
         }
       },
       {
@@ -1492,7 +1498,7 @@
             65.0,
             22.0
           ],
-          "text": "0.48"
+          "text": "0.2"
         }
       },
       {
@@ -1514,7 +1520,7 @@
             220.0,
             20.0
           ],
-          "text": "Gear Mesh"
+          "text": "Idle Body"
         }
       },
       {
@@ -1542,7 +1548,7 @@
             90.0,
             22.0
           ],
-          "varname": "dna_gear_mesh_level"
+          "varname": "dna_idle_body"
         }
       },
       {
@@ -1578,7 +1584,7 @@
             100.0,
             22.0
           ],
-          "text": "prepend gear_mesh_level"
+          "text": "prepend idle_body"
         }
       },
       {
@@ -1596,7 +1602,7 @@
             65.0,
             22.0
           ],
-          "text": "0.42"
+          "text": "0.36"
         }
       },
       {
@@ -1618,7 +1624,7 @@
             220.0,
             20.0
           ],
-          "text": "Electrical Detail"
+          "text": "Idle Metal"
         }
       },
       {
@@ -1646,7 +1652,7 @@
             90.0,
             22.0
           ],
-          "varname": "dna_electrical_detail"
+          "varname": "dna_idle_metal"
         }
       },
       {
@@ -1682,7 +1688,7 @@
             100.0,
             22.0
           ],
-          "text": "prepend electrical_detail"
+          "text": "prepend idle_metal"
         }
       },
       {
@@ -1697,6 +1703,630 @@
           "patching_rect": [
             935.0,
             475.0,
+            65.0,
+            22.0
+          ],
+          "text": "0.32"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-84",
+          "maxclass": "comment",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            35.0,
+            540.0,
+            220.0,
+            20.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            35,
+            540,
+            220.0,
+            20.0
+          ],
+          "text": "Idle Irregularity"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-85",
+          "maxclass": "flonum",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "numinlets": 1,
+          "numoutlets": 2,
+          "outlettype": [
+            "",
+            ""
+          ],
+          "patching_rect": [
+            35.0,
+            565.0,
+            90.0,
+            22.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            35,
+            565,
+            90.0,
+            22.0
+          ],
+          "varname": "dna_idle_irregularity"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-86",
+          "maxclass": "newobj",
+          "numinlets": 3,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ],
+          "patching_rect": [
+            135.0,
+            565.0,
+            90.0,
+            22.0
+          ],
+          "text": "clip 0 1"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-87",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ],
+          "patching_rect": [
+            230.0,
+            565.0,
+            100.0,
+            22.0
+          ],
+          "text": "prepend idle_irregularity"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-88",
+          "maxclass": "message",
+          "numinlets": 2,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ],
+          "patching_rect": [
+            35.0,
+            600.0,
+            65.0,
+            22.0
+          ],
+          "text": "0.08"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-89",
+          "maxclass": "comment",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            335.0,
+            540.0,
+            220.0,
+            20.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            335,
+            540,
+            220.0,
+            20.0
+          ],
+          "text": "Idle Air"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-90",
+          "maxclass": "flonum",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "numinlets": 1,
+          "numoutlets": 2,
+          "outlettype": [
+            "",
+            ""
+          ],
+          "patching_rect": [
+            335.0,
+            565.0,
+            90.0,
+            22.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            335,
+            565,
+            90.0,
+            22.0
+          ],
+          "varname": "dna_idle_air"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-91",
+          "maxclass": "newobj",
+          "numinlets": 3,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ],
+          "patching_rect": [
+            435.0,
+            565.0,
+            90.0,
+            22.0
+          ],
+          "text": "clip 0 1"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-92",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ],
+          "patching_rect": [
+            530.0,
+            565.0,
+            100.0,
+            22.0
+          ],
+          "text": "prepend idle_air"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-93",
+          "maxclass": "message",
+          "numinlets": 2,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ],
+          "patching_rect": [
+            335.0,
+            600.0,
+            65.0,
+            22.0
+          ],
+          "text": "0.44"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-94",
+          "maxclass": "comment",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            635.0,
+            540.0,
+            220.0,
+            20.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            635,
+            540,
+            220.0,
+            20.0
+          ],
+          "text": "Idle Width"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-95",
+          "maxclass": "flonum",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "numinlets": 1,
+          "numoutlets": 2,
+          "outlettype": [
+            "",
+            ""
+          ],
+          "patching_rect": [
+            635.0,
+            565.0,
+            90.0,
+            22.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            635,
+            565,
+            90.0,
+            22.0
+          ],
+          "varname": "dna_idle_width"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-96",
+          "maxclass": "newobj",
+          "numinlets": 3,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ],
+          "patching_rect": [
+            735.0,
+            565.0,
+            90.0,
+            22.0
+          ],
+          "text": "clip 0 1"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-97",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ],
+          "patching_rect": [
+            830.0,
+            565.0,
+            100.0,
+            22.0
+          ],
+          "text": "prepend idle_width"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-98",
+          "maxclass": "message",
+          "numinlets": 2,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ],
+          "patching_rect": [
+            635.0,
+            600.0,
+            65.0,
+            22.0
+          ],
+          "text": "0.56"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-99",
+          "maxclass": "comment",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            935.0,
+            540.0,
+            220.0,
+            20.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            935,
+            540,
+            220.0,
+            20.0
+          ],
+          "text": "Torque Ripple"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-100",
+          "maxclass": "flonum",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "numinlets": 1,
+          "numoutlets": 2,
+          "outlettype": [
+            "",
+            ""
+          ],
+          "patching_rect": [
+            935.0,
+            565.0,
+            90.0,
+            22.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            935,
+            565,
+            90.0,
+            22.0
+          ],
+          "varname": "dna_torque_ripple_level"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-101",
+          "maxclass": "newobj",
+          "numinlets": 3,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ],
+          "patching_rect": [
+            1035.0,
+            565.0,
+            90.0,
+            22.0
+          ],
+          "text": "clip 0 1"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-102",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ],
+          "patching_rect": [
+            1130.0,
+            565.0,
+            100.0,
+            22.0
+          ],
+          "text": "prepend torque_ripple_level"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-103",
+          "maxclass": "message",
+          "numinlets": 2,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ],
+          "patching_rect": [
+            935.0,
+            600.0,
+            65.0,
+            22.0
+          ],
+          "text": "0.48"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-104",
+          "maxclass": "comment",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            35.0,
+            665.0,
+            220.0,
+            20.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            35,
+            665,
+            220.0,
+            20.0
+          ],
+          "text": "Gear Mesh"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-105",
+          "maxclass": "flonum",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "numinlets": 1,
+          "numoutlets": 2,
+          "outlettype": [
+            "",
+            ""
+          ],
+          "patching_rect": [
+            35.0,
+            690.0,
+            90.0,
+            22.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            35,
+            690,
+            90.0,
+            22.0
+          ],
+          "varname": "dna_gear_mesh_level"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-106",
+          "maxclass": "newobj",
+          "numinlets": 3,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ],
+          "patching_rect": [
+            135.0,
+            690.0,
+            90.0,
+            22.0
+          ],
+          "text": "clip 0 1"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-107",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ],
+          "patching_rect": [
+            230.0,
+            690.0,
+            100.0,
+            22.0
+          ],
+          "text": "prepend gear_mesh_level"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-108",
+          "maxclass": "message",
+          "numinlets": 2,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ],
+          "patching_rect": [
+            35.0,
+            725.0,
+            65.0,
+            22.0
+          ],
+          "text": "0.42"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-109",
+          "maxclass": "comment",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            335.0,
+            665.0,
+            220.0,
+            20.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            335,
+            665,
+            220.0,
+            20.0
+          ],
+          "text": "Electrical Detail"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-110",
+          "maxclass": "flonum",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "numinlets": 1,
+          "numoutlets": 2,
+          "outlettype": [
+            "",
+            ""
+          ],
+          "patching_rect": [
+            335.0,
+            690.0,
+            90.0,
+            22.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            335,
+            690,
+            90.0,
+            22.0
+          ],
+          "varname": "dna_electrical_detail"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-111",
+          "maxclass": "newobj",
+          "numinlets": 3,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ],
+          "patching_rect": [
+            435.0,
+            690.0,
+            90.0,
+            22.0
+          ],
+          "text": "clip 0 1"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-112",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ],
+          "patching_rect": [
+            530.0,
+            690.0,
+            100.0,
+            22.0
+          ],
+          "text": "prepend electrical_detail"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-113",
+          "maxclass": "message",
+          "numinlets": 2,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ],
+          "patching_rect": [
+            335.0,
+            725.0,
             65.0,
             22.0
           ],
@@ -1738,7 +2368,7 @@
           ],
           "source": [
             "obj-3",
-            12
+            18
           ]
         }
       },
@@ -2914,6 +3544,510 @@
           ],
           "source": [
             "obj-83",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-85",
+            0
+          ],
+          "source": [
+            "obj-3",
+            12
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-86",
+            0
+          ],
+          "source": [
+            "obj-85",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-87",
+            0
+          ],
+          "source": [
+            "obj-86",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-4",
+            0
+          ],
+          "source": [
+            "obj-87",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-88",
+            0
+          ],
+          "source": [
+            "obj-13",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-88",
+            0
+          ],
+          "source": [
+            "obj-21",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-85",
+            0
+          ],
+          "source": [
+            "obj-88",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-90",
+            0
+          ],
+          "source": [
+            "obj-3",
+            13
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-91",
+            0
+          ],
+          "source": [
+            "obj-90",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-92",
+            0
+          ],
+          "source": [
+            "obj-91",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-4",
+            0
+          ],
+          "source": [
+            "obj-92",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-93",
+            0
+          ],
+          "source": [
+            "obj-13",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-93",
+            0
+          ],
+          "source": [
+            "obj-21",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-90",
+            0
+          ],
+          "source": [
+            "obj-93",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-95",
+            0
+          ],
+          "source": [
+            "obj-3",
+            14
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-96",
+            0
+          ],
+          "source": [
+            "obj-95",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-97",
+            0
+          ],
+          "source": [
+            "obj-96",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-4",
+            0
+          ],
+          "source": [
+            "obj-97",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-98",
+            0
+          ],
+          "source": [
+            "obj-13",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-98",
+            0
+          ],
+          "source": [
+            "obj-21",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-95",
+            0
+          ],
+          "source": [
+            "obj-98",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-100",
+            0
+          ],
+          "source": [
+            "obj-3",
+            15
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-101",
+            0
+          ],
+          "source": [
+            "obj-100",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-102",
+            0
+          ],
+          "source": [
+            "obj-101",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-4",
+            0
+          ],
+          "source": [
+            "obj-102",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-103",
+            0
+          ],
+          "source": [
+            "obj-13",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-103",
+            0
+          ],
+          "source": [
+            "obj-21",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-100",
+            0
+          ],
+          "source": [
+            "obj-103",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-105",
+            0
+          ],
+          "source": [
+            "obj-3",
+            16
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-106",
+            0
+          ],
+          "source": [
+            "obj-105",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-107",
+            0
+          ],
+          "source": [
+            "obj-106",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-4",
+            0
+          ],
+          "source": [
+            "obj-107",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-108",
+            0
+          ],
+          "source": [
+            "obj-13",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-108",
+            0
+          ],
+          "source": [
+            "obj-21",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-105",
+            0
+          ],
+          "source": [
+            "obj-108",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-110",
+            0
+          ],
+          "source": [
+            "obj-3",
+            17
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-111",
+            0
+          ],
+          "source": [
+            "obj-110",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-112",
+            0
+          ],
+          "source": [
+            "obj-111",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-4",
+            0
+          ],
+          "source": [
+            "obj-112",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-113",
+            0
+          ],
+          "source": [
+            "obj-13",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-113",
+            0
+          ],
+          "source": [
+            "obj-21",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-110",
+            0
+          ],
+          "source": [
+            "obj-113",
             0
           ]
         }

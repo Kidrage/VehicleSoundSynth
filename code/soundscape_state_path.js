@@ -14,11 +14,11 @@ function projectRoot() {
 }
 
 function statePath() {
-    return projectRoot() + "/presets/local/" + profile + "_soundscape.json";
+    return projectRoot() + "/presets/local/" + profile + "_soundscape_v2.json";
 }
 
 function factoryPath() {
-    return projectRoot() + "/presets/" + profile + "_soundscape_factory.json";
+    return projectRoot() + "/presets/" + profile + "_soundscape_v2_factory.json";
 }
 
 function fileExists(path) {

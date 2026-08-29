@@ -512,7 +512,7 @@
             100.0,
             22.0
           ],
-          "text": "loadmess 0.38"
+          "text": "loadmess 0.34"
         }
       },
       {
@@ -713,7 +713,7 @@
             95.0,
             22.0
           ],
-          "text": "loadmess 0.1"
+          "text": "loadmess 0.08"
         }
       },
       {
@@ -859,7 +859,7 @@
             95.0,
             22.0
           ],
-          "text": "loadmess 0.32"
+          "text": "loadmess 0.3"
         }
       },
       {

@@ -51,7 +51,6 @@ patchers/engine_controller_v12.maxpat
 patchers/engine_start_beap~.maxpat
 patchers/engine_start_core~.maxpat
 patchers/engine_start_voice.maxpat
-patchers/soundscape_control.maxpat
 patchers/ev_cinematic_soundscape_host~.maxpat
 patchers/ev_expressive_beap~.maxpat
 patchers/ev_expressive_voice.maxpat
@@ -70,6 +69,7 @@ patchers/module_mixer.maxpat
 patchers/powertrain~.maxpat
 patchers/reference_texture~.maxpat
 patchers/road_air~.maxpat
+patchers/soundscape_control.maxpat
 patchers/transient_ev~.maxpat
 patchers/transient_v10~.maxpat
 patchers/transient_v12~.maxpat

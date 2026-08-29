@@ -9,18 +9,13 @@
 - Working root: `.`
 - Repository name: `VehicleSoundSynth-V5`
 - Git repository: `true`
-- Generated at: `2026-08-29T12:17:46+08:00`
+- Generated at: `2026-08-29T07:26:57.328950+00:00`
 
 ## Current State
 
-- Branch: `codex/soundscape-pitch-restore`; Soundscape pitch, voicing and
-  factory/local-state implementation fixed point is `fd21aa0`; later
-  handoff-only descendants do not alter the implementation.
-- Canonical base before this focused change: `e8f89cd` on `main`.
-- Prior keyboard, persistent seven-module mixer, and kick-impact Pop fixed
-  point: `f85c1ca`.
-- Prior layered-backfire implementation: `9fffe195d9e3aa68678856ad880693ac6a5df63a`.
-- Indexed paths: 163 including the repository-local AgentLab handoff
+- Branch: `codex/v5-idle-start-soundscape-v2`
+- HEAD: `058c2da`
+- Indexed paths: 169
 - Inventory truncated: `false`
 - Inaccessible paths: 0
 - Scan mode: complete path/metadata inventory; no bulk content read; no symlink traversal.
@@ -37,51 +32,49 @@
 
 ## Active Work and Pending Items
 
-- In progress: none.
-- Pending decisions/files/plans/acceptance artifacts: none.
-- Next safe entry point: start from `fd21aa0` on
-  `codex/soundscape-pitch-restore`; edit generated Soundscape hosts only through
-  `tools/build_project.py`, and preserve the seed-once shared BEAP patcher.
+- In progress: inspect Current Changes and Agent Notes.
+- Pending decisions: record durable choices in Agent Notes before handoff.
+- Pending files to modify: record intended paths in Agent Notes before dispatch.
+- Pending plans to confirm: link task/run plans in Agent Notes.
+- Pending acceptance artifacts: link deliverables and validation evidence in Agent Notes.
+- Next safe entry point: run `./agentlab.sh repository-handoff --repo <path>` before deep work.
 
 ## Directory Routes
 
 | Route | Files |
 |---|---:|
-| `patchers` | 62 |
+| `patchers` | 65 |
 | `media` | 35 |
 | `.` | 17 |
 | `tools` | 13 |
 | `assets` | 11 |
+| `code` | 9 |
+| `presets` | 9 |
 | `assets/raw` | 7 |
 | `.codex` | 4 |
-| `.agentlab` | 1 |
-| `code` | 8 |
 | `gen` | 3 |
-| `presets` | 6 |
 | `tests` | 3 |
 | `presets/local` | 1 |
 
 ## Data and File Structure
 
-### Tracked payload
+### Categories
 
-- total: 163 files, 121246974 bytes
-- audio (`.wav`): 41 files, 103833150 bytes
-- executable sources (`.py`, `.js`, `.gendsp`): 27 files, 961744 bytes
-- Max project/patch (`.maxpat`, `.maxproj`): 67 files, 15742840 bytes
-- documentation (`.md`, `.docx`, `.pdf`): 15 files, 646034 bytes
-- structured data (`.json`): 9 files, 57239 bytes
-- other tracked text/markers: 4 files, 5967 bytes
+- audio: 41 files, 103833150 bytes
+- code: 25 files, 954979 bytes
+- literature: 16 files, 645605 bytes
+- other: 75 files, 17424846 bytes
+- structured_data: 12 files, 80989 bytes
 
 ### Common Extensions
 
-- `.maxpat`: 66
+- `.maxpat`: 69
 - `.wav`: 41
 - `.py`: 16
-- `.md`: 9
-- `.json`: 9
+- `.json`: 12
+- `.js`: 9
+- `.md`: 8
 - `.docx`: 5
-- `.js`: 8
 - `.gendsp`: 3
 - `.txt`: 2
 - `[no extension]`: 2
@@ -100,88 +93,69 @@
 
 ## Change History
 
+- `058c2da 2026-08-29 docs: preserve legacy handoff alias`
+- `ecd2cbb 2026-08-29 docs: record soundscape pitch restoration handoff`
 - `fd21aa0 2026-08-29 feat: restore profile soundscape pitch and persistence`
+- `e8f89cd 2026-08-28 docs: record scoped soundscape control review`
 - `168a7bb 2026-08-28 fix: scope main soundscape controls by profile`
+- `67ce425 2026-08-28 docs: record main soundscape control handoff`
 - `0d600c8 2026-08-28 fix: expose live soundscape controls in main`
+- `ad975b0 2026-08-28 docs: close soundscape stabilization review`
 - `cfc65aa 2026-08-28 fix: recall soundscape state and preserve tails`
 - `3b14b3a 2026-08-28 docs: record soundscape stabilization handoff`
 - `973a2f2 2026-08-28 fix: stabilize live soundscape tuning and persistence`
+- `1f668eb 2026-08-27 docs: preserve pre-existing Max process record`
+- `0deaf5f 2026-08-27 docs: record live sound tuning validation`
 - `dc84aad 2026-08-27 fix: make sound modules live and persistent`
+- `857da2b 2026-08-27 docs: record keyboard pop and mixer validation`
 - `f85c1ca 2026-08-27 feat: add persistent module mixer and impact pop`
+- `a754277 2026-08-26 docs: record keyboard and pop pressure repair`
 - `82fca86 2026-08-26 fix: restore keyboard pedals and deepen pop pressure`
+- `4e22b6a 2026-08-26 docs: close pop and DNA authority handoff`
 - `e1e0286 2026-08-26 fix: route pop tuning to resonant frequency inlets`
-- `d80ce18 2026-08-26 fix: tune every pop layer and cover DNA controls`
-- `10921aa 2026-08-26 fix: make pop and sound DNA controls authoritative`
-- `fe50c57 2026-08-26 feat: deepen randomized backfire bursts`
-- `b990974 2026-08-26 fix: preserve start BEAP and validate controller start`
-- `ba49a3f 2026-08-26 feat: restore audible start and layered pop`
-- `9fffe19 2026-08-25 fix: make backfire BEAP tone controls authoritative`
-- `6931239 2026-08-25 feat: deepen layered backfire pop synthesis`
-- `136ca58 2026-08-25 feat: refine pedals and physical overrun backfire`
-- `16ac747 2026-08-25 fix: validate throttle timbre and stereo coherence`
-- `eef6c91 2026-08-25 feat: expose modular sound design controls`
-- `0fccd1f 2026-08-24 feat: tune speed-dependent natural coasting`
-- `4c206bd 2026-08-24 fix: isolate gamepad state and soundscape solo`
-- `9f066e4 2026-08-24 feat: add fixed gamepad pedals and cinematic soundscape`
-- `942cd3f 2026-08-21 docs: record V5 mainline consolidation`
-- `cf4c970 2026-08-21 feat: add switchable gamepad manual throttle control`
-- `1738ef6 2026-08-20 docs: refresh V5 repository handoff`
-- `4a3d892 2026-08-20 fix: gate backfire by engine state`
-- `4580cb7 2026-08-20 fix: close V5 review gaps`
-- `6ecfd6a 2026-08-20 feat: start VehicleSoundSynth V5 realism pass`
-- `6aa49d0 2026-08-20 Refresh repository handoff`
-- `aaf3508 2026-08-20 Rebuild procedural vehicle lifecycle runtimes`
-- `dc8d175 2026-08-19 fix: restore profile throttle and stabilize runtime audio`
-- `2970e9d 2026-08-18 docs: refresh V4 silence-fix handoff`
-- `17c8e14 2026-08-18 fix: enable runtime audio and restore W S driving`
-- `5024087 2026-08-18 docs: refresh V4 project handoff`
-- `aff305f 2026-08-18 feat: split V4 runtimes and restore sample-led V10`
-- `68af5db 2026-08-18 fix: soften V10 V12 combustion with local Ferrari body`
-- `3a678eb 2026-08-17 docs: refresh V4 repair handoff`
-- `8cf0f1e 2026-08-17 fix: remove full-rate combustion reset harshness`
-- `745207c 2026-08-14 fix: rebuild V4 engine realism and stereo field`
-- `f138ccb 2026-08-12 docs: seal V4 integrity audit`
-- `32bc86d 2026-08-12 docs: complete V4 Ferrari validation guide`
-- `32873f8 2026-08-12 docs: finalize V4 integrity record`
-- `613d929 2026-08-12 docs: correct V4 manual identity`
 
 ## Current Changes
 
-- Completed on `codex/soundscape-pitch-restore` at implementation fixed point
-  `fd21aa0`. Only the shared Soundscape graph, its three generated profile hosts,
-  factory-state plumbing, project declarations, tests and operator documentation
-  changed; drivetrain, manual input, engine DNA, Pop/backfire, EQ, continuous
-  powertrain DSP, top-level runtimes and media were not changed.
-- The generated hosts restore the legacy RPM pitch laws exactly: EV
-  `55 + 0.032*rpm`, V10 `36.7 + 0.014*rpm`, and V12
-  `32.7 + 0.012*rpm`. Pitch Follow logarithmically blends each law toward its
-  stationary base, Transpose remains additive in semitones, and `pack 0. 90`
-  smooths control-rate motion. Hidden interval offsets were removed, so the
-  three visible BEAP Osc Offset controls are the authoritative chord controls.
-- Factory voicings are profile-specific: EV `0/+7/+12` with the widest/futuristic
-  motion, V10 `-5/0/+7` with the lowest/most restrained body, and V12
-  `0/+7/+12` with a broad cinematic bed. Each tracked factory JSON stores all
-  90 controllable clients in slot 99. Local Save writes only slot 1; startup,
-  Reload and Reset re-prime slot 99 from the tracked profile factory, preventing
-  an old local file from overriding Factory Reset.
-- All 173 tests pass. Two independent fresh builds are byte-identical,
-  preservation tests cover the seed-once BEAP graph, and `git diff --check` is
-  clean. Fresh CoreAudio EV/V10/V12 persistence probes wrote 90-client local
-  slot-1 states whose 87 user-tunable/static clients exactly matched factory;
-  only the three oscillator Frequency dials differed because live RPM owns them.
-  The three final WAVs were non-silent and unclipped, had distinct hashes, and
-  remained far below the documented `0.001` harshness gate.
-- A complete isolated checkout named `VehicleSoundSynth-V5` was regenerated and
-  opened through `VehicleSoundSynth-V5.maxproj` in Max 8.6.5. The 12:12 log
-  contained no project-category, missing-object/JS, Gen outlet/function,
-  patchcord-range or feedback blocker. The only errors were the expected absent
-  ignored `media/local/ferrari_sf90_startup.wav`; clean checkout used the tracked
-  starter fallback. Directly launched Max did not respond to normal Quit/Cmd-Q,
-  so the zero-window task PIDs were exactly verified and terminated; their
-  `maxworkspace-*.txt` files were archived under
-  `/Users/saintpeter/Downloads/.VehicleSoundSynth-Backups/V5/20260829-094048-soundscape-restore/`.
-  Max now reports not running. The remaining 09:10 editor stack log predates this
-  task and is not an active workspace recovery file.
+- `## codex/v5-idle-start-soundscape-v2`
+- ` M .codex/REPO_GUIDE.md`
+- ` M .codex/repo_files.txt`
+- ` M .codex/source_index.txt`
+- ` M PROJECT_HANDOFF.md`
+- ` M README.md`
+- ` M SOUND_DESIGN_GUIDE.md`
+- ` M VehicleSoundSynth-EV.maxpat`
+- ` M VehicleSoundSynth-V10.maxpat`
+- ` M VehicleSoundSynth-V12.maxpat`
+- ` M VehicleSoundSynth-V5.maxproj`
+- ` M code/soundscape_state_path.js`
+- ` M gen/ev_powertrain.gendsp`
+- ` M gen/v10_powertrain.gendsp`
+- ` M gen/v12_powertrain.gendsp`
+- ` M patchers/cinematic_soundscape_beap~.maxpat`
+- ` M patchers/ev_cinematic_soundscape_host~.maxpat`
+- ` M patchers/ev_sound_dna~.maxpat`
+- ` M patchers/transient_ev~.maxpat`
+- ` M patchers/transient_v10~.maxpat`
+- ` M patchers/transient_v12~.maxpat`
+- ` M patchers/v10_cinematic_soundscape_host~.maxpat`
+- ` M patchers/v10_sound_dna~.maxpat`
+- ` M patchers/v12_cinematic_soundscape_host~.maxpat`
+- ` M patchers/v12_sound_dna~.maxpat`
+- ` M patchers/vehicle_engine_ev~.maxpat`
+- ` M patchers/vehicle_engine_v10~.maxpat`
+- ` M patchers/vehicle_engine_v12~.maxpat`
+- ` M patchers/vehicle_engine~.maxpat`
+- ` M presets/sound_dna.json`
+- ` M tests/test_project.py`
+- ` M tools/build_project.py`
+- ` M tools/build_runtime_probe.py`
+- `?? code/start_state_path.js`
+- `?? patchers/ev_engine_start_beap~.maxpat`
+- `?? patchers/v10_engine_start_beap~.maxpat`
+- `?? patchers/v12_engine_start_beap~.maxpat`
+- `?? presets/ev_soundscape_v2_factory.json`
+- `?? presets/v10_soundscape_v2_factory.json`
+- `?? presets/v12_soundscape_v2_factory.json`
 
 ## Related Repositories
 
@@ -206,6 +180,7 @@
 - `ASSET_LICENSES.md`
 - `PROJECT_HANDOFF.md`
 - `README.md`
+- `SOUND_DESIGN_GUIDE.md`
 - `VehicleSoundSynthV2_完整使用手册.docx`
 - `VehicleSoundSynthV3_完整使用手册.docx`
 - `VehicleSoundSynthV3_车机RTPC_DSP链路技术说明.docx`
@@ -252,9 +227,12 @@
 - `assets/ferrari_sf90_acoustic_target.json`
 - `assets/ferrari_v10_lifecycle_targets.json`
 - `presets/ev_soundscape_factory.json`
+- `presets/ev_soundscape_v2_factory.json`
 - `presets/sound_dna.json`
 - `presets/v10_soundscape_factory.json`
+- `presets/v10_soundscape_v2_factory.json`
 - `presets/v12_soundscape_factory.json`
+- `presets/v12_soundscape_v2_factory.json`
 - `presets/vehicle_bus_eq_default.json`
 
 ## Validation and Risks
@@ -266,6 +244,19 @@
 ## Agent Notes
 
 <!-- AGENT_NOTES_START -->
+- 2026-08-29 V5 idle/start/Soundscape V2 branch: added six persistent idle DNA
+  controls and distinct EV/V10/V12 low-RPM layers; EV remains a ready-state
+  electromagnetic bed while V10/V12 share exact bank cadence and fade smoothly
+  above idle. Replaced the shared start colour path with three seed-once live
+  Start Designers and kept realistic ICE samples mutually exclusive. The shared
+  Soundscape now has Body/Modal, Harmonic/Macro, Noise/Resonator and Air/Shimmer
+  layers, centred bass below 120 Hz, V2-only factory/local state files, and
+  throttle/load timbre mapping independent of root pitch. Max exposed and the
+  generator fixed a Gen parameter/local-name collision. Corrected fixed-state
+  probes prove unchanged low/high-load main peaks (EV 103.629 Hz, V10 56.525 Hz,
+  V12 49.796 Hz), distinct hashes/timbres, zero clipping, harshness below 0.001,
+  and mono-fold loss below 3 dB. All 175 tests and deterministic double generation
+  pass. Task Max instances were removed; pre-existing PID 68025 was preserved.
 - 2026-08-27 keyboard/module-mixer/impact-Pop repair: the prior keyboard patch
   still had Max `gate` ports reversed. `f85c1ca` now follows the installed
   Max 8.6.5 reference exactly: inlet 0 controls the gate and inlet 1 receives

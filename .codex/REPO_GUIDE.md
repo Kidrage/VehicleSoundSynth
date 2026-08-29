@@ -5,7 +5,8 @@
 Max 8.6.5 vehicle-sound V5, forked from stable V4 tag `v4.0.0`, with three independent fixed-profile runtimes. V10
 and V12 continuous audio are procedural; Ferrari.wav is a V10 lifecycle-analysis
 target and may supply only the optional ignored realistic-start one-shot. All
-three profiles share one suspendable, user-editable cinematic BEAP soundscape.
+three profiles share one suspendable, user-editable four-layer cinematic BEAP
+Soundscape V2 topology while keeping independent factory and user states.
 The project also contains a
 start-relative single-speed/seven-speed drivetrain, cabin rumble, licensed
 events, short cabin IR, adjustable stereo compression, EQ, and peak protection.
@@ -50,13 +51,14 @@ events, short cabin IR, adjustable stereo compression, EQ, and peak protection.
 - `patchers/{ev,v10,v12}_cinematic_soundscape_host~.maxpat` — generated profile
   mapping, persistence and cancellable DSP suspension around a direct embedded
   instance of the shared runtime Soundscape; there is no detached voice wrapper.
-- `presets/{ev,v10,v12}_soundscape_factory.json` — tracked profile-specific,
+- `presets/{ev,v10,v12}_soundscape_v2_factory.json` — tracked profile-specific,
   complete 90-client Soundscape slot-99 authority. The state helper re-reads
   slot 99 after every local read; local Save deletes slot 99 before writing so
   ignored user files contain slot 1 only.
-- `patchers/cinematic_soundscape_beap~.maxpat` plus the engine-start, three
-  legacy EV, two legacy ICE-pad, and two backfire graphs — nine seed-once,
-  user-tunable BEAP files. The legacy pads are preserved but undeclared.
+- `patchers/cinematic_soundscape_beap~.maxpat`, three profile-specific
+  `*_engine_start_beap~` designers, three legacy EV pads, two legacy ICE pads,
+  and two backfire graphs are seed-once user-tunable files. The legacy pads and
+  old shared start files are preserved but undeclared.
 - `patchers/`, `gen/`, `media/`, `presets/` — generated runtime resources.
 - `tests/` — deterministic structural and resource checks.
 
@@ -74,7 +76,7 @@ python3 tools/validate_v10_lifecycle.py --drive-lifecycle-wav v10_v10-lifecycle-
 
 Regenerate twice and compare hashes when generator determinism matters. Never
 hand-edit generated `.maxpat`, `.gendsp`, or `.wav` files. The three Sound DNA
-panels, bus EQ, and nine seed-once BEAP patchers named above are explicit
+panels, bus EQ, and seed-once BEAP patchers named above are explicit
 user-owned exceptions. The project generator preserves those files after their
 first seed. The project generator
 never overwrites curated runtime WAVs already present in `media/`.
@@ -94,13 +96,13 @@ Module Mixer's `Pop / Event` fader.
 For continuous-engine tuning, open the active Sound DNA instance and use DNA
 Solo; EV Aggression and V10 Brightness are explicitly connected to Gen DSP,
 while several other controls are RPM/load/throttle-state dependent.
-Soundscape `Open Designer` addresses the active embedded instance; `Save`
-persists profile-local state for the shared seed-once graph. The visible three
-oscillator Offsets own the chord; EV/V10/V12 use separate tracked factory
-voicings with no hidden interval adders. `Pitch Follow = 1` restores the exact
+Soundscape `Open Designer` addresses the active embedded V2 instance; `Save`
+persists profile-local V2 state for the shared seed-once graph. Body/Modal,
+Harmonic/Macro, Noise/Resonator and Air/Shimmer are separately tunable;
+EV/V10/V12 use distinct tracked V2 factory voicings. `Pitch Follow = 1` restores the exact
 legacy full-travel RPM laws (`55+.032*rpm`, `36.7+.014*rpm`, and
-`32.7+.012*rpm`) with 90 ms smoothing. Restrained sub-0.05 Hz LFO drift is
-owned separately by Motion and scaled smoothly by throttle. The launcher uses
+`32.7+.012*rpm`) with 90 ms smoothing. Restrained LFO motion affects
+filter/waveform/high-band pan rather than root pitch or level. The launcher uses
 profile-scoped `vss.runtime.control.<profile>` and
 `vss.soundscape.feedback.<profile>` buses selected by `vss.runtime.select`, so
 runtime-close overlap cannot edit the old profile; do not instantiate DSP or a

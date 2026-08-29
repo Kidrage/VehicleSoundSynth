@@ -10,7 +10,7 @@
     "boxes": [
       {
         "box": {
-          "code": "// Procedural EV motor: RPM owns pitch; pedal owns bounded torque loudness.\nParam rpm(650, min=0, max=10000);\nParam throttle(0, min=0, max=1);\nParam load(0, min=-1, max=1);\nParam aggression(0.25, min=0, max=1);\nParam brightness(0.72, min=0, max=1);\nParam body(0.34, min=0, max=1);\nParam texture(0.2, min=0, max=1);\nParam air_detail(0.58, min=0, max=1);\nParam cycle_irregularity(0.18, min=0, max=1);\nParam stereo_width(0.68, min=0, max=1);\nParam throttle_loudness_depth(4.5, min=0, max=8);\nParam saturation(0.2, min=0, max=1);\nParam torque_ripple_level(0.48, min=0, max=1);\nParam gear_mesh_level(0.42, min=0, max=1);\nParam electrical_detail(0.64, min=0, max=1);\nr = slide(clamp(rpm, 0, 10000), 1200, 1800);\nt = slide(clamp(throttle, 0, 1), 700, 1400);\nl = abs(clamp(load, -1, 1));\nf = clamp(55 + r * 0.052, 55, 760);\nthrottle_gain = pow(10, (t * throttle_loudness_depth) / 20);\ntone_t = 0.62 + t * 0.38;\nbody_t = 1 - t * 0.12;\na = clamp((0.045 + l * 0.028) * throttle_gain, 0, 0.16);\nslow_motion = cycle(clamp(r / 240, 0.35, 30)) * cycle_irregularity;\nelectrical_motion = 0.985 + slow_motion * 0.018;\naggression_colour = 0.6 + aggression * 1.6;\naggression_air = 0.8 + aggression * 0.8;\ntorque_ripple = cycle(clamp(f * 0.5, 27.5, 380)) * (0.035 + l * 0.035) * torque_ripple_level * aggression_colour;\ngear_l = cycle(clamp(f * 1.49, 82, 1140)) * 0.045 + cycle(clamp(f * 2.23, 124, 1710)) * 0.026;\ngear_r = cycle(clamp(f * 1.53, 84, 1160)) * 0.045 + cycle(clamp(f * 2.29, 126, 1750)) * 0.026;\ncoherent_low = cycle(f) * (0.58 + body * 0.18);\nh2 = cycle(clamp(f * 2, 110, 1520)) * (0.08 + body * 0.05);\nh3_l = cycle(clamp(f * 3.03, 165, 2320)) * (0.035 + texture * 0.055);\nh3_r = cycle(clamp(f * 2.97, 165, 2260)) * (0.035 + texture * 0.055);\ninverter_l = cycle(clamp(f * (2.65 + brightness + aggression * 0.64), 150, 4400)) * (0.08 + electrical_detail * 0.16) * tone_t;\ninverter_r = cycle(clamp(f * (2.77 + brightness + aggression * 0.64), 155, 4600)) * (0.08 + electrical_detail * 0.16) * tone_t;\nair_l = (cycle(clamp(f * 5.37, 300, 7800)) + cycle(clamp(f * 7.11, 420, 11200)) * 0.55) * air_detail * 0.035 * tone_t;\nair_r = (cycle(clamp(f * 5.61, 320, 8100)) + cycle(clamp(f * 6.83, 400, 10800)) * 0.55) * air_detail * 0.035 * tone_t;\nshared = (coherent_low + torque_ripple + h2) * body_t;\nside_l = (h3_l * (0.82 + t * 0.18) + gear_l * gear_mesh_level * (0.76 + t * 0.24)) * aggression_colour + (inverter_l + air_l) * aggression_air;\nside_r = (h3_r * (0.82 + t * 0.18) + gear_r * gear_mesh_level * (0.76 + t * 0.24)) * aggression_colour + (inverter_r + air_r) * aggression_air;\nleft_drive = (shared + side_l * (0.45 + stereo_width * 0.55)) * electrical_motion * a;\nright_drive = (shared + side_r * (0.45 + stereo_width * 0.55)) * electrical_motion * a;\nsat_drive = 1 + saturation * 0.85;\nout1 = tanh(left_drive * sat_drive) / sat_drive;\nout2 = tanh(right_drive * sat_drive) / sat_drive;",
+          "code": "// Procedural EV motor: RPM owns pitch; pedal owns bounded torque loudness.\nParam rpm(650, min=0, max=10000);\nParam throttle(0, min=0, max=1);\nParam load(0, min=-1, max=1);\nParam aggression(0.25, min=0, max=1);\nParam brightness(0.72, min=0, max=1);\nParam body(0.34, min=0, max=1);\nParam texture(0.2, min=0, max=1);\nParam air_detail(0.58, min=0, max=1);\nParam cycle_irregularity(0.18, min=0, max=1);\nParam stereo_width(0.68, min=0, max=1);\nParam throttle_loudness_depth(4.5, min=0, max=8);\nParam saturation(0.2, min=0, max=1);\nParam idle_level(0.20, min=0, max=1);\nParam idle_body(0.36, min=0, max=1);\nParam idle_metal(0.32, min=0, max=1);\nParam idle_irregularity(0.08, min=0, max=1);\nParam idle_air(0.44, min=0, max=1);\nParam idle_width(0.56, min=0, max=1);\nParam torque_ripple_level(0.48, min=0, max=1);\nParam gear_mesh_level(0.42, min=0, max=1);\nParam electrical_detail(0.64, min=0, max=1);\nParam engine_running(0, min=0, max=1);\nr = slide(clamp(rpm, 0, 10000), 1200, 1800);\nt = slide(clamp(throttle, 0, 1), 700, 1400);\nl = abs(clamp(load, -1, 1));\nf = clamp(55 + r * 0.052, 55, 760);\nthrottle_gain = pow(10, (t * throttle_loudness_depth) / 20);\ntone_t = 0.62 + t * 0.38;\nbody_t = 1 - t * 0.12;\na = clamp((0.045 + l * 0.028) * throttle_gain, 0, 0.16);\nslow_motion = cycle(clamp(r / 240, 0.35, 30)) * cycle_irregularity;\nelectrical_motion = 0.985 + slow_motion * 0.018;\naggression_colour = 0.6 + aggression * 1.6;\naggression_air = 0.8 + aggression * 0.8;\ntorque_ripple = cycle(clamp(f * 0.5, 27.5, 380)) * (0.035 + l * 0.035) * torque_ripple_level * aggression_colour;\ngear_l = cycle(clamp(f * 1.49, 82, 1140)) * 0.045 + cycle(clamp(f * 2.23, 124, 1710)) * 0.026;\ngear_r = cycle(clamp(f * 1.53, 84, 1160)) * 0.045 + cycle(clamp(f * 2.29, 126, 1750)) * 0.026;\ncoherent_low = cycle(f) * (0.58 + body * 0.18);\nh2 = cycle(clamp(f * 2, 110, 1520)) * (0.08 + body * 0.05);\nh3_l = cycle(clamp(f * 3.03, 165, 2320)) * (0.035 + texture * 0.055);\nh3_r = cycle(clamp(f * 2.97, 165, 2260)) * (0.035 + texture * 0.055);\ninverter_l = cycle(clamp(f * (2.65 + brightness + aggression * 0.64), 150, 4400)) * (0.08 + electrical_detail * 0.16) * tone_t;\ninverter_r = cycle(clamp(f * (2.77 + brightness + aggression * 0.64), 155, 4600)) * (0.08 + electrical_detail * 0.16) * tone_t;\nair_l = (cycle(clamp(f * 5.37, 300, 7800)) + cycle(clamp(f * 7.11, 420, 11200)) * 0.55) * air_detail * 0.035 * tone_t;\nair_r = (cycle(clamp(f * 5.61, 320, 8100)) + cycle(clamp(f * 6.83, 400, 10800)) * 0.55) * air_detail * 0.035 * tone_t;\nshared = (coherent_low + torque_ripple + h2) * body_t;\nside_l = (h3_l * (0.82 + t * 0.18) + gear_l * gear_mesh_level * (0.76 + t * 0.24)) * aggression_colour + (inverter_l + air_l) * aggression_air;\nside_r = (h3_r * (0.82 + t * 0.18) + gear_r * gear_mesh_level * (0.76 + t * 0.24)) * aggression_colour + (inverter_r + air_r) * aggression_air;\nready = slide(clamp(engine_running, 0, 1), 900, 1800);\nready_weight = 1 - clamp((r - 650) / 1450, 0, 1);\nready_motion = 1 + cycle(0.37) * idle_irregularity * 0.018;\nready_body = (cycle(55) * 0.62 + cycle(110) * 0.22 + cycle(165) * 0.10) * idle_body;\nready_metal = (cycle(330) * 0.045 + cycle(440) * 0.025) * idle_metal;\nready_air_layer = (cycle(880) * 0.022 + cycle(1320) * 0.012) * idle_air;\nready_gain = idle_level * ready * ready_weight * (1 - t * 0.42);\nready_center = ready_body * ready_gain * ready_motion;\nready_side = (ready_metal + ready_air_layer) * ready_gain * idle_width;\nleft_drive = (shared + side_l * (0.45 + stereo_width * 0.55)) * electrical_motion * a + ready_center + ready_side;\nright_drive = (shared + side_r * (0.45 + stereo_width * 0.55)) * electrical_motion * a + ready_center - ready_side;\nsat_drive = 1 + saturation * 0.85;\nout1 = tanh(left_drive * sat_drive) / sat_drive;\nout2 = tanh(right_drive * sat_drive) / sat_drive;",
           "id": "obj-1",
           "maxclass": "codebox",
           "numinlets": 1,
@@ -249,7 +249,7 @@
             220.0,
             22.0
           ],
-          "text": "param torque_ripple_level 0.48 @min 0 @max 1"
+          "text": "param idle_level 0.20 @min 0 @max 1"
         }
       },
       {
@@ -264,7 +264,7 @@
             220.0,
             22.0
           ],
-          "text": "param gear_mesh_level 0.42 @min 0 @max 1"
+          "text": "param idle_body 0.36 @min 0 @max 1"
         }
       },
       {
@@ -279,7 +279,112 @@
             220.0,
             22.0
           ],
+          "text": "param idle_metal 0.32 @min 0 @max 1"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-19",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            840.0,
+            520.0,
+            220.0,
+            22.0
+          ],
+          "text": "param idle_irregularity 0.08 @min 0 @max 1"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-20",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            840.0,
+            552.0,
+            220.0,
+            22.0
+          ],
+          "text": "param idle_air 0.44 @min 0 @max 1"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-21",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            840.0,
+            584.0,
+            220.0,
+            22.0
+          ],
+          "text": "param idle_width 0.56 @min 0 @max 1"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-22",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            840.0,
+            616.0,
+            220.0,
+            22.0
+          ],
+          "text": "param torque_ripple_level 0.48 @min 0 @max 1"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-23",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            840.0,
+            648.0,
+            220.0,
+            22.0
+          ],
+          "text": "param gear_mesh_level 0.42 @min 0 @max 1"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-24",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            840.0,
+            680.0,
+            220.0,
+            22.0
+          ],
           "text": "param electrical_detail 0.64 @min 0 @max 1"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-25",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            840.0,
+            712.0,
+            220.0,
+            22.0
+          ],
+          "text": "param engine_running 0 @min 0 @max 1"
         }
       }
     ],

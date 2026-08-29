@@ -625,13 +625,14 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
                 str(destination),
             ]
             subprocess.run(command, check=True, cwd=ROOT, capture_output=True, text=True)
-            path = destination / "patchers" / "engine_start_beap~.maxpat"
-            payload = json.loads(path.read_text(encoding="utf-8"))
-            payload["patcher"]["description"] = "user-start-colour-tuning"
-            path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
-            before = path.read_bytes()
-            subprocess.run(command, check=True, cwd=ROOT, capture_output=True, text=True)
-            self.assertEqual(before, path.read_bytes())
+            for profile in ("ev", "v10", "v12"):
+                path = destination / "patchers" / f"{profile}_engine_start_beap~.maxpat"
+                payload = json.loads(path.read_text(encoding="utf-8"))
+                payload["patcher"]["description"] = f"{profile}-user-start-tuning"
+                path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
+                before = path.read_bytes()
+                subprocess.run(command, check=True, cwd=ROOT, capture_output=True, text=True)
+                self.assertEqual(before, path.read_bytes())
 
     def test_sound_design_is_split_into_user_owned_dna_eq_and_soundscape_modules(self):
         project = self.load_json("VehicleSoundSynth-V5.maxproj")
@@ -651,7 +652,8 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
             for control in (
                 "aggression", "brightness", "body", "texture", "air_detail",
                 "cycle_irregularity", "stereo_width", "throttle_loudness_depth",
-                "saturation",
+                "saturation", "idle_level", "idle_body", "idle_metal",
+                "idle_irregularity", "idle_air", "idle_width",
             ):
                 self.assertIn(control, dna_text)
             engine = self.load_json(f"patchers/vehicle_engine_{profile}~.maxpat")["patcher"]
@@ -711,7 +713,9 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
             ).lower()
             for parameter in (
                 "air_detail", "cycle_irregularity", "stereo_width",
-                "throttle_loudness_depth", "saturation",
+                "throttle_loudness_depth", "saturation", "idle_level",
+                "idle_body", "idle_metal", "idle_irregularity", "idle_air",
+                "idle_width",
             ):
                 self.assertIn(f"param {parameter}", code)
             self.assertIn("pow(10, (t * throttle_loudness_depth) / 20)", code)
@@ -729,6 +733,32 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
                 # detuning the engine's dominant harmonic order.
                 self.assertIn("orders_r = cycle(fire)", code)
                 self.assertNotRegex(code, r"orders_r\s*=\s*cycle\(clamp\(fire\s*\*")
+
+    def test_idle_layers_share_physical_cadence_and_fade_above_idle(self):
+        defaults = self.load_json("presets/sound_dna.json")
+        for profile, preset_name in {
+            "ev": "Future EV", "v10": "Aggressive V10", "v12": "High-Rev V12",
+        }.items():
+            code = "\n".join(
+                item["box"].get("code", "")
+                for item in self.load_json(f"gen/{profile}_powertrain.gendsp")["patcher"]["boxes"]
+            ).lower()
+            for name in (
+                "idle_level", "idle_body", "idle_metal", "idle_irregularity",
+                "idle_air", "idle_width",
+            ):
+                self.assertIn(f"param {name}", code)
+                self.assertIn(name, defaults[preset_name])
+            if profile == "ev":
+                self.assertIn("ready_weight = 1 - clamp((r - 650) / 1450", code)
+                self.assertIn("param engine_running", code)
+                self.assertNotIn("idle_modal =", code)
+            else:
+                self.assertIn("idle_gain = idle_level * idle_weight * run", code)
+                self.assertIn("idle_modal =", code)
+                self.assertIn("idle_center", code)
+                self.assertIn("idle_side", code)
+                self.assertNotRegex(code, r"idle_(?:modal|metal|air).*fire\s*\*\s*1\.0[0-9]")
 
     def test_every_visible_sound_dna_control_reaches_the_generated_dsp(self):
         for profile in ("ev", "v10", "v12"):
@@ -811,6 +841,27 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
             self.assertIn("loadmess 1", host)
             self.assertIn("pack 0. 90", host)
             self.assertNotIn("$f1*$f1*(3.-2.*$f1)", host)
+
+    def test_soundscape_load_probes_hold_pitch_while_changing_timbre(self):
+        for profile in ("ev", "v10", "v12"):
+            low = SCENARIOS[f"{profile}-soundscape-solo-low-load"]
+            high = SCENARIOS[f"{profile}-soundscape-solo-high-load"]
+            self.assertEqual(low["rpm"], high["rpm"])
+            self.assertTrue(low["lock_rpm"] and high["lock_rpm"])
+            self.assertTrue(
+                low["direct_soundscape_state"]
+                and high["direct_soundscape_state"]
+            )
+            self.assertLess(low["throttle"], high["throttle"])
+            self.assertLess(low["load"], high["load"])
+            self.assertEqual(1, low["soundscape_solo"])
+            self.assertEqual(1, high["soundscape_solo"])
+            host = json.dumps(
+                self.load_json(f"patchers/{profile}_cinematic_soundscape_host~.maxpat")
+            )
+            pitch_formula = host.split("expr (log(max(24.", 1)[1].split("pack 0. 90", 1)[0]
+            self.assertNotIn("$f4", pitch_formula)
+            self.assertIn("pak 0. 0. 0. 0.5", host)
 
     def test_launcher_soundscape_controls_the_selected_audible_runtime(self):
         launcher = self.load_json("main.maxpat")["patcher"]
@@ -1023,7 +1074,8 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
             encoding="utf-8"
         )
         self.assertIn("/presets/local/", helper)
-        self.assertIn("_soundscape.json", helper)
+        self.assertIn("_soundscape_v2.json", helper)
+        self.assertIn("_soundscape_v2_factory.json", helper)
         self.assertIn('outlet(0, "delete", 99);', helper)
         self.assertIn('outlet(0, "read", factoryPath());', helper)
         self.assertNotIn("setstoredvalue", helper)
@@ -1286,72 +1338,77 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
                         aggregate["extra_messages"],
                     )
 
-    def test_shared_beap_soundscape_has_three_voice_motion_and_formant_colour(self):
+    def test_shared_beap_soundscape_has_four_structured_layers_and_centered_bass(self):
         core = self.load_json("patchers/cinematic_soundscape_beap~.maxpat")["patcher"]
         text = json.dumps(core)
-        for token in ("LFO_Slow", "Osc_C", "MMF", "Mixer"):
+        for token in (
+            "LFO_Slow", "Osc_C", "MMF", "Mixer", "1 BODY / MODAL",
+            "2 HARMONIC / MACRO", "3 NOISE / RESONATOR", "4 AIR / SHIMMER",
+        ):
             self.assertIn(token, text)
         plain = "\n".join(item["box"].get("text", "") for item in core["boxes"])
-        self.assertIn("svf~ 70 0.7", plain)
+        self.assertIn("svf~ 120 0.7", plain)
+        self.assertIn("svf~ 28 0.7", plain)
+        self.assertIn("reson~ 2.6 62 4.5", plain)
+        self.assertIn("reson~ 1.8 640 8.", plain)
         self.assertNotIn("+~ 0.5849625", plain)
-        self.assertNotIn("+~ 1.", plain)
         self.assertNotIn("saw~", plain.lower())
         self.assertNotIn("rect~", plain.lower())
 
     def test_soundscape_factory_profiles_define_distinct_audible_voicings(self):
         expected = {
             "ev": {
-                "soundscape_motion_state": 0.28,
-                "soundscape_space_state": 0.46,
-                "soundscape_brightness_state": 0.68,
-                "Osc_A::Waveform": 1,
-                "Osc_A::Offset": 0,
-                "Osc_B::Waveform": 2,
-                "Osc_B::Offset": 7,
-                "Osc_C::Waveform": 0,
-                "Osc_C::Offset": 12,
-                "Mixer::in1": -6,
-                "Mixer::in2": -14,
-                "Mixer::in4": -18,
-                "Ladder::Freq": 1900,
-                "Chorus::Width": 18,
-            },
-            "v10": {
-                "soundscape_motion_state": 0.10,
-                "soundscape_space_state": 0.32,
-                "soundscape_brightness_state": 0.38,
-                "Osc_A::Waveform": 1,
-                "Osc_A::Offset": -5,
-                "Osc_B::Waveform": 2,
-                "Osc_B::Offset": 0,
-                "Osc_C::Waveform": 0,
-                "Osc_C::Offset": 7,
-                "Mixer::in1": -3,
-                "Mixer::in2": -9,
-                "Mixer::in4": -5,
-                "Ladder::Freq": 1050,
-                "Chorus::Width": 7,
-            },
-            "v12": {
-                "soundscape_motion_state": 0.16,
-                "soundscape_space_state": 0.46,
-                "soundscape_brightness_state": 0.50,
+                "soundscape_motion_state": 0.24,
+                "soundscape_space_state": 0.58,
+                "soundscape_brightness_state": 0.62,
                 "Osc_A::Waveform": 0,
                 "Osc_A::Offset": 0,
                 "Osc_B::Waveform": 1,
-                "Osc_B::Offset": 7,
+                "Osc_B::Offset": 12,
                 "Osc_C::Waveform": 0,
-                "Osc_C::Offset": 12,
+                "Osc_C::Offset": 19,
+                "Mixer::in1": -8,
+                "Mixer::in2": -13,
+                "Mixer::in4": -18,
+                "Ladder::Freq": 2200,
+                "Chorus::Width": 16,
+            },
+            "v10": {
+                "soundscape_motion_state": 0.08,
+                "soundscape_space_state": 0.30,
+                "soundscape_brightness_state": 0.34,
+                "Osc_A::Waveform": 0,
+                "Osc_A::Offset": 0,
+                "Osc_B::Waveform": 2,
+                "Osc_B::Offset": 24,
+                "Osc_C::Waveform": 1,
+                "Osc_C::Offset": 31,
+                "Mixer::in1": -3,
+                "Mixer::in2": -20,
+                "Mixer::in4": -8,
+                "Ladder::Freq": 980,
+                "Chorus::Width": 5,
+            },
+            "v12": {
+                "soundscape_motion_state": 0.13,
+                "soundscape_space_state": 0.44,
+                "soundscape_brightness_state": 0.48,
+                "Osc_A::Waveform": 0,
+                "Osc_A::Offset": 0,
+                "Osc_B::Waveform": 1,
+                "Osc_B::Offset": 12,
+                "Osc_C::Waveform": 0,
+                "Osc_C::Offset": 24,
                 "Mixer::in1": -5,
-                "Mixer::in2": -8,
-                "Mixer::in4": -13,
-                "Ladder::Freq": 1450,
-                "Chorus::Width": 15,
+                "Mixer::in2": -10,
+                "Mixer::in4": -12,
+                "Ladder::Freq": 1520,
+                "Chorus::Width": 11,
             },
         }
         for profile, values in expected.items():
             preset = self.load_json(
-                f"presets/{profile}_soundscape_factory.json"
+                f"presets/{profile}_soundscape_v2_factory.json"
             )["pattrstorage"]
             self.assertEqual(f"soundscape_{profile}", preset["name"])
             data = preset["slots"]["99"]["data"]
@@ -1383,7 +1440,7 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
             ROOT / "code" / "soundscape_state_path.js"
         ).read_text(encoding="utf-8")
         self.assertIn("function factoryPath()", state_helper)
-        self.assertIn('"/presets/" + profile + "_soundscape_factory.json"', state_helper)
+        self.assertIn('"/presets/" + profile + "_soundscape_v2_factory.json"', state_helper)
         self.assertIn("function factory()", state_helper)
         for profile in ("ev", "v10", "v12"):
             host = self.load_json(
@@ -1433,9 +1490,9 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
 
     def test_soundscape_hosts_use_profile_specific_tone_maps_and_defaults(self):
         expected = {
-            "ev": ("min(1.35", "0.22+0.72*$f1", ("0.28", "0.46", "0.68")),
-            "v10": ("min(0.85", "0.12+0.36*$f1", ("0.1", "0.32", "0.38")),
-            "v12": ("min(1.", "0.16+0.48*$f1", ("0.16", "0.46", "0.5")),
+            "ev": ("min(1.35", "0.22+0.72*$f1", ("0.24", "0.58", "0.62")),
+            "v10": ("min(0.85", "0.12+0.36*$f1", ("0.08", "0.3", "0.34")),
+            "v12": ("min(1.", "0.16+0.48*$f1", ("0.13", "0.44", "0.48")),
         }
         for profile, (ceiling, throttle, defaults) in expected.items():
             host = self.load_json(
@@ -2154,20 +2211,33 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
 
 
     def test_ice_start_defaults_to_cinematic_beap_with_realistic_sample_option(self):
-        start_beap = self.load_json("patchers/engine_start_beap~.maxpat")["patcher"]
-        start_text = "\n".join(
-            item["box"].get("text", "") + " " + item["box"].get("varname", "")
-            for item in start_beap["boxes"]
-        )
-        self.assertIn("USER-TUNABLE", start_text)
-        for token in (
-            "L_Mixer", "L_Ladder", "L_ADSR", "L_VCA",
-            "R_Mixer", "R_Ladder", "R_ADSR", "R_VCA",
-        ):
-            self.assertIn(token, start_text)
         project = self.load_json("VehicleSoundSynth-V5.maxproj")
-        self.assertIn("patchers/engine_start_core~.maxpat", project["contents"]["patchers"])
-        for profile in ("v10", "v12"):
+        declared = project["contents"]["patchers"]
+        self.assertIn("code/start_state_path.js", project["contents"]["code"])
+        self.assertNotIn("patchers/engine_start_core~.maxpat", declared)
+        self.assertNotIn("patchers/engine_start_voice.maxpat", declared)
+        for profile in ("ev", "v10", "v12"):
+            designer_path = f"patchers/{profile}_engine_start_beap~.maxpat"
+            self.assertIn(designer_path, declared)
+            designer = self.load_json(designer_path)["patcher"]
+            designer_text = "\n".join(
+                item["box"].get("text", "") + " " + item["box"].get("varname", "")
+                for item in designer["boxes"]
+            )
+            for token in (
+                "START DESIGNER V2", "Crank / Activation Body", "Catch Bloom",
+                "Metal", "Air", "Tail", "Level", "Audition", "Save", "Reload",
+                "Factory Reset", f"pattrstorage start_{profile}_v2",
+                f"js Patcher:/code/start_state_path.js {profile}", "Start_Mixer",
+                "Start_Filter", "Start_AD", "Start_VCA", "svf~ 28 0.7",
+                "svf~ 120 0.7",
+            ):
+                self.assertIn(token, designer_text)
+            for name in (
+                "activation_body", "catch_bloom", "metal", "air", "tail", "level",
+            ):
+                self.assertIn(f"start_{name}", designer_text)
+
             transient = self.load_json(f"patchers/transient_{profile}~.maxpat")["patcher"]
             text = "\n".join(
                 item["box"].get("text", "") + " " + item["box"].get("varname", "")
@@ -2176,38 +2246,30 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
             self.assertIn("route starter start_style", text)
             self.assertIn("sel cinematic realistic", text)
             self.assertIn("loadmess cinematic", text)
-            self.assertIn("poly~ engine_start_voice 1", text)
-            self.assertIn("engine_start_core~", text)
+            self.assertIn(f"{profile}_engine_start_beap~", text)
+            self.assertNotIn("poly~ engine_start_voice", text)
+            self.assertNotIn("engine_start_core~", text)
             self.assertIn("start_cinematic_gain", text)
             self.assertIn("starter_state_gate", text)
             self.assertIn("rampsmooth~ 64 256", text)
-            self.assertIn("mute 1 0", text)
-            self.assertIn("mute 1 1", text)
-            self.assertIn("t b b", text)
             self.assertIn("delay 5", text)
-            self.assertIn("delay 1600", text)
-            self.assertIn("*~ 0.55", text)
-            self.assertIn("*~ 0.75", text)
-            if profile == "v10":
-                self.assertIn("*~ 0.65", text)
-            self.assertIn("starter_", text)
-        start_core = self.load_json("patchers/engine_start_core~.maxpat")["patcher"]
-        start_core_text = "\n".join(
-            item["box"].get("text", "") + " " + item["box"].get("varname", "")
-            for item in start_core["boxes"]
-        )
-        self.assertEqual(
-            3,
-            sum(item["box"].get("maxclass") == "inlet" for item in start_core["boxes"]),
-        )
-        for token in ("phasor~", "tanh~", "svf~ 28 0.7"):
-            self.assertIn(token, start_core_text)
-        ev_text = "\n".join(
-            item["box"].get("text", "")
-            for item in self.load_json("patchers/transient_ev~.maxpat")["patcher"]["boxes"]
-        )
-        self.assertIn("poly~ engine_start_voice 1", ev_text)
-        self.assertNotIn("play~ starter_", ev_text)
+            for command in ("start_open", "start_save", "start_reload", "start_reset", "start_audition"):
+                self.assertIn(command, text)
+            runtime = json.dumps(self.load_json(f"VehicleSoundSynth-{profile.upper()}.maxpat"))
+            self.assertIn("Open Start Designer", runtime)
+            self.assertIn("Audition Start", runtime)
+            if profile == "ev":
+                self.assertNotIn("play~ starter_", text)
+            else:
+                self.assertIn("*~ 0.75", text)
+                self.assertIn("starter_", text)
+
+        v10 = json.dumps(self.load_json("patchers/v10_engine_start_beap~.maxpat"))
+        v12 = json.dumps(self.load_json("patchers/v12_engine_start_beap~.maxpat"))
+        ev = json.dumps(self.load_json("patchers/ev_engine_start_beap~.maxpat"))
+        self.assertIn("scale~ -1.25 0.55 9 62", v10)
+        self.assertIn("scale~ -1.25 0.55 12 78", v12)
+        self.assertIn("scale~ -1.25 0.55 48 130", ev)
 
     def test_backfire_test_is_audition_only_while_physical_events_remain_gated(self):
         for profile in ("v10", "v12"):
@@ -3061,7 +3123,8 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
             "compressor_attack_rate", "compressor_release_rate",
             "compressor_makeup_db", "compressor_bypass",
             "air_detail", "cycle_irregularity", "stereo_width",
-            "throttle_loudness_depth", "saturation",
+            "throttle_loudness_depth", "saturation", "idle_level", "idle_body",
+            "idle_metal", "idle_irregularity", "idle_air", "idle_width",
         }
         for values in presets.values():
             profile_specific = (
@@ -3868,6 +3931,9 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
                 "presets/ev_soundscape_factory.json",
                 "presets/v10_soundscape_factory.json",
                 "presets/v12_soundscape_factory.json",
+                "presets/ev_soundscape_v2_factory.json",
+                "presets/v10_soundscape_v2_factory.json",
+                "presets/v12_soundscape_v2_factory.json",
                 "media/local/ferrari_sf90_startup.wav",
                 "ferrari_sf90_startup.wav",
             ):
@@ -3896,7 +3962,7 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
             self.assertIn("v12_powertrain.gendsp", project["contents"]["code"])
             self.assertIn("drive_model.js", project["contents"]["code"])
             self.assertIn(
-                "presets/v12_soundscape_factory.json",
+                "presets/v12_soundscape_v2_factory.json",
                 project["contents"]["data"],
             )
             self.assertIn("media/starter_v12.wav", project["contents"]["media"])

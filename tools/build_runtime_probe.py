@@ -192,6 +192,16 @@ SCENARIOS = {
         "soundscape_enable": 1, "soundscape_level_db": -3.0,
         "soundscape_solo": 1,
     },
+    "ev-soundscape-solo-low-load": {
+        "profile": "ev", "rpm": 1800.0, "throttle": 0.10, "load": 0.10,
+        "lock_rpm": True, "direct_soundscape_state": True, "soundscape_enable": 1,
+        "soundscape_level_db": -3.0, "soundscape_solo": 1,
+    },
+    "ev-soundscape-solo-high-load": {
+        "profile": "ev", "rpm": 1800.0, "throttle": 0.90, "load": 0.85,
+        "lock_rpm": True, "direct_soundscape_state": True, "soundscape_enable": 1,
+        "soundscape_level_db": -3.0, "soundscape_solo": 1,
+    },
     "v10-soundscape-on": {
         "profile": "v10", "rpm": 1800.0, "throttle": 0.35, "lock_rpm": True,
         "soundscape_level_db": -8.0, "soundscape_enable": 1,
@@ -200,6 +210,16 @@ SCENARIOS = {
         "profile": "v10", "rpm": 1800.0, "throttle": 0.35, "lock_rpm": True,
         "soundscape_enable": 0,
     },
+    "v10-soundscape-solo-low-load": {
+        "profile": "v10", "rpm": 1800.0, "throttle": 0.10, "load": 0.10,
+        "lock_rpm": True, "direct_soundscape_state": True, "soundscape_enable": 1,
+        "soundscape_level_db": -6.0, "soundscape_solo": 1,
+    },
+    "v10-soundscape-solo-high-load": {
+        "profile": "v10", "rpm": 1800.0, "throttle": 0.90, "load": 0.85,
+        "lock_rpm": True, "direct_soundscape_state": True, "soundscape_enable": 1,
+        "soundscape_level_db": -6.0, "soundscape_solo": 1,
+    },
     "v12-soundscape-on": {
         "profile": "v12", "rpm": 1800.0, "throttle": 0.35, "lock_rpm": True,
         "soundscape_level_db": -9.0, "soundscape_enable": 1,
@@ -207,6 +227,16 @@ SCENARIOS = {
     "v12-soundscape-off": {
         "profile": "v12", "rpm": 1800.0, "throttle": 0.35, "lock_rpm": True,
         "soundscape_enable": 0,
+    },
+    "v12-soundscape-solo-low-load": {
+        "profile": "v12", "rpm": 1800.0, "throttle": 0.10, "load": 0.10,
+        "lock_rpm": True, "direct_soundscape_state": True, "soundscape_enable": 1,
+        "soundscape_level_db": -7.0, "soundscape_solo": 1,
+    },
+    "v12-soundscape-solo-high-load": {
+        "profile": "v12", "rpm": 1800.0, "throttle": 0.90, "load": 0.85,
+        "lock_rpm": True, "direct_soundscape_state": True, "soundscape_enable": 1,
+        "soundscape_level_db": -7.0, "soundscape_solo": 1,
     },
     "shift-up": {"profile": "v12", "rpm": 3200.0, "event": "shift_dir 1, shift 1"},
     "shift-down": {"profile": "v10", "rpm": 2800.0, "event": "shift_dir -1, shift 1"},
@@ -264,6 +294,7 @@ SCENARIOS = {
     "v10-start-realistic": start_scenario("v10", "realistic"),
     "v12-start-cinematic": start_scenario("v12", "cinematic"),
     "v12-start-realistic": start_scenario("v12", "realistic"),
+    "ev-start-cinematic": start_scenario("ev", "cinematic"),
     "v10-start-controller-cinematic": controller_start_scenario("v10", "cinematic"),
     "v12-start-controller-cinematic": controller_start_scenario("v12", "cinematic"),
     "v10-lifecycle-idle": {
@@ -402,6 +433,7 @@ def make_probe(
     direct_event_to_transient: bool = False,
     drive_lifecycle: bool = False,
     direct_powertrain: bool = False,
+    direct_soundscape_state: bool = False,
 ) -> dict:
     settings = PROFILE_SETTINGS[profile]
     rumble_values = settings["rumble"] if rumble_enabled else (0.0, 0.0, 0.0)
@@ -439,7 +471,8 @@ def make_probe(
         p.connect(controller, powertrain, 0, 0)
     for controlled in (transient, road, rumble, cabin, mix):
         p.connect(controller, controlled, 0, 0)
-    p.connect(controller, soundscape, 0, 0)
+    if not direct_soundscape_state:
+        p.connect(controller, soundscape, 0, 0)
     solo_router = p.new("route soundscape_solo pad_solo backfire_solo dna_solo", 620, 300, 390, numinlets=1, numoutlets=5)
     soundscape_solo_clip = p.new("clip 0 1", 620, 335, 65, numinlets=3, numoutlets=1)
     backfire_solo_clip = p.new("clip 0 1", 695, 335, 65, numinlets=3, numoutlets=1)
@@ -568,6 +601,8 @@ def make_probe(
     for index, message in enumerate(control_messages):
         initial = p.new(f"loadmess {message}", 25, 110 + index * 32, 245, numinlets=1, numoutlets=1)
         p.connect(initial, powertrain if direct_powertrain else drive)
+        if direct_soundscape_state:
+            p.connect(initial, soundscape)
 
     load = p.new("loadbang", 500, 110, 65, numinlets=1, numoutlets=1)
     start_delay = p.new("delay 100", 500, 150, 70, numinlets=2, numoutlets=1)
@@ -685,6 +720,8 @@ def make_probe(
         p.connect(start_trigger, dsp_start, 4, 0)
         p.connect(start_trigger, runtime_replay, 3, 0)
         p.connect(runtime_replay, powertrain if direct_powertrain else drive)
+        if direct_soundscape_state:
+            p.connect(runtime_replay, soundscape)
         if lock_rpm:
             catch_complete = p.new("delay 1000", 540, 665, 75, numinlets=2, numoutlets=1)
             lock_order = p.new("t b b b", 540, 700, 65, numinlets=1, numoutlets=3)
@@ -854,8 +891,9 @@ def main() -> None:
         presets / "vehicle_bus_eq_default.json",
     )
     for profile_name in PROFILE_SETTINGS:
-        factory_name = f"{profile_name}_soundscape_factory.json"
-        shutil.copy2(root / "presets" / factory_name, presets / factory_name)
+        for suffix in ("soundscape_factory", "soundscape_v2_factory"):
+            factory_name = f"{profile_name}_{suffix}.json"
+            shutil.copy2(root / "presets" / factory_name, presets / factory_name)
     for source in (root / "patchers").glob("*.maxpat"):
         document = json.loads(source.read_text(encoding="utf-8"))
         for item in document["patcher"]["boxes"]:
@@ -944,6 +982,9 @@ def main() -> None:
             ),
             drive_lifecycle=bool(scenario.get("drive_lifecycle", False)),
             direct_powertrain=bool(scenario.get("direct_powertrain", False)),
+            direct_soundscape_state=bool(
+                scenario.get("direct_soundscape_state", False)
+            ),
         ),
     )
     if "lifecycle_role" in scenario:
@@ -990,9 +1031,7 @@ def main() -> None:
         "cabin_rumble~.maxpat",
         "cabin_master~.maxpat",
         "mix_master~.maxpat",
-        "engine_start_core~.maxpat",
-        "engine_start_voice.maxpat",
-        "engine_start_beap~.maxpat",
+        f"{profile}_engine_start_beap~.maxpat",
         "backfire_burst_scheduler.maxpat",
     }
     required_patchers.update({

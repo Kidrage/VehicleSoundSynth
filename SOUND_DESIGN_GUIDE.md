@@ -31,8 +31,8 @@ profile. Save the patcher itself after changing its layout or objects. Use its
 | `patchers/v10_sound_dna~.maxpat` | V10 combustion, intake, exhaust and residual character | Same |
 | `patchers/v12_sound_dna~.maxpat` | V12 bank, air and smooth high-rev character | Same |
 | `patchers/vehicle_bus_eq~.maxpat` | Four-band output tone shaping | Patcher is seed-once; `Save EQ` writes ignored per-profile state |
-| `patchers/cinematic_soundscape_beap~.maxpat` | Shared cinematic pad topology | Seed-once; the live host writes ignored per-profile state |
-| `patchers/engine_start_beap~.maxpat` | Cinematic start effect | Seed-once |
+| `patchers/cinematic_soundscape_beap~.maxpat` | Shared four-layer Soundscape V2 topology | Seed-once; the live host writes ignored per-profile V2 state |
+| `patchers/{ev,v10,v12}_engine_start_beap~.maxpat` | Independent cinematic starts | Seed-once; each profile has its own controls and ignored state |
 | `patchers/v10_backfire_beap~.maxpat`, `v12_backfire_beap~.maxpat` | Physical pressure-release voices | Seed-once |
 
 `patchers/module_mixer.maxpat` is generated routing/UI, not a synthesis patch.
@@ -126,13 +126,15 @@ final ceiling.
 
 ## Engine start
 
-`Cinematic BEAP` is a hybrid procedural start, not sample playback. The
-generated `patchers/engine_start_core~.maxpat` supplies the guaranteed crank and
-first-fire pressure, and `patchers/engine_start_beap~.maxpat` is the seed-once
-editable colour layer. The generated transient host gates the core directly
-from the persistent `starter 0|1` state, avoiding a fragile bang-only envelope.
-`Realistic Sample` is the alternate sample mode and uses the tracked CC0 starter
-fallback, or the optional local-only V10 Ferrari startup when available.
+`Cinematic BEAP` is procedural, not sample playback. Open the active profile's
+seed-once `ev_engine_start_beap~`, `v10_engine_start_beap~`, or
+`v12_engine_start_beap~` designer and tune Activation/Crank Body, Catch Bloom,
+Metal, Air, Tail and Level. Audition reaches that exact audible instance; Save,
+Reload and Factory Reset persist under
+`presets/local/{profile}_start_v2.json`. V10 uses a cranked 60--67 Hz catch,
+V12 a quicker smoother twelve-cylinder catch, and EV a ready chime/harmonic
+activation. `Realistic Sample` is the mutually exclusive ICE alternate and uses
+the tracked CC0 fallback, or optional local-only V10 Ferrari startup.
 
 ## Sound DNA controls
 
@@ -159,6 +161,11 @@ Common controls:
   3.5–5.5 dB for a physical result.
 - `Saturation`: Gen soft drive before the safety compressor. Keep below 0.5
   while judging high-frequency detail.
+- `Idle Level`, `Idle Body`, `Idle Metal`, `Idle Irregularity`, `Idle Air`, and
+  `Idle Width`: shape the low-RPM layer. On V10/V12 the exact firing cadence is
+  shared by both channels and stereo comes from bank/modal detail, not detuning;
+  the layer fades smoothly with RPM. On EV these controls shape only the quiet
+  ready-state electromagnetic bed, never simulated combustion.
 
 EV `Aggression` now drives torque-ripple/gear-mesh colour directly; V10
 `Brightness` now drives upper firing orders and air directly. These two controls
@@ -201,30 +208,28 @@ first-run migration fallback.
 
 ## Cinematic Soundscape
 
-The pad is a BEAP/MSP hybrid. The large named modules are the sound-design
-surface: two LFOs, three oscillators, Noise, Mixer, Ladder, MMF, ADSR, VCA,
-Chorus and Reverb. Small MSP objects only scale CV, blend stereo, high-pass at
-70 Hz and soft-bound the output. The generated profile host handles vehicle
+Soundscape V2 is a BEAP/MSP hybrid divided into Body/Modal, Harmonic/Macro,
+Noise/Resonator and Air/Shimmer layers. The generated profile host handles vehicle
 mapping, smoothing, level and DSP suspension; do not tune that plumbing JSON.
 
 The signal path is:
 
 ```text
-three visibly tuned oscillators + very low noise
-  -> Mixer -> Ladder -> MMF -> VCA
-  -> parallel Chorus + Reverb -> stereo blend -> 70 Hz HP -> soft output
+Body + Harmonic + Resonator + Air
+  -> structure/filter -> dynamics
+  -> high-band space and pan -> centred <120 Hz bass -> soft output
 ```
 
-The three visible oscillator `Offset` controls are authoritative: there are no
-hidden fixed-interval MSP adders after them. The two LFOs run below `0.05 Hz` and
-their opposing pitch depths stay in the fine-drift range before the Motion
-scaler. They add analog life rather than engine-fault vibrato; only smooth
-sine/triangle outputs are connected. Long ADSR times avoid rhythmic pumping,
-while Chorus/Reverb supply width and tail.
+RPM continuously owns the root pitch. Throttle and load change layer balance,
+filter opening and texture, not the root note. The two LFOs only add restrained
+filter/waveform/high-band pan motion: they do not impose obvious volume pumping
+or large pitch wander. Tune in the labelled order—source, structure/filter,
+dynamics, space, output—and keep the low-frequency Body centred.
 
-The tracked factory files are `presets/ev_soundscape_factory.json`,
-`presets/v10_soundscape_factory.json`, and
-`presets/v12_soundscape_factory.json`. They use the same editable BEAP graph but
+The V2 tracked factory files are `presets/ev_soundscape_v2_factory.json`,
+`presets/v10_soundscape_v2_factory.json`, and
+`presets/v12_soundscape_v2_factory.json`. The old unversioned files remain
+unchanged for compatibility but are never loaded into V2. They use the same editable BEAP graph but
 deliberately different palettes:
 
 - EV: `0 / +7 / +12` voicing, brightest filters, wider chorus, restrained long
@@ -237,7 +242,7 @@ deliberately different palettes:
 The tracked JSON contains explicit values for all 90 host/BEAP clients. At load,
 the helper reads slot 99 from that authority, waits for the nested BEAP clients,
 recalls it, and then
-applies the ignored `presets/local/{profile}_soundscape.json` slot 1 when it
+applies the ignored `presets/local/{profile}_soundscape_v2.json` slot 1 when it
 exists. After every local read it re-reads slot 99 from tracked JSON, so a legacy
 local slot 99 cannot shadow a newer shipped voicing. `Factory Reset` recalls the
 reloaded slot 99 and saves that complete result as the new local slot 1. Saving
@@ -268,9 +273,9 @@ The Main link uses separate EV/V10/V12 buses, so even the brief overlap while an
 old runtime closes cannot receive the new profile's tuning or overwrite its
 saved Soundscape.
 
-For a warmer Prophet-style pad, tune the visible Osc A/B/C `Offset` controls as
-a chord, keep the root oscillator dominant, leave the brighter waveform roughly
-7–12 dB below it, keep Noise low, and use Chorus/Reverb for width. For a darker
+For a warmer future bed, tune the Harmonic/Macro layer around the profile root,
+keep Body dominant, keep Resonator/Air restrained, and add width only above the
+bass split. For a darker
 ICE bed, start with Motion `0.10–0.18`, Pitch Follow `1.0`, Brightness
 `0.35–0.50`, and Space `0.28–0.46`. Avoid high Ladder/MMF resonance and large
 LFO-to-pitch depth: those are the main routes back to metallic whistle, FM-like
@@ -281,7 +286,7 @@ Pitch Follow toward 1 before raising Motion.
 Use `Soundscape Solo`, temporarily bring its mixer level up to about -10 dB,
 and click `Open Designer`. Edits in that window affect the currently audible
 instance immediately. `Save` writes
-`presets/local/{profile}_soundscape.json`; `Reload` restores it and `Factory
+`presets/local/{profile}_soundscape_v2.json`; `Reload` restores it and `Factory
 Reset` recalls the shipped state. EV, V10 and V12 share the graph but not saved
 values. `Save Profile Sound` also saves Soundscape, EQ and Mixer together.
 After tuning, turn Solo off and return the shipped balance near -18 dB for EV

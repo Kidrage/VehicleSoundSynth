@@ -2,7 +2,7 @@
 
 Repository: /Users/saintpeter/Downloads/VehicleSoundSynth-V5
 Tracked filtered files: 122
-High-value indexed files: 46
+High-value indexed files: 42
 
 Read this file before broad repository exploration. Prefer focused `rg`
 or `git grep` against the listed areas before opening source files.
@@ -43,13 +43,6 @@ or `git grep` against the listed areas before opening source files.
 - tests/test_manual_input.py
 - tests/test_project.py
 
-## generated audio bridge
-
-- patchers/backfire_burst_scheduler.maxpat
-- patchers/engine_start_core~.maxpat
-- patchers/module_mixer.maxpat
-- patchers/soundscape_control.maxpat
-
 ## config
 
 - assets/asset_manifest.json
@@ -69,5 +62,4 @@ or `git grep` against the listed areas before opening source files.
 - .codex/REPO_GUIDE.md
 - ASSET_LICENSES.md
 - PROJECT_HANDOFF.md
-- README.md
 - SOUND_DESIGN_GUIDE.md

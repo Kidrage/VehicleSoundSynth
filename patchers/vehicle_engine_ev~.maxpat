@@ -88,8 +88,14 @@
           "id": "obj-5",
           "maxclass": "newobj",
           "numinlets": 1,
-          "numoutlets": 72,
+          "numoutlets": 78,
           "outlettype": [
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
             "",
             "",
             "",
@@ -169,7 +175,7 @@
             990.0,
             22.0
           ],
-          "text": "route ignition start speed_kph rpm throttle brake load accel gear shift shift_dir overrun pop intake_backfire exhaust_pop click aggression brightness body texture air_detail cycle_irregularity stereo_width throttle_loudness_depth saturation torque_ripple_level gear_mesh_level electrical_detail combustion_pulse intake_detail exhaust_detail residual_detail cabin_width cabin_rumble exhaust_boom structure_vibration cabin_ir_mix powertrain_level_db start_level_db transient_level_db road_level_db rumble_level_db pad_level_db pad_mute pad_solo soundscape_enable soundscape_level_db soundscape_motion soundscape_space soundscape_solo dna_solo backfire_enable backfire_intensity backfire_solo reference_texture_level_db reference_texture_mute eq_low eq_lowmid eq_highmid eq_high eq_bypass master_trim_db compressor_threshold_db compressor_ratio compressor_attack_rate compressor_release_rate compressor_makeup_db compressor_bypass ev_mode ev_soundscape_level_db ev_soundscape_mute"
+          "text": "route ignition start speed_kph rpm throttle brake load accel gear shift shift_dir overrun pop intake_backfire exhaust_pop click aggression brightness body texture air_detail cycle_irregularity stereo_width throttle_loudness_depth saturation idle_level idle_body idle_metal idle_irregularity idle_air idle_width torque_ripple_level gear_mesh_level electrical_detail combustion_pulse intake_detail exhaust_detail residual_detail cabin_width cabin_rumble exhaust_boom structure_vibration cabin_ir_mix powertrain_level_db start_level_db transient_level_db road_level_db rumble_level_db pad_level_db pad_mute pad_solo soundscape_enable soundscape_level_db soundscape_motion soundscape_space soundscape_solo dna_solo backfire_enable backfire_intensity backfire_solo reference_texture_level_db reference_texture_mute eq_low eq_lowmid eq_highmid eq_high eq_bypass master_trim_db compressor_threshold_db compressor_ratio compressor_attack_rate compressor_release_rate compressor_makeup_db compressor_bypass ev_mode ev_soundscape_level_db ev_soundscape_mute"
         }
       },
       {
