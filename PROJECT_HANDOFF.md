@@ -9,12 +9,12 @@
 - Working root: `.`
 - Repository name: `VehicleSoundSynth-V5`
 - Git repository: `true`
-- Generated at: `2026-08-29T07:26:57.328950+00:00`
+- Generated at: `2026-08-29T07:30:16.928757+00:00`
 
 ## Current State
 
 - Branch: `codex/v5-idle-start-soundscape-v2`
-- HEAD: `058c2da`
+- HEAD: `decf0d2`
 - Indexed paths: 169
 - Inventory truncated: `false`
 - Inaccessible paths: 0
@@ -62,7 +62,7 @@
 
 - audio: 41 files, 103833150 bytes
 - code: 25 files, 954979 bytes
-- literature: 16 files, 645605 bytes
+- literature: 16 files, 647208 bytes
 - other: 75 files, 17424846 bytes
 - structured_data: 12 files, 80989 bytes
 
@@ -93,6 +93,7 @@
 
 ## Change History
 
+- `decf0d2 2026-08-29 feat: deepen idle start and soundscape design`
 - `058c2da 2026-08-29 docs: preserve legacy handoff alias`
 - `ecd2cbb 2026-08-29 docs: record soundscape pitch restoration handoff`
 - `fd21aa0 2026-08-29 feat: restore profile soundscape pitch and persistence`
@@ -112,50 +113,10 @@
 - `a754277 2026-08-26 docs: record keyboard and pop pressure repair`
 - `82fca86 2026-08-26 fix: restore keyboard pedals and deepen pop pressure`
 - `4e22b6a 2026-08-26 docs: close pop and DNA authority handoff`
-- `e1e0286 2026-08-26 fix: route pop tuning to resonant frequency inlets`
 
 ## Current Changes
 
 - `## codex/v5-idle-start-soundscape-v2`
-- ` M .codex/REPO_GUIDE.md`
-- ` M .codex/repo_files.txt`
-- ` M .codex/source_index.txt`
-- ` M PROJECT_HANDOFF.md`
-- ` M README.md`
-- ` M SOUND_DESIGN_GUIDE.md`
-- ` M VehicleSoundSynth-EV.maxpat`
-- ` M VehicleSoundSynth-V10.maxpat`
-- ` M VehicleSoundSynth-V12.maxpat`
-- ` M VehicleSoundSynth-V5.maxproj`
-- ` M code/soundscape_state_path.js`
-- ` M gen/ev_powertrain.gendsp`
-- ` M gen/v10_powertrain.gendsp`
-- ` M gen/v12_powertrain.gendsp`
-- ` M patchers/cinematic_soundscape_beap~.maxpat`
-- ` M patchers/ev_cinematic_soundscape_host~.maxpat`
-- ` M patchers/ev_sound_dna~.maxpat`
-- ` M patchers/transient_ev~.maxpat`
-- ` M patchers/transient_v10~.maxpat`
-- ` M patchers/transient_v12~.maxpat`
-- ` M patchers/v10_cinematic_soundscape_host~.maxpat`
-- ` M patchers/v10_sound_dna~.maxpat`
-- ` M patchers/v12_cinematic_soundscape_host~.maxpat`
-- ` M patchers/v12_sound_dna~.maxpat`
-- ` M patchers/vehicle_engine_ev~.maxpat`
-- ` M patchers/vehicle_engine_v10~.maxpat`
-- ` M patchers/vehicle_engine_v12~.maxpat`
-- ` M patchers/vehicle_engine~.maxpat`
-- ` M presets/sound_dna.json`
-- ` M tests/test_project.py`
-- ` M tools/build_project.py`
-- ` M tools/build_runtime_probe.py`
-- `?? code/start_state_path.js`
-- `?? patchers/ev_engine_start_beap~.maxpat`
-- `?? patchers/v10_engine_start_beap~.maxpat`
-- `?? patchers/v12_engine_start_beap~.maxpat`
-- `?? presets/ev_soundscape_v2_factory.json`
-- `?? presets/v10_soundscape_v2_factory.json`
-- `?? presets/v12_soundscape_v2_factory.json`
 
 ## Related Repositories
 
