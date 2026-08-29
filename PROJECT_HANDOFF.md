@@ -65,11 +65,11 @@
 
 ### Tracked payload
 
-- total: 163 files, 121247249 bytes
+- total: 163 files, 121246974 bytes
 - audio (`.wav`): 41 files, 103833150 bytes
 - executable sources (`.py`, `.js`, `.gendsp`): 27 files, 961744 bytes
 - Max project/patch (`.maxpat`, `.maxproj`): 67 files, 15742840 bytes
-- documentation (`.md`, `.docx`, `.pdf`): 15 files, 646309 bytes
+- documentation (`.md`, `.docx`, `.pdf`): 15 files, 646034 bytes
 - structured data (`.json`): 9 files, 57239 bytes
 - other tracked text/markers: 4 files, 5967 bytes
 
