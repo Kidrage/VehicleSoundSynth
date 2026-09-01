@@ -497,7 +497,7 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
     def test_v5_all_profiles_share_one_editable_cinematic_soundscape_core(self):
         project = self.load_json("VehicleSoundSynth-V5.maxproj")
         declared = set(project["contents"]["patchers"])
-        core_path = "patchers/cinematic_soundscape_beap~.maxpat"
+        core_path = "patchers/cinematic_soundscape_v3_beap~.maxpat"
         voice_path = "patchers/cinematic_soundscape_voice.maxpat"
         self.assertIn(core_path, declared)
         self.assertNotIn(voice_path, declared)
@@ -521,7 +521,7 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
                 "pad_level_db", "pad_mute",
             ):
                 self.assertIn(control, host_text)
-            self.assertIn(f"cinematic_soundscape_beap~ {profile}", host_text)
+            self.assertIn(f"cinematic_soundscape_v3_beap~ {profile}", host_text)
             self.assertIn("mute~", host_text)
             engine = self.load_json(f"patchers/vehicle_engine_{profile}~.maxpat")["patcher"]
             engine_text = "\n".join(item["box"].get("text", "") for item in engine["boxes"])
@@ -607,7 +607,7 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
                 str(destination),
             ]
             subprocess.run(command, check=True, cwd=ROOT, capture_output=True, text=True)
-            path = destination / "patchers" / "cinematic_soundscape_beap~.maxpat"
+            path = destination / "patchers" / "cinematic_soundscape_v3_beap~.maxpat"
             payload = json.loads(path.read_text())
             payload["patcher"]["description"] = "shared-soundscape-user-tuning"
             path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
@@ -795,7 +795,7 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
 
     def test_runtime_open_soundscape_targets_the_audible_live_instance(self):
         core = json.dumps(
-            self.load_json("patchers/cinematic_soundscape_beap~.maxpat")
+            self.load_json("patchers/cinematic_soundscape_v3_beap~.maxpat")
         )
         self.assertIn("route open save reload reset", core)
         self.assertIn('"text": "front"', core)
@@ -810,7 +810,7 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
             self.assertIn("Patcher:/patchers/soundscape_control.maxpat", runtime)
             self.assertNotIn("s open.cinematic_soundscape", runtime)
             self.assertNotIn(
-                "loadunique Patcher:/patchers/cinematic_soundscape_beap~.maxpat",
+                "loadunique Patcher:/patchers/cinematic_soundscape_v3_beap~.maxpat",
                 runtime,
             )
             host = json.dumps(
@@ -818,7 +818,7 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
                     f"patchers/{profile}_cinematic_soundscape_host~.maxpat"
                 )
             )
-            self.assertIn(f"cinematic_soundscape_beap~ {profile}", host)
+            self.assertIn(f"cinematic_soundscape_v3_beap~ {profile}", host)
             self.assertIn(
                 "min(1.,max(0.,$f2*(0.25+0.75*$f1)))",
                 host,
@@ -974,7 +974,7 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
         )
 
         core = json.dumps(
-            self.load_json("patchers/cinematic_soundscape_beap~.maxpat")
+            self.load_json("patchers/cinematic_soundscape_v3_beap~.maxpat")
         )
         self.assertIn("soundscape_action save", core)
         self.assertNotIn("r open.cinematic_soundscape", core)
@@ -986,7 +986,7 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
                 )
             )
             self.assertIn(
-                f"cinematic_soundscape_beap~ {profile}", host,
+                f"cinematic_soundscape_v3_beap~ {profile}", host,
                 "the editable object must be the instance that feeds the runtime",
             )
             self.assertNotIn("poly~ cinematic_soundscape_voice", host)
@@ -1074,13 +1074,15 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
             encoding="utf-8"
         )
         self.assertIn("/presets/local/", helper)
-        self.assertIn("_soundscape_v2.json", helper)
-        self.assertIn("_soundscape_v2_factory.json", helper)
+        self.assertIn("_soundscape_v3.json", helper)
+        self.assertIn("_soundscape_v3_factory.json", helper)
         self.assertIn('outlet(0, "delete", 99);', helper)
         self.assertIn('outlet(0, "read", factoryPath());', helper)
         self.assertNotIn("setstoredvalue", helper)
         self.assertNotIn("JSON.parse(text)", helper)
         self.assertIn("function prime()", helper)
+        self.assertIn("function ready()", helper)
+        self.assertIn("if (!initialized)", helper)
 
     def test_soundscape_factory_is_audible_after_ignition_without_hidden_setup(self):
         for profile in ("ev", "v10", "v12"):
@@ -1339,7 +1341,7 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
                     )
 
     def test_shared_beap_soundscape_has_four_structured_layers_and_centered_bass(self):
-        core = self.load_json("patchers/cinematic_soundscape_beap~.maxpat")["patcher"]
+        core = self.load_json("patchers/cinematic_soundscape_v3_beap~.maxpat")["patcher"]
         text = json.dumps(core)
         for token in (
             "LFO_Slow", "Osc_C", "MMF", "Mixer", "1 BODY / MODAL",
@@ -1349,8 +1351,9 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
         plain = "\n".join(item["box"].get("text", "") for item in core["boxes"])
         self.assertIn("svf~ 120 0.7", plain)
         self.assertIn("svf~ 28 0.7", plain)
-        self.assertIn("reson~ 2.6 62 4.5", plain)
-        self.assertIn("reson~ 1.8 640 8.", plain)
+        self.assertIn("phasor~", plain)
+        self.assertIn("reson~ 1.2 420 8", plain)
+        self.assertIn("reson~ 1.2 760 10", plain)
         self.assertNotIn("+~ 0.5849625", plain)
         self.assertNotIn("saw~", plain.lower())
         self.assertNotIn("rect~", plain.lower())
@@ -1358,57 +1361,57 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
     def test_soundscape_factory_profiles_define_distinct_audible_voicings(self):
         expected = {
             "ev": {
-                "soundscape_motion_state": 0.24,
-                "soundscape_space_state": 0.58,
-                "soundscape_brightness_state": 0.62,
+                "soundscape_motion_state": 0.20,
+                "soundscape_space_state": 0.65,
+                "soundscape_brightness_state": 0.58,
                 "Osc_A::Waveform": 0,
                 "Osc_A::Offset": 0,
-                "Osc_B::Waveform": 1,
+                "Osc_B::Waveform": 0,
                 "Osc_B::Offset": 12,
-                "Osc_C::Waveform": 0,
+                "Osc_C::Waveform": 1,
                 "Osc_C::Offset": 19,
-                "Mixer::in1": -8,
-                "Mixer::in2": -13,
-                "Mixer::in4": -18,
-                "Ladder::Freq": 2200,
+                "Mixer::in1": -14,
+                "Mixer::in2": -9,
+                "Mixer::in4": -7,
+                "Ladder::Freq": 2400,
                 "Chorus::Width": 16,
             },
             "v10": {
-                "soundscape_motion_state": 0.08,
-                "soundscape_space_state": 0.30,
-                "soundscape_brightness_state": 0.34,
+                "soundscape_motion_state": 0.07,
+                "soundscape_space_state": 0.36,
+                "soundscape_brightness_state": 0.42,
                 "Osc_A::Waveform": 0,
                 "Osc_A::Offset": 0,
-                "Osc_B::Waveform": 2,
+                "Osc_B::Waveform": 1,
                 "Osc_B::Offset": 24,
-                "Osc_C::Waveform": 1,
+                "Osc_C::Waveform": 0,
                 "Osc_C::Offset": 31,
-                "Mixer::in1": -3,
-                "Mixer::in2": -20,
-                "Mixer::in4": -8,
-                "Ladder::Freq": 980,
+                "Mixer::in1": -4,
+                "Mixer::in2": -12,
+                "Mixer::in4": -13,
+                "Ladder::Freq": 1250,
                 "Chorus::Width": 5,
             },
             "v12": {
-                "soundscape_motion_state": 0.13,
-                "soundscape_space_state": 0.44,
-                "soundscape_brightness_state": 0.48,
+                "soundscape_motion_state": 0.11,
+                "soundscape_space_state": 0.50,
+                "soundscape_brightness_state": 0.52,
                 "Osc_A::Waveform": 0,
                 "Osc_A::Offset": 0,
                 "Osc_B::Waveform": 1,
                 "Osc_B::Offset": 12,
                 "Osc_C::Waveform": 0,
                 "Osc_C::Offset": 24,
-                "Mixer::in1": -5,
-                "Mixer::in2": -10,
-                "Mixer::in4": -12,
-                "Ladder::Freq": 1520,
-                "Chorus::Width": 11,
+                "Mixer::in1": -6,
+                "Mixer::in2": -11,
+                "Mixer::in4": -10,
+                "Ladder::Freq": 1750,
+                "Chorus::Width": 10,
             },
         }
         for profile, values in expected.items():
             preset = self.load_json(
-                f"presets/{profile}_soundscape_v2_factory.json"
+                f"presets/{profile}_soundscape_v3_factory.json"
             )["pattrstorage"]
             self.assertEqual(f"soundscape_{profile}", preset["name"])
             data = preset["slots"]["99"]["data"]
@@ -1418,20 +1421,20 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
             )
             self.assertEqual([1.0], data["soundscape_pitch_follow_state"])
             for complete_key, complete_value in {
-                "cinematic_soundscape_beap~::Osc_A::FreqMode": [1],
-                "cinematic_soundscape_beap~::Osc_A::Freq": [0.6],
-                "cinematic_soundscape_beap~::Osc_A::PW": [50],
-                "cinematic_soundscape_beap~::Ladder::CV2": [0.0],
-                "cinematic_soundscape_beap~::Ladder::power[1]": [0.0],
-                "cinematic_soundscape_beap~::Mixer::Mute": [0.0],
-                "cinematic_soundscape_beap~::Noise::manCVa": [0.0],
-                "cinematic_soundscape_beap~::VCA::Response": [0.0],
+                "cinematic_soundscape_v3_beap~::Osc_A::FreqMode": [1],
+                "cinematic_soundscape_v3_beap~::Osc_A::Freq": [0.6],
+                "cinematic_soundscape_v3_beap~::Osc_A::PW": [50],
+                "cinematic_soundscape_v3_beap~::Ladder::CV2": [0.0],
+                "cinematic_soundscape_v3_beap~::Ladder::power[1]": [0.0],
+                "cinematic_soundscape_v3_beap~::Mixer::Mute": [0.0],
+                "cinematic_soundscape_v3_beap~::Noise::manCVa": [0.0],
+                "cinematic_soundscape_v3_beap~::VCA::Response": [0.0],
             }.items():
                 self.assertEqual(complete_value, data[complete_key])
             for key, value in values.items():
                 storage_key = (
                     key if key.startswith("soundscape_")
-                    else f"cinematic_soundscape_beap~::{key}"
+                    else f"cinematic_soundscape_v3_beap~::{key}"
                 )
                 self.assertEqual([value], data[storage_key])
 
@@ -1440,7 +1443,7 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
             ROOT / "code" / "soundscape_state_path.js"
         ).read_text(encoding="utf-8")
         self.assertIn("function factoryPath()", state_helper)
-        self.assertIn('"/presets/" + profile + "_soundscape_v2_factory.json"', state_helper)
+        self.assertIn('"/presets/" + profile + "_soundscape_v3_factory.json"', state_helper)
         self.assertIn("function factory()", state_helper)
         for profile in ("ev", "v10", "v12"):
             host = self.load_json(
@@ -1456,7 +1459,8 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
             self.assertIn("delay 1200", texts)
             self.assertGreaterEqual(texts.count("delay 800"), 2)
             self.assertGreaterEqual(texts.count("delay 120"), 2)
-            self.assertGreaterEqual(texts.count("prime"), 2)
+            self.assertGreaterEqual(texts.count("prime"), 1)
+            self.assertEqual(1, texts.count("ready"))
             self.assertFalse(any(
                 text.startswith(f"pattrstorage soundscape_{profile}_factory ")
                 for text in texts if text
@@ -1490,9 +1494,9 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
 
     def test_soundscape_hosts_use_profile_specific_tone_maps_and_defaults(self):
         expected = {
-            "ev": ("min(1.35", "0.22+0.72*$f1", ("0.24", "0.58", "0.62")),
-            "v10": ("min(0.85", "0.12+0.36*$f1", ("0.08", "0.3", "0.34")),
-            "v12": ("min(1.", "0.16+0.48*$f1", ("0.13", "0.44", "0.48")),
+            "ev": ("min(1.35", "0.22+0.72*$f1", ("0.2", "0.65", "0.58")),
+            "v10": ("min(0.85", "0.12+0.36*$f1", ("0.07", "0.36", "0.42")),
+            "v12": ("min(1.", "0.16+0.48*$f1", ("0.11", "0.5", "0.52")),
         }
         for profile, (ceiling, throttle, defaults) in expected.items():
             host = self.load_json(
@@ -1507,7 +1511,7 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
                 self.assertIn(f"loadmess {value}", text)
 
     def test_soundscape_factory_uses_smooth_modulation_and_one_soft_safety_stage(self):
-        core = self.load_json("patchers/cinematic_soundscape_beap~.maxpat")["patcher"]
+        core = self.load_json("patchers/cinematic_soundscape_v3_beap~.maxpat")["patcher"]
         boxes = {item["box"]["id"]: item["box"] for item in core["boxes"]}
         modules = {
             box.get("varname"): box for box in boxes.values()
@@ -1531,15 +1535,15 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
             self.assertEqual(1, len(matches))
             return {key: values[0] for key, values in matches[0].items()}
 
-        self.assertEqual(0.035, restore_for(modules["LFO"])["Frequency"])
-        self.assertEqual(0.009, restore_for(modules["LFO_Slow"])["Frequency"])
+        self.assertEqual(0.022, restore_for(modules["LFO"])["Frequency"])
+        self.assertEqual(0.0055, restore_for(modules["LFO_Slow"])["Frequency"])
         self.assertEqual(
-            {"in1": -5, "in2": -12, "in3": -36, "in4": -26},
+            {"in1": -6, "in2": -11, "in3": -9, "in4": -10},
             {key: restore_for(modules["Mixer"])[key] for key in ("in1", "in2", "in3", "in4")},
         )
-        self.assertEqual(1400, restore_for(modules["Ladder"])["Freq"])
+        self.assertEqual(1750, restore_for(modules["Ladder"])["Freq"])
         self.assertLessEqual(restore_for(modules["Ladder"])["Res"], 3)
-        self.assertEqual(4500, restore_for(modules["MMF"])["Freq"])
+        self.assertEqual(5000, restore_for(modules["MMF"])["Freq"])
         chorus = restore_for(modules["Chorus"])
         self.assertLessEqual(chorus["Rate"], 0.015)
         self.assertLessEqual(chorus["Regen"], 0.02)
@@ -1560,7 +1564,7 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
 
         core_text = "\n".join(box.get("text", "") for box in boxes.values())
         self.assertNotIn("clip~ -0.8 0.8", core_text)
-        self.assertEqual(2, core_text.count("tanh~"))
+        self.assertEqual(0, core_text.count("tanh~"))
         self.assertNotIn("expr~", core_text)
         for profile in ("ev", "v10", "v12"):
             host_text = json.dumps(
@@ -2098,7 +2102,7 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
         self.assertNotIn("patchers/ev_soundscape_host~.maxpat", declared)
         host = self.load_json("patchers/ev_cinematic_soundscape_host~.maxpat")["patcher"]
         host_text = "\n".join(item["box"].get("text", "") for item in host["boxes"])
-        self.assertIn("cinematic_soundscape_beap~ ev", host_text)
+        self.assertIn("cinematic_soundscape_v3_beap~ ev", host_text)
         self.assertIn("delay 5200", host_text)
         self.assertIn("delay 5600", host_text)
         self.assertIn("0. 300", host_text)
@@ -3505,9 +3509,9 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
         self.assertNotIn("patchers/ev_pad_beap~.maxpat", declared)
         self.assertIn("patchers/ev_cinematic_soundscape_host~.maxpat", declared)
         self.assertNotIn("patchers/cinematic_soundscape_voice.maxpat", declared)
-        self.assertIn("patchers/cinematic_soundscape_beap~.maxpat", declared)
+        self.assertIn("patchers/cinematic_soundscape_v3_beap~.maxpat", declared)
 
-        pad = self.load_json("patchers/cinematic_soundscape_beap~.maxpat")["patcher"]
+        pad = self.load_json("patchers/cinematic_soundscape_v3_beap~.maxpat")["patcher"]
         modules = [
             item["box"] for item in pad["boxes"]
             if item["box"].get("maxclass") == "bpatcher"
@@ -3524,7 +3528,7 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
             if item["box"].get("maxclass") == "outlet"
             and item["box"].get("comment") == "signal"
         ]
-        self.assertEqual(5, len(signal_inlets))
+        self.assertEqual(7, len(signal_inlets))
         self.assertEqual(2, len(signal_outlets))
 
     def test_seeded_beap_pad_restores_audible_pad_defaults(self):
@@ -3934,6 +3938,9 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
                 "presets/ev_soundscape_v2_factory.json",
                 "presets/v10_soundscape_v2_factory.json",
                 "presets/v12_soundscape_v2_factory.json",
+                "presets/ev_soundscape_v3_factory.json",
+                "presets/v10_soundscape_v3_factory.json",
+                "presets/v12_soundscape_v3_factory.json",
                 "media/local/ferrari_sf90_startup.wav",
                 "ferrari_sf90_startup.wav",
             ):
@@ -3962,7 +3969,7 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
             self.assertIn("v12_powertrain.gendsp", project["contents"]["code"])
             self.assertIn("drive_model.js", project["contents"]["code"])
             self.assertIn(
-                "presets/v12_soundscape_v2_factory.json",
+                "presets/v12_soundscape_v3_factory.json",
                 project["contents"]["data"],
             )
             self.assertIn("media/starter_v12.wav", project["contents"]["media"])
@@ -4152,7 +4159,7 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
             self.assertTrue(probe_path.is_file())
             self.assertTrue((bundle / "ev_cinematic_soundscape_host~.maxpat").is_file())
             self.assertFalse((bundle / "cinematic_soundscape_voice.maxpat").exists())
-            self.assertTrue((bundle / "cinematic_soundscape_beap~.maxpat").is_file())
+            self.assertTrue((bundle / "cinematic_soundscape_v3_beap~.maxpat").is_file())
             patch = json.loads(probe_path.read_text(encoding="utf-8"))
             text = "\n".join(item["box"].get("text", "") for item in patch["patcher"]["boxes"])
             self.assertIn("engine_controller_ev", text)
@@ -4963,6 +4970,117 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
                 check=True, cwd=ROOT, capture_output=True, text=True,
             )
             self.assertEqual(b"curated-audio-sentinel", protected.read_bytes())
+
+    def test_soundscape_v3_uses_a_new_state_namespace_and_visible_version(self):
+        project = self.load_json("VehicleSoundSynth-V5.maxproj")["contents"]
+        self.assertIn(
+            "patchers/cinematic_soundscape_v3_beap~.maxpat",
+            project["patchers"],
+        )
+        self.assertNotIn(
+            "patchers/cinematic_soundscape_beap~.maxpat",
+            project["patchers"],
+        )
+        for profile in ("ev", "v10", "v12"):
+            self.assertIn(
+                f"presets/{profile}_soundscape_v3_factory.json",
+                project["data"],
+            )
+            host = json.dumps(
+                self.load_json(
+                    f"patchers/{profile}_cinematic_soundscape_host~.maxpat"
+                )
+            )
+            self.assertIn(f"cinematic_soundscape_v3_beap~ {profile}", host)
+            self.assertIn("SOUNDSCAPE RUNNING LATCH", host)
+            self.assertIn("cadence", host.lower())
+            self.assertIn("idle / ready blend", host.lower())
+            if profile == "ev":
+                self.assertIn("expr -45.*$i2", host)
+
+        helper = (ROOT / "code" / "soundscape_state_path.js").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("_soundscape_v3.json", helper)
+        self.assertIn("_soundscape_v3_factory.json", helper)
+        self.assertIn("function ready()", helper)
+        self.assertIn("if (!initialized)", helper)
+        self.assertNotIn("_soundscape_v2.json", helper)
+
+        control = json.dumps(self.load_json("patchers/soundscape_control.maxpat"))
+        self.assertIn("Soundscape V3", control)
+        self.assertIn("Factory V3", control)
+
+    def test_audio_metrics_detect_square_like_flat_tops(self):
+        sys.path.insert(0, str(ROOT / "tools"))
+        from audio_metrics import analyze
+
+        with tempfile.TemporaryDirectory() as directory:
+            sine_path = Path(directory) / "sine.wav"
+            square_path = Path(directory) / "square.wav"
+            sample_rate = 48000
+            for path, square in ((sine_path, False), (square_path, True)):
+                values = []
+                for index in range(sample_rate):
+                    sine = math.sin(2.0 * math.pi * 120.0 * index / sample_rate)
+                    value = 0.5 * (1.0 if sine >= 0.0 else -1.0) if square else 0.5 * sine
+                    values.append(round(value * 32767.0))
+                with wave.open(str(path), "wb") as handle:
+                    handle.setnchannels(1)
+                    handle.setsampwidth(2)
+                    handle.setframerate(sample_rate)
+                    handle.writeframes(b"".join(struct.pack("<h", value) for value in values))
+            sine = analyze(sine_path)
+            square = analyze(square_path)
+        self.assertLess(sine["near_peak_sample_ratio"], 0.35)
+        self.assertGreater(square["near_peak_sample_ratio"], 0.90)
+        self.assertGreater(sine["crest_db"], square["crest_db"] + 2.5)
+
+    def test_soundscape_v3_core_is_mechanical_layered_and_not_full_mix_waveshaped(self):
+        core = self.load_json(
+            "patchers/cinematic_soundscape_v3_beap~.maxpat"
+        )["patcher"]
+        text = "\n".join(
+            item["box"].get("text", "") + " "
+            + item["box"].get("varname", "")
+            for item in core["boxes"]
+        )
+        for token in (
+            "SOUNDSCAPE V3",
+            "1 BODY / MODAL",
+            "CADENCE EXCITER",
+            "2 HARMONIC / MACRO",
+            "3 NOISE / RESONATOR",
+            "4 AIR / SHIMMER",
+            "svf~ 120 0.7",
+            "svf~ 28 0.7",
+        ):
+            self.assertIn(token, text)
+        self.assertIn("abs~", text)
+        self.assertIn(">~ 0.", text)
+        self.assertNotIn("+~ 0.18", text)
+        self.assertEqual(8, sum(
+            item["box"].get("maxclass") == "inlet" for item in core["boxes"]
+        ))
+        self.assertNotIn("tanh~", text)
+        self.assertNotIn("clip~ -0.8 0.8", text)
+        self.assertNotIn("saw~", text.lower())
+        self.assertNotIn("rect~", text.lower())
+
+    def test_soundscape_v3_factories_avoid_saw_and_square_waveforms(self):
+        hashes = set()
+        for profile in ("ev", "v10", "v12"):
+            path = ROOT / "presets" / f"{profile}_soundscape_v3_factory.json"
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            hashes.add(hashlib.sha256(path.read_bytes()).hexdigest())
+            data = payload["pattrstorage"]["slots"]["99"]["data"]
+            for oscillator in ("Osc_A", "Osc_B", "Osc_C"):
+                key = (
+                    "cinematic_soundscape_v3_beap~::"
+                    f"{oscillator}::Waveform"
+                )
+                self.assertIn(data[key][0], (0, 1))
+        self.assertEqual(3, len(hashes))
 
 
 if __name__ == "__main__":

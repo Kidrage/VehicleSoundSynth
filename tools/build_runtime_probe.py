@@ -197,6 +197,11 @@ SCENARIOS = {
         "lock_rpm": True, "direct_soundscape_state": True, "soundscape_enable": 1,
         "soundscape_level_db": -3.0, "soundscape_solo": 1,
     },
+    "ev-soundscape-solo-idle": {
+        "profile": "ev", "rpm": 0.0, "throttle": 0.0, "load": 0.0,
+        "lock_rpm": True, "direct_soundscape_state": True, "soundscape_enable": 1,
+        "soundscape_level_db": -3.0, "soundscape_solo": 1,
+    },
     "ev-soundscape-solo-high-load": {
         "profile": "ev", "rpm": 1800.0, "throttle": 0.90, "load": 0.85,
         "lock_rpm": True, "direct_soundscape_state": True, "soundscape_enable": 1,
@@ -220,6 +225,23 @@ SCENARIOS = {
         "lock_rpm": True, "direct_soundscape_state": True, "soundscape_enable": 1,
         "soundscape_level_db": -6.0, "soundscape_solo": 1,
     },
+    "v10-soundscape-solo-idle": {
+        "profile": "v10", "rpm": 740.0, "throttle": 0.04, "load": 0.12,
+        "lock_rpm": True, "direct_soundscape_state": True, "soundscape_enable": 1,
+        "soundscape_level_db": -6.0, "soundscape_solo": 1,
+    },
+    "v10-soundscape-prestart": {
+        "profile": "v10", "rpm": 740.0, "throttle": 0.0, "load": 0.0,
+        "lock_rpm": True, "direct_soundscape_state": True, "soundscape_enable": 1,
+        "soundscape_level_db": -6.0, "soundscape_solo": 1,
+        "extra_messages": ("start 0",),
+    },
+    "v10-soundscape-start-gate": {
+        "profile": "v10", "rpm": 740.0, "throttle": 0.0, "load": 0.0,
+        "lock_rpm": True, "direct_soundscape_state": True, "soundscape_enable": 1,
+        "soundscape_level_db": -6.0, "soundscape_solo": 1,
+        "extra_messages": ("start 0",), "event": "start 1", "event_at_ms": 3000,
+    },
     "v12-soundscape-on": {
         "profile": "v12", "rpm": 1800.0, "throttle": 0.35, "lock_rpm": True,
         "soundscape_level_db": -9.0, "soundscape_enable": 1,
@@ -235,6 +257,11 @@ SCENARIOS = {
     },
     "v12-soundscape-solo-high-load": {
         "profile": "v12", "rpm": 1800.0, "throttle": 0.90, "load": 0.85,
+        "lock_rpm": True, "direct_soundscape_state": True, "soundscape_enable": 1,
+        "soundscape_level_db": -7.0, "soundscape_solo": 1,
+    },
+    "v12-soundscape-solo-idle": {
+        "profile": "v12", "rpm": 780.0, "throttle": 0.04, "load": 0.12,
         "lock_rpm": True, "direct_soundscape_state": True, "soundscape_enable": 1,
         "soundscape_level_db": -7.0, "soundscape_solo": 1,
     },
@@ -583,6 +610,8 @@ def make_probe(
         "master_trim_db -8.",
     )
     default_messages += ("soundscape_enable 0",)
+    if direct_soundscape_state:
+        default_messages += ("start 1",)
     if drive_lifecycle:
         default_messages = (
             "ignition 0", "auto 1",
@@ -614,7 +643,12 @@ def make_probe(
         raise ValueError("a probe event must use either a message or a global send")
     if event_message is not None:
         event = p.message(event_message, 790, 190, 190)
-        p.connect(event, transient if direct_event_to_transient else drive)
+        event_target = (
+            transient if direct_event_to_transient
+            else soundscape if direct_soundscape_state
+            else drive
+        )
+        p.connect(event, event_target)
     elif global_event_address is not None:
         event = p.new(
             f"s {global_event_address}", 790, 190, 190,
@@ -891,7 +925,9 @@ def main() -> None:
         presets / "vehicle_bus_eq_default.json",
     )
     for profile_name in PROFILE_SETTINGS:
-        for suffix in ("soundscape_factory", "soundscape_v2_factory"):
+        for suffix in (
+            "soundscape_factory", "soundscape_v2_factory", "soundscape_v3_factory",
+        ):
             factory_name = f"{profile_name}_{suffix}.json"
             shutil.copy2(root / "presets" / factory_name, presets / factory_name)
     for source in (root / "patchers").glob("*.maxpat"):
@@ -1036,7 +1072,7 @@ def main() -> None:
     }
     required_patchers.update({
         f"{profile}_cinematic_soundscape_host~.maxpat",
-        "cinematic_soundscape_beap~.maxpat",
+        "cinematic_soundscape_v3_beap~.maxpat",
     })
     if profile != "ev":
         required_patchers.update({

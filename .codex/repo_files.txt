@@ -40,6 +40,7 @@ patchers/backfire_burst_scheduler.maxpat
 patchers/cabin_master~.maxpat
 patchers/cabin_rumble~.maxpat
 patchers/cinematic_soundscape_beap~.maxpat
+patchers/cinematic_soundscape_v3_beap~.maxpat
 patchers/drive_simulator.maxpat
 patchers/drive_simulator_ev.maxpat
 patchers/drive_simulator_v10.maxpat
@@ -99,10 +100,16 @@ patchers/vehicle_engine_v10~.maxpat
 patchers/vehicle_engine_v12~.maxpat
 patchers/vehicle_engine~.maxpat
 presets/ev_soundscape_factory.json
+presets/ev_soundscape_v2_factory.json
+presets/ev_soundscape_v3_factory.json
 presets/local/.gitkeep
 presets/sound_dna.json
 presets/v10_soundscape_factory.json
+presets/v10_soundscape_v2_factory.json
+presets/v10_soundscape_v3_factory.json
 presets/v12_soundscape_factory.json
+presets/v12_soundscape_v2_factory.json
+presets/v12_soundscape_v3_factory.json
 presets/vehicle_bus_eq_default.json
 tests/test_backfire_burst.py
 tests/test_manual_input.py

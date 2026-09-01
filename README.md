@@ -63,11 +63,13 @@ four-stroke cylinder banks, low-order body resonances, bounded combustion
 residuals, and soft saturation instead of saw/square oscillators. V10 is tuned
 against offline Ferrari lifecycle targets; V12 remains an independent, smoother
 high-rev model. EV, V10 and V12 all feed one shared, independently editable
-four-layer cinematic BEAP Soundscape V2 core through profile-specific continuous control maps.
-The procedural powertrain remains the speed-tracking fundamental; the shared
-layer is high-passed at 70 Hz, then balanced well below Sound DNA so it adds
-analog-pad width without replacing the vehicle body. The factory Module Mixer
-starts it near -18 dB for EV and -20 dB for V10/V12.
+four-layer cinematic BEAP/MSP Soundscape V3 core through profile-specific
+continuous control maps. RPM (and therefore vehicle speed through the existing
+drive model) continuously drives the tonal root. Throttle and load change the
+modal, harmonic, structure and air balance without stepping that root. V10/V12
+also receive a Start-latched combustion cadence at idle; ignition alone cannot
+self-start that pulse layer. EV uses a restrained ready-state bed instead of a
+fake combustion idle.
 
 V5 adds visible per-profile `Open Sound DNA` panels, low-order crankcase/manifold motion to the ICE models and torque-ripple/
 gear-mesh motion to the EV model. These remain phase-continuous and are driven by
@@ -188,40 +190,30 @@ These files are seeded only when absent and are not overwritten by project
 regeneration:
 
 - `patchers/{ev,v10,v12}_engine_start_beap~.maxpat` — independent cinematic starts
-- `patchers/cinematic_soundscape_beap~.maxpat` — shared runtime EV/V10/V12 Soundscape V2 topology
+- `patchers/cinematic_soundscape_v3_beap~.maxpat` — shared runtime EV/V10/V12 Soundscape V3 topology
 - `patchers/ev_pad_beap~.maxpat` — EV Relax
 - `patchers/ev_expressive_beap~.maxpat` — EV Expressive
 - `patchers/ev_sport_beap~.maxpat` — EV Sport
 - `patchers/v10_pad_beap~.maxpat` / `patchers/v12_pad_beap~.maxpat` — cinematic ICE pads
 - `patchers/v10_backfire_beap~.maxpat` / `patchers/v12_backfire_beap~.maxpat` — physical backfire voices
 
-Only the shared `cinematic_soundscape_beap~` design graph is declared by the current runtime;
-the older EV and ICE pad graphs remain seed-once archives so existing user edits
-are never destroyed. The V2 graph separates Body/Modal, Harmonic/Macro,
-Noise/Resonator and Air/Shimmer layers. RPM owns continuous root pitch;
-throttle/load crossfade layers and filter colour without discrete pitch jumps.
-Modulation is restricted to light filter, waveform and high-band pan motion,
-while bass below 120 Hz stays centred. EV, V10 and V12 load distinct tracked
-factory voicings from `presets/<profile>_soundscape_v2_factory.json`, then apply
-an optional ignored V2 local override. The helper re-reads the complete
-90-parameter factory slot from
-tracked JSON after every local read, while Save writes only the user slot; a
-stale local preset therefore cannot overwrite Factory Reset. With `Pitch Follow = 1`,
-the restored full-travel RPM laws are exactly
-EV `55 + 0.032*rpm`, V10 `36.7 + 0.014*rpm`, and V12
-`32.7 + 0.012*rpm`; lower values blend toward each profile's stationary root.
-The three visible Osc `Freq` dials are runtime-owned by this law; use their
-`Offset` controls for chord tuning.
-Pitch smoothing is 90 ms, so RPM follows continuously without the previous
-restricted travel. `Motion` controls only tiny analog drift, and throttle scales
-that drift from 25% to 100%, avoiding forced idle wobble. This follows the
-layered analog-synth approach documented in the
-[Sequential Prophet-5 guide](https://sequential.com/wp-content/uploads/2021/02/Prophet-5-Users-Guide-1.3.pdf),
-without copying any score or preset. `Soundscape Enable`, dB, `Motion`, `Space`,
+Only `cinematic_soundscape_v3_beap~` is declared by the current runtime. The V2
+graph, its tracked factories and ignored local presets are preserved unchanged,
+but V3 never reads them. V3 separates cadence-excited Body/Modal resonances,
+normalized sine/triangle Harmonic/Macro voices, a bounded Noise/Resonator
+structure layer, and a high-passed Air/Shimmer layer. It has no square/saw
+factory waveform and no full-mix waveshaper. Bass below 120 Hz stays centred;
+only the upper structure receives restrained stereo motion.
+
+EV, V10 and V12 load distinct tracked V3 factories from
+`presets/<profile>_soundscape_v3_factory.json` and optionally apply the ignored
+`presets/local/<profile>_soundscape_v3.json`. `Factory Reset` always reloads the
+tracked V3 authority, so an older local V2 tone cannot leak into this version.
+`Soundscape Enable`, dB, `Motion`, `Space`,
 `Pitch Follow`, `Transpose`, `Brightness`, and `Solo` are exposed on every
 runtime. `Open Designer` fronts the exact embedded instance feeding that
 runtime—there is no detached editor or `poly~` copy. `Save` stores the active
-profile to ignored `presets/local/<profile>_soundscape_v2.json`; EV, V10 and V12
+profile to ignored `presets/local/<profile>_soundscape_v3.json`; EV, V10 and V12
 therefore share one graph topology but keep independent factory and user states.
 
 ## Public control messages
@@ -381,7 +373,7 @@ generated `patchers/module_mixer.maxpat` if the mixer interface itself changes.
 `Save Profile Sound` commits the active profile's Module Mixer, Soundscape and
 four-band vehicle-bus EQ. Their ignored state files are respectively
 `presets/local/<profile>_module_mixer.json`,
-`<profile>_soundscape_v2.json`, and `<profile>_vehicle_bus_eq.json`.
+`<profile>_soundscape_v3.json`, and `<profile>_vehicle_bus_eq.json`.
 `Reload Profile Sound` recalls all three. Each panel also retains its own Save,
 Reload and Reset controls. A legacy `presets/local/vehicle_bus_eq.json` is read
 once as a migration fallback when a profile EQ file does not yet exist; the

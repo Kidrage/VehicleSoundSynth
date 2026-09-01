@@ -2,6 +2,8 @@ autowatch = 1;
 outlets = 2;
 
 var profile = String(jsarguments.length > 1 ? jsarguments[1] : "ev");
+var initialized = false;
+var currentState = "Factory V3";
 
 function projectRoot() {
     var patchPath = String(this.patcher.filepath || "");
@@ -14,11 +16,11 @@ function projectRoot() {
 }
 
 function statePath() {
-    return projectRoot() + "/presets/local/" + profile + "_soundscape_v2.json";
+    return projectRoot() + "/presets/local/" + profile + "_soundscape_v3.json";
 }
 
 function factoryPath() {
-    return projectRoot() + "/presets/" + profile + "_soundscape_v2_factory.json";
+    return projectRoot() + "/presets/" + profile + "_soundscape_v3_factory.json";
 }
 
 function fileExists(path) {
@@ -33,11 +35,15 @@ function fileExists(path) {
 function primeFactorySlot(reportStatus) {
     outlet(0, "read", factoryPath());
     if (reportStatus) {
-        outlet(1, "soundscape_status", "factory", profile);
+        outlet(1, "soundscape_status", "Factory V3", profile);
     }
 }
 
 function save() {
+    if (!initialized) {
+        outlet(1, "soundscape_status", "V3 Not Ready", profile);
+        return;
+    }
     var path = statePath();
     outlet(0, "store", 1);
     // Old local files may contain the former shared factory slot.  Strip it so
@@ -46,10 +52,12 @@ function save() {
     outlet(0, "write", path);
     // Re-read the tracked factory after writing the local-only file.
     primeFactorySlot(false);
-    outlet(1, "soundscape_status", "saved", profile);
+    currentState = "Local V3";
+    outlet(1, "soundscape_status", "Local V3 Saved", profile);
 }
 
 function factory() {
+    currentState = "Factory V3";
     primeFactorySlot(true);
 }
 
@@ -63,13 +71,25 @@ function restore() {
     var path = statePath();
     if (fileExists(path)) {
         outlet(0, "read", path);
-        outlet(1, "soundscape_status", "loaded", profile);
+        currentState = "Local V3";
+        outlet(1, "soundscape_status", "Local V3", profile);
     } else {
-        outlet(1, "soundscape_status", "factory", profile);
+        currentState = "Factory V3";
+        outlet(1, "soundscape_status", "Factory V3", profile);
     }
 }
 
 function reset() {
+    currentState = "Factory V3";
     primeFactorySlot(false);
-    outlet(1, "soundscape_status", "factory", profile);
+    outlet(1, "soundscape_status", "Factory V3", profile);
+}
+
+function ready() {
+    // Startup calls this only after the nested BEAP clients and the optional
+    // V3 local slot have both been recalled.  Until then Save is rejected so
+    // closing a loading patcher cannot replace a valid local state.
+    initialized = true;
+    primeFactorySlot(false);
+    outlet(1, "soundscape_status", currentState, profile);
 }

@@ -208,7 +208,7 @@ first-run migration fallback.
 
 ## Cinematic Soundscape
 
-Soundscape V2 is a BEAP/MSP hybrid divided into Body/Modal, Harmonic/Macro,
+Soundscape V3 is a BEAP/MSP hybrid divided into Body/Modal, Harmonic/Macro,
 Noise/Resonator and Air/Shimmer layers. The generated profile host handles vehicle
 mapping, smoothing, level and DSP suspension; do not tune that plumbing JSON.
 
@@ -217,19 +217,23 @@ The signal path is:
 ```text
 Body + Harmonic + Resonator + Air
   -> structure/filter -> dynamics
-  -> high-band space and pan -> centred <120 Hz bass -> soft output
+  -> high-band space and pan -> centred <120 Hz bass -> protected output
 ```
 
-RPM continuously owns the root pitch. Throttle and load change layer balance,
+RPM continuously owns the root pitch, so Soundscape changes with speed through
+the unchanged drive model. Throttle and load change layer balance,
 filter opening and texture, not the root note. The two LFOs only add restrained
 filter/waveform/high-band pan motion: they do not impose obvious volume pumping
 or large pitch wander. Tune in the labelled order—source, structure/filter,
 dynamics, space, output—and keep the low-frequency Body centred.
 
-The V2 tracked factory files are `presets/ev_soundscape_v2_factory.json`,
-`presets/v10_soundscape_v2_factory.json`, and
-`presets/v12_soundscape_v2_factory.json`. The old unversioned files remain
-unchanged for compatibility but are never loaded into V2. They use the same editable BEAP graph but
+The V3 tracked factory files are `presets/ev_soundscape_v3_factory.json`,
+`presets/v10_soundscape_v3_factory.json`, and
+`presets/v12_soundscape_v3_factory.json`. V1/V2 factories and local presets
+remain unchanged for compatibility but are never loaded into V3. V3 factory
+oscillators use only sine/triangle families; a normalized structure branch and
+the absence of a full-mix waveshaper prevent the previous square-like flat top.
+The profiles deliberately use different palettes:
 deliberately different palettes:
 
 - EV: `0 / +7 / +12` voicing, brightest filters, wider chorus, restrained long
@@ -239,10 +243,10 @@ deliberately different palettes:
 - V12: `0 / +7 / +12`, smoother harmonic blend, broad chorus and the longest
   release/reverb for a weightier orchestral pad.
 
-The tracked JSON contains explicit values for all 90 host/BEAP clients. At load,
+The tracked JSON contains the complete V3 state. At load,
 the helper reads slot 99 from that authority, waits for the nested BEAP clients,
 recalls it, and then
-applies the ignored `presets/local/{profile}_soundscape_v2.json` slot 1 when it
+applies the ignored `presets/local/{profile}_soundscape_v3.json` slot 1 when it
 exists. After every local read it re-reads slot 99 from tracked JSON, so a legacy
 local slot 99 cannot shadow a newer shipped voicing. `Factory Reset` recalls the
 reloaded slot 99 and saves that complete result as the new local slot 1. Saving
@@ -266,6 +270,9 @@ Use the Main macros first:
   throttle response; it is not an LFO speed.
 
 `Enable` defaults on in a fresh/factory profile but remains ignition-gated.
+For V10/V12, the cadence-excited idle Body additionally requires a successful
+`start 1`; `ignition 0` clears that latch. Thus opening the patch, enabling
+Soundscape, or receiving RPM alone cannot passively start a combustion roar.
 Changes from either Main or the runtime view are sent directly to the current
 engine; feedback updates both views without reopening the patch. `Save` writes
 only the selected profile, while `Reload` immediately recalls its saved state.
@@ -286,7 +293,7 @@ Pitch Follow toward 1 before raising Motion.
 Use `Soundscape Solo`, temporarily bring its mixer level up to about -10 dB,
 and click `Open Designer`. Edits in that window affect the currently audible
 instance immediately. `Save` writes
-`presets/local/{profile}_soundscape_v2.json`; `Reload` restores it and `Factory
+`presets/local/{profile}_soundscape_v3.json`; `Reload` restores it and `Factory
 Reset` recalls the shipped state. EV, V10 and V12 share the graph but not saved
 values. `Save Profile Sound` also saves Soundscape, EQ and Mixer together.
 After tuning, turn Solo off and return the shipped balance near -18 dB for EV

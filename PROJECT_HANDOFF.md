@@ -205,6 +205,22 @@
 ## Agent Notes
 
 <!-- AGENT_NOTES_START -->
+- 2026-09-01 Soundscape V3 acceptance repair:
+  replaced the active V2 graph with a new V3-only state namespace and four-layer
+  mechanical-resonance core. RPM remains the continuous speed-derived root;
+  throttle/load change colour rather than pitch. V10/V12 idle cadence is latched
+  only by Start and cleared by Ignition Off, so Soundscape cannot passively create
+  combustion. V3 factories use only sine/triangle oscillator families, remove
+  full-mix waveshaping, centre bass below 120 Hz and bound the structure/air
+  paths. Existing V2 local/factory files remain untouched and are ignored by V3.
+  Final 48 kHz isolated renders: EV Ready peak -8.98/RMS -17.32/crest 8.33 dB,
+  V10 idle -2.57/-12.37/9.80 dB and V12 idle -3.37/-13.70/10.33 dB. All have
+  zero clipping, harshness below 0.001 and mono-fold loss below 3 dB. The final
+  179-test suite and deterministic double generation pass; drive, keyboard,
+  gamepad/manual input, Mixer, Gen and public vehicle seams remain unchanged.
+  Max 8.6.5 loaded all three runtimes without missing-object, Gen, category or
+  patchcord blockers. Every test patcher was saved, its Project closed, and Max
+  was confirmed fully exited before delivery.
 - 2026-08-29 V5 idle/start/Soundscape V2 branch: added six persistent idle DNA
   controls and distinct EV/V10/V12 low-RPM layers; EV remains a ready-state
   electromagnetic bed while V10/V12 share exact bank cadence and fade smoothly

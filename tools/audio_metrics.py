@@ -330,6 +330,10 @@ def analyze(
         max(envelope_high, 1e-12) / max(envelope_low, 1e-12)
     )
     clipped_ratio = sum(abs(value) >= 0.999 for value in level_samples) / len(level_samples)
+    near_peak_sample_ratio = (
+        sum(abs(value) >= peak * 0.90 for value in level_samples) / len(level_samples)
+        if peak > 1e-9 else 0.0
+    )
     size = min(fft_size, 1 << (len(samples).bit_length() - 1))
     left_samples = [mid + side for mid, side in zip(samples, side_samples)]
     right_samples = [mid - side for mid, side in zip(samples, side_samples)]
@@ -504,6 +508,7 @@ def analyze(
         "crest_db": 20.0 * math.log10(max(peak / max(rms, 1e-12), 1e-12)),
         "envelope_spread_db": envelope_spread_db,
         "clipped_sample_ratio": clipped_ratio,
+        "near_peak_sample_ratio": near_peak_sample_ratio,
         "subsonic_ratio": subsonic,
         "rumble_ratio": rumble,
         "low_mid_ratio": low_mid,
@@ -564,6 +569,7 @@ def main() -> int:
     parser.add_argument("--max-dominant-peak-ratio", type=float)
     parser.add_argument("--max-envelope-spread-db", type=float)
     parser.add_argument("--max-clipped-sample-ratio", type=float)
+    parser.add_argument("--max-near-peak-sample-ratio", type=float)
     parser.add_argument("--require-sample-rate", type=int)
     parser.add_argument("--expected-fundamental-hz", type=float)
     parser.add_argument("--max-spectral-centroid-hz", type=float)
@@ -661,6 +667,11 @@ def main() -> int:
         failures.append("envelope_spread_db")
     if args.max_clipped_sample_ratio is not None and metrics["clipped_sample_ratio"] > args.max_clipped_sample_ratio:
         failures.append("clipped_sample_ratio")
+    if (
+        args.max_near_peak_sample_ratio is not None
+        and metrics["near_peak_sample_ratio"] > args.max_near_peak_sample_ratio
+    ):
+        failures.append("near_peak_sample_ratio")
     if (
         args.max_spectral_centroid_hz is not None
         and metrics["spectral_centroid_hz"] > args.max_spectral_centroid_hz

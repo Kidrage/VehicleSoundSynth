@@ -6,7 +6,7 @@ Max 8.6.5 vehicle-sound V5, forked from stable V4 tag `v4.0.0`, with three indep
 and V12 continuous audio are procedural; Ferrari.wav is a V10 lifecycle-analysis
 target and may supply only the optional ignored realistic-start one-shot. All
 three profiles share one suspendable, user-editable four-layer cinematic BEAP
-Soundscape V2 topology while keeping independent factory and user states.
+Soundscape V3 topology while keeping independent factory and user states.
 The project also contains a
 start-relative single-speed/seven-speed drivetrain, cabin rumble, licensed
 events, short cabin IR, adjustable stereo compression, EQ, and peak protection.
@@ -51,11 +51,11 @@ events, short cabin IR, adjustable stereo compression, EQ, and peak protection.
 - `patchers/{ev,v10,v12}_cinematic_soundscape_host~.maxpat` — generated profile
   mapping, persistence and cancellable DSP suspension around a direct embedded
   instance of the shared runtime Soundscape; there is no detached voice wrapper.
-- `presets/{ev,v10,v12}_soundscape_v2_factory.json` — tracked profile-specific,
-  complete 90-client Soundscape slot-99 authority. The state helper re-reads
+- `presets/{ev,v10,v12}_soundscape_v3_factory.json` — tracked profile-specific
+  Soundscape V3 slot-99 authority. The state helper re-reads
   slot 99 after every local read; local Save deletes slot 99 before writing so
   ignored user files contain slot 1 only.
-- `patchers/cinematic_soundscape_beap~.maxpat`, three profile-specific
+- `patchers/cinematic_soundscape_v3_beap~.maxpat`, three profile-specific
   `*_engine_start_beap~` designers, three legacy EV pads, two legacy ICE pads,
   and two backfire graphs are seed-once user-tunable files. The legacy pads and
   old shared start files are preserved but undeclared.
@@ -96,10 +96,13 @@ Module Mixer's `Pop / Event` fader.
 For continuous-engine tuning, open the active Sound DNA instance and use DNA
 Solo; EV Aggression and V10 Brightness are explicitly connected to Gen DSP,
 while several other controls are RPM/load/throttle-state dependent.
-Soundscape `Open Designer` addresses the active embedded V2 instance; `Save`
-persists profile-local V2 state for the shared seed-once graph. Body/Modal,
+Soundscape `Open Designer` addresses the active embedded V3 instance; `Save`
+persists profile-local V3 state for the shared seed-once graph. Body/Modal,
 Harmonic/Macro, Noise/Resonator and Air/Shimmer are separately tunable;
-EV/V10/V12 use distinct tracked V2 factory voicings. `Pitch Follow = 1` restores the exact
+EV/V10/V12 use distinct tracked V3 factory voicings. RPM continuously owns root
+pitch while throttle/load only alter colour and layer balance. V10/V12 modal
+cadence is Start-latched and clears on Ignition Off. V2 preset files are retained
+but V3 never reads them. `Pitch Follow = 1` restores the exact
 legacy full-travel RPM laws (`55+.032*rpm`, `36.7+.014*rpm`, and
 `32.7+.012*rpm`) with 90 ms smoothing. Restrained LFO motion affects
 filter/waveform/high-band pan rather than root pitch or level. The launcher uses
