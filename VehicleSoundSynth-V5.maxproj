@@ -31,11 +31,23 @@
         "kind": "javascript",
         "local": 1
       },
+      "code/pop_v2_state_path.js": {
+        "kind": "javascript",
+        "local": 1
+      },
       "code/soundscape_state_path.js": {
         "kind": "javascript",
         "local": 1
       },
+      "code/soundscape_v4_state_path.js": {
+        "kind": "javascript",
+        "local": 1
+      },
       "code/start_state_path.js": {
+        "kind": "javascript",
+        "local": 1
+      },
+      "code/start_v3_state_path.js": {
         "kind": "javascript",
         "local": 1
       },
@@ -73,6 +85,10 @@
         "kind": "data",
         "local": 1
       },
+      "presets/ev_soundscape_v4_factory.json": {
+        "kind": "data",
+        "local": 1
+      },
       "presets/sound_dna.json": {
         "kind": "data",
         "local": 1
@@ -89,6 +105,10 @@
         "kind": "data",
         "local": 1
       },
+      "presets/v10_soundscape_v4_factory.json": {
+        "kind": "data",
+        "local": 1
+      },
       "presets/v12_soundscape_factory.json": {
         "kind": "data",
         "local": 1
@@ -98,6 +118,10 @@
         "local": 1
       },
       "presets/v12_soundscape_v3_factory.json": {
+        "kind": "data",
+        "local": 1
+      },
+      "presets/v12_soundscape_v4_factory.json": {
         "kind": "data",
         "local": 1
       },
@@ -189,11 +213,19 @@
         "kind": "patcher",
         "local": 1
       },
+      "patchers/ev_engine_start_v3_beap~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
       "patchers/ev_powertrain~.maxpat": {
         "kind": "patcher",
         "local": 1
       },
       "patchers/ev_sound_dna~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/ev_soundscape_v4_beap~.maxpat": {
         "kind": "patcher",
         "local": 1
       },
@@ -245,11 +277,19 @@
         "kind": "patcher",
         "local": 1
       },
+      "patchers/v10_backfire_v2_beap~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
       "patchers/v10_cinematic_soundscape_host~.maxpat": {
         "kind": "patcher",
         "local": 1
       },
       "patchers/v10_engine_start_beap~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/v10_engine_start_v3_beap~.maxpat": {
         "kind": "patcher",
         "local": 1
       },
@@ -261,11 +301,19 @@
         "kind": "patcher",
         "local": 1
       },
+      "patchers/v10_soundscape_v4_beap~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
       "patchers/v12_backfire_beap~.maxpat": {
         "kind": "patcher",
         "local": 1
       },
       "patchers/v12_backfire_host~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/v12_backfire_v2_beap~.maxpat": {
         "kind": "patcher",
         "local": 1
       },
@@ -277,11 +325,19 @@
         "kind": "patcher",
         "local": 1
       },
+      "patchers/v12_engine_start_v3_beap~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
       "patchers/v12_powertrain~.maxpat": {
         "kind": "patcher",
         "local": 1
       },
       "patchers/v12_sound_dna~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/v12_soundscape_v4_beap~.maxpat": {
         "kind": "patcher",
         "local": 1
       },

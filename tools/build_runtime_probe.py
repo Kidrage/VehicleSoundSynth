@@ -611,7 +611,9 @@ def make_probe(
     )
     default_messages += ("soundscape_enable 0",)
     if direct_soundscape_state:
-        default_messages += ("start 1",)
+        # The V4 host consumes lifecycle truth; direct probes bypass the
+        # controller and therefore must provide its authoritative run state.
+        default_messages += ("engine_running 1", "start 1")
     if drive_lifecycle:
         default_messages = (
             "ignition 0", "auto 1",
@@ -927,6 +929,7 @@ def main() -> None:
     for profile_name in PROFILE_SETTINGS:
         for suffix in (
             "soundscape_factory", "soundscape_v2_factory", "soundscape_v3_factory",
+            "soundscape_v4_factory",
         ):
             factory_name = f"{profile_name}_{suffix}.json"
             shutil.copy2(root / "presets" / factory_name, presets / factory_name)

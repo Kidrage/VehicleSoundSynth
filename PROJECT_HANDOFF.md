@@ -3,6 +3,35 @@
 > Deterministically generated repository/project memory for cross-agent handoff.
 > Update after every material project change and before final reporting.
 
+## Soundscape V4 rebuild (2026-09-01)
+
+The active feature branch replaces the shared Soundscape V3 runtime with three
+seed-once profile instruments: `ev_soundscape_v4_beap~`,
+`v10_soundscape_v4_beap~`, and `v12_soundscape_v4_beap~`. The public Main-page
+controls are unchanged. Each host consumes the controller's real
+`engine_running` state and `speed_kph`; it no longer creates its own running
+latch. RPM maps root pitch, speed maps only upper-band air/space, and
+load/throttle map layer blend and colour.
+
+The EV graph is a cinematic Evolution score/energy/transient design; V10 is an
+exact `rpm/12` cadence plus a continuous Ignition-style order climb; V12 is an
+exact `rpm/10` heavy body/exhaust-cavity design with a restrained load-driven
+turbine/mechanical band. All three keep bass below 120 Hz mono-compatible.
+
+Current start designers use `{profile}_engine_start_v3_beap~`; current ICE
+backfire designers use `{profile}_backfire_v2_beap~`. Older seed-once files and
+V1--V3 preset namespaces remain recoverable but are not in the audible path.
+
+Final verification passed 184/184 tests, including keyboard/gamepad trigger
+exclusivity and lifecycle gating. Nine Max 8.6.5 48 kHz Soundscape Solo renders
+covered EV/V10/V12 at fixed 1800 RPM under low load, high load and 180 km/h.
+All were non-silent and unclipped, with harshness below `0.001`, subsonic ratio
+below `0.01`, and mono-fold loss below `3.1` dB. Fixed-RPM centroid movement was
+EV `71.2 -> 119.9 / 80.9` Hz, V10 `86.9 -> 131.9 / 127.2` Hz, and V12
+`103.7 -> 109.6 / 108.0` Hz (high-load / high-speed), proving that load and
+speed change timbre/space without direct root-pitch jumps. All task-owned Max
+probe instances exited; pre-existing windowless PID `22230` was preserved.
+
 ## Repository Identity
 
 - Repository ID: `VehicleSoundSynth-V5-8de441799e7b`
@@ -13,8 +42,8 @@
 
 ## Current State
 
-- Branch: `codex/v5-idle-start-soundscape-v2`
-- HEAD: `decf0d2`
+- Branch: `codex/v5-soundscape-v4-rebuild`
+- Base HEAD: `9a79128`
 - Indexed paths: 169
 - Inventory truncated: `false`
 - Inaccessible paths: 0

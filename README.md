@@ -175,8 +175,8 @@ start_style realistic
 ```
 
 `cinematic` is the default. Each profile owns a directly embedded, seed-once
-Start Designer: `ev_engine_start_beap~`, `v10_engine_start_beap~`, or
-`v12_engine_start_beap~`. Their Activation/Crank Body, Catch Bloom, Metal, Air,
+V3 Start Designer: `ev_engine_start_v3_beap~`, `v10_engine_start_v3_beap~`, or
+`v12_engine_start_v3_beap~`. Their Activation/Crank Body, Catch Bloom, Metal, Air,
 Tail and Level controls drive the audible instance and persist independently.
 V10 catches into its 60--67 Hz firing cadence, V12 catches faster and more
 smoothly, and EV uses a ready chime plus harmonic activation instead of a fake
@@ -189,32 +189,39 @@ and procedural starter are never layered.
 These files are seeded only when absent and are not overwritten by project
 regeneration:
 
-- `patchers/{ev,v10,v12}_engine_start_beap~.maxpat` — independent cinematic starts
-- `patchers/cinematic_soundscape_v3_beap~.maxpat` — shared runtime EV/V10/V12 Soundscape V3 topology
+- `patchers/{ev,v10,v12}_engine_start_v3_beap~.maxpat` — independent current cinematic starts
+- `patchers/{ev,v10,v12}_soundscape_v4_beap~.maxpat` — three independent current Soundscape V4 instruments
 - `patchers/ev_pad_beap~.maxpat` — EV Relax
 - `patchers/ev_expressive_beap~.maxpat` — EV Expressive
 - `patchers/ev_sport_beap~.maxpat` — EV Sport
 - `patchers/v10_pad_beap~.maxpat` / `patchers/v12_pad_beap~.maxpat` — cinematic ICE pads
-- `patchers/v10_backfire_beap~.maxpat` / `patchers/v12_backfire_beap~.maxpat` — physical backfire voices
+- `patchers/v10_backfire_v2_beap~.maxpat` / `patchers/v12_backfire_v2_beap~.maxpat` — current physical backfire voices
 
-Only `cinematic_soundscape_v3_beap~` is declared by the current runtime. The V2
-graph, its tracked factories and ignored local presets are preserved unchanged,
-but V3 never reads them. V3 separates cadence-excited Body/Modal resonances,
-normalized sine/triangle Harmonic/Macro voices, a bounded Noise/Resonator
-structure layer, and a high-passed Air/Shimmer layer. It has no square/saw
-factory waveform and no full-mix waveshaper. Bass below 120 Hz stays centred;
-only the upper structure receives restrained stereo motion.
+The current runtime instantiates exactly one profile-owned V4 instrument. EV is
+an Evolution-style cinematic energy bed with fixed-ratio score voices, motor /
+inverter texture, and short spectral transients. V10 uses an exact `rpm/12`
+firing clock to excite body modes, then adds a continuous Ignition-style order
+climb, induction structure and shift reset. V12 uses `rpm/10`, a heavier
+35--450 Hz body/cavity structure, and a restrained load-opened mechanical whine.
+No Sound DNA audio or named parameter enters these graphs: Sound DNA and
+Soundscape meet only at the existing engine stem sum.
 
-EV, V10 and V12 load distinct tracked V3 factories from
-`presets/<profile>_soundscape_v3_factory.json` and optionally apply the ignored
-`presets/local/<profile>_soundscape_v3.json`. `Factory Reset` always reloads the
-tracked V3 authority, so an older local V2 tone cannot leak into this version.
+RPM owns continuous root pitch, speed owns upper-band air and space, and
+load/throttle own layer balance and filter colour. Bass below 120 Hz stays
+centred and stereo processing is upper-band only. Factory oscillators are
+sine/triangle; firing pulses excite filters/resonators and are never exposed as
+bare square waves. There is no Soundscape full-mix waveshaper.
+
+EV, V10 and V12 load tracked factories from
+`presets/<profile>_soundscape_v4_factory.json` and optionally apply ignored
+`presets/local/<profile>_soundscape_v4.json`. `Factory Reset` reloads the V4
+authority; V1--V3 graphs and presets remain archived and cannot re-voice V4.
 `Soundscape Enable`, dB, `Motion`, `Space`,
 `Pitch Follow`, `Transpose`, `Brightness`, and `Solo` are exposed on every
 runtime. `Open Designer` fronts the exact embedded instance feeding that
 runtime—there is no detached editor or `poly~` copy. `Save` stores the active
-profile to ignored `presets/local/<profile>_soundscape_v3.json`; EV, V10 and V12
-therefore share one graph topology but keep independent factory and user states.
+profile to ignored `presets/local/<profile>_soundscape_v4.json`; EV, V10 and V12
+have independent graph topologies, factory states and local user states.
 
 ## Public control messages
 

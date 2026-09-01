@@ -3,59 +3,55 @@
 ## Repository Identity
 
 - Canonical remote: `git@github.com:Kidrage/VehicleSoundSynth.git`
-- Target runtime: Max 8.6.5 on macOS
-- Canonical branch: `main`.
-- Authoritative live/persistent sound-module implementation fixed point:
-  `dc84aad`, contained in canonical `main`; later descendants are handoff-only.
+- Target runtime: Max 8.6.5 on macOS.
+- Feature branch: `codex/v5-soundscape-v4-rebuild`.
+- Fixed point: `9a79128b3a39e9013dbdcc34386fef7071cbf050`.
 
 ## Delivered Change
 
-- Main-page module buttons now address the audible nested instances. DNA remains
-  live and saves per-profile ignored JSON; Soundscape opens the active shared
-  BEAP voice and `Save Soundscape` writes that seed-once graph; V10/V12 Pop gains
-  `Save Pop`/`Reload Pop` backed by ignored `<profile>_pop.json` files.
-- The shared Soundscape factory patch is restored to a restrained
-  root/fifth/octave voicing with 0.07/0.02 Hz drift, lower pitch depth and filter
-  resonance, controlled high-frequency detail, and slower pad envelopes.
-  `Motion` is a maximum depth and throttle supplies its smooth 25--100% scaler.
-- Stale ignored V10/V12 DNA states were reset to their tracked intended presets.
-  The generated runtimes, public pedal seam, 20 ms drivetrain integration,
-  Pop event schedule, and module mixer architecture are otherwise unchanged.
+- The audible shared Soundscape V3 core is replaced by three independent,
+  seed-once V4 BEAP instruments: EV Evolution Score, V10 Ignition/cadence, and
+  V12 Luxury Body/turbine-whine. Sound DNA audio and parameter namespaces do
+  not enter these graphs; they share only controller-owned vehicle state.
+- RPM is the only continuous root-pitch authority. Load/throttle blend tonal,
+  structural and air layers; `speed_kph` changes upper-band texture and space.
+  Bass below 120 Hz remains centred and the output rejects sub-28 Hz energy.
+- Current procedural start voices use `{profile}_engine_start_v3_beap~`.
+  Current ICE backfire voices use `{profile}_backfire_v2_beap~`. Older
+  seed-once designers remain recoverable but are not on the audible path.
+- The existing Main Soundscape controls and keyboard/gamepad/drive seams are
+  unchanged. Direct acoustic probes now supply `engine_running 1`, matching
+  the V4 host's controller-authoritative lifecycle gate.
 
 ## Repository Rules
 
 - Edit generated Max JSON only through `tools/build_project.py`.
-- Seed-once Sound DNA, Soundscape, start and backfire BEAP graphs are user-owned
-  and must not be overwritten by regeneration.
-- V10/V12 continuous sound remains procedural; local Ferrari media is not a
-  distributable continuous-runtime source.
+- Seed-once Sound DNA, Soundscape, start and backfire BEAP graphs are
+  user-owned and must not be overwritten after creation.
+- V10/V12 continuous sound remains procedural. Ferrari material is
+  analysis-only except for the explicit ignored realistic V10 start option.
 - Before delivery run deterministic regeneration, all tests, audio probes,
-  `git diff --check`, real Max smoke/save/close, and confirm Max is fully exited.
-
-## Local Save Archive
-
-- The pre-existing V10 top-level Max save was preserved at
-  `/private/tmp/vss-live-tuning-backup.1CYB1C/VehicleSoundSynth-V10.maxpat`
-  (SHA-256 `41471bdc72545afac23774f2893c4c25461f42f95e400f05b4f5122437032689`).
+  `git diff --check`, real Max smoke/save/close, and scoped Max-process cleanup.
 
 ## Validation
 
-- 162/162 unit tests pass; `git diff --check` passes. The ten changed generated
-  outputs are byte-identical to an independent fresh generator build. V4 remains
-  clean and `drive_model.js` has no diff.
-- Final Soundscape on/off renders for EV/V10/V12 are distinct, non-silent and
-  unclipped. Their harshness ratios range from `5.35e-5` to `1.02e-4`, below the
-  documented `0.001` safety gate. Final V10 Pop measures `-2.93` dBFS peak,
-  `121.5` Hz attack centroid, `0.875` low-band energy, `0.000216` snare-band
-  energy, and a `170` ms tail.
-- Final headless Max 8.6.5 loads covered the project and EV/V10/V12 separately.
-  Current and rotated logs contain zero missing-object, Gen/function,
-  invalid-category, or patchcord-range blocker matches. The direct-open
-  search-path notices remain warning-only; abstractions loaded, and all three
-  ignored per-profile module-mixer JSON states were written with expected
-  defaults.
-- The official `crashrecovery` preference was backed up, temporarily changed
-  from Ask to Never for headless smoke, and restored byte-for-byte to Ask. Every
-  task-owned process had zero windows before exact termination. Pre-existing
-  zero-window Max PID `35660` (started at 13:38, before this task) was preserved;
-  final AppleScript therefore reports Max running.
+- 184/184 unit tests pass, including keyboard/gamepad exclusivity, pedal
+  release, lifecycle triggers, valid patchcords, current audible-instance
+  routing, version-isolated persistence, and deterministic generation.
+- Real Max 8.6.5 produced nine 48 kHz Soundscape Solo renders at fixed 1800 RPM:
+  EV/V10/V12 low load, high load, and 180 km/h low load. Every render is
+  non-silent, has zero clipped samples, subsonic ratio below 0.01, harshness
+  below 0.001, and mono-fold loss below 3.1 dB.
+- Fixed-RPM EV centroid moves 71.2 -> 119.9 Hz with load and 71.2 -> 80.9 Hz
+  with speed. V10 moves 86.9 -> 131.9 / 127.2 Hz; V12 moves 103.7 -> 109.6 /
+  108.0 Hz. This verifies timbre/space change without direct pitch jumps.
+- All task-created probe patchers were generated/saved on disk and their exact
+  Max PIDs were terminated after render finalization. Only pre-existing,
+  windowless user Max PID `22230` remains; it was not touched.
+
+## Safety Archive
+
+- Pre-task dirty runtime saves and intermediate task-owned V4 seeds are stored
+  under `/Users/saintpeter/Downloads/.VehicleSoundSynth-Backups/20260901-soundscape-v4-rebuild/`.
+- No Ferrari source/continuous derivative, local preset, Max recovery file, or
+  temporary WAV is part of the repository change.

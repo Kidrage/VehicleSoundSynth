@@ -21,7 +21,7 @@
             760.0,
             22.0
           ],
-          "text": "SOUNDSCAPE V3 CONTROL \u2014 live mechanical-resonance profile state"
+          "text": "SOUNDSCAPE V4 CONTROL \u2014 live profile-owned instrument state"
         }
       },
       {
@@ -43,7 +43,7 @@
             105.0,
             18.0
           ],
-          "text": "Soundscape V3"
+          "text": "Soundscape V4"
         }
       },
       {
@@ -163,7 +163,7 @@
             170.0,
             22.0
           ],
-          "text": "Factory V3"
+          "text": "Factory V4"
         }
       },
       {
