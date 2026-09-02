@@ -23,83 +23,128 @@ jobs:
           mkdir -p out diagnostics
           python -m pip install --upgrade requests beautifulsoup4 "yt-dlp[default,curl-cffi]"
           python - <<'PY'
-          import json, pathlib, re, sys
+          import json
+          import pathlib
+          import re
+          import sys
           from urllib.parse import quote, urljoin
+
           import requests
           from bs4 import BeautifulSoup
 
-          VID='QjdRMwsym1I'
-          YT=f'https://www.youtube.com/watch?v={VID}'
-          OUT=pathlib.Path('out'); LOG=pathlib.Path('diagnostics')
-          s=requests.Session(); s.headers.update({'User-Agent':'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/150.0 Safari/537.36'})
-          records=[]
-          def req(name,url,**kwargs):
-              try:
-                  r=s.get(url,timeout=(15,120),allow_redirects=True,**kwargs)
-                  records.append({'name':name,'url':url,'status':r.status_code,'final_url':r.url,'headers':dict(r.headers),'text':r.text[:200000] if 'text' in r.headers.get('content-type','') or 'json' in r.headers.get('content-type','') else ''})
-                  print(name,r.status_code,r.url,r.headers.get('content-type'),len(r.content),flush=True)
-                  return r
-              except Exception as e:
-                  records.append({'name':name,'url':url,'error':repr(e)})
-                  print(name,'ERROR',repr(e),flush=True); return None
+          VID = 'QjdRMwsym1I'
+          YT = f'https://www.youtube.com/watch?v={VID}'
+          OUT = pathlib.Path('out')
+          LOG = pathlib.Path('diagnostics')
+          session = requests.Session()
+          session.headers.update({'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/150.0 Safari/537.36'})
+          records = []
+          candidates = []
 
-          urls=[
-            ('ia_metadata',f'https://archive.org/metadata/youtube-{VID}'),
-            ('ia_metadata_plain',f'https://archive.org/metadata/{VID}'),
-            ('ia_search_id',f'https://archive.org/advancedsearch.php?q={quote(VID)}&fl[]=identifier,title&rows=50&page=1&output=json'),
-            ('ia_search_title','https://archive.org/advancedsearch.php?q='+quote('title:("2026 Hyundai Ioniq 6N POV Test Drive")')+'&fl[]=identifier,title&rows=50&page=1&output=json'),
-            ('wayback_cdx','https://web.archive.org/cdx/search/cdx?url='+quote(YT,safe='')+'&output=json&filter=statuscode:200&filter=mimetype:text/html&fl=timestamp,original,statuscode,digest&collapse=digest'),
-            ('wayback_media',f'https://web.archive.org/web/2oe_/http://wayback-fakeurl.archive.org/yt/{VID}'),
-            ('ghost_varchive',f'https://ghostarchive.org/varchive/{VID}'),
-            ('ghost_search','https://ghostarchive.org/search?term='+quote(YT,safe='')),
+          def fetch(name, url):
+              try:
+                  response = session.get(url, timeout=(15, 120), allow_redirects=True)
+                  content_type = response.headers.get('content-type', '')
+                  records.append({
+                      'name': name,
+                      'url': url,
+                      'status': response.status_code,
+                      'final_url': response.url,
+                      'content_type': content_type,
+                      'content_length': len(response.content),
+                      'text': response.text[:200000] if ('text' in content_type or 'json' in content_type) else '',
+                  })
+                  print(name, response.status_code, response.url, content_type, len(response.content), flush=True)
+                  return response
+              except Exception as exc:
+                  records.append({'name': name, 'url': url, 'error': repr(exc)})
+                  print(name, 'ERROR', repr(exc), flush=True)
+                  return None
+
+          endpoints = [
+              ('ia_metadata', f'https://archive.org/metadata/youtube-{VID}'),
+              ('ia_metadata_plain', f'https://archive.org/metadata/{VID}'),
+              ('ia_search_id', f'https://archive.org/advancedsearch.php?q={quote(VID)}&fl[]=identifier,title&rows=50&page=1&output=json'),
+              ('ia_search_title', 'https://archive.org/advancedsearch.php?q=' + quote('title:("2026 Hyundai Ioniq 6N POV Test Drive")') + '&fl[]=identifier,title&rows=50&page=1&output=json'),
+              ('wayback_cdx', 'https://web.archive.org/cdx/search/cdx?url=' + quote(YT, safe='') + '&output=json&filter=statuscode:200&filter=mimetype:text/html&fl=timestamp,original,statuscode,digest&collapse=digest'),
+              ('wayback_media', f'https://web.archive.org/web/2oe_/http://wayback-fakeurl.archive.org/yt/{VID}'),
+              ('ghost_varchive', f'https://ghostarchive.org/varchive/{VID}'),
+              ('ghost_search', 'https://ghostarchive.org/search?term=' + quote(YT, safe='')),
           ]
-          candidates=[]
-          for name,url in urls:
-              r=req(name,url)
-              if not r: continue
-              ctype=r.headers.get('content-type','')
-              if r.status_code==200 and ('video/' in ctype or 'audio/' in ctype or len(r.content)>1_000_000 and 'html' not in ctype):
-                  p=OUT/f'ioniq6n_source_{name}.bin'; p.write_bytes(r.content); candidates.append(str(p))
-              if name.startswith('ia_') and 'json' in ctype:
+
+          seen_archive_ids = set()
+          for name, url in endpoints:
+              response = fetch(name, url)
+              if response is None:
+                  continue
+              content_type = response.headers.get('content-type', '')
+
+              if response.status_code == 200 and (
+                  'video/' in content_type
+                  or 'audio/' in content_type
+                  or (len(response.content) > 1_000_000 and 'html' not in content_type)
+              ):
+                  target = OUT / f'ioniq6n_source_{name}.bin'
+                  target.write_bytes(response.content)
+                  candidates.append(str(target))
+
+              if name.startswith('ia_') and 'json' in content_type:
                   try:
-                      data=r.json()
-                      docs=data.get('response',{}).get('docs',[]) if isinstance(data,dict) else []
-                      identifiers=[d.get('identifier') for d in docs if d.get('identifier')]
-                      if name.startswith('ia_metadata') and isinstance(data,dict) and data.get('files'):
-                          identifiers.append(data.get('metadata',{}).get('identifier') or url.rsplit('/',1)[-1])
-                      for ident in dict.fromkeys(x for x in identifiers if x):
-                          m=req('ia_item_'+ident,f'https://archive.org/metadata/{ident}')
-                          if not m or m.status_code!=200: continue
-                          md=m.json()
-                          files=md.get('files',[])
-                          media=[f for f in files if str(f.get('name','')).lower().endswith(('.mp4','.webm','.mkv','.mp3','.m4a','.ogg','.opus','.wav'))]
-                          media.sort(key=lambda f:int(f.get('size') or 0),reverse=True)
-                          for f in media[:5]:
-                              u=f'https://archive.org/download/{quote(ident)}/{quote(f["name"])}'
-                              rr=req('ia_media_'+ident+'_'+f['name'],u,stream=False)
-                              if rr and rr.status_code==200 and len(rr.content)>1_000_000:
-                                  p=OUT/('ioniq6n_source_ia_'+re.sub(r'[^A-Za-z0-9_.-]','_',f['name']))
-                                  p.write_bytes(rr.content); candidates.append(str(p)); break
-              if name.startswith('ghost') and r.status_code==200:
-                  soup=BeautifulSoup(r.text,'html.parser')
-                  for tag in soup.find_all(['video','audio','source','a']):
-                      u=tag.get('src') or tag.get('href')
-                      if not u: continue
-                      full=urljoin(r.url,u)
-                      if any(x in full.lower() for x in ('.mp4','.webm','.m3u8','.mp3','.m4a','videoplayback','googlevideo')) or '/varchive/' in full:
-                          candidates.append(full)
-          LOG.joinpath('archive_probe.json').write_text(json.dumps(records,ensure_ascii=False,indent=2),encoding='utf-8')
-          LOG.joinpath('candidates.txt').write_text('\n'.join(dict.fromkeys(candidates)),encoding='utf-8')
-          # Local files already retrieved count as success; otherwise leave URL candidates for yt-dlp shell pass.
-          sys.exit(0)
+                      data = response.json()
+                  except Exception:
+                      data = {}
+                  identifiers = []
+                  if isinstance(data, dict):
+                      identifiers.extend(
+                          doc.get('identifier')
+                          for doc in data.get('response', {}).get('docs', [])
+                          if doc.get('identifier')
+                      )
+                      if data.get('files'):
+                          identifiers.append(data.get('metadata', {}).get('identifier') or url.rsplit('/', 1)[-1])
+                  for identifier in identifiers:
+                      if not identifier or identifier in seen_archive_ids:
+                          continue
+                      seen_archive_ids.add(identifier)
+                      metadata_response = fetch('ia_item_' + identifier, f'https://archive.org/metadata/{identifier}')
+                      if metadata_response is None or metadata_response.status_code != 200:
+                          continue
+                      try:
+                          metadata = metadata_response.json()
+                      except Exception:
+                          continue
+                      files = [
+                          entry for entry in metadata.get('files', [])
+                          if str(entry.get('name', '')).lower().endswith(('.mp4', '.webm', '.mkv', '.mp3', '.m4a', '.ogg', '.opus', '.wav'))
+                      ]
+                      files.sort(key=lambda entry: int(entry.get('size') or 0), reverse=True)
+                      for entry in files[:5]:
+                          media_url = f'https://archive.org/download/{quote(identifier)}/{quote(entry["name"])}'
+                          candidates.append(media_url)
+
+              if name.startswith('ghost') and response.status_code == 200:
+                  soup = BeautifulSoup(response.text, 'html.parser')
+                  for tag in soup.find_all(['video', 'audio', 'source', 'a']):
+                      link = tag.get('src') or tag.get('href')
+                      if not link:
+                          continue
+                      full_url = urljoin(response.url, link)
+                      lower = full_url.lower()
+                      if any(marker in lower for marker in ('.mp4', '.webm', '.m3u8', '.mp3', '.m4a', 'videoplayback', 'googlevideo')):
+                          candidates.append(full_url)
+
+          LOG.joinpath('archive_probe.json').write_text(json.dumps(records, ensure_ascii=False, indent=2), encoding='utf-8')
+          LOG.joinpath('candidates.txt').write_text('\n'.join(dict.fromkeys(candidates)), encoding='utf-8')
+          print('CANDIDATE_COUNT', len(dict.fromkeys(candidates)))
           PY
 
+          touch diagnostics/ytdlp_candidates.log
           while IFS= read -r candidate; do
             [ -z "$candidate" ] && continue
-            if [ -f "$candidate" ]; then continue; fi
+            [ -f "$candidate" ] && continue
             echo "TRY_CANDIDATE $candidate" | tee -a diagnostics/ytdlp_candidates.log
             yt-dlp -v --no-playlist -f 'bestaudio/best' -o 'out/ioniq6n_source_archive.%(ext)s' "$candidate" >> diagnostics/ytdlp_candidates.log 2>&1
-            if [ "$?" -eq 0 ]; then break; fi
+            [ "$?" -eq 0 ] && break
           done < diagnostics/candidates.txt
 
           find out -type f -size -1M -delete || true
@@ -109,7 +154,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ioniq6n-archive-probe
+          name: ioniq6n-archive-probe-fixed
           path: |
             out/
             diagnostics/
