@@ -23,51 +23,207 @@ jobs:
         with:
           node-version: '24'
 
-      - name: Install audio tools
+      - name: Install acquisition tools
         run: |
-          sudo apt-get update
-          sudo apt-get install -y ffmpeg
+          if ! command -v ffmpeg >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y ffmpeg
+          fi
           python -m pip install --upgrade pip
-          python -m pip install --upgrade "yt-dlp[default,curl-cffi]"
+          python -m pip install --upgrade "yt-dlp[default,curl-cffi]" requests
 
-      - name: Acquire exact reference audio
+      - name: Acquire exact reference audio with fallbacks
+        id: acquire
         shell: bash
         run: |
-          set -euo pipefail
-          mkdir -p out
+          set -u
+          mkdir -p out attempts
           URL='https://www.youtube.com/watch?v=QjdRMwsym1I'
-          yt-dlp --version
-          yt-dlp \
-            --no-playlist \
-            --js-runtimes node \
-            --remote-components ejs:github \
-            --write-info-json \
-            --write-thumbnail \
-            --convert-thumbnails jpg \
-            -f 'bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio' \
-            -o 'out/ioniq6n_source.%(ext)s' \
-            "$URL"
+          VIDEO_ID='QjdRMwsym1I'
+          SUCCESS=0
 
-          AUDIO_FILE="$(find out -maxdepth 1 -type f \( -name 'ioniq6n_source.m4a' -o -name 'ioniq6n_source.webm' -o -name 'ioniq6n_source.opus' -o -name 'ioniq6n_source.mp4' \) | head -n 1)"
-          test -n "$AUDIO_FILE"
+          try_ytdlp() {
+            local label="$1"
+            local clients="$2"
+            echo "=== yt-dlp attempt: $label ($clients) ===" | tee -a attempts/summary.log
+            yt-dlp \
+              --no-playlist \
+              --js-runtimes node \
+              --remote-components ejs:github \
+              --impersonate chrome \
+              --extractor-args "youtube:player_client=${clients}" \
+              --write-info-json \
+              -f 'bestaudio[ext=webm]/bestaudio[ext=m4a]/bestaudio' \
+              -o "out/ioniq6n_source_${label}.%(ext)s" \
+              "$URL" 2>&1 | tee "attempts/ytdlp_${label}.log"
+            local rc=${PIPESTATUS[0]}
+            if [ "$rc" -eq 0 ]; then SUCCESS=1; fi
+            return "$rc"
+          }
 
-          ffmpeg -hide_banner -y -i "$AUDIO_FILE" -vn -ar 48000 -ac 2 -c:a libmp3lame -b:a 192k out/ioniq6n_reference_48k_stereo.mp3
+          try_ytdlp tv_safari 'tv,web_safari' || true
+          if [ "$SUCCESS" -eq 0 ]; then try_ytdlp embedded 'web_embedded,tv_simply,web_safari' || true; fi
+          if [ "$SUCCESS" -eq 0 ]; then try_ytdlp mobile 'mweb,android_vr,web_safari' || true; fi
+
+          if [ "$SUCCESS" -eq 0 ]; then
+            python - <<'PY'
+          import json
+          import pathlib
+          import re
+          import sys
+          import time
+          from urllib.parse import urlparse
+
+          import requests
+
+          OUT = pathlib.Path('out')
+          LOG = pathlib.Path('attempts')
+          URL = 'https://www.youtube.com/watch?v=QjdRMwsym1I'
+          VID = 'QjdRMwsym1I'
+          UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/150.0 Safari/537.36'
+          session = requests.Session()
+          session.headers.update({'User-Agent': UA})
+
+          def save_response(name, text):
+              (LOG / name).write_text(text[:200000], encoding='utf-8', errors='replace')
+
+          def download(url, target, headers=None):
+              with session.get(url, headers=headers or {}, stream=True, timeout=(20, 360), allow_redirects=True) as r:
+                  r.raise_for_status()
+                  ctype = r.headers.get('content-type', '')
+                  total = 0
+                  with open(target, 'wb') as f:
+                      for chunk in r.iter_content(1024 * 1024):
+                          if chunk:
+                              f.write(chunk)
+                              total += len(chunk)
+                  if total < 1_000_000:
+                      raise RuntimeError(f'download too small: {total} bytes, content-type={ctype}')
+                  return total, ctype
+
+          # Cobalt v11 community APIs currently reporting YouTube support.
+          cobalt_instances = [
+              'https://cobalt-api.meowing.de',
+              'https://capi.3kh0.net',
+          ]
+          payloads = [
+              {'url': URL, 'downloadMode': 'audio', 'audioFormat': 'best', 'filenameStyle': 'basic', 'alwaysProxy': True, 'youtubeBetterAudio': True},
+              {'url': URL, 'downloadMode': 'audio', 'audioFormat': 'best', 'filenameStyle': 'basic', 'alwaysProxy': True, 'youtubeHLS': True},
+              {'url': URL, 'downloadMode': 'audio', 'audioFormat': 'mp3', 'audioBitrate': '320', 'filenameStyle': 'basic', 'alwaysProxy': True, 'youtubeHLS': True},
+          ]
+          for base in cobalt_instances:
+              for n, payload in enumerate(payloads, 1):
+                  key = re.sub(r'[^a-z0-9]+', '_', urlparse(base).netloc.lower())
+                  try:
+                      r = session.post(base.rstrip('/') + '/', headers={'Accept': 'application/json', 'Content-Type': 'application/json'}, json=payload, timeout=(20, 120))
+                      save_response(f'cobalt_{key}_{n}.log', f'HTTP {r.status_code}\n{r.text}')
+                      r.raise_for_status()
+                      data = r.json()
+                      media_url = data.get('url')
+                      if data.get('status') in {'redirect', 'tunnel'} and media_url:
+                          target = OUT / f'ioniq6n_source_cobalt_{key}_{n}.bin'
+                          size, ctype = download(media_url, target)
+                          print(f'COBALT_SUCCESS {base} payload={n} size={size} type={ctype}')
+                          sys.exit(0)
+                  except Exception as exc:
+                      with open(LOG / 'fallback_errors.log', 'a', encoding='utf-8') as f:
+                          f.write(f'COBALT {base} payload={n}: {exc!r}\n')
+
+          # Trusted public Invidious instances from the project's official list.
+          invidious_instances = [
+              'https://inv.nadeko.net',
+              'https://invidious.nerdvpn.de',
+              'https://yt.chocolatemoo53.com',
+          ]
+          for base in invidious_instances:
+              key = re.sub(r'[^a-z0-9]+', '_', urlparse(base).netloc.lower())
+              try:
+                  api = f'{base}/api/v1/videos/{VID}?local=true'
+                  r = session.get(api, timeout=(20, 120))
+                  save_response(f'invidious_{key}.log', f'HTTP {r.status_code}\n{r.text}')
+                  r.raise_for_status()
+                  data = r.json()
+                  formats = data.get('adaptiveFormats') or data.get('formatStreams') or []
+                  audio = [x for x in formats if str(x.get('type', '')).startswith('audio/') and x.get('url')]
+                  audio.sort(key=lambda x: int(x.get('bitrate') or 0), reverse=True)
+                  for idx, fmt in enumerate(audio[:4], 1):
+                      try:
+                          target = OUT / f'ioniq6n_source_invidious_{key}_{idx}.bin'
+                          size, ctype = download(fmt['url'], target, headers={'Referer': base + '/'})
+                          print(f'INVIDIOUS_SUCCESS {base} format={fmt.get("itag")} size={size} type={ctype}')
+                          sys.exit(0)
+                      except Exception as inner:
+                          with open(LOG / 'fallback_errors.log', 'a', encoding='utf-8') as f:
+                              f.write(f'INVIDIOUS_STREAM {base} #{idx}: {inner!r}\n')
+              except Exception as exc:
+                  with open(LOG / 'fallback_errors.log', 'a', encoding='utf-8') as f:
+                      f.write(f'INVIDIOUS_API {base}: {exc!r}\n')
+
+          # Piped APIs as a last public-front-end fallback.
+          piped_instances = [
+              'https://pipedapi.kavin.rocks',
+              'https://pipedapi.private.coffee',
+              'https://pipedapi.reallyaweso.me',
+              'https://piped-api.garudalinux.org',
+              'https://api-piped.mha.fi',
+          ]
+          for base in piped_instances:
+              key = re.sub(r'[^a-z0-9]+', '_', urlparse(base).netloc.lower())
+              try:
+                  api = f'{base}/streams/{VID}'
+                  r = session.get(api, timeout=(20, 120))
+                  save_response(f'piped_{key}.log', f'HTTP {r.status_code}\n{r.text}')
+                  r.raise_for_status()
+                  data = r.json()
+                  audio = [x for x in (data.get('audioStreams') or []) if x.get('url')]
+                  audio.sort(key=lambda x: int(x.get('bitrate') or 0), reverse=True)
+                  for idx, fmt in enumerate(audio[:4], 1):
+                      try:
+                          target = OUT / f'ioniq6n_source_piped_{key}_{idx}.bin'
+                          size, ctype = download(fmt['url'], target, headers={'Referer': base + '/'})
+                          print(f'PIPED_SUCCESS {base} size={size} type={ctype}')
+                          sys.exit(0)
+                      except Exception as inner:
+                          with open(LOG / 'fallback_errors.log', 'a', encoding='utf-8') as f:
+                              f.write(f'PIPED_STREAM {base} #{idx}: {inner!r}\n')
+              except Exception as exc:
+                  with open(LOG / 'fallback_errors.log', 'a', encoding='utf-8') as f:
+                      f.write(f'PIPED_API {base}: {exc!r}\n')
+
+          print('ALL_PUBLIC_FALLBACKS_FAILED', file=sys.stderr)
+          sys.exit(1)
+          PY
+            if [ "$?" -eq 0 ]; then SUCCESS=1; fi
+          fi
+
+          AUDIO_FILE="$(find out -maxdepth 1 -type f \( -name 'ioniq6n_source_*.m4a' -o -name 'ioniq6n_source_*.webm' -o -name 'ioniq6n_source_*.opus' -o -name 'ioniq6n_source_*.mp4' -o -name 'ioniq6n_source_*.bin' \) -size +1M | head -n 1)"
+          if [ "$SUCCESS" -eq 0 ] || [ -z "$AUDIO_FILE" ]; then
+            echo 'No usable source file acquired.' | tee -a attempts/summary.log
+            exit 1
+          fi
+
+          echo "Selected source: $AUDIO_FILE" | tee -a attempts/summary.log
           ffprobe -v error -show_format -show_streams -of json "$AUDIO_FILE" > out/ffprobe_source.json
-          ffprobe -v error -show_format -show_streams -of json out/ioniq6n_reference_48k_stereo.mp3 > out/ffprobe_reference.json
+          ffmpeg -hide_banner -y -i "$AUDIO_FILE" -vn -ar 48000 -ac 2 -c:a pcm_s24le out/ioniq6n_reference_48k_stereo.wav
+          ffmpeg -hide_banner -y -i "$AUDIO_FILE" -vn -ar 48000 -ac 2 -c:a libmp3lame -b:a 192k out/ioniq6n_reference_48k_stereo.mp3
+          ffprobe -v error -show_format -show_streams -of json out/ioniq6n_reference_48k_stereo.wav > out/ffprobe_reference.json
           sha256sum out/* > out/SHA256SUMS.txt
           {
             echo 'Source title: 2026 Hyundai Ioniq 6N POV Test Drive'
             echo 'Video ID: QjdRMwsym1I'
-            echo 'Purpose: temporary engineering reference acquisition for Sound DNA analysis'
-            echo "Source file: $AUDIO_FILE"
+            echo 'Purpose: engineering reference for Sound DNA analysis'
+            echo "Selected source file: $AUDIO_FILE"
           } > out/README.txt
-          ls -lh out
+          ls -lh out attempts
 
-      - name: Upload temporary analysis input
+      - name: Upload acquisition result and diagnostics
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ioniq6n-audio-reference
-          path: out/
-          if-no-files-found: error
+          name: ioniq6n-audio-reference-attempt-2
+          path: |
+            out/
+            attempts/
+          if-no-files-found: warn
           retention-days: 1
           compression-level: 0
