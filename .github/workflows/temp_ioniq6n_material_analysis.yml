@@ -9,148 +9,175 @@ permissions:
   contents: read
 
 jobs:
-  acquire-audio:
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
+  macos-direct:
+    runs-on: macos-15
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '24'
-
-      - name: Install current extractors
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install --upgrade "yt-dlp[default,curl-cffi]" bgutil-ytdlp-pot-provider requests
-          npm install --no-save youtubei.js
-
-      - name: Acquire exact public reference through independent extractor paths
+      - name: Try direct extraction from a non-Azure runner
         shell: bash
         run: |
-          set -u
+          set +e
           mkdir -p out diagnostics
+          python -m pip install --upgrade "yt-dlp[default,curl-cffi]" bgutil-ytdlp-pot-provider
           URL='https://www.youtube.com/watch?v=QjdRMwsym1I'
-          VID='QjdRMwsym1I'
-          SUCCESS=0
-
-          echo '=== Start BgUtils PO-token provider ===' | tee diagnostics/summary.log
-          docker run --name bgutil-provider -d --init -p 4416:4416 brainicism/bgutil-ytdlp-pot-provider:latest > diagnostics/bgutil_container_id.txt 2>&1 || true
-          sleep 5
-          docker logs bgutil-provider > diagnostics/bgutil_provider.log 2>&1 || true
-          curl -fsS http://127.0.0.1:4416/ > diagnostics/bgutil_health.txt 2>&1 || true
-
-          try_ytdlp() {
-            local label="$1"; local clients="$2"
-            echo "=== yt-dlp + PO token: $label ($clients) ===" | tee -a diagnostics/summary.log
-            yt-dlp -v \
-              --no-playlist \
-              --js-runtimes node \
-              --remote-components ejs:github \
-              --impersonate chrome \
+          for clients in 'tv,web_safari' 'mweb' 'ios,web_safari' 'android_vr,web_embedded'; do
+            label="$(echo "$clients" | tr ',' '_')"
+            echo "=== $clients ===" | tee -a diagnostics/summary.log
+            yt-dlp -v --no-playlist --js-runtimes node --remote-components ejs:github \
               --extractor-args "youtube:player_client=${clients}" \
               -f 'bestaudio[ext=webm]/bestaudio[ext=m4a]/bestaudio' \
-              -o "out/ioniq6n_source_${label}.%(ext)s" \
-              "$URL" > "diagnostics/ytdlp_${label}.log" 2>&1
-            local rc=$?
+              -o "out/ioniq6n_source_${label}.%(ext)s" "$URL" \
+              > "diagnostics/ytdlp_${label}.log" 2>&1
+            rc=$?
             cat "diagnostics/ytdlp_${label}.log"
-            if [ "$rc" -eq 0 ]; then SUCCESS=1; fi
-            return "$rc"
-          }
+            if [ "$rc" -eq 0 ]; then break; fi
+          done
+          find out -type f -size -1M -delete || true
+          find out -type f -maxdepth 1 -print -exec shasum -a 256 {} \; > diagnostics/files.txt
+          test -n "$(find out -type f -size +1M -print -quit)"
+      - name: Upload macOS result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ioniq6n-macos-attempt
+          path: |
+            out/
+            diagnostics/
+          if-no-files-found: warn
+          retention-days: 1
+          compression-level: 0
 
-          try_ytdlp mweb 'mweb' || true
-          if [ "$SUCCESS" -eq 0 ]; then try_ytdlp web 'web,web_safari' || true; fi
-          if [ "$SUCCESS" -eq 0 ]; then try_ytdlp mixed 'mweb,web_safari,android_vr' || true; fi
+  proxy-discovery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Probe current public frontends and self-hosted cobalt
+        shell: bash
+        run: |
+          set +e
+          mkdir -p out diagnostics
+          python -m pip install --upgrade requests
+          python - <<'PY'
+          import json, pathlib, re, sys, time
+          from urllib.parse import urlparse
+          import requests
 
-          if [ "$SUCCESS" -eq 0 ]; then
-            echo '=== youtubei.js direct path ===' | tee -a diagnostics/summary.log
-            cat > diagnostics/youtubei_acquire.mjs <<'JS'
-          import fs from 'node:fs';
-          import { Innertube, UniversalCache } from 'youtubei.js';
-          const id = 'QjdRMwsym1I';
-          try {
-            const yt = await Innertube.create({ cache: new UniversalCache(false), generate_session_locally: true });
-            const info = await yt.getBasicInfo(id);
-            fs.writeFileSync('diagnostics/youtubei_info.json', JSON.stringify(info.basic_info, null, 2));
-            const stream = await info.download({ type: 'audio', quality: 'best', format: 'any' });
-            const reader = stream.getReader();
-            const fd = fs.openSync('out/ioniq6n_source_youtubei.bin', 'w');
-            let total = 0;
-            while (true) {
-              const { done, value } = await reader.read();
-              if (done) break;
-              fs.writeSync(fd, value);
-              total += value.length;
-            }
-            fs.closeSync(fd);
-            console.log(`YOUTUBEI_SUCCESS bytes=${total}`);
-            if (total < 1000000) process.exit(2);
-          } catch (err) {
-            fs.writeFileSync('diagnostics/youtubei_error.txt', String(err?.stack || err));
-            console.error(err);
-            process.exit(1);
-          }
-          JS
-            node diagnostics/youtubei_acquire.mjs > diagnostics/youtubei_stdout.log 2>&1
-            if [ "$?" -eq 0 ]; then SUCCESS=1; fi
-          fi
+          VID='QjdRMwsym1I'
+          OUT=pathlib.Path('out'); LOG=pathlib.Path('diagnostics')
+          s=requests.Session(); s.headers.update({'User-Agent':'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/150.0 Safari/537.36'})
+          events=[]
+          def note(kind, base, msg):
+              events.append({'kind':kind,'base':base,'result':str(msg)[:1200]})
+              print(kind, base, str(msg)[:300], flush=True)
+          def get_file(url, target, headers=None):
+              with s.get(url,headers=headers or {},stream=True,timeout=(6,90),allow_redirects=True) as r:
+                  ctype=r.headers.get('content-type',''); r.raise_for_status(); total=0
+                  with open(target,'wb') as f:
+                      for chunk in r.iter_content(1024*1024):
+                          if chunk: f.write(chunk); total += len(chunk)
+                          if total > 250_000_000: raise RuntimeError('oversized')
+              if total < 1_000_000: raise RuntimeError(f'too small {total} type={ctype}')
+              return total,ctype
 
-          if [ "$SUCCESS" -eq 0 ]; then
-            echo '=== self-hosted cobalt path ===' | tee -a diagnostics/summary.log
-            docker run --name cobalt -d --init -p 9000:9000 -e API_URL=http://127.0.0.1:9000/ ghcr.io/imputnet/cobalt:11 > diagnostics/cobalt_container_id.txt 2>&1 || true
-            sleep 10
-            docker logs cobalt > diagnostics/cobalt_server.log 2>&1 || true
-            python - <<'PY'
-          import json, pathlib, requests, sys, time
-          base='http://127.0.0.1:9000'
-          payload={'url':'https://www.youtube.com/watch?v=QjdRMwsym1I','downloadMode':'audio','audioFormat':'best','filenameStyle':'basic','youtubeHLS':True}
+          # Obtain the live Invidious list and try direct proxied media endpoints first.
+          candidates=[]
           try:
-              r=requests.post(base+'/',json=payload,headers={'Accept':'application/json','Content-Type':'application/json'},timeout=120)
+              raw=s.get('https://api.invidious.io/instances.json',timeout=20).json()
+              for domain,meta in raw:
+                  uri=(meta or {}).get('uri') or ('https://'+domain)
+                  if uri.startswith('https://') and uri not in candidates: candidates.append(uri.rstrip('/'))
+          except Exception as e: note('INVIDIOUS_LIST','official',repr(e))
+          # Add currently documented fallbacks first, then cap total probes.
+          preferred=['https://inv.nadeko.net','https://invidious.nerdvpn.de','https://yt.chocolatemoo53.com','https://yewtu.be','https://invidious.privacyredirect.com']
+          candidates=preferred+[x for x in candidates if x not in preferred]
+          for base in candidates[:35]:
+              key=re.sub(r'[^a-z0-9]+','_',urlparse(base).netloc.lower())
+              for itag in (251,140):
+                  try:
+                      url=f'{base}/latest_version?id={VID}&itag={itag}&local=true'
+                      total,ctype=get_file(url,OUT/f'ioniq6n_source_invidious_{key}_{itag}.bin',{'Referer':base+'/'})
+                      note('INVIDIOUS_DIRECT',base,f'SUCCESS itag={itag} bytes={total} type={ctype}')
+                      (LOG/'probe_results.json').write_text(json.dumps(events,ensure_ascii=False,indent=2))
+                      sys.exit(0)
+                  except Exception as e:
+                      try: (OUT/f'ioniq6n_source_invidious_{key}_{itag}.bin').unlink()
+                      except: pass
+                      note('INVIDIOUS_DIRECT',base,f'itag={itag} {e!r}')
+              try:
+                  r=s.get(f'{base}/api/v1/videos/{VID}?local=true',timeout=(6,25)); r.raise_for_status(); data=r.json()
+                  formats=[x for x in data.get('adaptiveFormats',[]) if str(x.get('type','')).startswith('audio/') and x.get('url')]
+                  formats.sort(key=lambda x:int(x.get('bitrate') or 0),reverse=True)
+                  for idx,fmt in enumerate(formats[:3]):
+                      try:
+                          total,ctype=get_file(fmt['url'],OUT/f'ioniq6n_source_invidious_{key}_api{idx}.bin',{'Referer':base+'/'})
+                          note('INVIDIOUS_API',base,f'SUCCESS bytes={total} type={ctype}')
+                          (LOG/'probe_results.json').write_text(json.dumps(events,ensure_ascii=False,indent=2))
+                          sys.exit(0)
+                      except Exception as e: note('INVIDIOUS_STREAM',base,repr(e))
+              except Exception as e: note('INVIDIOUS_API',base,repr(e))
+
+          # Probe a bounded set of documented Piped APIs.
+          piped=[
+            'https://pipedapi.kavin.rocks','https://pipedapi.tokhmi.xyz','https://pipedapi.moomoo.me',
+            'https://pipedapi.syncpundit.io','https://api-piped.mha.fi','https://piped-api.garudalinux.org',
+            'https://pipedapi.rivo.lol','https://pipedapi.adminforge.de','https://pipedapi.reallyaweso.me'
+          ]
+          for base in piped:
+              key=re.sub(r'[^a-z0-9]+','_',urlparse(base).netloc.lower())
+              try:
+                  r=s.get(f'{base}/streams/{VID}',timeout=(6,30)); r.raise_for_status(); data=r.json()
+                  streams=[x for x in data.get('audioStreams',[]) if x.get('url')]
+                  streams.sort(key=lambda x:int(x.get('bitrate') or 0),reverse=True)
+                  for idx,fmt in enumerate(streams[:3]):
+                      try:
+                          total,ctype=get_file(fmt['url'],OUT/f'ioniq6n_source_piped_{key}_{idx}.bin',{'Referer':base+'/'})
+                          note('PIPED',base,f'SUCCESS bytes={total} type={ctype}')
+                          (LOG/'probe_results.json').write_text(json.dumps(events,ensure_ascii=False,indent=2))
+                          sys.exit(0)
+                      except Exception as e: note('PIPED_STREAM',base,repr(e))
+              except Exception as e: note('PIPED_API',base,repr(e))
+          (LOG/'probe_results.json').write_text(json.dumps(events,ensure_ascii=False,indent=2))
+          sys.exit(1)
+          PY
+          PROBE_RC=$?
+
+          if [ "$PROBE_RC" -ne 0 ]; then
+            docker run --name cobalt -d --init -p 9000:9000 -e API_URL=http://127.0.0.1:9000/ ghcr.io/imputnet/cobalt:11 > diagnostics/cobalt_start.txt 2>&1
+            sleep 12
+            docker logs cobalt > diagnostics/cobalt_server.log 2>&1
+            python - <<'PY'
+          import pathlib,requests,sys
+          try:
+              r=requests.post('http://127.0.0.1:9000/',json={'url':'https://www.youtube.com/watch?v=QjdRMwsym1I','downloadMode':'audio','audioFormat':'best','filenameStyle':'basic','youtubeHLS':True},timeout=120)
               pathlib.Path('diagnostics/cobalt_response.txt').write_text(f'HTTP {r.status_code}\n{r.text}',encoding='utf-8')
-              r.raise_for_status()
-              data=r.json(); url=data.get('url')
-              if data.get('status') not in {'redirect','tunnel'} or not url: raise RuntimeError(data)
-              with requests.get(url,stream=True,timeout=(20,360)) as s:
+              r.raise_for_status(); data=r.json(); u=data.get('url')
+              if not u: raise RuntimeError(data)
+              with requests.get(u,stream=True,timeout=(10,360)) as s:
                   s.raise_for_status(); total=0
                   with open('out/ioniq6n_source_cobalt.bin','wb') as f:
                       for chunk in s.iter_content(1024*1024):
-                          if chunk: f.write(chunk); total += len(chunk)
-              print('COBALT_SUCCESS',total)
-              if total < 1000000: raise RuntimeError(f'too small {total}')
+                          if chunk: f.write(chunk); total+=len(chunk)
+              if total<1_000_000: raise RuntimeError(f'too small {total}')
           except Exception as e:
               pathlib.Path('diagnostics/cobalt_client_error.txt').write_text(repr(e),encoding='utf-8')
               sys.exit(1)
           PY
-            if [ "$?" -eq 0 ]; then SUCCESS=1; fi
           fi
-
-          find out -maxdepth 1 -type f -size -1M -delete || true
-          AUDIO_FILE="$(find out -maxdepth 1 -type f -name 'ioniq6n_source_*' -size +1M | head -n 1)"
-          if [ "$SUCCESS" -eq 0 ] || [ -z "$AUDIO_FILE" ]; then
-            echo 'ALL_EXTRACTION_PATHS_FAILED' | tee -a diagnostics/summary.log
-            docker logs bgutil-provider >> diagnostics/bgutil_provider.log 2>&1 || true
-            docker logs cobalt >> diagnostics/cobalt_server.log 2>&1 || true
-            exit 1
-          fi
-
-          echo "Selected source: $AUDIO_FILE" | tee -a diagnostics/summary.log
-          ffprobe -v error -show_format -show_streams -of json "$AUDIO_FILE" > out/ffprobe_source.json || true
-          if command -v ffmpeg >/dev/null 2>&1; then
-            ffmpeg -hide_banner -y -i "$AUDIO_FILE" -vn -ar 48000 -ac 2 -c:a pcm_s24le out/ioniq6n_reference_48k_stereo.wav
-            ffmpeg -hide_banner -y -i "$AUDIO_FILE" -vn -ar 48000 -ac 2 -c:a libmp3lame -b:a 192k out/ioniq6n_reference_48k_stereo.mp3
-          fi
-          sha256sum out/* > out/SHA256SUMS.txt
-          ls -lh out diagnostics
-
-      - name: Upload acquisition result and diagnostics
+          docker logs cobalt >> diagnostics/cobalt_server.log 2>&1 || true
+          find out -type f -size -1M -delete || true
+          find out -type f -maxdepth 1 -print -exec sha256sum {} \; > diagnostics/files.txt
+          test -n "$(find out -type f -size +1M -print -quit)"
+      - name: Upload proxy result
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ioniq6n-audio-reference-attempt-3
+          name: ioniq6n-proxy-discovery-attempt
           path: |
             out/
             diagnostics/
