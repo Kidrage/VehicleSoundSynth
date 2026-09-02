@@ -8,6 +8,7 @@
 Branch `codex/v5-ioniq6n-profile` adds a fourth fixed runtime,
 `VehicleSoundSynth-IONIQ6N.maxpat`, from fixed point `d3dbad6`. This is not a
 V10 rebuild: the committed EV, V10 and V12 acoustic artifacts remain unchanged.
+The implementation commit is `ba830a854806c72a1a0be5b21fb12642c3c31d1b`.
 The launcher opens only one of the four runtimes, and the IONIQ profile reuses
 the verified keyboard/gamepad throttle and brake seam.
 

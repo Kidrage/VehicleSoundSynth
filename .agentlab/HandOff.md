@@ -6,6 +6,7 @@
 - Target runtime: Max 8.6.5 on macOS.
 - Feature branch: `codex/v5-ioniq6n-profile`.
 - Fixed point: `d3dbad6513e2c9b37076ca8959c8cf119bfee3bf`.
+- Feature implementation: `ba830a854806c72a1a0be5b21fb12642c3c31d1b`.
 
 ## Delivered Change
 
