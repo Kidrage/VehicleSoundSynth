@@ -2,11 +2,12 @@
 
 ## Purpose
 
-Max 8.6.5 vehicle-sound V5, forked from stable V4 tag `v4.0.0`, with three independent fixed-profile runtimes. V10
+Max 8.6.5 vehicle-sound V5, forked from stable V4 tag `v4.0.0`, with four independent fixed-profile runtimes. V10
 and V12 continuous audio are procedural; Ferrari.wav is a V10 lifecycle-analysis
-target and may supply only the optional ignored realistic-start one-shot. All
-three profiles share one suspendable, user-editable four-layer cinematic BEAP
-Soundscape V3 topology while keeping independent factory and user states.
+target and may supply only the optional ignored realistic-start one-shot. EV,
+V10 and V12 retain their independent Soundscape V4 instruments. IONIQ6N is a
+separate fourth electric profile with one Sound DNA, three crossfaded N Sound
+BEAP instruments, a ready activation voice and a mode-aware N-event bus.
 The project also contains a
 start-relative single-speed/seven-speed drivetrain, cabin rumble, licensed
 events, short cabin IR, adjustable stereo compression, EQ, and peak protection.
@@ -25,13 +26,13 @@ events, short cabin IR, adjustable stereo compression, EQ, and peak protection.
 - `tools/prepare_engine_texture.py` — CC0 stereo residual filtering, envelope stabilization, Side decorrelation, cyclic seam closure, normalization, and hashing.
 - `tools/prepare_local_reference.py` — builds the ignored Ferrari startup one-shot plus analysis-only legacy derivatives and hash manifests.
 - `tools/analyze_reference_lifecycle.py` / `tools/validate_v10_lifecycle.py` — build the tracked 14-node target table and gate five synthesized roles plus the throttle-only full-drive render.
-- `code/drive_model.js` — exact deterministic 20 ms EV/V10/V12 drivetrain used by Max and Node regression traces.
+- `code/drive_model.js` — exact deterministic 20 ms EV/V10/V12/IONIQ6N drivetrain used by Max and Node regression traces.
 - `code/manual_input.js` — ES5/Node-testable fixed LT-throttle/RT-brake
   normalization, smoothing, source exclusivity, and safe pedal-release state.
 - `assets/asset_manifest.json` / `ASSET_LICENSES.md` — runtime-audio provenance authority.
 - `main.maxpat` — DSP-free launcher; it must never instantiate an engine. Its
   Soundscape control is only a send/receive view of the selected runtime.
-- `VehicleSoundSynth-{EV,V10,V12}.maxpat` — independent runnable UIs; the
+- `VehicleSoundSynth-{EV,V10,V12,IONIQ6N}.maxpat` — independent runnable UIs; the
   single `Audio + Output` toggle enables both DSP and the output ramp.
 - `patchers/keyboard_drive_ws.maxpat` — focus-aware Manual-mode binary W/S
   pedals with forced release when leaving Manual. Its Max `gate` control is
@@ -39,8 +40,8 @@ events, short cabin IR, adjustable stereo compression, EQ, and peak protection.
 - `patchers/manual_input.maxpat` — generated deep module that selects the
   keyboard adapter or Max's built-in macOS `gamepad` adapter and exposes only
   normalized throttle/brake to the existing drivetrain.
-- `patchers/vehicle_engine_{ev,v10,v12}~.maxpat` — fixed public seams.
-- `patchers/{ev,v10,v12}_sound_dna~.maxpat` — seed-once, user-editable profile
+- `patchers/vehicle_engine_{ev,v10,v12,ioniq6n}~.maxpat` — fixed public seams.
+- `patchers/{ev,v10,v12,ioniq6n}_sound_dna~.maxpat` — seed-once, user-editable profile
   sound-design panels that own synthesis macros and wrap one generated powertrain.
 - `patchers/{ev,v10,v12}_powertrain~.maxpat` — exactly one Gen per profile.
 - `patchers/vehicle_bus_eq~.maxpat` — seed-once, user-editable four-band EQ
@@ -55,6 +56,15 @@ events, short cabin IR, adjustable stereo compression, EQ, and peak protection.
   Soundscape V3 slot-99 authority. The state helper re-reads
   slot 99 after every local read; local Save deletes slot 99 before writing so
   ignored user files contain slot 1 only.
+- `patchers/ioniq6n_cinematic_soundscape_host~.maxpat` — fourth-profile host;
+  crossfades Ignition/Evolution/Lightspeed over 150 ms and never accepts Sound
+  DNA audio or DNA parameter messages.
+- `patchers/ioniq6n_soundscape_{ignition,evolution,lightspeed}_beap~.maxpat` —
+  seed-once N Sound instruments. `presets/ioniq6n_soundscape_modes_factory.json`
+  is their tracked state authority; local state is ignored.
+- `patchers/ioniq6n_activation_beap~.maxpat` and
+  `patchers/ioniq6n_n_event_beap~.maxpat` — separately editable activation and
+  mode-aware shift/release event voices.
 - `patchers/cinematic_soundscape_v3_beap~.maxpat`, three profile-specific
   `*_engine_start_beap~` designers, three legacy EV pads, two legacy ICE pads,
   and two backfire graphs are seed-once user-tunable files. The legacy pads and
@@ -75,7 +85,7 @@ python3 tools/validate_v10_lifecycle.py --drive-lifecycle-wav v10_v10-lifecycle-
 ```
 
 Regenerate twice and compare hashes when generator determinism matters. Never
-hand-edit generated `.maxpat`, `.gendsp`, or `.wav` files. The three Sound DNA
+hand-edit generated `.maxpat`, `.gendsp`, or `.wav` files. The four Sound DNA
 panels, bus EQ, and seed-once BEAP patchers named above are explicit
 user-owned exceptions. The project generator preserves those files after their
 first seed. The project generator
@@ -169,6 +179,9 @@ On macOS, Max writes load diagnostics to
 - Keep natural coast inside the shared 20 ms drive model: released low-speed
   settling is stronger than high-speed coasting, blends to the original powered
   drag by 0.08 throttle, and must not alter the public throttle/brake interface.
+- Add IONIQ6N as a fourth isolated profile without modifying the committed
+  EV/V10/V12 acoustic graphs. Keep N e-Shift optional, default it on, and keep
+  Sound DNA, the three N Sound modes, activation and N events as separate stems.
 
 ## Repository State
 

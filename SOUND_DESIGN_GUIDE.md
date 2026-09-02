@@ -17,11 +17,14 @@ audible instance and receive its current state:
 - V10/V12 `Open Pop Designer` opens the active backfire voice in the supported
   one-runtime-at-a-time workflow, not a detached duplicate patcher. Two copies
   of one profile share its tuning bus and are not a supported tuning setup.
+- IONIQ6N exposes `N Sound Mode`, `N e-Shift`, and a separate N Event Designer.
+  Its Soundscape, Sound DNA, ready activation and N events are four independent
+  tuning domains; changing one never writes parameters into another.
 
 The visible four-node EQ embedded at the bottom of each engine window uses the
 same `patchers/vehicle_bus_eq~.maxpat` design, but its values are stored per
 profile. Save the patcher itself after changing its layout or objects. Use its
-`Save EQ` button to save the active EV/V10/V12 values for the next launch.
+`Save EQ` button to save the active EV/V10/V12/IONIQ6N values for the next launch.
 
 ## Human-maintained sound-design modules
 
@@ -30,10 +33,14 @@ profile. Save the patcher itself after changing its layout or objects. Use its
 | `patchers/ev_sound_dna~.maxpat` | EV motor, inverter, gear and stereo character | Patcher is seed-once; `Save DNA` writes ignored local values |
 | `patchers/v10_sound_dna~.maxpat` | V10 combustion, intake, exhaust and residual character | Same |
 | `patchers/v12_sound_dna~.maxpat` | V12 bank, air and smooth high-rev character | Same |
+| `patchers/ioniq6n_sound_dna~.maxpat` | IONIQ6N motor order, body/cavity, mechanical texture and ready bed | Same |
 | `patchers/vehicle_bus_eq~.maxpat` | Four-band output tone shaping | Patcher is seed-once; `Save EQ` writes ignored per-profile state |
 | `patchers/cinematic_soundscape_beap~.maxpat` | Shared four-layer Soundscape V2 topology | Seed-once; the live host writes ignored per-profile V2 state |
 | `patchers/{ev,v10,v12}_engine_start_beap~.maxpat` | Independent cinematic starts | Seed-once; each profile has its own controls and ignored state |
 | `patchers/v10_backfire_beap~.maxpat`, `v12_backfire_beap~.maxpat` | Physical pressure-release voices | Seed-once |
+| `patchers/ioniq6n_soundscape_{ignition,evolution,lightspeed}_beap~.maxpat` | Three independent N Sound instruments | Seed-once; shared mode host writes ignored local state |
+| `patchers/ioniq6n_activation_beap~.maxpat` | Ready activation/chime | Seed-once |
+| `patchers/ioniq6n_n_event_beap~.maxpat` | N e-Shift impact, release bubble and afterburner pop | Seed-once; own ignored local state |
 
 `patchers/module_mixer.maxpat` is generated routing/UI, not a synthesis patch.
 Use its seven main-page faders to balance Sound DNA, Start, Pop/Event,
@@ -178,6 +185,45 @@ before deciding that a control is inactive.
 
 EV adds `Torque Ripple`, `Gear Mesh`, and `Electrical Detail`. V10/V12 add
 `Combustion Pulse`, `Intake Detail`, `Exhaust Detail`, and `Residual Detail`.
+
+## IONIQ6N independent profile
+
+This fourth runtime is deliberately separate from V10. The reference road-test
+MP3 informed target ranges only; no recording or derivative is loaded at
+runtime. Use Sound DNA Solo first and tune in this order:
+
+1. `Body Pressure` and `Cavity Structure` fill the low-mid mass without adding
+   fake combustion.
+2. `Motor Order` sets the phase-coherent electric core.
+3. `Mechanical Texture` and `HF Edge` add inverter/gear definition; keep HF
+   Edge restrained if acceleration becomes plastic.
+4. `Load Depth` opens the timbre at fixed RPM, while `Release Mass` controls
+   lift-off weight. `Ready Bed` is the quiet ignition-on floor.
+5. Set `Stereo Width` and `Saturation` last. Bass centring and the final
+   subsonic/peak guards remain downstream.
+
+The Soundscape has three genuinely separate BEAP graphs selected with
+`n_sound_mode ignition|evolution|lightspeed` and crossfaded over 150 ms:
+
+- Ignition is pressure-led and restrained; release may excite a low bubble.
+- Evolution is the default cinematic score voice, built from fixed-ratio
+  harmonic motion and short dramatic transients.
+- Lightspeed emphasizes velocity pressure, mechanical climb and a bounded high
+  shimmer; release may excite the afterburner event.
+
+RPM is the only root-pitch input. Load/throttle changes layer balance and
+filter opening, and speed changes only upper air/space. To prove the separation,
+hold RPM fixed, move throttle/load, then change speed: the first operation must
+change density/colour, the second must change width/air, and neither should
+step the root pitch.
+
+`eshift_enable 1` is the default eight-ratio N e-Shift behaviour. Set it to `0`
+for continuous EV pitch with no virtual shift events. The N Event Designer has
+its own Enable, Intensity, Audition, Save, Reload and Factory Reset controls;
+normal events still require ignition and engine-running state. Factory state is
+tracked in `presets/ioniq6n_soundscape_modes_factory.json` and
+`presets/ioniq6n_n_event_factory.json`; user state stays under ignored
+`presets/local/`.
 Every DNA number is live. `Save DNA`, `Reload DNA`, and `Reset DNA` operate per profile in
 `presets/local/{profile}_sound_dna.json`; those local files are intentionally
 ignored by Git.

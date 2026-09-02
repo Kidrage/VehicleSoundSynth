@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "profile": "ioniq6n",
+  "runtime_policy": {
+    "analysis_only": true,
+    "continuous_sample_playback": false,
+    "committed_audio": false
+  },
+  "sources": {
+    "full_drive_reference": {
+      "description": "2026 Hyundai Ioniq 6N POV Test Drive",
+      "sha256": "82f94a34ccba3444e9979a2f44b4a7f425e633a801a1f70d9ed2f57daa49f410",
+      "sample_rate_hz": 44100,
+      "channels": 2,
+      "duration_seconds": 978.52
+    },
+    "validated_clip_ids": [
+      "R07_ignition_accel_release",
+      "R09_evolution_steady_structure",
+      "R10_evolution_high_load_multishift",
+      "R12_lightspeed"
+    ]
+  },
+  "modal_targets_hz": {
+    "body": [185, 200, 240, 265],
+    "cavity": [285, 335, 500, 530],
+    "mechanical": [586, 668, 840, 1050],
+    "high_frequency_ceiling": [2000, 6000]
+  },
+  "load_followers_ms": {
+    "fast": {"attack": 60, "release": 180},
+    "slow": {"attack": 120, "release": 450}
+  },
+  "measured_low_to_high_load_delta_db": {
+    "ignition": {
+      "120_250": 7.02,
+      "250_600": 19.69,
+      "600_1200": 13.28,
+      "2000_6000": 8.20,
+      "hf_to_body": -2.46
+    },
+    "evolution": {
+      "120_250": 13.10,
+      "250_600": 17.61,
+      "600_1200": 17.36,
+      "2000_6000": 10.83,
+      "hf_to_body": -3.73
+    },
+    "lightspeed": {
+      "120_250": 8.67,
+      "250_600": 11.40,
+      "600_1200": 13.23,
+      "2000_6000": 8.32,
+      "hf_to_body": -1.07
+    }
+  },
+  "virtual_eshift": {
+    "engineering_default_gears": 8,
+    "dip_ms": 80,
+    "recovery_ms": 180,
+    "note": "Engineering approximation for interaction design; not represented as recorded CAN or production calibration truth."
+  }
+}

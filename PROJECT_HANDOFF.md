@@ -3,6 +3,39 @@
 > Deterministically generated repository/project memory for cross-agent handoff.
 > Update after every material project change and before final reporting.
 
+## Independent IONIQ 6 N profile (2026-09-02)
+
+Branch `codex/v5-ioniq6n-profile` adds a fourth fixed runtime,
+`VehicleSoundSynth-IONIQ6N.maxpat`, from fixed point `d3dbad6`. This is not a
+V10 rebuild: the committed EV, V10 and V12 acoustic artifacts remain unchanged.
+The launcher opens only one of the four runtimes, and the IONIQ profile reuses
+the verified keyboard/gamepad throttle and brake seam.
+
+IONIQ6N owns a sample-free electric Sound DNA with separately tunable
+motor-order, low-mid body/cavity, mechanical texture, high-edge, load/release
+and ready-bed components. Its Soundscape is a different stem and parameter
+namespace containing three seed-once BEAP instruments: Ignition, Evolution and
+Lightspeed. Mode changes crossfade over 150 ms. RPM alone controls their tonal
+root; load/throttle opens layers and filter colour, while speed affects only
+upper air and space. The supplied road-test MP3 is analysis-only and is never a
+runtime resource or tracked artifact.
+
+Ready activation and N events are separate seed-once BEAP buses. Ignition mode
+arms a restrained release bubble, Evolution arms neither release effect, and
+Lightspeed arms an afterburner pop; shift impacts follow actual N e-Shift state.
+The eight-ratio N e-Shift model defaults on and can be disabled with
+`eshift_enable 0` for continuous EV pitch. Each tunable subsystem has its own
+tracked factory state and ignored local user state.
+
+Final verification passed all 192 tests and two consecutive generator runs
+matched across 212 filtered files. The three N Sound patchers have distinct
+hashes; Max NonRealTime diagnostics were non-clipping, below the `0.001`
+2--6 kHz harshness threshold and within the 3 dB mono-fold limit. The recent
+Max log has no new missing-object, invalid-category, Gen or patchcord blocker;
+only the known application-level read-only object-database warning remains.
+All task-owned project/probe instances were saved and exited. Pre-existing user
+Max PID `65075` was deliberately preserved.
+
 ## Soundscape V4 rebuild (2026-09-01)
 
 The active feature branch replaces the shared Soundscape V3 runtime with three
@@ -42,8 +75,8 @@ probe instances exited; pre-existing windowless PID `22230` was preserved.
 
 ## Current State
 
-- Branch: `codex/v5-soundscape-v4-rebuild`
-- Base HEAD: `9a79128`
+- Branch: `codex/v5-ioniq6n-profile`
+- Base HEAD: `d3dbad6`
 - Indexed paths: 169
 - Inventory truncated: `false`
 - Inaccessible paths: 0

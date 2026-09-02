@@ -4,54 +4,59 @@
 
 - Canonical remote: `git@github.com:Kidrage/VehicleSoundSynth.git`
 - Target runtime: Max 8.6.5 on macOS.
-- Feature branch: `codex/v5-soundscape-v4-rebuild`.
-- Fixed point: `9a79128b3a39e9013dbdcc34386fef7071cbf050`.
+- Feature branch: `codex/v5-ioniq6n-profile`.
+- Fixed point: `d3dbad6513e2c9b37076ca8959c8cf119bfee3bf`.
 
 ## Delivered Change
 
-- The audible shared Soundscape V3 core is replaced by three independent,
-  seed-once V4 BEAP instruments: EV Evolution Score, V10 Ignition/cadence, and
-  V12 Luxury Body/turbine-whine. Sound DNA audio and parameter namespaces do
-  not enter these graphs; they share only controller-owned vehicle state.
-- RPM is the only continuous root-pitch authority. Load/throttle blend tonal,
-  structural and air layers; `speed_kph` changes upper-band texture and space.
-  Bass below 120 Hz remains centred and the output rejects sub-28 Hz energy.
-- Current procedural start voices use `{profile}_engine_start_v3_beap~`.
-  Current ICE backfire voices use `{profile}_backfire_v2_beap~`. Older
-  seed-once designers remain recoverable but are not on the audible path.
-- The existing Main Soundscape controls and keyboard/gamepad/drive seams are
-  unchanged. Direct acoustic probes now supply `engine_running 1`, matching
-  the V4 host's controller-authoritative lifecycle gate.
+- Adds `VehicleSoundSynth-IONIQ6N.maxpat` as a fourth independent runtime and
+  launcher target. It does not replace or retune V10.
+- Adds an electric IONIQ6N Sound DNA with independent motor-order, low-mid
+  body/cavity, mechanical texture, high-edge, load/release and ready-bed
+  controls. The user-supplied road-test MP3 is analysis-only and is not loaded,
+  copied or committed.
+- Adds three seed-once, crossfaded N Sound instruments: Ignition, Evolution and
+  Lightspeed. RPM is the sole root-pitch authority, load/throttle controls the
+  layer/filter mix, and speed changes only upper air/space. Soundscape audio and
+  parameters remain completely outside the Sound DNA graph.
+- Adds separate seed-once ready activation and N-event designers. Ignition
+  arms the restrained release bubble, Evolution leaves both release effects
+  disarmed, and Lightspeed arms the afterburner pop. Shift impacts follow the
+  optional eight-ratio N e-Shift model, which defaults enabled and can be
+  disabled for continuous EV pitch.
+- Preserves the original EV/V10/V12 generated acoustic artifacts byte-for-byte
+  relative to the fixed point. Keyboard/gamepad and public throttle/brake seams
+  are reused unchanged.
 
-## Repository Rules
+## Persistence and Editing
 
-- Edit generated Max JSON only through `tools/build_project.py`.
-- Seed-once Sound DNA, Soundscape, start and backfire BEAP graphs are
-  user-owned and must not be overwritten after creation.
-- V10/V12 continuous sound remains procedural. Ferrari material is
-  analysis-only except for the explicit ignored realistic V10 start option.
-- Before delivery run deterministic regeneration, all tests, audio probes,
-  `git diff --check`, real Max smoke/save/close, and scoped Max-process cleanup.
+- Soundscape factory: `presets/ioniq6n_soundscape_modes_factory.json`.
+- N-event factory: `presets/ioniq6n_n_event_factory.json`.
+- User state is written only under ignored `presets/local/`.
+- Seed-once IONIQ6N Sound DNA, Soundscape, activation and event BEAP patchers
+  are user-owned after their first generation.
 
 ## Validation
 
-- 184/184 unit tests pass, including keyboard/gamepad exclusivity, pedal
-  release, lifecycle triggers, valid patchcords, current audible-instance
-  routing, version-isolated persistence, and deterministic generation.
-- Real Max 8.6.5 produced nine 48 kHz Soundscape Solo renders at fixed 1800 RPM:
-  EV/V10/V12 low load, high load, and 180 km/h low load. Every render is
-  non-silent, has zero clipped samples, subsonic ratio below 0.01, harshness
-  below 0.001, and mono-fold loss below 3.1 dB.
-- Fixed-RPM EV centroid moves 71.2 -> 119.9 Hz with load and 71.2 -> 80.9 Hz
-  with speed. V10 moves 86.9 -> 131.9 / 127.2 Hz; V12 moves 103.7 -> 109.6 /
-  108.0 Hz. This verifies timbre/space change without direct pitch jumps.
-- All task-created probe patchers were generated/saved on disk and their exact
-  Max PIDs were terminated after render finalization. Only pre-existing,
-  windowless user Max PID `22230` remains; it was not touched.
+- All 192 tests pass, including structural, deterministic-generation,
+  drivetrain, lifecycle, persistence and acoustic-probe regressions in
+  `tests/test_project.py` and `tools/build_runtime_probe.py`.
+- Max NonRealTime diagnostics cover activation, ready-state, all three modes at
+  low/high load, low/high speed, N e-Shift on/off, and the three N-event paths.
+  The installed driver may render at 44.1 kHz even when 48 kHz is requested;
+  those files are diagnostic and are not tracked.
+- Two consecutive project generations produced identical SHA-256 values for all
+  212 filtered repository files. `git diff --check` is clean; the current Max
+  log contains no missing-object, invalid-category, Gen or patchcord blocker.
+  The known application database read-only warning remains unrelated.
+- Three N Sound patchers have distinct SHA-256 values. Max diagnostics were
+  non-clipping, remained below the `0.001` 2--6 kHz harshness gate, and kept
+  mono-fold loss below 3 dB. All task-owned Max instances exited normally;
+  pre-existing user PID `65075` was preserved.
 
-## Safety Archive
+## Safety
 
-- Pre-task dirty runtime saves and intermediate task-owned V4 seeds are stored
-  under `/Users/saintpeter/Downloads/.VehicleSoundSynth-Backups/20260901-soundscape-v4-rebuild/`.
-- No Ferrari source/continuous derivative, local preset, Max recovery file, or
-  temporary WAV is part of the repository change.
+- The original dirty V10/V12 working tree is untouched and archived under
+  `/Users/saintpeter/Downloads/.VehicleSoundSynth-Backups/20260902-ioniq6n-profile/`.
+- Never commit or sync the supplied MP3, Ferrari material, local presets,
+  recovery files or temporary renders.

@@ -1,8 +1,8 @@
 # Source Index
 
-Repository: /Users/saintpeter/Downloads/VehicleSoundSynth-V5
-Tracked filtered files: 122
-High-value indexed files: 42
+Repository: /private/tmp/VehicleSoundSynth-V5-ioniq6n
+Tracked filtered files: 167
+High-value indexed files: 60
 
 Read this file before broad repository exploration. Prefer focused `rg`
 or `git grep` against the listed areas before opening source files.
@@ -19,10 +19,16 @@ or `git grep` against the listed areas before opening source files.
 - code/dna_state_path.js
 - code/drive_model.js
 - code/eq_state_path.js
+- code/ioniq6n_event_state_path.js
+- code/ioniq6n_soundscape_state_path.js
 - code/manual_input.js
 - code/module_mixer_state_path.js
 - code/pop_state_path.js
+- code/pop_v2_state_path.js
 - code/soundscape_state_path.js
+- code/soundscape_v4_state_path.js
+- code/start_state_path.js
+- code/start_v3_state_path.js
 - tools/analyze_reference_lifecycle.py
 - tools/audio_metrics.py
 - tools/bind_drive_render.py
@@ -49,16 +55,22 @@ or `git grep` against the listed areas before opening source files.
 - assets/engine_texture_bank.json
 - assets/ferrari_sf90_acoustic_target.json
 - assets/ferrari_v10_lifecycle_targets.json
+- assets/ioniq6n_acoustic_targets.json
 - presets/ev_soundscape_factory.json
 - presets/ev_soundscape_v2_factory.json
 - presets/ev_soundscape_v3_factory.json
+- presets/ev_soundscape_v4_factory.json
+- presets/ioniq6n_n_event_factory.json
+- presets/ioniq6n_soundscape_modes_factory.json
 - presets/sound_dna.json
 - presets/v10_soundscape_factory.json
 - presets/v10_soundscape_v2_factory.json
 - presets/v10_soundscape_v3_factory.json
+- presets/v10_soundscape_v4_factory.json
 - presets/v12_soundscape_factory.json
 - presets/v12_soundscape_v2_factory.json
 - presets/v12_soundscape_v3_factory.json
+- presets/v12_soundscape_v4_factory.json
 - presets/vehicle_bus_eq_default.json
 
 ## docs

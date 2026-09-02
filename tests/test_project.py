@@ -894,29 +894,29 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
         )
         selection_map = next(
             box_id for box_id, box in boxes.items()
-            if box.get("text") == "sel ev v10 v12 none"
+            if box.get("text") == "sel ev v10 v12 ioniq6n none"
         )
         command_gate = next(
             box_id for box_id, box in boxes.items()
-            if box.get("text") == "gate 3"
+            if box.get("text") == "gate 4"
         )
         feedback_selector = next(
             box_id for box_id, box in boxes.items()
-            if box.get("text") == "switch 3"
+            if box.get("text") == "switch 4"
         )
         command_buses = {
             profile: next(
                 box_id for box_id, box in boxes.items()
                 if box.get("text") == f"s vss.runtime.control.{profile}"
             )
-            for profile in ("ev", "v10", "v12")
+            for profile in ("ev", "v10", "v12", "ioniq6n")
         }
         feedback_buses = {
             profile: next(
                 box_id for box_id, box in boxes.items()
                 if box.get("text") == f"r vss.soundscape.feedback.{profile}"
             )
-            for profile in ("ev", "v10", "v12")
+            for profile in ("ev", "v10", "v12", "ioniq6n")
         }
         texts = {box.get("text") for box in boxes.values()}
         self.assertNotIn("s vss.runtime.control", texts)
@@ -932,7 +932,7 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
         cords = {
             (tuple(line["source"]), tuple(line["destination"])) for line in lines
         }
-        for index, profile in enumerate(("ev", "v10", "v12"), start=1):
+        for index, profile in enumerate(("ev", "v10", "v12", "ioniq6n"), start=1):
             index_message = next(
                 box_id for box_id, box in boxes.items()
                 if box.get("maxclass") == "message" and box.get("text") == str(index)
@@ -946,7 +946,7 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
             box_id for box_id, box in boxes.items()
             if box.get("maxclass") == "message" and box.get("text") == "0"
         )
-        self.assertIn(((selection_map, 3), (selection_off, 0)), cords)
+        self.assertIn(((selection_map, 4), (selection_off, 0)), cords)
         self.assertIn(((selection_off, 0), (command_gate, 0)), cords)
         self.assertIn(((selection_off, 0), (feedback_selector, 0)), cords)
         self.assertTrue(
@@ -1988,6 +1988,221 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
             self.assertNotIn("write", runtime_text)
             self.assertIn("wclose", runtime_text)
             self.assertIn("thispatcher", runtime_text)
+
+    def test_ioniq6n_is_a_fourth_independent_runtime_and_launcher_target(self):
+        project = self.load_json("VehicleSoundSynth-V5.maxproj")["contents"]
+        runtime = "VehicleSoundSynth-IONIQ6N.maxpat"
+        self.assertIn(runtime, project["patchers"])
+
+        runtime_text = json.dumps(self.load_json(runtime))
+        self.assertIn("drive_simulator_ioniq6n", runtime_text)
+        self.assertIn("vehicle_engine_ioniq6n~", runtime_text)
+        self.assertIn("r vss.runtime.select", runtime_text)
+        self.assertNotIn("engine_type", runtime_text)
+
+        launcher_text = json.dumps(self.load_json("main.maxpat"))
+        self.assertIn(f"loadunique {runtime}", launcher_text)
+        self.assertIn("sel ev v10 v12 ioniq6n none", launcher_text)
+        self.assertIn("gate 4", launcher_text)
+        self.assertIn("switch 4", launcher_text)
+
+    def test_existing_drive_profile_traces_remain_byte_stable(self):
+        expected = {
+            "ev": "ce5bab2d9635c1c4393ff7daa7973d8b1aa2a60160eb07114e26eac363690126",
+            "v10": "1a27c233017370da23c3b5a8a655a7d8e15285737ceb80ae4a11e1ca781a9aa9",
+            "v12": "2aaff823ee38abf26d1eaec609562b8f067a5f9c9b886c10ebf13661bb6e2f2c",
+        }
+        for profile, digest in expected.items():
+            trace = json.dumps(
+                self.run_drive_trace(profile), separators=(",", ":"), sort_keys=True
+            ).encode()
+            self.assertEqual(digest, hashlib.sha256(trace).hexdigest(), profile)
+
+    def test_ioniq6n_eshift_is_default_on_and_can_be_disabled_for_continuous_pitch(self):
+        script = r"""
+const moduleUnderTest = require(process.argv[1]);
+function run(enabled) {
+  const model = new moduleUnderTest.DriveModel("ioniq6n");
+  model.handle("eshift_enable", [enabled]);
+  model.handle("ignition", [1]);
+  model.handle("start", [1]);
+  model.handle("throttle", [1]);
+  let shifts = 0;
+  let minCut = 1;
+  for (let index = 0; index < 1200; index += 1) {
+    const events = model.tick(0.02);
+    shifts += events.filter(event => event[0] === "shift" && event[1] === 1).length;
+    minCut = Math.min(minCut, model.snapshot().shiftCut);
+  }
+  return {snapshot: model.snapshot(), shifts, minCut};
+}
+const defaultModel = new moduleUnderTest.DriveModel("ioniq6n");
+process.stdout.write(JSON.stringify({defaultState: defaultModel.snapshot(), on: run(1), off: run(0)}));
+"""
+        result = subprocess.run(
+            ["node", "-e", script, str(ROOT / "code" / "drive_model.js")],
+            check=True, cwd=ROOT, capture_output=True, text=True,
+        )
+        outcome = json.loads(result.stdout)
+        self.assertEqual(1, outcome["defaultState"]["eShiftEnabled"])
+        self.assertGreater(outcome["on"]["shifts"], 0)
+        self.assertLess(outcome["on"]["minCut"], 0.9)
+        self.assertLessEqual(outcome["on"]["snapshot"]["gear"], 8)
+        self.assertEqual(0, outcome["off"]["shifts"])
+        self.assertEqual(1, outcome["off"]["snapshot"]["gear"])
+        self.assertEqual(1, outcome["off"]["minCut"])
+
+    def test_ioniq6n_sound_dna_is_a_sample_free_tunable_beap_chain(self):
+        project = self.load_json("VehicleSoundSynth-V5.maxproj")["contents"]
+        dna_path = "patchers/ioniq6n_sound_dna~.maxpat"
+        powertrain_path = "patchers/ioniq6n_powertrain~.maxpat"
+        self.assertIn(dna_path, project["patchers"])
+        self.assertIn(powertrain_path, project["patchers"])
+
+        dna_text = json.dumps(self.load_json(dna_path))
+        for control in (
+            "motor_order", "body_pressure", "cavity_structure",
+            "mechanical_texture", "hf_edge", "load_depth", "release_mass",
+            "ready_bed", "stereo_width", "saturation", "powertrain_level_db",
+        ):
+            self.assertIn(control, dna_text)
+        for module in (
+            "DNA_Body_Modal", "DNA_Cavity", "DNA_Mechanical",
+            "DNA_HF_Ceiling", "DNA_Layer_Mixer", "DNA_Output_VCA",
+        ):
+            self.assertIn(module, dna_text)
+        self.assertIn("ioniq6n_powertrain~", dna_text)
+        for forbidden in ("buffer~", "play~", "groove~"):
+            self.assertNotIn(forbidden, dna_text.lower())
+
+        gen_text = (ROOT / "gen" / "ioniq6n_powertrain.gendsp").read_text()
+        self.assertIn("Param rpm", gen_text)
+        self.assertIn("Param throttle", gen_text)
+        self.assertIn("Param load", gen_text)
+        self.assertIn("Param shift_cut", gen_text)
+
+    def test_ioniq6n_soundscape_has_three_decoupled_crossfaded_beap_instruments(self):
+        project = self.load_json("VehicleSoundSynth-V5.maxproj")["contents"]
+        modes = {
+            "ignition": ("Synthetic_Orders", "Induction_Resonator", "Gear_Mesh_Air"),
+            "evolution": ("Score_Body", "Evolution_Harmonics", "Dramatic_Transient"),
+            "lightspeed": ("Afterburner_Body", "Pulse_Resonator", "Velocity_Shimmer"),
+        }
+        mode_payloads = []
+        for mode, modules in modes.items():
+            path = f"patchers/ioniq6n_soundscape_{mode}_beap~.maxpat"
+            self.assertIn(path, project["patchers"])
+            payload = self.load_json(path)
+            text = json.dumps(payload)
+            for module in modules:
+                self.assertIn(module, text)
+            for forbidden in ("buffer~", "play~", "groove~"):
+                self.assertNotIn(forbidden, text.lower())
+            mode_payloads.append(hashlib.sha256(text.encode()).hexdigest())
+        self.assertEqual(3, len(set(mode_payloads)))
+
+        host_path = "patchers/ioniq6n_cinematic_soundscape_host~.maxpat"
+        self.assertIn(host_path, project["patchers"])
+        host_text = json.dumps(self.load_json(host_path))
+        for mode in modes:
+            self.assertIn(f"ioniq6n_soundscape_{mode}_beap~", host_text)
+        self.assertIn("sel ignition evolution lightspeed", host_text)
+        self.assertIn("loadmess evolution", host_text)
+        self.assertIn("pack 0. 150", host_text)
+        self.assertIn("expr $i1*$i2*$i3", host_text)
+        self.assertIn("SPEED -> AIR / SPACE ONLY", host_text)
+        self.assertNotIn("sound_dna", host_text.lower())
+        self.assertNotIn("powertrain", host_text.lower())
+
+    def test_ioniq6n_activation_and_n_events_are_separate_sample_free_beap_buses(self):
+        project = self.load_json("VehicleSoundSynth-V5.maxproj")["contents"]
+        required = (
+            "patchers/ioniq6n_activation_beap~.maxpat",
+            "patchers/ioniq6n_n_event_beap~.maxpat",
+            "patchers/ioniq6n_n_event_host~.maxpat",
+            "patchers/transient_ioniq6n~.maxpat",
+            "patchers/vehicle_engine_ioniq6n~.maxpat",
+            "patchers/engine_controller_ioniq6n.maxpat",
+            "patchers/drive_simulator_ioniq6n.maxpat",
+        )
+        for path in required:
+            self.assertIn(path, project["patchers"])
+            text = json.dumps(self.load_json(path))
+            for forbidden in ("buffer~", "play~", "groove~"):
+                self.assertNotIn(forbidden, text.lower(), path)
+
+        activation = json.dumps(self.load_json(required[0]))
+        self.assertIn("ACTIVATION DESIGNER", activation)
+        self.assertIn("Ready Chime", activation)
+        event = json.dumps(self.load_json(required[1]))
+        for module in ("Upshift_Bang", "Bubbling", "Afterburner_Pop", "Event_HF_Ceiling"):
+            self.assertIn(module, event)
+        event_host = json.dumps(self.load_json(required[2]))
+        for control in (
+            "event_enable", "event_intensity", "event_open", "event_save",
+            "event_reload", "event_reset", "event_audition", "n_sound_mode",
+            "eshift_enable", "shift", "overrun", "pop",
+        ):
+            self.assertIn(control, event_host)
+
+        engine = json.dumps(self.load_json("patchers/vehicle_engine_ioniq6n~.maxpat"))
+        self.assertIn("ioniq6n_sound_dna~", engine)
+        self.assertIn("ioniq6n_cinematic_soundscape_host~", engine)
+        self.assertIn("transient_ioniq6n~", engine)
+        runtime = json.dumps(self.load_json("VehicleSoundSynth-IONIQ6N.maxpat"))
+        self.assertIn("n_sound_mode evolution", runtime)
+        self.assertIn("eshift_enable", runtime)
+        self.assertIn("event_enable", runtime)
+        self.assertIn("event_intensity", runtime)
+
+    def test_ioniq6n_runtime_probe_covers_modes_lifecycle_eshift_and_events(self):
+        expected = {
+            "ioniq6n-activation", "ioniq6n-ready",
+            "ioniq6n-ignition-low-load", "ioniq6n-ignition-high-load",
+            "ioniq6n-evolution-low-load", "ioniq6n-evolution-high-load",
+            "ioniq6n-lightspeed-low-load", "ioniq6n-lightspeed-high-load",
+            "ioniq6n-evolution-low-speed", "ioniq6n-evolution-high-speed",
+            "ioniq6n-eshift-on", "ioniq6n-eshift-off",
+            "ioniq6n-event-upshift", "ioniq6n-event-bubble",
+            "ioniq6n-event-afterburner",
+        }
+        self.assertTrue(expected.issubset(SCENARIOS))
+        with tempfile.TemporaryDirectory() as directory:
+            subprocess.run(
+                [
+                    sys.executable, str(ROOT / "tools" / "build_runtime_probe.py"),
+                    "--bundle-root", directory,
+                    "--scenario", "ioniq6n-evolution-high-load",
+                    "--render-ms", "1000",
+                ],
+                check=True, cwd=ROOT, capture_output=True, text=True,
+            )
+            probe = next(Path(directory).glob("runtime_probe_ioniq6n*.maxpat"))
+            text = probe.read_text(encoding="utf-8")
+            self.assertIn("n_sound_mode evolution", text)
+            self.assertIn("ioniq6n_cinematic_soundscape_host~", text)
+            self.assertIn("engine_running 1", text)
+
+    def test_ioniq6n_reuses_verified_manual_inputs_and_keeps_soundscape_lifecycle_gated(self):
+        runtime = json.dumps(self.load_json("VehicleSoundSynth-IONIQ6N.maxpat"))
+        self.assertIn("Patcher:/patchers/manual_input.maxpat", runtime)
+        self.assertIn("Patcher:/patchers/drive_simulator_ioniq6n.maxpat", runtime)
+        self.assertIn("switch 2", runtime)
+
+        controller = json.dumps(
+            self.load_json("patchers/engine_controller_ioniq6n.maxpat")
+        )
+        self.assertIn("delay 650", controller)
+        self.assertIn("starter 1", controller)
+        self.assertIn("engine_running 1", controller)
+        self.assertIn("loadmess engine_running 0", controller)
+
+        soundscape = json.dumps(
+            self.load_json("patchers/ioniq6n_cinematic_soundscape_host~.maxpat")
+        )
+        self.assertIn("expr $i1*$i2*$i3", soundscape)
+        self.assertIn("loadmess 0", soundscape)
+        self.assertIn("engine_running", soundscape)
 
     def test_each_runtime_uses_only_its_own_powertrain_graph(self):
         expected = {
@@ -3487,16 +3702,22 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
 
     def test_gen_patchers_expose_bounded_required_parameters(self):
         gen_paths = sorted((ROOT / "gen").glob("*.gendsp"))
-        self.assertEqual(3, len(gen_paths))
+        self.assertEqual(4, len(gen_paths))
         for path in gen_paths:
             patcher = self.load_json(path.relative_to(ROOT))["patcher"]
             code = "\n".join(
                 item["box"].get("code", item["box"].get("text", ""))
                 for item in patcher["boxes"]
             )
-            required = {"rpm", "throttle", "load", "aggression", "body"}
-            required |= {"brightness", "texture"}
-            if path.name != "ev_powertrain.gendsp":
+            if path.name == "ioniq6n_powertrain.gendsp":
+                required = {
+                    "rpm", "throttle", "load", "motor_order", "body_pressure",
+                    "engine_running", "shift_cut",
+                }
+            else:
+                required = {"rpm", "throttle", "load", "aggression", "body"}
+                required |= {"brightness", "texture"}
+            if path.name not in {"ev_powertrain.gendsp", "ioniq6n_powertrain.gendsp"}:
                 required |= {"engine_running", "combustion_gain", "shift_cut"}
             for name in required:
                 self.assertIn(f"Param {name}", code, path.name)

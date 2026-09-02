@@ -2,7 +2,7 @@
 
 Base: frozen V4 tag `v4.0.0` (`6aa49d0`).
 
-1. Rename project/runtime identity to V5 without changing the three-runtime architecture.
+1. Rename project/runtime identity to V5 without changing the original three-runtime architecture.
 2. Replace runtime shift/pop/crackle samples with continuous powertrain/cabin motion and BEAP physical transients.
 3. Improve continuous EV, V10, and V12 realism while preserving smooth throttle-driven RPM and the V10 Ferrari lifecycle analysis gates.
 4. Add one editable EV/V10/V12 cinematic Soundscape plus V10/V12 backfire BEAP patchers with top-level controls and suspendable DSP.
@@ -11,3 +11,6 @@ Base: frozen V4 tag `v4.0.0` (`6aa49d0`).
 7. Add a switchable Keyboard/macOS gamepad Manual Input module with fixed
    semantic LT-throttle/RT-brake mapping, live debug, normalized pedals, and
    safe source release without changing the 20 ms drivetrain model.
+8. Add IONIQ6N as an isolated fourth runtime: electric Sound DNA, optional
+   eight-ratio N e-Shift, three decoupled N Sound BEAP instruments, independent
+   ready activation and mode-aware N events. Preserve EV/V10/V12 acoustic files.

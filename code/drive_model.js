@@ -57,6 +57,26 @@ var DRIVE_CONFIG = {
         overrunArmSeconds: 0.12,
         overrunWindowSeconds: 0.18,
         overrunCooldownSeconds: 0.30
+    },
+    ioniq6n: {
+        idle: 650.0,
+        flare: 1450.0,
+        catchSeconds: 0.65,
+        electric: true,
+        singleSpeedRatio: 31.0,
+        eShiftDefault: 1,
+        maxGear: 8,
+        launchRpm: 5200.0,
+        ratios: [75.0, 58.0, 47.0, 39.0, 33.0, 28.0, 24.0, 21.0],
+        upBase: 4500.0,
+        upThrottle: 1000.0,
+        downBase: 1750.0,
+        downThrottle: 850.0,
+        shiftCutSeconds: 0.04,
+        shiftSweepSeconds: 0.04,
+        shiftEngageSeconds: 0.18,
+        shiftFloor: 0.62,
+        shiftLockSeconds: 0.36
     }
 };
 
@@ -103,6 +123,7 @@ DriveModel.prototype.reset = function () {
     this.startElapsed = -1.0;
     this.shift = null;
     this.shiftCut = 1.0;
+    this.eShiftEnabled = this.config.eShiftDefault ? 1 : 0;
     this.lastShiftEnd = -999.0;
     this.overrunArmElapsed = 0.0;
     this.overrunArmed = 0;
@@ -129,6 +150,14 @@ DriveModel.prototype.handle = function (name, args) {
         this.manualBrake = clamp(value, 0.0, 1.0);
     } else if (name === "auto") {
         this.auto = value ? 1 : 0;
+    } else if (name === "eshift_enable" && this.profile === "ioniq6n") {
+        this.eShiftEnabled = value ? 1 : 0;
+        this.shift = null;
+        this.shiftCut = 1.0;
+        this.gear = 1;
+        events.push(["eshift_enable", this.eShiftEnabled]);
+        events.push(["shift_cut", 1.0]);
+        events.push(["gear", 1]);
     } else if (name === "ignition") {
         this.ignition = value ? 1 : 0;
         events.push(["ignition", this.ignition]);
@@ -204,7 +233,7 @@ DriveModel.prototype.updateOverrun = function (dt, previousThrottle, events) {
     var dropStrength;
     var rpmStrength;
     var strength;
-    if (this.profile === "ev" || !this.running ||
+    if (this.profile === "ev" || this.config.electric || !this.running ||
             (this.startElapsed >= 0.0 && this.startElapsed < this.config.catchSeconds)) {
         this.clearOverrun();
         return;
@@ -254,7 +283,8 @@ DriveModel.prototype.updateOverrun = function (dt, previousThrottle, events) {
 };
 
 DriveModel.prototype.beginShift = function (direction, events) {
-    var nextGear = clamp(this.gear + direction, 1, 7);
+    var maxGear = this.config.maxGear || 7;
+    var nextGear = clamp(this.gear + direction, 1, maxGear);
     if (nextGear === this.gear) {
         return;
     }
@@ -307,7 +337,7 @@ DriveModel.prototype.maybeShift = function (events) {
     }
     var up = this.config.upBase + this.config.upThrottle * this.throttle;
     var down = this.config.downBase + this.config.downThrottle * this.throttle;
-    if (this.rpm > up && this.gear < 7) {
+    if (this.rpm > up && this.gear < (this.config.maxGear || 7)) {
         this.beginShift(1, events);
     } else if (this.rpm < down && this.gear > 1) {
         this.beginShift(-1, events);
@@ -344,7 +374,8 @@ DriveModel.prototype.tick = function (dt) {
         this.rpm = this.config.flare +
             (this.config.idle - this.config.flare) *
             smoothstep(this.startElapsed / this.config.catchSeconds);
-    } else if (this.profile === "ev") {
+    } else if (this.profile === "ev" ||
+            (this.profile === "ioniq6n" && !this.eShiftEnabled)) {
         target = this.config.idle + this.speed * this.config.singleSpeedRatio;
         this.rpm = clamp(target, this.config.idle, 10000.0);
     } else if (this.shift) {
@@ -370,7 +401,7 @@ DriveModel.prototype.tick = function (dt) {
 };
 
 DriveModel.prototype.snapshot = function () {
-    return {
+    var state = {
         time: this.time,
         speed: this.speed,
         rpm: this.rpm,
@@ -381,6 +412,10 @@ DriveModel.prototype.snapshot = function () {
         shifting: this.shift ? 1 : 0,
         shiftCut: this.shiftCut
     };
+    if (this.profile === "ioniq6n") {
+        state.eShiftEnabled = this.eShiftEnabled;
+    }
+    return state;
 };
 
 function outputEvents(events) {

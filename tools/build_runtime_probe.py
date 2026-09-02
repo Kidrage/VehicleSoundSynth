@@ -35,6 +35,12 @@ PROFILE_SETTINGS = {
         "rumble": (0.92, 0.74, 0.72),
         "ir_mix": 0.18,
     },
+    "ioniq6n": {
+        "rpm": 650.0,
+        "weights": (1.0, 0.0, 0.0),
+        "rumble": (0.0, 0.0, 0.0),
+        "ir_mix": 0.08,
+    },
 }
 
 DSP_SETTLE_MS = 6000
@@ -351,6 +357,92 @@ SCENARIOS = {
         "profile": "v10", "drive_lifecycle": True,
         "extra_messages": ("auto 1",),
     },
+    "ioniq6n-activation": {
+        "profile": "ioniq6n", "rpm": 650.0, "start_enabled": False,
+        "lock_rpm": True,
+        "event": "start 1", "event_at_ms": 250,
+        "direct_event_to_transient": True,
+        "extra_messages": ("ignition 1", "start_level_db -7"),
+    },
+    "ioniq6n-ready": {
+        "profile": "ioniq6n", "rpm": 650.0, "throttle": 0.0, "load": 0.0,
+        "lock_rpm": True,
+        "extra_messages": ("engine_running 1", "shift_cut 1", "n_sound_mode evolution"),
+    },
+    "ioniq6n-ignition-low-load": {
+        "profile": "ioniq6n", "rpm": 3600.0, "throttle": 0.12, "load": 0.12,
+        "lock_rpm": True, "direct_soundscape_state": True,
+        "soundscape_enable": 1, "soundscape_level_db": -6.0, "soundscape_solo": 1,
+        "extra_messages": ("n_sound_mode ignition", "speed_kph 80", "engine_running 1"),
+    },
+    "ioniq6n-ignition-high-load": {
+        "profile": "ioniq6n", "rpm": 3600.0, "throttle": 0.90, "load": 0.88,
+        "lock_rpm": True, "direct_soundscape_state": True,
+        "soundscape_enable": 1, "soundscape_level_db": -6.0, "soundscape_solo": 1,
+        "extra_messages": ("n_sound_mode ignition", "speed_kph 80", "engine_running 1"),
+    },
+    "ioniq6n-evolution-low-load": {
+        "profile": "ioniq6n", "rpm": 3600.0, "throttle": 0.12, "load": 0.12,
+        "lock_rpm": True, "direct_soundscape_state": True,
+        "soundscape_enable": 1, "soundscape_level_db": -6.0, "soundscape_solo": 1,
+        "extra_messages": ("n_sound_mode evolution", "speed_kph 80", "engine_running 1"),
+    },
+    "ioniq6n-evolution-high-load": {
+        "profile": "ioniq6n", "rpm": 3600.0, "throttle": 0.90, "load": 0.88,
+        "lock_rpm": True, "direct_soundscape_state": True,
+        "soundscape_enable": 1, "soundscape_level_db": -6.0, "soundscape_solo": 1,
+        "extra_messages": ("n_sound_mode evolution", "speed_kph 80", "engine_running 1"),
+    },
+    "ioniq6n-lightspeed-low-load": {
+        "profile": "ioniq6n", "rpm": 3600.0, "throttle": 0.12, "load": 0.12,
+        "lock_rpm": True, "direct_soundscape_state": True,
+        "soundscape_enable": 1, "soundscape_level_db": -6.0, "soundscape_solo": 1,
+        "extra_messages": ("n_sound_mode lightspeed", "speed_kph 80", "engine_running 1"),
+    },
+    "ioniq6n-lightspeed-high-load": {
+        "profile": "ioniq6n", "rpm": 3600.0, "throttle": 0.90, "load": 0.88,
+        "lock_rpm": True, "direct_soundscape_state": True,
+        "soundscape_enable": 1, "soundscape_level_db": -6.0, "soundscape_solo": 1,
+        "extra_messages": ("n_sound_mode lightspeed", "speed_kph 80", "engine_running 1"),
+    },
+    "ioniq6n-evolution-low-speed": {
+        "profile": "ioniq6n", "rpm": 3600.0, "throttle": 0.55, "load": 0.55,
+        "lock_rpm": True, "direct_soundscape_state": True,
+        "soundscape_enable": 1, "soundscape_level_db": -6.0, "soundscape_solo": 1,
+        "extra_messages": ("n_sound_mode evolution", "speed_kph 15", "engine_running 1"),
+    },
+    "ioniq6n-evolution-high-speed": {
+        "profile": "ioniq6n", "rpm": 3600.0, "throttle": 0.55, "load": 0.55,
+        "lock_rpm": True, "direct_soundscape_state": True,
+        "soundscape_enable": 1, "soundscape_level_db": -6.0, "soundscape_solo": 1,
+        "extra_messages": ("n_sound_mode evolution", "speed_kph 220", "engine_running 1"),
+    },
+    "ioniq6n-eshift-on": {
+        "profile": "ioniq6n", "drive_lifecycle": True,
+        "extra_messages": ("auto 1", "eshift_enable 1", "n_sound_mode evolution"),
+    },
+    "ioniq6n-eshift-off": {
+        "profile": "ioniq6n", "drive_lifecycle": True,
+        "extra_messages": ("auto 1", "eshift_enable 0", "n_sound_mode evolution"),
+    },
+    "ioniq6n-event-upshift": {
+        "profile": "ioniq6n", "rpm": 4200.0, "lock_rpm": True,
+        "event": "eshift_enable 1, event_enable 1, shift 1", "event_at_ms": 300,
+        "direct_event_to_transient": True,
+        "extra_messages": ("engine_running 1", "event_intensity 0.72", "event_solo 1"),
+    },
+    "ioniq6n-event-bubble": {
+        "profile": "ioniq6n", "rpm": 3600.0, "lock_rpm": True,
+        "event": "n_sound_mode ignition, event_enable 1, overrun 0.9", "event_at_ms": 300,
+        "direct_event_to_transient": True,
+        "extra_messages": ("engine_running 1", "event_intensity 0.72", "event_solo 1"),
+    },
+    "ioniq6n-event-afterburner": {
+        "profile": "ioniq6n", "rpm": 3600.0, "lock_rpm": True,
+        "event": "n_sound_mode lightspeed, event_enable 1, pop 1", "event_at_ms": 300,
+        "direct_event_to_transient": True,
+        "extra_messages": ("engine_running 1", "event_intensity 0.72", "event_solo 1"),
+    },
 }
 
 
@@ -359,6 +451,11 @@ def dna_parameter_scenario(profile: str, parameter: str, value: float) -> dict:
     if profile == "ev":
         rpm = 3200.0
         state = ("accel 0", "speed_kph 0")
+    elif profile == "ioniq6n":
+        rpm = 3200.0
+        state = (
+            "accel 0", "speed_kph 0", "engine_running 1", "shift_cut 1"
+        )
     else:
         rpm = 4200.0 if profile == "v10" else 4500.0
         state = (
@@ -369,7 +466,7 @@ def dna_parameter_scenario(profile: str, parameter: str, value: float) -> dict:
         "profile": profile,
         "rpm": rpm,
         "throttle": 0.65,
-        "load": 0.65 if profile != "ev" else 0.55,
+        "load": 0.55 if profile in {"ev", "ioniq6n"} else 0.65,
         "lock_rpm": True,
         "direct_powertrain": True,
         "extra_messages": (*state, f"{parameter} {value:g}"),
@@ -720,13 +817,15 @@ def make_probe(
         start_trigger = p.new("t b b b b b b", 630, 600, 105, numinlets=1, numoutlets=6)
         dsp_start = p.message("1", 720, 600, 30)
         replay_messages = list(control_messages)
+        delayed_start_messages: tuple[str, ...] = ()
         if start_enabled and ignition_enabled:
             # The load-time start occurs while DSP is stopped, so signal-rate
-            # line~ gates cannot advance. Reset the lifecycle lock and replay
-            # the complete state only after DSP is running.
-            replay_messages.extend(("ignition 0", "ignition 1", "start 1"))
+            # line~ gates cannot advance. Reset the lifecycle lock, but defer
+            # the actual one-shot until the audio driver has entered its first
+            # active vectors instead of sharing the ezdac~ scheduler tick.
+            delayed_start_messages = ("ignition 0", "ignition 1", "start 1")
         elif start_enabled:
-            replay_messages.append("start 1")
+            delayed_start_messages = ("start 1",)
         runtime_replay = p.message(", ".join(replay_messages), 720, 565, 250)
         metro_start = p.message("1", 630, 635, 30)
         metro = p.new("metro 10", 670, 635, 65, numinlets=2, numoutlets=1)
@@ -758,6 +857,14 @@ def make_probe(
         p.connect(runtime_replay, powertrain if direct_powertrain else drive)
         if direct_soundscape_state:
             p.connect(runtime_replay, soundscape)
+        if delayed_start_messages:
+            delayed_start = p.new("delay 250", 770, 530, 70, numinlets=2, numoutlets=1)
+            delayed_start_message = p.message(
+                ", ".join(delayed_start_messages), 850, 530, 210,
+            )
+            p.connect(start_trigger, delayed_start, 2, 0)
+            p.connect(delayed_start, delayed_start_message)
+            p.connect(delayed_start_message, drive)
         if lock_rpm:
             catch_complete = p.new("delay 1000", 540, 665, 75, numinlets=2, numoutlets=1)
             lock_order = p.new("t b b b", 540, 700, 65, numinlets=1, numoutlets=3)
@@ -926,13 +1033,17 @@ def main() -> None:
         root / "presets" / "vehicle_bus_eq_default.json",
         presets / "vehicle_bus_eq_default.json",
     )
-    for profile_name in PROFILE_SETTINGS:
+    for profile_name in ("ev", "v10", "v12"):
         for suffix in (
             "soundscape_factory", "soundscape_v2_factory", "soundscape_v3_factory",
             "soundscape_v4_factory",
         ):
             factory_name = f"{profile_name}_{suffix}.json"
             shutil.copy2(root / "presets" / factory_name, presets / factory_name)
+    for factory_name in (
+        "ioniq6n_soundscape_modes_factory.json", "ioniq6n_n_event_factory.json",
+    ):
+        shutil.copy2(root / "presets" / factory_name, presets / factory_name)
     for source in (root / "patchers").glob("*.maxpat"):
         document = json.loads(source.read_text(encoding="utf-8"))
         for item in document["patcher"]["boxes"]:
@@ -1070,14 +1181,26 @@ def main() -> None:
         "cabin_rumble~.maxpat",
         "cabin_master~.maxpat",
         "mix_master~.maxpat",
-        f"{profile}_engine_start_beap~.maxpat",
         "backfire_burst_scheduler.maxpat",
     }
     required_patchers.update({
         f"{profile}_cinematic_soundscape_host~.maxpat",
-        "cinematic_soundscape_v3_beap~.maxpat",
     })
-    if profile != "ev":
+    if profile == "ioniq6n":
+        required_patchers.update({
+            "ioniq6n_activation_beap~.maxpat",
+            "ioniq6n_n_event_beap~.maxpat",
+            "ioniq6n_n_event_host~.maxpat",
+            "ioniq6n_soundscape_ignition_beap~.maxpat",
+            "ioniq6n_soundscape_evolution_beap~.maxpat",
+            "ioniq6n_soundscape_lightspeed_beap~.maxpat",
+        })
+    else:
+        required_patchers.update({
+            f"{profile}_engine_start_beap~.maxpat",
+            "cinematic_soundscape_v3_beap~.maxpat",
+        })
+    if profile not in {"ev", "ioniq6n"}:
         required_patchers.update({
             f"{profile}_backfire_host~.maxpat",
             f"{profile}_backfire_beap~.maxpat",

@@ -1,0 +1,336 @@
+{
+  "patcher": {
+    "appversion": {
+      "architecture": "x64",
+      "major": 8,
+      "minor": 6,
+      "modernui": 1,
+      "revision": 5
+    },
+    "boxes": [
+      {
+        "box": {
+          "code": "// IONIQ 6 N mode-neutral electric order exciter; BEAP owns the tunable acoustic structure.\nParam rpm(650, min=0, max=10000);\nParam throttle(0, min=0, max=1);\nParam load(0, min=-1, max=1);\nParam accel(0, min=-1, max=1);\nParam engine_running(0, min=0, max=1);\nParam shift_cut(1, min=0, max=1);\nParam motor_order(0.72, min=0, max=1);\nParam body_pressure(0.86, min=0, max=1);\nParam cavity_structure(0.78, min=0, max=1);\nParam mechanical_texture(0.58, min=0, max=1);\nParam hf_edge(0.34, min=0, max=1);\nParam load_depth(0.82, min=0, max=1);\nParam release_mass(0.68, min=0, max=1);\nParam ready_bed(0.42, min=0, max=1);\nParam stereo_width(0.62, min=0, max=1);\nParam saturation(0.24, min=0, max=1);\nr = slide(clamp(rpm, 0, 10000), 900, 1500);\nt_fast = slide(clamp(throttle, 0, 1), 60, 180);\nl_fast = slide(abs(clamp(load, -1, 1)), 60, 180);\nl_slow = slide(abs(clamp(load, -1, 1)), 120, 450);\nrelease = slide(max(-clamp(accel, -1, 1), 0), 120, 520);\nrun = slide(clamp(engine_running, 0, 1), 700, 1700);\ncut = slide(clamp(shift_cut, 0, 1), 80, 260);\nroot = clamp(52 + r * 0.047, 52, 522);\ndrive = clamp(0.11 + load_depth * (0.30*t_fast + 0.22*l_fast) + 0.10*l_slow, 0.08, 0.72);\norder1 = cycle(root) * (0.50 + 0.20*motor_order);\norder2 = cycle(clamp(root*1.5, 78, 920)) * (0.13 + 0.12*motor_order);\norder3 = cycle(clamp(root*2.25, 118, 1450)) * (0.055 + 0.09*cavity_structure);\nbody = (cycle(clamp(root*0.5, 28, 260))*0.24 + cycle(clamp(root*0.75, 40, 390))*0.13) * body_pressure;\ncavity_l = (cycle(clamp(root*3.05, 165, 2100))*0.058 + cycle(clamp(root*4.10, 220, 2850))*0.032) * cavity_structure;\ncavity_r = (cycle(clamp(root*2.98, 162, 2050))*0.058 + cycle(clamp(root*4.18, 225, 2900))*0.032) * cavity_structure;\nmechanical_l = (cycle(clamp(root*5.37, 290, 4300))*0.040 + cycle(clamp(root*7.13, 385, 5700))*0.018) * mechanical_texture;\nmechanical_r = (cycle(clamp(root*5.61, 300, 4450))*0.040 + cycle(clamp(root*6.87, 370, 5550))*0.018) * mechanical_texture;\nedge_l = (cycle(clamp(root*9.7, 520, 6100))*0.018 + cycle(clamp(root*12.9, 690, 7600))*0.008) * hf_edge * (0.25+0.75*t_fast);\nedge_r = (cycle(clamp(root*10.1, 540, 6300))*0.018 + cycle(clamp(root*12.4, 670, 7400))*0.008) * hf_edge * (0.25+0.75*t_fast);\nready_weight = 1-clamp((r-650)/1250,0,1);\nready = (cycle(55)*0.10 + cycle(110)*0.045 + cycle(220)*0.018) * ready_bed * ready_weight * (1-0.55*t_fast);\nrelease_body = (cycle(clamp(root*0.62,32,320))*0.075 + cycle(clamp(root*1.24,65,640))*0.035) * release * release_mass;\ncenter = (order1+order2+order3+body+ready+release_body) * drive;\nside_l = (cavity_l+mechanical_l+edge_l) * drive * (0.28+0.42*stereo_width);\nside_r = (cavity_r+mechanical_r+edge_r) * drive * (0.28+0.42*stereo_width);\ngain = run*cut;\nsat = 1+saturation*0.75;\nout1 = tanh((center+side_l)*gain*sat)/sat;\nout2 = tanh((center+side_r)*gain*sat)/sat;",
+          "id": "obj-1",
+          "maxclass": "codebox",
+          "numinlets": 1,
+          "numoutlets": 2,
+          "outlettype": [
+            "",
+            ""
+          ],
+          "patching_rect": [
+            40.0,
+            40.0,
+            760.0,
+            580.0
+          ]
+        }
+      },
+      {
+        "box": {
+          "id": "obj-2",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            40.0,
+            640.0,
+            45.0,
+            22.0
+          ],
+          "text": "out 1"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-3",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            120.0,
+            640.0,
+            45.0,
+            22.0
+          ],
+          "text": "out 2"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-4",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            840.0,
+            40.0,
+            220.0,
+            22.0
+          ],
+          "text": "param rpm 650 @min 0 @max 10000"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-5",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            840.0,
+            72.0,
+            220.0,
+            22.0
+          ],
+          "text": "param throttle 0 @min 0 @max 1"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-6",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            840.0,
+            104.0,
+            220.0,
+            22.0
+          ],
+          "text": "param load 0 @min -1 @max 1"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-7",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            840.0,
+            136.0,
+            220.0,
+            22.0
+          ],
+          "text": "param accel 0 @min -1 @max 1"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-8",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            840.0,
+            168.0,
+            220.0,
+            22.0
+          ],
+          "text": "param engine_running 0 @min 0 @max 1"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-9",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            840.0,
+            200.0,
+            220.0,
+            22.0
+          ],
+          "text": "param shift_cut 1 @min 0 @max 1"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-10",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            840.0,
+            232.0,
+            220.0,
+            22.0
+          ],
+          "text": "param motor_order 0.72 @min 0 @max 1"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-11",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            840.0,
+            264.0,
+            220.0,
+            22.0
+          ],
+          "text": "param body_pressure 0.86 @min 0 @max 1"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-12",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            840.0,
+            296.0,
+            220.0,
+            22.0
+          ],
+          "text": "param cavity_structure 0.78 @min 0 @max 1"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-13",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            840.0,
+            328.0,
+            220.0,
+            22.0
+          ],
+          "text": "param mechanical_texture 0.58 @min 0 @max 1"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-14",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            840.0,
+            360.0,
+            220.0,
+            22.0
+          ],
+          "text": "param hf_edge 0.34 @min 0 @max 1"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-15",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            840.0,
+            392.0,
+            220.0,
+            22.0
+          ],
+          "text": "param load_depth 0.82 @min 0 @max 1"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-16",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            840.0,
+            424.0,
+            220.0,
+            22.0
+          ],
+          "text": "param release_mass 0.68 @min 0 @max 1"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-17",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            840.0,
+            456.0,
+            220.0,
+            22.0
+          ],
+          "text": "param ready_bed 0.42 @min 0 @max 1"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-18",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            840.0,
+            488.0,
+            220.0,
+            22.0
+          ],
+          "text": "param stereo_width 0.62 @min 0 @max 1"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-19",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            840.0,
+            520.0,
+            220.0,
+            22.0
+          ],
+          "text": "param saturation 0.24 @min 0 @max 1"
+        }
+      }
+    ],
+    "classnamespace": "dsp.gen",
+    "fileversion": 1,
+    "lines": [
+      {
+        "patchline": {
+          "destination": [
+            "obj-2",
+            0
+          ],
+          "source": [
+            "obj-1",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-3",
+            0
+          ],
+          "source": [
+            "obj-1",
+            1
+          ]
+        }
+      }
+    ],
+    "rect": [
+      50.0,
+      50.0,
+      850.0,
+      680.0
+    ]
+  }
+}

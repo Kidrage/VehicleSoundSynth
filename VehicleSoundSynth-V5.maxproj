@@ -19,6 +19,14 @@
         "kind": "javascript",
         "local": 1
       },
+      "code/ioniq6n_event_state_path.js": {
+        "kind": "javascript",
+        "local": 1
+      },
+      "code/ioniq6n_soundscape_state_path.js": {
+        "kind": "javascript",
+        "local": 1
+      },
       "code/manual_input.js": {
         "kind": "javascript",
         "local": 1
@@ -55,6 +63,10 @@
         "kind": "gendsp",
         "local": 1
       },
+      "gen/ioniq6n_powertrain.gendsp": {
+        "kind": "gendsp",
+        "local": 1
+      },
       "gen/v10_powertrain.gendsp": {
         "kind": "gendsp",
         "local": 1
@@ -73,6 +85,10 @@
         "kind": "data",
         "local": 1
       },
+      "assets/ioniq6n_acoustic_targets.json": {
+        "kind": "data",
+        "local": 1
+      },
       "presets/ev_soundscape_factory.json": {
         "kind": "data",
         "local": 1
@@ -86,6 +102,14 @@
         "local": 1
       },
       "presets/ev_soundscape_v4_factory.json": {
+        "kind": "data",
+        "local": 1
+      },
+      "presets/ioniq6n_n_event_factory.json": {
+        "kind": "data",
+        "local": 1
+      },
+      "presets/ioniq6n_soundscape_modes_factory.json": {
         "kind": "data",
         "local": 1
       },
@@ -153,6 +177,10 @@
         "kind": "patcher",
         "local": 1
       },
+      "VehicleSoundSynth-IONIQ6N.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
       "VehicleSoundSynth-V10.maxpat": {
         "kind": "patcher",
         "local": 1
@@ -185,6 +213,10 @@
         "kind": "patcher",
         "local": 1
       },
+      "patchers/drive_simulator_ioniq6n.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
       "patchers/drive_simulator_v10.maxpat": {
         "kind": "patcher",
         "local": 1
@@ -194,6 +226,10 @@
         "local": 1
       },
       "patchers/engine_controller_ev.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/engine_controller_ioniq6n.maxpat": {
         "kind": "patcher",
         "local": 1
       },
@@ -229,6 +265,42 @@
         "kind": "patcher",
         "local": 1
       },
+      "patchers/ioniq6n_activation_beap~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/ioniq6n_cinematic_soundscape_host~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/ioniq6n_n_event_beap~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/ioniq6n_n_event_host~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/ioniq6n_powertrain~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/ioniq6n_sound_dna~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/ioniq6n_soundscape_evolution_beap~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/ioniq6n_soundscape_ignition_beap~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/ioniq6n_soundscape_lightspeed_beap~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
       "patchers/keyboard_drive_ws.maxpat": {
         "kind": "patcher",
         "local": 1
@@ -254,6 +326,10 @@
         "local": 1
       },
       "patchers/transient_ev~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/transient_ioniq6n~.maxpat": {
         "kind": "patcher",
         "local": 1
       },
@@ -346,6 +422,10 @@
         "local": 1
       },
       "patchers/vehicle_engine_ev~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/vehicle_engine_ioniq6n~.maxpat": {
         "kind": "patcher",
         "local": 1
       },

@@ -1,12 +1,13 @@
 # VehicleSoundSynth V5
 
-Max/MSP 8.6.5 vehicle-sound project with three independent runtimes:
+Max/MSP 8.6.5 vehicle-sound project with four independent runtimes:
 
 - `VehicleSoundSynth-EV.maxpat`
 - `VehicleSoundSynth-V10.maxpat`
 - `VehicleSoundSynth-V12.maxpat`
+- `VehicleSoundSynth-IONIQ6N.maxpat`
 
-`main.maxpat` is a DSP-free launcher. It does not contain the three engines and
+`main.maxpat` is a DSP-free launcher. It does not contain the four engines and
 does not keep inactive profiles running. Selecting another profile first sends
 `write` and closes the active runtime, then opens one unique replacement; this
 is the supported low-CPU workflow. Its visible Soundscape strip sends controls
@@ -16,7 +17,7 @@ a second Soundscape or any launcher-side DSP.
 ## Quick start
 
 1. Open `VehicleSoundSynth-V5.maxproj` and wait for the Project window. Directly
-   opening one of the three runtime `.maxpat` files is also supported: their
+   opening one of the four runtime `.maxpat` files is also supported: their
    root-level abstractions use explicit `patchers/` paths.
 2. Open `main.maxpat` from the Project window, then click one profile. Audio
    starts off. The Main Soundscape strip controls that selected runtime;
@@ -26,23 +27,28 @@ a second Soundscape or any launcher-side DSP.
    780 RPM for V12; it no longer enters a high-rev default after ignition.
 4. In EV, choose Relax, Expressive, or Sport, then enable ignition/start when
    the selected BEAP layer should sound.
-5. Use Internal Manual for direct throttle/brake control, Internal Auto for the
+5. In IONIQ6N, select Ignition, Evolution, or Lightspeed. Evolution is the
+   default. N e-Shift starts enabled with eight virtual ratios; disable it for
+   continuous EV pitch without virtual shifts. Its Sound DNA, three
+   Soundscapes, activation and N-event designer are sample-free and independent
+   of V10.
+6. Use Internal Manual for direct throttle/brake control, Internal Auto for the
    guarded drive cycle, or send messages to `vss.ev.input`, `vss.v10.input`, or
-   `vss.v12.input` in External mode.
-6. After lowering the monitoring level, enable the single `Audio + Output`
+   `vss.v12.input` in External mode. IONIQ6N uses `vss.ioniq6n.input`.
+7. After lowering the monitoring level, enable the single `Audio + Output`
    toggle. It opens the output ramp and Max DSP together; ignition/start alone
    intentionally do not enable monitoring.
-7. Use `Open Sound DNA` plus `Sound DNA Solo` to tune the procedural engine, or
+8. Use `Open Sound DNA` plus `Sound DNA Solo` to tune the procedural engine, or
    use Main Soundscape `Enable`, macros, `Open Designer` and `Solo` for the
    active pad. The same controls remain visible in the runtime page. In
    V10/V12 use `Open Pop Designer`, `Backfire Solo`, and `Test Pop` to tune the
    active Pop voice without driving the car. These buttons open the audible
    instances; use the matching `Save` control, or `Save Profile Sound` for the
    Mixer, Soundscape and EQ together, after an edit.
-8. Balance the seven audible modules in the `MODULE MIXER`: Sound DNA, Start,
+9. Balance the seven audible modules in the `MODULE MIXER`: Sound DNA, Start,
    Pop/Event, Soundscape, Road/Air, Cabin Rumble, and Master. Each profile
    restores its own local mixer state automatically.
-9. Save intentional BEAP subpatcher edits. The launcher saves/closes the active
+10. Save intentional BEAP subpatcher edits. The launcher saves/closes the active
    top-level runtime when switching; when finished, close the runtime and Project
    windows and quit Max.
 
@@ -53,9 +59,20 @@ Each public profile patcher has one message inlet and stereo signal outlets:
 - `patchers/vehicle_engine_ev~.maxpat`
 - `patchers/vehicle_engine_v10~.maxpat`
 - `patchers/vehicle_engine_v12~.maxpat`
+- `patchers/vehicle_engine_ioniq6n~.maxpat`
 
 Each profile owns exactly one user-editable Sound DNA wrapper around one Gen powertrain. There are no runtime profile
 weights and no hidden V10/V12/EV generators muted behind gain objects.
+
+IONIQ6N is a fourth profile, not a V10 retune. Its procedural Sound DNA fills
+the motor-order, low-mid body/cavity and mechanical-texture bands without
+loading the supplied road-test recording. Its Soundscape is a separate stem
+with three crossfaded, seed-once BEAP instruments: Ignition emphasizes
+activation pressure and restrained bubbles, Evolution uses cinematic harmonic
+motion plus dramatic transients, and Lightspeed adds velocity pressure and an
+upper shimmer ceiling. RPM alone owns the tonal root; load/throttle reveal
+layers and colour, while speed only increases air and space. Activation and
+N-event buses are separately tunable, persistent and lifecycle-gated.
 
 V10 and V12 continuous sound is procedural. No idle, acceleration, deceleration,
 or shift-recovery recording is loaded or looped. Both engines use phase-locked
@@ -191,6 +208,8 @@ regeneration:
 
 - `patchers/{ev,v10,v12}_engine_start_v3_beap~.maxpat` — independent current cinematic starts
 - `patchers/{ev,v10,v12}_soundscape_v4_beap~.maxpat` — three independent current Soundscape V4 instruments
+- `patchers/ioniq6n_soundscape_{ignition,evolution,lightspeed}_beap~.maxpat` — independent IONIQ6N N Sound instruments
+- `patchers/ioniq6n_activation_beap~.maxpat` / `patchers/ioniq6n_n_event_beap~.maxpat` — ready activation and mode-aware N events
 - `patchers/ev_pad_beap~.maxpat` — EV Relax
 - `patchers/ev_expressive_beap~.maxpat` — EV Expressive
 - `patchers/ev_sport_beap~.maxpat` — EV Sport
@@ -222,6 +241,12 @@ runtime. `Open Designer` fronts the exact embedded instance feeding that
 runtime—there is no detached editor or `poly~` copy. `Save` stores the active
 profile to ignored `presets/local/<profile>_soundscape_v4.json`; EV, V10 and V12
 have independent graph topologies, factory states and local user states.
+
+IONIQ6N instead persists all three mode graphs through
+`presets/ioniq6n_soundscape_modes_factory.json` and the ignored local
+`presets/local/ioniq6n_soundscape_modes.json`. Switching `n_sound_mode` uses a
+150 ms crossfade; it never copies parameters between instruments. The separate
+N-event factory is `presets/ioniq6n_n_event_factory.json`.
 
 ## Public control messages
 
@@ -282,6 +307,21 @@ compressor_attack_rate 0..150
 compressor_release_rate 0..150
 compressor_makeup_db -12..12
 compressor_bypass 0|1
+```
+
+IONIQ6N additionally accepts:
+
+```text
+n_sound_mode ignition|evolution|lightspeed
+eshift_enable 0|1
+event_enable 0|1
+event_intensity 0..1
+event_open
+event_save
+event_reload
+event_reset
+event_audition
+event_solo 0|1
 ```
 
 OMX attack/release values are rates, not milliseconds: larger values are
@@ -461,7 +501,7 @@ Distributable audio provenance remains governed by `ASSET_LICENSES.md` and
 ## Regeneration and validation
 
 Generated `.maxpat`, `.gendsp`, preset, and fallback media are owned by
-`tools/build_project.py`. The shared bus EQ, three Sound DNA panels, and the
+`tools/build_project.py`. The shared bus EQ, four Sound DNA panels, and the
 seed-once BEAP patchers documented in `SOUND_DESIGN_GUIDE.md` are user-owned and
 preserved by normal regeneration.
 
