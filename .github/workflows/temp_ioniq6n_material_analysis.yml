@@ -11,7 +11,7 @@ permissions:
 jobs:
   acquire-audio:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
@@ -23,207 +23,137 @@ jobs:
         with:
           node-version: '24'
 
-      - name: Install acquisition tools
+      - name: Install current extractors
         run: |
-          if ! command -v ffmpeg >/dev/null 2>&1; then
-            sudo apt-get update
-            sudo apt-get install -y ffmpeg
-          fi
           python -m pip install --upgrade pip
-          python -m pip install --upgrade "yt-dlp[default,curl-cffi]" requests
+          python -m pip install --upgrade "yt-dlp[default,curl-cffi]" bgutil-ytdlp-pot-provider requests
+          npm install --no-save youtubei.js
 
-      - name: Acquire exact reference audio with fallbacks
-        id: acquire
+      - name: Acquire exact public reference through independent extractor paths
         shell: bash
         run: |
           set -u
-          mkdir -p out attempts
+          mkdir -p out diagnostics
           URL='https://www.youtube.com/watch?v=QjdRMwsym1I'
-          VIDEO_ID='QjdRMwsym1I'
+          VID='QjdRMwsym1I'
           SUCCESS=0
 
+          echo '=== Start BgUtils PO-token provider ===' | tee diagnostics/summary.log
+          docker run --name bgutil-provider -d --init -p 4416:4416 brainicism/bgutil-ytdlp-pot-provider:latest > diagnostics/bgutil_container_id.txt 2>&1 || true
+          sleep 5
+          docker logs bgutil-provider > diagnostics/bgutil_provider.log 2>&1 || true
+          curl -fsS http://127.0.0.1:4416/ > diagnostics/bgutil_health.txt 2>&1 || true
+
           try_ytdlp() {
-            local label="$1"
-            local clients="$2"
-            echo "=== yt-dlp attempt: $label ($clients) ===" | tee -a attempts/summary.log
-            yt-dlp \
+            local label="$1"; local clients="$2"
+            echo "=== yt-dlp + PO token: $label ($clients) ===" | tee -a diagnostics/summary.log
+            yt-dlp -v \
               --no-playlist \
               --js-runtimes node \
               --remote-components ejs:github \
               --impersonate chrome \
               --extractor-args "youtube:player_client=${clients}" \
-              --write-info-json \
               -f 'bestaudio[ext=webm]/bestaudio[ext=m4a]/bestaudio' \
               -o "out/ioniq6n_source_${label}.%(ext)s" \
-              "$URL" 2>&1 | tee "attempts/ytdlp_${label}.log"
-            local rc=${PIPESTATUS[0]}
+              "$URL" > "diagnostics/ytdlp_${label}.log" 2>&1
+            local rc=$?
+            cat "diagnostics/ytdlp_${label}.log"
             if [ "$rc" -eq 0 ]; then SUCCESS=1; fi
             return "$rc"
           }
 
-          try_ytdlp tv_safari 'tv,web_safari' || true
-          if [ "$SUCCESS" -eq 0 ]; then try_ytdlp embedded 'web_embedded,tv_simply,web_safari' || true; fi
-          if [ "$SUCCESS" -eq 0 ]; then try_ytdlp mobile 'mweb,android_vr,web_safari' || true; fi
+          try_ytdlp mweb 'mweb' || true
+          if [ "$SUCCESS" -eq 0 ]; then try_ytdlp web 'web,web_safari' || true; fi
+          if [ "$SUCCESS" -eq 0 ]; then try_ytdlp mixed 'mweb,web_safari,android_vr' || true; fi
 
           if [ "$SUCCESS" -eq 0 ]; then
+            echo '=== youtubei.js direct path ===' | tee -a diagnostics/summary.log
+            cat > diagnostics/youtubei_acquire.mjs <<'JS'
+          import fs from 'node:fs';
+          import { Innertube, UniversalCache } from 'youtubei.js';
+          const id = 'QjdRMwsym1I';
+          try {
+            const yt = await Innertube.create({ cache: new UniversalCache(false), generate_session_locally: true });
+            const info = await yt.getBasicInfo(id);
+            fs.writeFileSync('diagnostics/youtubei_info.json', JSON.stringify(info.basic_info, null, 2));
+            const stream = await info.download({ type: 'audio', quality: 'best', format: 'any' });
+            const reader = stream.getReader();
+            const fd = fs.openSync('out/ioniq6n_source_youtubei.bin', 'w');
+            let total = 0;
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              fs.writeSync(fd, value);
+              total += value.length;
+            }
+            fs.closeSync(fd);
+            console.log(`YOUTUBEI_SUCCESS bytes=${total}`);
+            if (total < 1000000) process.exit(2);
+          } catch (err) {
+            fs.writeFileSync('diagnostics/youtubei_error.txt', String(err?.stack || err));
+            console.error(err);
+            process.exit(1);
+          }
+          JS
+            node diagnostics/youtubei_acquire.mjs > diagnostics/youtubei_stdout.log 2>&1
+            if [ "$?" -eq 0 ]; then SUCCESS=1; fi
+          fi
+
+          if [ "$SUCCESS" -eq 0 ]; then
+            echo '=== self-hosted cobalt path ===' | tee -a diagnostics/summary.log
+            docker run --name cobalt -d --init -p 9000:9000 -e API_URL=http://127.0.0.1:9000/ ghcr.io/imputnet/cobalt:11 > diagnostics/cobalt_container_id.txt 2>&1 || true
+            sleep 10
+            docker logs cobalt > diagnostics/cobalt_server.log 2>&1 || true
             python - <<'PY'
-          import json
-          import pathlib
-          import re
-          import sys
-          import time
-          from urllib.parse import urlparse
-
-          import requests
-
-          OUT = pathlib.Path('out')
-          LOG = pathlib.Path('attempts')
-          URL = 'https://www.youtube.com/watch?v=QjdRMwsym1I'
-          VID = 'QjdRMwsym1I'
-          UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/150.0 Safari/537.36'
-          session = requests.Session()
-          session.headers.update({'User-Agent': UA})
-
-          def save_response(name, text):
-              (LOG / name).write_text(text[:200000], encoding='utf-8', errors='replace')
-
-          def download(url, target, headers=None):
-              with session.get(url, headers=headers or {}, stream=True, timeout=(20, 360), allow_redirects=True) as r:
-                  r.raise_for_status()
-                  ctype = r.headers.get('content-type', '')
-                  total = 0
-                  with open(target, 'wb') as f:
-                      for chunk in r.iter_content(1024 * 1024):
-                          if chunk:
-                              f.write(chunk)
-                              total += len(chunk)
-                  if total < 1_000_000:
-                      raise RuntimeError(f'download too small: {total} bytes, content-type={ctype}')
-                  return total, ctype
-
-          # Cobalt v11 community APIs currently reporting YouTube support.
-          cobalt_instances = [
-              'https://cobalt-api.meowing.de',
-              'https://capi.3kh0.net',
-          ]
-          payloads = [
-              {'url': URL, 'downloadMode': 'audio', 'audioFormat': 'best', 'filenameStyle': 'basic', 'alwaysProxy': True, 'youtubeBetterAudio': True},
-              {'url': URL, 'downloadMode': 'audio', 'audioFormat': 'best', 'filenameStyle': 'basic', 'alwaysProxy': True, 'youtubeHLS': True},
-              {'url': URL, 'downloadMode': 'audio', 'audioFormat': 'mp3', 'audioBitrate': '320', 'filenameStyle': 'basic', 'alwaysProxy': True, 'youtubeHLS': True},
-          ]
-          for base in cobalt_instances:
-              for n, payload in enumerate(payloads, 1):
-                  key = re.sub(r'[^a-z0-9]+', '_', urlparse(base).netloc.lower())
-                  try:
-                      r = session.post(base.rstrip('/') + '/', headers={'Accept': 'application/json', 'Content-Type': 'application/json'}, json=payload, timeout=(20, 120))
-                      save_response(f'cobalt_{key}_{n}.log', f'HTTP {r.status_code}\n{r.text}')
-                      r.raise_for_status()
-                      data = r.json()
-                      media_url = data.get('url')
-                      if data.get('status') in {'redirect', 'tunnel'} and media_url:
-                          target = OUT / f'ioniq6n_source_cobalt_{key}_{n}.bin'
-                          size, ctype = download(media_url, target)
-                          print(f'COBALT_SUCCESS {base} payload={n} size={size} type={ctype}')
-                          sys.exit(0)
-                  except Exception as exc:
-                      with open(LOG / 'fallback_errors.log', 'a', encoding='utf-8') as f:
-                          f.write(f'COBALT {base} payload={n}: {exc!r}\n')
-
-          # Trusted public Invidious instances from the project's official list.
-          invidious_instances = [
-              'https://inv.nadeko.net',
-              'https://invidious.nerdvpn.de',
-              'https://yt.chocolatemoo53.com',
-          ]
-          for base in invidious_instances:
-              key = re.sub(r'[^a-z0-9]+', '_', urlparse(base).netloc.lower())
-              try:
-                  api = f'{base}/api/v1/videos/{VID}?local=true'
-                  r = session.get(api, timeout=(20, 120))
-                  save_response(f'invidious_{key}.log', f'HTTP {r.status_code}\n{r.text}')
-                  r.raise_for_status()
-                  data = r.json()
-                  formats = data.get('adaptiveFormats') or data.get('formatStreams') or []
-                  audio = [x for x in formats if str(x.get('type', '')).startswith('audio/') and x.get('url')]
-                  audio.sort(key=lambda x: int(x.get('bitrate') or 0), reverse=True)
-                  for idx, fmt in enumerate(audio[:4], 1):
-                      try:
-                          target = OUT / f'ioniq6n_source_invidious_{key}_{idx}.bin'
-                          size, ctype = download(fmt['url'], target, headers={'Referer': base + '/'})
-                          print(f'INVIDIOUS_SUCCESS {base} format={fmt.get("itag")} size={size} type={ctype}')
-                          sys.exit(0)
-                      except Exception as inner:
-                          with open(LOG / 'fallback_errors.log', 'a', encoding='utf-8') as f:
-                              f.write(f'INVIDIOUS_STREAM {base} #{idx}: {inner!r}\n')
-              except Exception as exc:
-                  with open(LOG / 'fallback_errors.log', 'a', encoding='utf-8') as f:
-                      f.write(f'INVIDIOUS_API {base}: {exc!r}\n')
-
-          # Piped APIs as a last public-front-end fallback.
-          piped_instances = [
-              'https://pipedapi.kavin.rocks',
-              'https://pipedapi.private.coffee',
-              'https://pipedapi.reallyaweso.me',
-              'https://piped-api.garudalinux.org',
-              'https://api-piped.mha.fi',
-          ]
-          for base in piped_instances:
-              key = re.sub(r'[^a-z0-9]+', '_', urlparse(base).netloc.lower())
-              try:
-                  api = f'{base}/streams/{VID}'
-                  r = session.get(api, timeout=(20, 120))
-                  save_response(f'piped_{key}.log', f'HTTP {r.status_code}\n{r.text}')
-                  r.raise_for_status()
-                  data = r.json()
-                  audio = [x for x in (data.get('audioStreams') or []) if x.get('url')]
-                  audio.sort(key=lambda x: int(x.get('bitrate') or 0), reverse=True)
-                  for idx, fmt in enumerate(audio[:4], 1):
-                      try:
-                          target = OUT / f'ioniq6n_source_piped_{key}_{idx}.bin'
-                          size, ctype = download(fmt['url'], target, headers={'Referer': base + '/'})
-                          print(f'PIPED_SUCCESS {base} size={size} type={ctype}')
-                          sys.exit(0)
-                      except Exception as inner:
-                          with open(LOG / 'fallback_errors.log', 'a', encoding='utf-8') as f:
-                              f.write(f'PIPED_STREAM {base} #{idx}: {inner!r}\n')
-              except Exception as exc:
-                  with open(LOG / 'fallback_errors.log', 'a', encoding='utf-8') as f:
-                      f.write(f'PIPED_API {base}: {exc!r}\n')
-
-          print('ALL_PUBLIC_FALLBACKS_FAILED', file=sys.stderr)
-          sys.exit(1)
+          import json, pathlib, requests, sys, time
+          base='http://127.0.0.1:9000'
+          payload={'url':'https://www.youtube.com/watch?v=QjdRMwsym1I','downloadMode':'audio','audioFormat':'best','filenameStyle':'basic','youtubeHLS':True}
+          try:
+              r=requests.post(base+'/',json=payload,headers={'Accept':'application/json','Content-Type':'application/json'},timeout=120)
+              pathlib.Path('diagnostics/cobalt_response.txt').write_text(f'HTTP {r.status_code}\n{r.text}',encoding='utf-8')
+              r.raise_for_status()
+              data=r.json(); url=data.get('url')
+              if data.get('status') not in {'redirect','tunnel'} or not url: raise RuntimeError(data)
+              with requests.get(url,stream=True,timeout=(20,360)) as s:
+                  s.raise_for_status(); total=0
+                  with open('out/ioniq6n_source_cobalt.bin','wb') as f:
+                      for chunk in s.iter_content(1024*1024):
+                          if chunk: f.write(chunk); total += len(chunk)
+              print('COBALT_SUCCESS',total)
+              if total < 1000000: raise RuntimeError(f'too small {total}')
+          except Exception as e:
+              pathlib.Path('diagnostics/cobalt_client_error.txt').write_text(repr(e),encoding='utf-8')
+              sys.exit(1)
           PY
             if [ "$?" -eq 0 ]; then SUCCESS=1; fi
           fi
 
-          AUDIO_FILE="$(find out -maxdepth 1 -type f \( -name 'ioniq6n_source_*.m4a' -o -name 'ioniq6n_source_*.webm' -o -name 'ioniq6n_source_*.opus' -o -name 'ioniq6n_source_*.mp4' -o -name 'ioniq6n_source_*.bin' \) -size +1M | head -n 1)"
+          find out -maxdepth 1 -type f -size -1M -delete || true
+          AUDIO_FILE="$(find out -maxdepth 1 -type f -name 'ioniq6n_source_*' -size +1M | head -n 1)"
           if [ "$SUCCESS" -eq 0 ] || [ -z "$AUDIO_FILE" ]; then
-            echo 'No usable source file acquired.' | tee -a attempts/summary.log
+            echo 'ALL_EXTRACTION_PATHS_FAILED' | tee -a diagnostics/summary.log
+            docker logs bgutil-provider >> diagnostics/bgutil_provider.log 2>&1 || true
+            docker logs cobalt >> diagnostics/cobalt_server.log 2>&1 || true
             exit 1
           fi
 
-          echo "Selected source: $AUDIO_FILE" | tee -a attempts/summary.log
-          ffprobe -v error -show_format -show_streams -of json "$AUDIO_FILE" > out/ffprobe_source.json
-          ffmpeg -hide_banner -y -i "$AUDIO_FILE" -vn -ar 48000 -ac 2 -c:a pcm_s24le out/ioniq6n_reference_48k_stereo.wav
-          ffmpeg -hide_banner -y -i "$AUDIO_FILE" -vn -ar 48000 -ac 2 -c:a libmp3lame -b:a 192k out/ioniq6n_reference_48k_stereo.mp3
-          ffprobe -v error -show_format -show_streams -of json out/ioniq6n_reference_48k_stereo.wav > out/ffprobe_reference.json
+          echo "Selected source: $AUDIO_FILE" | tee -a diagnostics/summary.log
+          ffprobe -v error -show_format -show_streams -of json "$AUDIO_FILE" > out/ffprobe_source.json || true
+          if command -v ffmpeg >/dev/null 2>&1; then
+            ffmpeg -hide_banner -y -i "$AUDIO_FILE" -vn -ar 48000 -ac 2 -c:a pcm_s24le out/ioniq6n_reference_48k_stereo.wav
+            ffmpeg -hide_banner -y -i "$AUDIO_FILE" -vn -ar 48000 -ac 2 -c:a libmp3lame -b:a 192k out/ioniq6n_reference_48k_stereo.mp3
+          fi
           sha256sum out/* > out/SHA256SUMS.txt
-          {
-            echo 'Source title: 2026 Hyundai Ioniq 6N POV Test Drive'
-            echo 'Video ID: QjdRMwsym1I'
-            echo 'Purpose: engineering reference for Sound DNA analysis'
-            echo "Selected source file: $AUDIO_FILE"
-          } > out/README.txt
-          ls -lh out attempts
+          ls -lh out diagnostics
 
       - name: Upload acquisition result and diagnostics
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ioniq6n-audio-reference-attempt-2
+          name: ioniq6n-audio-reference-attempt-3
           path: |
             out/
-            attempts/
+            diagnostics/
           if-no-files-found: warn
           retention-days: 1
           compression-level: 0
