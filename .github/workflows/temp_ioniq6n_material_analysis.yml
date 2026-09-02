@@ -1,0 +1,73 @@
+name: temp-ioniq6n-material-analysis
+
+on:
+  push:
+    branches:
+      - temp/ioniq6n-material-analysis-20260902
+
+permissions:
+  contents: read
+
+jobs:
+  acquire-audio:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install audio tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          python -m pip install --upgrade pip
+          python -m pip install --upgrade "yt-dlp[default,curl-cffi]"
+
+      - name: Acquire exact reference audio
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          URL='https://www.youtube.com/watch?v=QjdRMwsym1I'
+          yt-dlp --version
+          yt-dlp \
+            --no-playlist \
+            --js-runtimes node \
+            --remote-components ejs:github \
+            --write-info-json \
+            --write-thumbnail \
+            --convert-thumbnails jpg \
+            -f 'bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio' \
+            -o 'out/ioniq6n_source.%(ext)s' \
+            "$URL"
+
+          AUDIO_FILE="$(find out -maxdepth 1 -type f \( -name 'ioniq6n_source.m4a' -o -name 'ioniq6n_source.webm' -o -name 'ioniq6n_source.opus' -o -name 'ioniq6n_source.mp4' \) | head -n 1)"
+          test -n "$AUDIO_FILE"
+
+          ffmpeg -hide_banner -y -i "$AUDIO_FILE" -vn -ar 48000 -ac 2 -c:a libmp3lame -b:a 192k out/ioniq6n_reference_48k_stereo.mp3
+          ffprobe -v error -show_format -show_streams -of json "$AUDIO_FILE" > out/ffprobe_source.json
+          ffprobe -v error -show_format -show_streams -of json out/ioniq6n_reference_48k_stereo.mp3 > out/ffprobe_reference.json
+          sha256sum out/* > out/SHA256SUMS.txt
+          {
+            echo 'Source title: 2026 Hyundai Ioniq 6N POV Test Drive'
+            echo 'Video ID: QjdRMwsym1I'
+            echo 'Purpose: temporary engineering reference acquisition for Sound DNA analysis'
+            echo "Source file: $AUDIO_FILE"
+          } > out/README.txt
+          ls -lh out
+
+      - name: Upload temporary analysis input
+        uses: actions/upload-artifact@v4
+        with:
+          name: ioniq6n-audio-reference
+          path: out/
+          if-no-files-found: error
+          retention-days: 1
+          compression-level: 0
