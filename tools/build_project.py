@@ -2938,7 +2938,7 @@ def make_soundscape_control() -> dict[str, Any]:
     p.add(
         "comment", "Soundscape V4", 735, 8, 120, 18,
         numinlets=1, numoutlets=0, presentation=1,
-        presentation_rect=[620.0, 70.0, 105.0, 18.0],
+        presentation_rect=[790.0, 8.0, 150.0, 18.0],
     )
     feedback = inlet(p, 15, 205)
     output = outlet(p, 945, 205)
@@ -2952,14 +2952,18 @@ def make_soundscape_control() -> dict[str, Any]:
     status = p.add(
         "message", "Factory V4", 895, 175, 70, 22,
         numinlets=2, numoutlets=1, presentation=1,
-        presentation_rect=[790.0, 68.0, 170.0, 22.0],
+        presentation_rect=[650.0, 68.0, 310.0, 22.0],
     )
     p.connect(feedback, feedback_route)
     p.connect(feedback_route, state_route, 0)
     p.connect(feedback_route, status_set, 1)
     p.connect(status_set, status)
 
-    p.comment("Enable", 15, 38, 55)
+    p.add(
+        "comment", "Enable / 开启", 15, 38, 80, 18,
+        numinlets=1, numoutlets=0, presentation=1,
+        presentation_rect=[15.0, 8.0, 80.0, 18.0],
+    )
     enable = p.add(
         "toggle", None, 15, 60, 22, 22, numinlets=1, numoutlets=1,
         presentation=1, presentation_rect=[15.0, 30.0, 22.0, 22.0],
@@ -2980,7 +2984,18 @@ def make_soundscape_control() -> dict[str, Any]:
     )
     controls: list[str] = []
     for label, name, low, high, x in specs:
-        p.comment(label, x, 38, 115)
+        visible_labels = {
+            "Motion": "Motion / 动态",
+            "Space": "Space / 空间",
+            "Pitch Follow": "Pitch Follow / 转速跟随",
+            "Transpose": "Transpose / 移调",
+            "Brightness": "Brightness / 明亮度",
+        }
+        p.add(
+            "comment", visible_labels[label], x, 38, 130, 18,
+            numinlets=1, numoutlets=0, presentation=1,
+            presentation_rect=[float(x), 8.0, 130.0, 18.0],
+        )
         number = p.add(
             "flonum", None, x, 60, 72, numinlets=1, numoutlets=2,
             presentation=1, presentation_rect=[float(x), 30.0, 72.0, 22.0],
@@ -3000,7 +3015,7 @@ def make_soundscape_control() -> dict[str, Any]:
         ("Open Designer", "soundscape_open", 15),
         ("Save", "soundscape_save", 145),
         ("Reload", "soundscape_reload", 225),
-        ("Factory Reset", "soundscape_reset", 315),
+        ("Factory Reset", "soundscape_reset", 355),
     )
     for label, command, x in buttons:
         button = p.add(
@@ -3011,10 +3026,14 @@ def make_soundscape_control() -> dict[str, Any]:
         request = p.message(command, x, 185, 120)
         p.connect(button, request)
         p.connect(request, output)
-    p.comment("Solo", 460, 155, 40)
+    p.add(
+        "comment", "Solo / 独听", 460, 155, 90, 18,
+        numinlets=1, numoutlets=0, presentation=1,
+        presentation_rect=[513.0, 70.0, 80.0, 18.0],
+    )
     solo = p.add(
         "toggle", None, 500, 155, 22, 22, numinlets=1, numoutlets=1,
-        presentation=1, presentation_rect=[465.0, 68.0, 22.0, 22.0],
+        presentation=1, presentation_rect=[485.0, 68.0, 22.0, 22.0],
     )
     solo_named = p.new("prepend soundscape_solo", 530, 155, 160, numinlets=1, numoutlets=1)
     solo_default = p.new("loadmess 0", 530, 185, 80, numinlets=1, numoutlets=1)
@@ -3026,7 +3045,7 @@ def make_soundscape_control() -> dict[str, Any]:
     p.connect(solo_set, solo)
     p.add(
         "comment", "State", 735, 155, 45, 18, numinlets=1, numoutlets=0,
-        presentation=1, presentation_rect=[735.0, 70.0, 45.0, 18.0],
+        presentation=1, presentation_rect=[600.0, 70.0, 45.0, 18.0],
     )
     return p.document(presentation=True)
 
@@ -8678,15 +8697,45 @@ def add_eq_band(
     engine: str,
     *,
     q: float | None = None,
+    presentation: bool = False,
 ) -> tuple[str, str, str | None]:
-    p.comment(f"{label} — Hz / dB" + (" / Q" if q is not None else ""), x, y, 185)
-    frequency = p.add("flonum", None, x, y + 24, 65, numinlets=1, numoutlets=2)
-    gain = p.add("flonum", None, x + 72, y + 24, 55, numinlets=1, numoutlets=2)
+    label_text = f"{label} — Hz / dB" + (" / Q" if q is not None else "")
+    label_presentation = {
+        "presentation": 1,
+        "presentation_rect": [float(x), 215.0, 240.0, 18.0],
+    } if presentation else {}
+    frequency_presentation = {
+        "presentation": 1,
+        "presentation_rect": [float(x), 238.0, 65.0, 22.0],
+    } if presentation else {}
+    gain_presentation = {
+        "presentation": 1,
+        "presentation_rect": [float(x + 72), 238.0, 55.0, 22.0],
+    } if presentation else {}
+    p.add(
+        "comment", label_text, x, y, 240, 18,
+        numinlets=1, numoutlets=0, **label_presentation,
+    )
+    frequency = p.add(
+        "flonum", None, x, y + 24, 65,
+        numinlets=1, numoutlets=2, **frequency_presentation,
+    )
+    gain = p.add(
+        "flonum", None, x + 72, y + 24, 55,
+        numinlets=1, numoutlets=2, **gain_presentation,
+    )
     q_control = None
     if q is None:
         values = p.new(f"pak {default_frequency:g} 0.", x, y + 58, 115, numinlets=2, numoutlets=1)
     else:
-        q_control = p.add("flonum", None, x + 134, y + 24, 50, numinlets=1, numoutlets=2)
+        q_presentation = {
+            "presentation": 1,
+            "presentation_rect": [float(x + 134), 238.0, 50.0, 22.0],
+        } if presentation else {}
+        q_control = p.add(
+            "flonum", None, x + 134, y + 24, 50,
+            numinlets=1, numoutlets=2, **q_presentation,
+        )
         values = p.new(f"pak {default_frequency:g} 0. {q:g}", x, y + 58, 145, numinlets=3, numoutlets=1)
         q_default = p.new(f"loadmess {q:g}", x + 134, y + 88, 85, numinlets=1, numoutlets=1)
         p.connect(q_control, values, 0, 2)
@@ -8708,7 +8757,11 @@ def make_drive_console() -> dict[str, Any]:
     feedback = inlet(p, 1060, 20)
     output = outlet(p, 1060, 565)
 
-    p.comment("Audio On / 音频总开关", 20, 50, 150)
+    p.add(
+        "comment", "Audio On / 音频总开关", 20, 50, 150, 18,
+        numinlets=1, numoutlets=0, presentation=1,
+        presentation_rect=[50.0, 47.0, 150.0, 18.0],
+    )
     audio = p.add(
         "toggle", None, 20, 75, 24, 24, numinlets=1, numoutlets=1,
         presentation=1, presentation_rect=[20.0, 44.0, 24.0, 24.0],
@@ -8723,19 +8776,19 @@ def make_drive_console() -> dict[str, Any]:
     ignition = p.add(
         "message", "Ignition On / 点火", 310, 75, 125,
         numinlets=2, numoutlets=1, presentation=1,
-        presentation_rect=[150.0, 44.0, 125.0, 24.0],
+        presentation_rect=[210.0, 44.0, 125.0, 24.0],
     )
     ignition_named = p.message("ignition 1", 310, 110, 75)
     start = p.add(
         "message", "Start / 启动", 445, 75, 95,
         numinlets=2, numoutlets=1, presentation=1,
-        presentation_rect=[285.0, 44.0, 95.0, 24.0],
+        presentation_rect=[345.0, 44.0, 95.0, 24.0],
     )
     start_named = p.message("start 1", 445, 110, 60)
     stop = p.add(
         "message", "Ignition Off / 熄火", 550, 75, 130,
         numinlets=2, numoutlets=1, presentation=1,
-        presentation_rect=[390.0, 44.0, 130.0, 24.0],
+        presentation_rect=[450.0, 44.0, 130.0, 24.0],
     )
     stop_named = p.message("ignition 0", 550, 110, 75)
     for button, command in ((ignition, ignition_named), (start, start_named), (stop, stop_named)):
@@ -8746,7 +8799,7 @@ def make_drive_console() -> dict[str, Any]:
     source_menu = p.add(
         "umenu", None, 710, 75, 210, numinlets=1, numoutlets=3,
         items=["Internal Manual / 手动", ",", "Internal Auto / 自动", ",", "External / 外部"],
-        presentation=1, presentation_rect=[540.0, 44.0, 210.0, 24.0],
+        presentation=1, presentation_rect=[600.0, 44.0, 210.0, 24.0],
     )
     source_default = p.new("loadmess 0", 930, 75, 80, numinlets=1, numoutlets=1)
     source_named = p.new("prepend drive_source", 710, 110, 150, numinlets=1, numoutlets=1)
@@ -8842,14 +8895,26 @@ def make_mix_eq_console() -> dict[str, Any]:
         presentation_rect=[20.0, 185.0, 520.0, 20.0],
     )
     eq_controls = (
-        add_eq_band(p, "Low Shelf / 低频架", "eq_low", 20, 245, 90.0, output),
-        add_eq_band(p, "Low-Mid / 中低频", "eq_lowmid", 280, 245, 250.0, output, q=0.8),
-        add_eq_band(p, "High-Mid / 中高频", "eq_highmid", 540, 245, 3800.0, output, q=1.0),
-        add_eq_band(p, "High Shelf / 高频架", "eq_high", 800, 245, 9000.0, output),
+        add_eq_band(
+            p, "Low Shelf / 低频架", "eq_low", 20, 245, 90.0, output,
+            presentation=True,
+        ),
+        add_eq_band(
+            p, "Low-Mid / 中低频", "eq_lowmid", 280, 245, 250.0, output,
+            q=0.8, presentation=True,
+        ),
+        add_eq_band(
+            p, "High-Mid / 中高频", "eq_highmid", 540, 245, 3800.0, output,
+            q=1.0, presentation=True,
+        ),
+        add_eq_band(
+            p, "High Shelf / 高频架", "eq_high", 800, 245, 9000.0, output,
+            presentation=True,
+        ),
     )
     eq_bypass = p.add(
         "toggle", None, 1010, 268, 24, 24, numinlets=1, numoutlets=1,
-        presentation=1, presentation_rect=[1010.0, 240.0, 24.0, 24.0],
+        presentation=1, presentation_rect=[1050.0, 185.0, 24.0, 24.0],
     )
     eq_named = p.new("prepend eq_bypass", 1010, 300, 120, numinlets=1, numoutlets=1)
     p.connect(eq_bypass, eq_named)
@@ -8857,7 +8922,7 @@ def make_mix_eq_console() -> dict[str, Any]:
     p.add(
         "comment", "EQ Bypass / 旁路", 980, 245, 130, 18,
         numinlets=1, numoutlets=0, presentation=1,
-        presentation_rect=[960.0, 218.0, 145.0, 18.0],
+        presentation_rect=[900.0, 188.0, 145.0, 18.0],
     )
     eq_names = ("eq_low", "eq_lowmid", "eq_highmid", "eq_high", "eq_bypass")
     eq_route = route(p, eq_names, 20, 370, 575)
@@ -8913,7 +8978,12 @@ def make_mix_eq_console() -> dict[str, Any]:
         p.connect(setter, value)
     bypass = p.add(
         "toggle", None, 1040, 458, 24, 24, numinlets=1, numoutlets=1,
-        presentation=1, presentation_rect=[1040.0, 442.0, 24.0, 24.0],
+        presentation=1, presentation_rect=[1040.0, 390.0, 24.0, 24.0],
+    )
+    p.add(
+        "comment", "Compressor Bypass / 压缩旁路", 875, 408, 160, 18,
+        numinlets=1, numoutlets=0, presentation=1,
+        presentation_rect=[875.0, 393.0, 160.0, 18.0],
     )
     bypass_named = p.new("prepend compressor_bypass", 940, 488, 175, numinlets=1, numoutlets=1)
     bypass_set = p.new("prepend set", 940, 518, 80, numinlets=1, numoutlets=1)
@@ -8925,7 +8995,7 @@ def make_mix_eq_console() -> dict[str, Any]:
     for index, (label, command, x) in enumerate((
         ("Save Profile / 保存", "save_profile_sound", 20),
         ("Reload / 重载", "reload_profile_sound", 190),
-        ("Reset Mix / 重置混音", "reset_profile_sound", 330),
+        ("Reset Mix / 重置混音", "reset_profile_sound", 360),
     )):
         button = p.add(
             "message", label, x, 570, 150, numinlets=2, numoutlets=1,

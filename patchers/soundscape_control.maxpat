@@ -38,9 +38,9 @@
           ],
           "presentation": 1,
           "presentation_rect": [
-            620.0,
-            70.0,
-            105.0,
+            790.0,
+            8.0,
+            150.0,
             18.0
           ],
           "text": "Soundscape V4"
@@ -158,9 +158,9 @@
           ],
           "presentation": 1,
           "presentation_rect": [
-            790.0,
+            650.0,
             68.0,
-            170.0,
+            310.0,
             22.0
           ],
           "text": "Factory V4"
@@ -175,10 +175,17 @@
           "patching_rect": [
             15.0,
             38.0,
-            55.0,
-            22.0
+            80.0,
+            18.0
           ],
-          "text": "Enable"
+          "presentation": 1,
+          "presentation_rect": [
+            15.0,
+            8.0,
+            80.0,
+            18.0
+          ],
+          "text": "Enable / \u5f00\u542f"
         }
       },
       {
@@ -250,10 +257,17 @@
           "patching_rect": [
             105.0,
             38.0,
-            115.0,
-            22.0
+            130.0,
+            18.0
           ],
-          "text": "Motion"
+          "presentation": 1,
+          "presentation_rect": [
+            105.0,
+            8.0,
+            130.0,
+            18.0
+          ],
+          "text": "Motion / \u52a8\u6001"
         }
       },
       {
@@ -326,10 +340,17 @@
           "patching_rect": [
             235.0,
             38.0,
-            115.0,
-            22.0
+            130.0,
+            18.0
           ],
-          "text": "Space"
+          "presentation": 1,
+          "presentation_rect": [
+            235.0,
+            8.0,
+            130.0,
+            18.0
+          ],
+          "text": "Space / \u7a7a\u95f4"
         }
       },
       {
@@ -402,10 +423,17 @@
           "patching_rect": [
             365.0,
             38.0,
-            115.0,
-            22.0
+            130.0,
+            18.0
           ],
-          "text": "Pitch Follow"
+          "presentation": 1,
+          "presentation_rect": [
+            365.0,
+            8.0,
+            130.0,
+            18.0
+          ],
+          "text": "Pitch Follow / \u8f6c\u901f\u8ddf\u968f"
         }
       },
       {
@@ -478,10 +506,17 @@
           "patching_rect": [
             505.0,
             38.0,
-            115.0,
-            22.0
+            130.0,
+            18.0
           ],
-          "text": "Transpose"
+          "presentation": 1,
+          "presentation_rect": [
+            505.0,
+            8.0,
+            130.0,
+            18.0
+          ],
+          "text": "Transpose / \u79fb\u8c03"
         }
       },
       {
@@ -554,10 +589,17 @@
           "patching_rect": [
             645.0,
             38.0,
-            115.0,
-            22.0
+            130.0,
+            18.0
           ],
-          "text": "Brightness"
+          "presentation": 1,
+          "presentation_rect": [
+            645.0,
+            8.0,
+            130.0,
+            18.0
+          ],
+          "text": "Brightness / \u660e\u4eae\u5ea6"
         }
       },
       {
@@ -850,14 +892,14 @@
             ""
           ],
           "patching_rect": [
-            315.0,
+            355.0,
             155.0,
             115.0,
             22.0
           ],
           "presentation": 1,
           "presentation_rect": [
-            315.0,
+            355.0,
             68.0,
             115.0,
             22.0
@@ -875,7 +917,7 @@
             ""
           ],
           "patching_rect": [
-            315.0,
+            355.0,
             185.0,
             120.0,
             22.0
@@ -892,10 +934,17 @@
           "patching_rect": [
             460.0,
             155.0,
-            40.0,
-            22.0
+            90.0,
+            18.0
           ],
-          "text": "Solo"
+          "presentation": 1,
+          "presentation_rect": [
+            513.0,
+            70.0,
+            80.0,
+            18.0
+          ],
+          "text": "Solo / \u72ec\u542c"
         }
       },
       {
@@ -915,7 +964,7 @@
           ],
           "presentation": 1,
           "presentation_rect": [
-            465.0,
+            485.0,
             68.0,
             22.0,
             22.0
@@ -990,7 +1039,7 @@
           ],
           "presentation": 1,
           "presentation_rect": [
-            735.0,
+            600.0,
             70.0,
             45.0,
             18.0

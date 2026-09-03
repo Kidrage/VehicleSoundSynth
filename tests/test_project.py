@@ -5466,6 +5466,109 @@ process.stdout.write(JSON.stringify({defaultState: defaultModel.snapshot(), on: 
             for token in forbidden_runtime_tokens:
                 self.assertNotIn(token, runtime, (profile, token))
 
+    def test_v6_main_presentation_exposes_every_common_control_label(self):
+        def presentation_boxes(relative_path):
+            patcher = self.load_json(relative_path)["patcher"]
+            return [
+                item["box"] for item in patcher["boxes"]
+                if item["box"].get("presentation") == 1
+            ]
+
+        def assert_controls_are_connected(relative_path, controls):
+            patcher = self.load_json(relative_path)["patcher"]
+            connected_sources = {
+                item["patchline"]["source"][0] for item in patcher["lines"]
+            }
+            for box in controls:
+                self.assertIn(
+                    box["id"], connected_sources,
+                    (relative_path, box.get("text", box["maxclass"])),
+                )
+
+        main = presentation_boxes("main.maxpat")
+        main_actions = [
+            box for box in main
+            if box.get("maxclass") == "message"
+            and (
+                box.get("text", "").startswith("Open ")
+                or box.get("text", "").startswith("Close Active")
+            )
+        ]
+        self.assertEqual(5, len(main_actions))
+        assert_controls_are_connected("main.maxpat", main_actions)
+
+        drive = presentation_boxes("patchers/drive_console.maxpat")
+        self.assertTrue(any(
+            box.get("maxclass") == "comment"
+            and "Audio On / 音频总开关" in box.get("text", "")
+            for box in drive
+        ))
+        drive_actions = [
+            box for box in drive
+            if box.get("maxclass") in {"toggle", "message", "umenu"}
+        ]
+        self.assertEqual(5, len(drive_actions))
+        assert_controls_are_connected("patchers/drive_console.maxpat", drive_actions)
+
+        soundscape = presentation_boxes("patchers/soundscape_control.maxpat")
+        soundscape_labels = {
+            box.get("text", "") for box in soundscape
+            if box.get("maxclass") == "comment"
+        }
+        self.assertTrue({
+            "Enable / 开启", "Motion / 动态", "Space / 空间",
+            "Pitch Follow / 转速跟随", "Transpose / 移调",
+            "Brightness / 明亮度", "Solo / 独听",
+        }.issubset(soundscape_labels))
+        soundscape_controls = [
+            box for box in soundscape
+            if box.get("maxclass") in {"toggle", "flonum", "message"}
+        ]
+        for index, first in enumerate(soundscape_controls):
+            ax, ay, aw, ah = first["presentation_rect"]
+            for second in soundscape_controls[index + 1:]:
+                bx, by, bw, bh = second["presentation_rect"]
+                overlaps = (
+                    ax < bx + bw and bx < ax + aw
+                    and ay < by + bh and by < ay + ah
+                )
+                self.assertFalse(
+                    overlaps,
+                    (first.get("text", first["maxclass"]),
+                     second.get("text", second["maxclass"])),
+                )
+
+        mix = presentation_boxes("patchers/mix_eq_console.maxpat")
+        mix_labels = {
+            box.get("text", "") for box in mix
+            if box.get("maxclass") == "comment"
+        }
+        for label in (
+            "Low Shelf / 低频架", "Low-Mid / 中低频",
+            "High-Mid / 中高频", "High Shelf / 高频架",
+        ):
+            self.assertTrue(any(text.startswith(label) for text in mix_labels), label)
+        self.assertIn("Compressor Bypass / 压缩旁路", mix_labels)
+        visible_numbers = [
+            box for box in mix if box.get("maxclass") == "flonum"
+        ]
+        self.assertEqual(22, len(visible_numbers))
+        mix_actions = [
+            box for box in mix
+            if box.get("maxclass") == "message"
+            and box.get("text", "").startswith(("Save Profile", "Reload", "Reset Mix"))
+        ]
+        self.assertEqual(3, len(mix_actions))
+        for index, first in enumerate(mix_actions):
+            ax, ay, aw, ah = first["presentation_rect"]
+            for second in mix_actions[index + 1:]:
+                bx, by, bw, bh = second["presentation_rect"]
+                overlaps = (
+                    ax < bx + bw and bx < ax + aw
+                    and ay < by + bh and by < ay + ah
+                )
+                self.assertFalse(overlaps, (first["text"], second["text"]))
+
     def test_v6_dna_controls_are_documented_routed_and_ioniq_has_one_gain_authority(self):
         runtime_host = json.dumps(self.load_json(
             "patchers/profile_runtime_host_ioniq6n.maxpat"

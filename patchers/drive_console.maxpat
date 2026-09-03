@@ -66,7 +66,14 @@
             20.0,
             50.0,
             150.0,
-            22.0
+            18.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            50.0,
+            47.0,
+            150.0,
+            18.0
           ],
           "text": "Audio On / \u97f3\u9891\u603b\u5f00\u5173"
         }
@@ -163,7 +170,7 @@
           ],
           "presentation": 1,
           "presentation_rect": [
-            150.0,
+            210.0,
             44.0,
             125.0,
             24.0
@@ -206,7 +213,7 @@
           ],
           "presentation": 1,
           "presentation_rect": [
-            285.0,
+            345.0,
             44.0,
             95.0,
             24.0
@@ -249,7 +256,7 @@
           ],
           "presentation": 1,
           "presentation_rect": [
-            390.0,
+            450.0,
             44.0,
             130.0,
             24.0
@@ -316,7 +323,7 @@
           ],
           "presentation": 1,
           "presentation_rect": [
-            540.0,
+            600.0,
             44.0,
             210.0,
             24.0
