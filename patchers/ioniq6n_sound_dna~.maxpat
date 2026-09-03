@@ -46,9 +46,8 @@
           "id": "obj-3",
           "maxclass": "newobj",
           "numinlets": 1,
-          "numoutlets": 12,
+          "numoutlets": 11,
           "outlettype": [
-            "",
             "",
             "",
             "",
@@ -67,7 +66,7 @@
             1160.0,
             22.0
           ],
-          "text": "route motor_order body_pressure cavity_structure mechanical_texture hf_edge load_depth release_mass ready_bed stereo_width saturation powertrain_level_db"
+          "text": "route motor_order body_pressure cavity_structure mechanical_texture hf_edge load_depth release_mass ready_bed stereo_width saturation"
         }
       },
       {
@@ -462,18 +461,18 @@
           "numoutlets": 0,
           "patching_rect": [
             35.0,
-            165.0,
-            220.0,
+            135.0,
+            285.0,
             20.0
           ],
           "presentation": 1,
           "presentation_rect": [
             35,
-            165,
-            220.0,
+            135,
+            285.0,
             20.0
           ],
-          "text": "Motor / Order Core"
+          "text": "Motor / \u7535\u673a \u00b7 Motor / Order Core / \u7535\u673a\u9636\u6b21\u6838\u5fc3 [0..1]"
         }
       },
       {
@@ -490,14 +489,14 @@
           ],
           "patching_rect": [
             35.0,
-            190.0,
+            159.0,
             90.0,
             22.0
           ],
           "presentation": 1,
           "presentation_rect": [
             35,
-            190,
+            159,
             90.0,
             22.0
           ],
@@ -566,18 +565,18 @@
           "numoutlets": 0,
           "patching_rect": [
             335.0,
-            165.0,
-            220.0,
+            135.0,
+            285.0,
             20.0
           ],
           "presentation": 1,
           "presentation_rect": [
             335,
-            165,
-            220.0,
+            135,
+            285.0,
             20.0
           ],
-          "text": "Body Pressure"
+          "text": "Body / \u4e3b\u4f53 \u00b7 Body Pressure / \u4e3b\u4f53\u538b\u529b [0..1]"
         }
       },
       {
@@ -594,14 +593,14 @@
           ],
           "patching_rect": [
             335.0,
-            190.0,
+            159.0,
             90.0,
             22.0
           ],
           "presentation": 1,
           "presentation_rect": [
             335,
-            190,
+            159,
             90.0,
             22.0
           ],
@@ -670,18 +669,18 @@
           "numoutlets": 0,
           "patching_rect": [
             635.0,
-            165.0,
-            220.0,
+            135.0,
+            285.0,
             20.0
           ],
           "presentation": 1,
           "presentation_rect": [
             635,
-            165,
-            220.0,
+            135,
+            285.0,
             20.0
           ],
-          "text": "Cavity Structure"
+          "text": "Structure / \u7ed3\u6784 \u00b7 Cavity Structure / \u8154\u4f53\u7ed3\u6784 [0..1]"
         }
       },
       {
@@ -698,14 +697,14 @@
           ],
           "patching_rect": [
             635.0,
-            190.0,
+            159.0,
             90.0,
             22.0
           ],
           "presentation": 1,
           "presentation_rect": [
             635,
-            190,
+            159,
             90.0,
             22.0
           ],
@@ -774,18 +773,18 @@
           "numoutlets": 0,
           "patching_rect": [
             935.0,
-            165.0,
-            220.0,
+            135.0,
+            285.0,
             20.0
           ],
           "presentation": 1,
           "presentation_rect": [
             935,
-            165,
-            220.0,
+            135,
+            285.0,
             20.0
           ],
-          "text": "Mechanical Texture"
+          "text": "Structure / \u7ed3\u6784 \u00b7 Mechanical Texture / \u673a\u68b0\u7eb9\u7406 [0..1]"
         }
       },
       {
@@ -802,14 +801,14 @@
           ],
           "patching_rect": [
             935.0,
-            190.0,
+            159.0,
             90.0,
             22.0
           ],
           "presentation": 1,
           "presentation_rect": [
             935,
-            190,
+            159,
             90.0,
             22.0
           ],
@@ -878,18 +877,18 @@
           "numoutlets": 0,
           "patching_rect": [
             35.0,
-            290.0,
-            220.0,
+            245.0,
+            285.0,
             20.0
           ],
           "presentation": 1,
           "presentation_rect": [
             35,
-            290,
-            220.0,
+            245,
+            285.0,
             20.0
           ],
-          "text": "HF Edge"
+          "text": "Tone / \u97f3\u8272 \u00b7 HF Edge / \u9ad8\u9891\u8fb9\u7f18 [0..1]"
         }
       },
       {
@@ -906,14 +905,14 @@
           ],
           "patching_rect": [
             35.0,
-            315.0,
+            269.0,
             90.0,
             22.0
           ],
           "presentation": 1,
           "presentation_rect": [
             35,
-            315,
+            269,
             90.0,
             22.0
           ],
@@ -982,18 +981,18 @@
           "numoutlets": 0,
           "patching_rect": [
             335.0,
-            290.0,
-            220.0,
+            245.0,
+            285.0,
             20.0
           ],
           "presentation": 1,
           "presentation_rect": [
             335,
-            290,
-            220.0,
+            245,
+            285.0,
             20.0
           ],
-          "text": "Load Depth"
+          "text": "Response / \u54cd\u5e94 \u00b7 Load Depth / \u8d1f\u8f7d\u6df1\u5ea6 [0..1]"
         }
       },
       {
@@ -1010,14 +1009,14 @@
           ],
           "patching_rect": [
             335.0,
-            315.0,
+            269.0,
             90.0,
             22.0
           ],
           "presentation": 1,
           "presentation_rect": [
             335,
-            315,
+            269,
             90.0,
             22.0
           ],
@@ -1086,18 +1085,18 @@
           "numoutlets": 0,
           "patching_rect": [
             635.0,
-            290.0,
-            220.0,
+            245.0,
+            285.0,
             20.0
           ],
           "presentation": 1,
           "presentation_rect": [
             635,
-            290,
-            220.0,
+            245,
+            285.0,
             20.0
           ],
-          "text": "Release Mass"
+          "text": "Response / \u54cd\u5e94 \u00b7 Release Mass / \u6536\u6cb9\u8d28\u91cf\u611f [0..1]"
         }
       },
       {
@@ -1114,14 +1113,14 @@
           ],
           "patching_rect": [
             635.0,
-            315.0,
+            269.0,
             90.0,
             22.0
           ],
           "presentation": 1,
           "presentation_rect": [
             635,
-            315,
+            269,
             90.0,
             22.0
           ],
@@ -1190,18 +1189,18 @@
           "numoutlets": 0,
           "patching_rect": [
             935.0,
-            290.0,
-            220.0,
+            245.0,
+            285.0,
             20.0
           ],
           "presentation": 1,
           "presentation_rect": [
             935,
-            290,
-            220.0,
+            245,
+            285.0,
             20.0
           ],
-          "text": "Ready Bed"
+          "text": "Ready / \u5f85\u673a \u00b7 Ready Bed / \u5f85\u673a\u5e95\u5e8a [0..1]"
         }
       },
       {
@@ -1218,14 +1217,14 @@
           ],
           "patching_rect": [
             935.0,
-            315.0,
+            269.0,
             90.0,
             22.0
           ],
           "presentation": 1,
           "presentation_rect": [
             935,
-            315,
+            269,
             90.0,
             22.0
           ],
@@ -1294,18 +1293,18 @@
           "numoutlets": 0,
           "patching_rect": [
             35.0,
-            415.0,
-            220.0,
+            355.0,
+            285.0,
             20.0
           ],
           "presentation": 1,
           "presentation_rect": [
             35,
-            415,
-            220.0,
+            355,
+            285.0,
             20.0
           ],
-          "text": "Stereo Width"
+          "text": "Space / \u7a7a\u95f4 \u00b7 Stereo Width / \u7acb\u4f53\u58f0\u5bbd\u5ea6 [0..1]"
         }
       },
       {
@@ -1322,14 +1321,14 @@
           ],
           "patching_rect": [
             35.0,
-            440.0,
+            379.0,
             90.0,
             22.0
           ],
           "presentation": 1,
           "presentation_rect": [
             35,
-            440,
+            379,
             90.0,
             22.0
           ],
@@ -1398,18 +1397,18 @@
           "numoutlets": 0,
           "patching_rect": [
             335.0,
-            415.0,
-            220.0,
+            355.0,
+            285.0,
             20.0
           ],
           "presentation": 1,
           "presentation_rect": [
             335,
-            415,
-            220.0,
+            355,
+            285.0,
             20.0
           ],
-          "text": "Saturation"
+          "text": "Dynamics / \u52a8\u6001 \u00b7 Saturation / \u9971\u548c\u5ea6 [0..1]"
         }
       },
       {
@@ -1426,14 +1425,14 @@
           ],
           "patching_rect": [
             335.0,
-            440.0,
+            379.0,
             90.0,
             22.0
           ],
           "presentation": 1,
           "presentation_rect": [
             335,
-            440,
+            379,
             90.0,
             22.0
           ],
@@ -1492,110 +1491,6 @@
             22.0
           ],
           "text": "0.24"
-        }
-      },
-      {
-        "box": {
-          "id": "obj-74",
-          "maxclass": "comment",
-          "numinlets": 1,
-          "numoutlets": 0,
-          "patching_rect": [
-            635.0,
-            415.0,
-            220.0,
-            20.0
-          ],
-          "presentation": 1,
-          "presentation_rect": [
-            635,
-            415,
-            220.0,
-            20.0
-          ],
-          "text": "DNA Output Level dB"
-        }
-      },
-      {
-        "box": {
-          "id": "obj-75",
-          "maxclass": "flonum",
-          "maximum": 6.0,
-          "minimum": -18.0,
-          "numinlets": 1,
-          "numoutlets": 2,
-          "outlettype": [
-            "",
-            ""
-          ],
-          "patching_rect": [
-            635.0,
-            440.0,
-            90.0,
-            22.0
-          ],
-          "presentation": 1,
-          "presentation_rect": [
-            635,
-            440,
-            90.0,
-            22.0
-          ],
-          "varname": "dna_powertrain_level_db"
-        }
-      },
-      {
-        "box": {
-          "id": "obj-76",
-          "maxclass": "newobj",
-          "numinlets": 3,
-          "numoutlets": 1,
-          "outlettype": [
-            ""
-          ],
-          "patching_rect": [
-            735.0,
-            440.0,
-            90.0,
-            22.0
-          ],
-          "text": "clip -18 6"
-        }
-      },
-      {
-        "box": {
-          "id": "obj-77",
-          "maxclass": "newobj",
-          "numinlets": 1,
-          "numoutlets": 1,
-          "outlettype": [
-            ""
-          ],
-          "patching_rect": [
-            830.0,
-            440.0,
-            100.0,
-            22.0
-          ],
-          "text": "prepend powertrain_level_db"
-        }
-      },
-      {
-        "box": {
-          "id": "obj-78",
-          "maxclass": "message",
-          "numinlets": 2,
-          "numoutlets": 1,
-          "outlettype": [
-            ""
-          ],
-          "patching_rect": [
-            635.0,
-            475.0,
-            65.0,
-            22.0
-          ],
-          "text": "-4"
         }
       },
       {
@@ -23522,6 +23417,226 @@
           ],
           "text": "svf~ 28 0.7"
         }
+      },
+      {
+        "box": {
+          "id": "obj-97",
+          "maxclass": "comment",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            131.0,
+            159.0,
+            194.0,
+            38.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            131,
+            157,
+            194.0,
+            40.0
+          ],
+          "text": "Audible / \u53ef\u542c: Cruise + Load / \u5de1\u822a\u8d1f\u8f7d \u2014 \u63a7\u5236\u4e3b\u8981\u7535\u673a\u9636\u6b21\u5f3a\u5ea6"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-98",
+          "maxclass": "comment",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            431.0,
+            159.0,
+            194.0,
+            38.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            431,
+            157,
+            194.0,
+            40.0
+          ],
+          "text": "Audible / \u53ef\u542c: Idle + Load / \u5f85\u673a\u8d1f\u8f7d \u2014 \u63a7\u5236\u4f4e\u9891\u4e0e\u4e2d\u4f4e\u9891\u538b\u529b\u611f"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-99",
+          "maxclass": "comment",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            731.0,
+            159.0,
+            194.0,
+            38.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            731,
+            157,
+            194.0,
+            40.0
+          ],
+          "text": "Audible / \u53ef\u542c: Cruise + Load / \u5de1\u822a\u8d1f\u8f7d \u2014 \u63a7\u5236\u5ea7\u8231/\u8f66\u4f53\u8154\u4f53\u5171\u632f"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-100",
+          "maxclass": "comment",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            1031.0,
+            159.0,
+            194.0,
+            38.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            1031,
+            157,
+            194.0,
+            40.0
+          ],
+          "text": "Audible / \u53ef\u542c: Load / \u52a0\u901f \u2014 \u63a7\u5236\u4e2d\u9891\u673a\u68b0\u7ed3\u6784"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-101",
+          "maxclass": "comment",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            131.0,
+            269.0,
+            194.0,
+            38.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            131,
+            267,
+            194.0,
+            40.0
+          ],
+          "text": "Audible / \u53ef\u542c: High RPM / \u9ad8\u8f6c \u2014 \u63a7\u5236\u9ad8\u8f6c\u9510\u5ea6\u4e0e\u8fb9\u7f18\u611f"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-102",
+          "maxclass": "comment",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            431.0,
+            269.0,
+            194.0,
+            38.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            431,
+            267,
+            194.0,
+            40.0
+          ],
+          "text": "Audible / \u53ef\u542c: Load / \u52a0\u901f \u2014 \u63a7\u5236\u6cb9\u95e8\u548c\u8d1f\u8f7d\u5bf9\u5c42\u6b21\u7684\u63a8\u52a8"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-103",
+          "maxclass": "comment",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            731.0,
+            269.0,
+            194.0,
+            38.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            731,
+            267,
+            194.0,
+            40.0
+          ],
+          "text": "Audible / \u53ef\u542c: Lift / \u6536\u6cb9 \u2014 \u63a7\u5236\u6536\u6cb9\u65f6\u7684\u4f4e\u9891\u60ef\u6027"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-104",
+          "maxclass": "comment",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            1031.0,
+            269.0,
+            194.0,
+            38.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            1031,
+            267,
+            194.0,
+            40.0
+          ],
+          "text": "Audible / \u53ef\u542c: Idle / Ready \u2014 \u63a7\u5236\u70b9\u706b\u540e\u7684\u4f4e\u58f0\u7535\u78c1\u5e95\u5e8a"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-105",
+          "maxclass": "comment",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            131.0,
+            379.0,
+            194.0,
+            38.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            131,
+            377,
+            194.0,
+            40.0
+          ],
+          "text": "Audible / \u53ef\u542c: All / \u5168\u573a\u666f \u2014 \u63a7\u5236\u4e2d\u9ad8\u9891\u58f0\u50cf\u4e0e\u7f38\u7ec4\u5206\u79bb"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-106",
+          "maxclass": "comment",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            431.0,
+            379.0,
+            194.0,
+            38.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            431,
+            377,
+            194.0,
+            40.0
+          ],
+          "text": "Audible / \u53ef\u542c: Load / \u9ad8\u8d1f\u8f7d \u2014 \u589e\u52a0\u5bc6\u5ea6\u4e0e\u8f6f\u524a\u6ce2\u5f3a\u5ea6"
+        }
       }
     ],
     "classnamespace": "box",
@@ -23558,7 +23673,7 @@
           ],
           "source": [
             "obj-3",
-            11
+            10
           ]
         }
       },
@@ -24566,90 +24681,6 @@
           ],
           "source": [
             "obj-73",
-            0
-          ]
-        }
-      },
-      {
-        "patchline": {
-          "destination": [
-            "obj-75",
-            0
-          ],
-          "source": [
-            "obj-3",
-            10
-          ]
-        }
-      },
-      {
-        "patchline": {
-          "destination": [
-            "obj-76",
-            0
-          ],
-          "source": [
-            "obj-75",
-            0
-          ]
-        }
-      },
-      {
-        "patchline": {
-          "destination": [
-            "obj-77",
-            0
-          ],
-          "source": [
-            "obj-76",
-            0
-          ]
-        }
-      },
-      {
-        "patchline": {
-          "destination": [
-            "obj-4",
-            0
-          ],
-          "source": [
-            "obj-77",
-            0
-          ]
-        }
-      },
-      {
-        "patchline": {
-          "destination": [
-            "obj-78",
-            0
-          ],
-          "source": [
-            "obj-13",
-            0
-          ]
-        }
-      },
-      {
-        "patchline": {
-          "destination": [
-            "obj-78",
-            0
-          ],
-          "source": [
-            "obj-21",
-            0
-          ]
-        }
-      },
-      {
-        "patchline": {
-          "destination": [
-            "obj-75",
-            0
-          ],
-          "source": [
-            "obj-78",
             0
           ]
         }

@@ -17,11 +17,11 @@
           "numoutlets": 0,
           "patching_rect": [
             30.0,
-            25.0,
-            520.0,
+            20.0,
+            650.0,
             22.0
           ],
-          "text": "VehicleSoundSynth V6 \u2014 choose one independent runtime"
+          "text": "VehicleSoundSynth V6 \u2014 one shared console, four profile adapters"
         }
       },
       {
@@ -32,11 +32,11 @@
           "numoutlets": 0,
           "patching_rect": [
             30.0,
-            58.0,
-            650.0,
+            48.0,
+            830.0,
             40.0
           ],
-          "text": "The launcher owns no audio objects. Selecting a profile closes the previous runtime before opening one instance."
+          "text": "Main owns lifecycle, input, Mix/EQ and sound-design controls. Selecting a profile safely closes the previous runtime."
         }
       },
       {
@@ -46,8 +46,8 @@
           "numinlets": 1,
           "numoutlets": 0,
           "patching_rect": [
-            570.0,
-            175.0,
+            1030.0,
+            100.0,
             70.0,
             22.0
           ],
@@ -61,8 +61,8 @@
           "numinlets": 1,
           "numoutlets": 0,
           "patching_rect": [
-            360.0,
-            285.0,
+            860.0,
+            100.0,
             145.0,
             22.0
           ],
@@ -84,8 +84,8 @@
             ""
           ],
           "patching_rect": [
-            690.0,
-            285.0,
+            860.0,
+            130.0,
             200.0,
             22.0
           ],
@@ -99,9 +99,9 @@
           "numinlets": 1,
           "numoutlets": 0,
           "patching_rect": [
-            45.0,
-            120.0,
-            210.0,
+            30.0,
+            92.0,
+            225.0,
             22.0
           ],
           "text": "Future EV"
@@ -117,10 +117,17 @@
             ""
           ],
           "patching_rect": [
-            270.0,
-            120.0,
-            190.0,
+            30.0,
+            118.0,
+            220.0,
             22.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            30.0,
+            66.0,
+            220.0,
+            24.0
           ],
           "text": "Open Future EV"
         }
@@ -136,8 +143,8 @@
             ""
           ],
           "patching_rect": [
-            470.0,
-            120.0,
+            30.0,
+            150.0,
             50.0,
             22.0
           ],
@@ -154,9 +161,9 @@
             ""
           ],
           "patching_rect": [
-            360.0,
+            90.0,
             150.0,
-            55.0,
+            65.0,
             22.0
           ],
           "text": "ev"
@@ -172,7 +179,7 @@
             ""
           ],
           "patching_rect": [
-            530.0,
+            160.0,
             150.0,
             65.0,
             22.0
@@ -190,9 +197,9 @@
             ""
           ],
           "patching_rect": [
-            270.0,
-            150.0,
-            260.0,
+            30.0,
+            180.0,
+            230.0,
             22.0
           ],
           "text": "loadunique VehicleSoundSynth-EV.maxpat"
@@ -205,9 +212,9 @@
           "numinlets": 1,
           "numoutlets": 0,
           "patching_rect": [
-            45.0,
-            188.0,
-            210.0,
+            275.0,
+            92.0,
+            225.0,
             22.0
           ],
           "text": "Ferrari-referenced V10"
@@ -223,10 +230,17 @@
             ""
           ],
           "patching_rect": [
-            270.0,
-            188.0,
-            190.0,
+            275.0,
+            118.0,
+            220.0,
             22.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            275.0,
+            66.0,
+            220.0,
+            24.0
           ],
           "text": "Open Ferrari-referenced V10"
         }
@@ -242,8 +256,8 @@
             ""
           ],
           "patching_rect": [
-            470.0,
-            188.0,
+            275.0,
+            150.0,
             50.0,
             22.0
           ],
@@ -260,9 +274,9 @@
             ""
           ],
           "patching_rect": [
-            360.0,
-            218.0,
-            55.0,
+            335.0,
+            150.0,
+            65.0,
             22.0
           ],
           "text": "v10"
@@ -278,8 +292,8 @@
             ""
           ],
           "patching_rect": [
-            530.0,
-            218.0,
+            405.0,
+            150.0,
             65.0,
             22.0
           ],
@@ -296,9 +310,9 @@
             ""
           ],
           "patching_rect": [
-            270.0,
-            218.0,
-            260.0,
+            275.0,
+            180.0,
+            230.0,
             22.0
           ],
           "text": "loadunique VehicleSoundSynth-V10.maxpat"
@@ -311,9 +325,9 @@
           "numinlets": 1,
           "numoutlets": 0,
           "patching_rect": [
-            45.0,
-            256.0,
-            210.0,
+            520.0,
+            92.0,
+            225.0,
             22.0
           ],
           "text": "Independent V12"
@@ -329,10 +343,17 @@
             ""
           ],
           "patching_rect": [
-            270.0,
-            256.0,
-            190.0,
+            520.0,
+            118.0,
+            220.0,
             22.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            520.0,
+            66.0,
+            220.0,
+            24.0
           ],
           "text": "Open Independent V12"
         }
@@ -348,8 +369,8 @@
             ""
           ],
           "patching_rect": [
-            470.0,
-            256.0,
+            520.0,
+            150.0,
             50.0,
             22.0
           ],
@@ -366,9 +387,9 @@
             ""
           ],
           "patching_rect": [
-            360.0,
-            286.0,
-            55.0,
+            580.0,
+            150.0,
+            65.0,
             22.0
           ],
           "text": "v12"
@@ -384,8 +405,8 @@
             ""
           ],
           "patching_rect": [
-            530.0,
-            286.0,
+            650.0,
+            150.0,
             65.0,
             22.0
           ],
@@ -402,9 +423,9 @@
             ""
           ],
           "patching_rect": [
-            270.0,
-            286.0,
-            260.0,
+            520.0,
+            180.0,
+            230.0,
             22.0
           ],
           "text": "loadunique VehicleSoundSynth-V12.maxpat"
@@ -417,9 +438,9 @@
           "numinlets": 1,
           "numoutlets": 0,
           "patching_rect": [
-            45.0,
-            324.0,
-            210.0,
+            765.0,
+            92.0,
+            225.0,
             22.0
           ],
           "text": "IONIQ 6 N"
@@ -435,10 +456,17 @@
             ""
           ],
           "patching_rect": [
-            270.0,
-            324.0,
-            190.0,
+            765.0,
+            118.0,
+            220.0,
             22.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            765.0,
+            66.0,
+            220.0,
+            24.0
           ],
           "text": "Open IONIQ 6 N"
         }
@@ -454,8 +482,8 @@
             ""
           ],
           "patching_rect": [
-            470.0,
-            324.0,
+            765.0,
+            150.0,
             50.0,
             22.0
           ],
@@ -472,9 +500,9 @@
             ""
           ],
           "patching_rect": [
-            360.0,
-            354.0,
-            55.0,
+            825.0,
+            150.0,
+            65.0,
             22.0
           ],
           "text": "ioniq6n"
@@ -490,8 +518,8 @@
             ""
           ],
           "patching_rect": [
-            530.0,
-            354.0,
+            895.0,
+            150.0,
             65.0,
             22.0
           ],
@@ -508,9 +536,9 @@
             ""
           ],
           "patching_rect": [
-            270.0,
-            354.0,
-            260.0,
+            765.0,
+            180.0,
+            230.0,
             22.0
           ],
           "text": "loadunique VehicleSoundSynth-IONIQ6N.maxpat"
@@ -526,12 +554,19 @@
             ""
           ],
           "patching_rect": [
-            510.0,
-            285.0,
-            145.0,
+            1010.0,
+            118.0,
+            200.0,
             22.0
           ],
-          "text": "Close active runtime"
+          "presentation": 1,
+          "presentation_rect": [
+            1010.0,
+            66.0,
+            200.0,
+            24.0
+          ],
+          "text": "Close Active / \u5173\u95ed\u5f53\u524d\u8f66\u578b"
         }
       },
       {
@@ -544,8 +579,8 @@
             ""
           ],
           "patching_rect": [
-            510.0,
-            315.0,
+            1090.0,
+            150.0,
             55.0,
             22.0
           ],
@@ -554,12 +589,9 @@
       },
       {
         "box": {
-          "args": [
-            "main"
-          ],
           "id": "obj-32",
           "maxclass": "bpatcher",
-          "name": "Patcher:/patchers/soundscape_control.maxpat",
+          "name": "Patcher:/patchers/runtime_console.maxpat",
           "numinlets": 1,
           "numoutlets": 1,
           "outlettype": [
@@ -567,11 +599,18 @@
           ],
           "patching_rect": [
             30.0,
-            350.0,
-            980.0,
-            115.0
+            220.0,
+            1180.0,
+            600.0
           ],
-          "varname": "main_soundscape_control"
+          "presentation": 1,
+          "presentation_rect": [
+            30.0,
+            115.0,
+            1180.0,
+            600.0
+          ],
+          "varname": "runtime_console"
         }
       },
       {
@@ -584,8 +623,8 @@
             ""
           ],
           "patching_rect": [
-            748.0,
-            315.0,
+            898.0,
+            190.0,
             30.0,
             22.0
           ],
@@ -602,8 +641,8 @@
             ""
           ],
           "patching_rect": [
-            786.0,
-            315.0,
+            936.0,
+            190.0,
             30.0,
             22.0
           ],
@@ -620,8 +659,8 @@
             ""
           ],
           "patching_rect": [
-            824.0,
-            315.0,
+            974.0,
+            190.0,
             30.0,
             22.0
           ],
@@ -638,8 +677,8 @@
             ""
           ],
           "patching_rect": [
-            862.0,
-            315.0,
+            1012.0,
+            190.0,
             30.0,
             22.0
           ],
@@ -656,8 +695,8 @@
             ""
           ],
           "patching_rect": [
-            710.0,
-            315.0,
+            860.0,
+            190.0,
             30.0,
             22.0
           ],
@@ -674,8 +713,8 @@
             ""
           ],
           "patching_rect": [
-            710.0,
-            345.0,
+            860.0,
+            220.0,
             80.0,
             22.0
           ],
@@ -695,8 +734,8 @@
             ""
           ],
           "patching_rect": [
-            735.0,
-            490.0,
+            1030.0,
+            700.0,
             65.0,
             22.0
           ],
@@ -713,8 +752,8 @@
             ""
           ],
           "patching_rect": [
-            735.0,
-            565.0,
+            1030.0,
+            750.0,
             75.0,
             22.0
           ],
@@ -728,8 +767,8 @@
           "numinlets": 1,
           "numoutlets": 0,
           "patching_rect": [
-            815.0,
-            480.0,
+            1020.0,
+            530.0,
             190.0,
             22.0
           ],
@@ -746,12 +785,12 @@
             ""
           ],
           "patching_rect": [
-            420.0,
-            545.0,
+            780.0,
+            530.0,
             220.0,
             22.0
           ],
-          "text": "r vss.soundscape.feedback.ev"
+          "text": "r vss.runtime.feedback.ev"
         }
       },
       {
@@ -761,8 +800,8 @@
           "numinlets": 1,
           "numoutlets": 0,
           "patching_rect": [
-            815.0,
-            505.0,
+            1020.0,
+            555.0,
             190.0,
             22.0
           ],
@@ -779,12 +818,12 @@
             ""
           ],
           "patching_rect": [
-            420.0,
-            570.0,
+            780.0,
+            555.0,
             220.0,
             22.0
           ],
-          "text": "r vss.soundscape.feedback.v10"
+          "text": "r vss.runtime.feedback.v10"
         }
       },
       {
@@ -794,8 +833,8 @@
           "numinlets": 1,
           "numoutlets": 0,
           "patching_rect": [
-            815.0,
-            530.0,
+            1020.0,
+            580.0,
             190.0,
             22.0
           ],
@@ -812,12 +851,12 @@
             ""
           ],
           "patching_rect": [
-            420.0,
-            595.0,
+            780.0,
+            580.0,
             220.0,
             22.0
           ],
-          "text": "r vss.soundscape.feedback.v12"
+          "text": "r vss.runtime.feedback.v12"
         }
       },
       {
@@ -827,8 +866,8 @@
           "numinlets": 1,
           "numoutlets": 0,
           "patching_rect": [
-            815.0,
-            555.0,
+            1020.0,
+            605.0,
             190.0,
             22.0
           ],
@@ -845,12 +884,12 @@
             ""
           ],
           "patching_rect": [
-            420.0,
-            620.0,
+            780.0,
+            605.0,
             220.0,
             22.0
           ],
-          "text": "r vss.soundscape.feedback.ioniq6n"
+          "text": "r vss.runtime.feedback.ioniq6n"
         }
       },
       {
@@ -861,11 +900,11 @@
           "numoutlets": 0,
           "patching_rect": [
             30.0,
-            615.0,
-            760.0,
+            825.0,
+            900.0,
             22.0
           ],
-          "text": "Main Soundscape controls use profile-scoped buses; overlap during runtime switching cannot touch the old profile."
+          "text": "Main is intentionally DSP-free. Audio starts OFF; command and feedback buses are scoped to the selected profile."
         }
       }
     ],
@@ -1581,12 +1620,12 @@
       }
     ],
     "objectsnaponopen": 1,
-    "openinpresentation": 0,
+    "openinpresentation": 1,
     "rect": [
       50.0,
       50.0,
-      1040,
-      645
+      1240,
+      850
     ],
     "toolbarvisible": 1
   }

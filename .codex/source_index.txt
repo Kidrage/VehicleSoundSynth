@@ -1,8 +1,8 @@
 # Source Index
 
 Repository: /private/tmp/VehicleSoundSynth-V5-ioniq6n
-Tracked filtered files: 167
-High-value indexed files: 60
+Tracked filtered files: 176
+High-value indexed files: 69
 
 Read this file before broad repository exploration. Prefer focused `rg`
 or `git grep` against the listed areas before opening source files.
@@ -18,6 +18,7 @@ or `git grep` against the listed areas before opening source files.
 - code/backfire_burst.js
 - code/dna_state_path.js
 - code/drive_model.js
+- code/eq_feedback_reader.js
 - code/eq_state_path.js
 - code/ioniq6n_event_state_path.js
 - code/ioniq6n_soundscape_state_path.js
@@ -29,6 +30,14 @@ or `git grep` against the listed areas before opening source files.
 - code/soundscape_v4_state_path.js
 - code/start_state_path.js
 - code/start_v3_state_path.js
+- patchers/drive_console.maxpat
+- patchers/mix_eq_console.maxpat
+- patchers/profile_runtime_host_ev.maxpat
+- patchers/profile_runtime_host_ioniq6n.maxpat
+- patchers/profile_runtime_host_v10.maxpat
+- patchers/profile_runtime_host_v12.maxpat
+- patchers/runtime_console.maxpat
+- patchers/sound_design_console.maxpat
 - tools/analyze_reference_lifecycle.py
 - tools/audio_metrics.py
 - tools/bind_drive_render.py

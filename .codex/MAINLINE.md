@@ -14,3 +14,10 @@ Base: frozen V4 tag `v4.0.0` (`6aa49d0`).
 8. Add IONIQ6N as an isolated fourth runtime: electric Sound DNA, optional
    eight-ratio N e-Shift, three decoupled N Sound BEAP instruments, independent
    ready activation and mode-aware N events. Preserve EV/V10/V12 acoustic files.
+9. Consolidate four duplicated operator surfaces into one Main console and one
+   profile-parameterized runtime host. Keep profile windows mode-only, document
+   every Sound DNA control, restore IONIQ6N mixer/DNA parity, and do not retune
+   any synthesis graph or factory preset.
+10. Recalibrate only drivetrain response: add high-speed throttle reserve,
+    distinguish abrupt lift braking from gradual coasting, and shorten service
+    braking while preserving the public 0..1 throttle/brake contract.

@@ -245,6 +245,29 @@ MODULE_MIX_DEFAULTS = {
     "ioniq6n": (-4.0, -7.0, -8.0, -22.0, -18.0, -60.0, -8.0),
 }
 
+# V6 control-registry seam.  These selectors already exist in the audio
+# modules; the registry adds one shared UI and documentation authority without
+# changing any DSP coefficient or factory value.
+MODULE_MIX_SPECS = (
+    ("Sound DNA / 核心声纹", "powertrain_level_db", -60.0, 6.0, "dB"),
+    ("Start / 启动", "start_level_db", -60.0, 6.0, "dB"),
+    ("Pop / Event / 事件", "transient_level_db", -60.0, 6.0, "dB"),
+    ("Soundscape / 氛围", "soundscape_level_db", -60.0, 6.0, "dB"),
+    ("Road / Air / 路噪", "road_level_db", -60.0, 6.0, "dB"),
+    ("Cabin Rumble / 座舱", "rumble_level_db", -60.0, 6.0, "dB"),
+    ("Master / 总输出", "master_trim_db", -24.0, 0.0, "dB"),
+)
+
+COMPRESSOR_CONTROL_SPECS = (
+    ("Threshold / 阈值", "compressor_threshold_db", -12.0, -36.0, 0.0, "dB"),
+    ("Ratio / 压缩比", "compressor_ratio", 2.0, 1.0, 50.0, ":1"),
+    ("Attack Rate / 启动速率", "compressor_attack_rate", 85.0, 0.0, 150.0, "rate"),
+    ("Release Rate / 释放速率", "compressor_release_rate", 35.0, 0.0, 150.0, "rate"),
+    ("Makeup / 补偿", "compressor_makeup_db", 0.0, -12.0, 12.0, "dB"),
+)
+
+TUNING_CONTEXTS = ("live", "idle", "cruise", "load", "lift", "high_rpm")
+
 # Complete, explicit defaults for every nested BEAP parameter client managed by
 # the profile host.  Factory Reset must restore the whole instrument, not just
 # the small subset that differs between the three factory voicings.
@@ -844,8 +867,43 @@ DNA_PARAMETER_SPECS = {
         ("ready_bed", "Ready Bed", 0.0, 1.0),
         ("stereo_width", "Stereo Width", 0.0, 1.0),
         ("saturation", "Saturation", 0.0, 1.0),
-        ("powertrain_level_db", "DNA Output Level dB", -18.0, 6.0),
     ),
+}
+
+# UI-only metadata.  The audible defaults/ranges remain owned by
+# DNA_PARAMETER_SPECS and the existing presets above.
+DNA_CONTROL_METADATA = {
+    "aggression": ("Response / 响应", "激进度", "0..1", "Load / 加速", "增加负载响应与动态存在感"),
+    "brightness": ("Tone / 音色", "明亮度", "0..1", "High RPM / 高转", "提升高阶谐波，不直接改变主音高"),
+    "body": ("Body / 主体", "厚度", "0..1", "Idle + Cruise / 怠速巡航", "填充低频与中低频主体"),
+    "texture": ("Structure / 结构", "结构纹理", "0..1", "Load / 负载", "增加机械与表面细节"),
+    "air_detail": ("Air / 空气", "空气细节", "0..1", "High RPM / 高转", "控制高频空气层"),
+    "cycle_irregularity": ("Motion / 律动", "周期不规则度", "0..1", "Idle / 怠速", "改变微小周期起伏，不改变平均转速"),
+    "stereo_width": ("Space / 空间", "立体声宽度", "0..1", "All / 全场景", "控制中高频声像与缸组分离"),
+    "throttle_loudness_depth": ("Response / 响应", "油门响度深度", "dB", "Load / 加速", "油门从 0 到 1 的响度增量"),
+    "saturation": ("Dynamics / 动态", "饱和度", "0..1", "Load / 高负载", "增加密度与软削波强度"),
+    "idle_level": ("Idle / 怠速", "怠速层电平", "0..1", "Idle / 怠速", "控制专用怠速层总体存在感"),
+    "idle_body": ("Idle / 怠速", "怠速主体", "0..1", "Idle / 怠速", "控制怠速低频与中低频模态"),
+    "idle_metal": ("Idle / 怠速", "怠速金属", "0..1", "Idle / 怠速", "控制怠速结构与金属侧带"),
+    "idle_irregularity": ("Idle / 怠速", "怠速不规则度", "0..1", "Idle / 怠速", "控制燃烧/电磁能量的细微波动"),
+    "idle_air": ("Idle / 怠速", "怠速空气", "0..1", "Idle / 怠速", "控制怠速高频空气细节"),
+    "idle_width": ("Idle / 怠速", "怠速宽度", "0..1", "Idle / 怠速", "控制怠速中高频空间宽度"),
+    "torque_ripple_level": ("EV Structure / 电驱结构", "扭矩脉动", "0..1", "Load / 加速", "控制电机转矩脉动层"),
+    "gear_mesh_level": ("EV Structure / 电驱结构", "齿轮啮合", "0..1", "Cruise + Load / 巡航负载", "控制减速齿轮啸叫结构"),
+    "electrical_detail": ("EV Structure / 电驱结构", "电气细节", "0..1", "High RPM / 高转", "控制逆变器与电磁高阶细节"),
+    "combustion_pulse": ("Combustion / 燃烧", "燃烧脉冲", "0..1", "Idle + Load / 怠速负载", "控制点火脉冲的冲击与轮廓"),
+    "intake_detail": ("Intake / 进气", "进气细节", "0..1", "Load / 加速", "控制进气阶次与负载呼吸"),
+    "exhaust_detail": ("Exhaust / 排气", "排气细节", "0..1", "Load + Lift / 负载收油", "控制排气阶次与收油能量"),
+    "residual_detail": ("Combustion / 燃烧", "残余结构", "0..1", "All running / 运转", "控制脉冲后的机械余振"),
+    "motor_order": ("Motor / 电机", "电机阶次核心", "0..1", "Cruise + Load / 巡航负载", "控制主要电机阶次强度"),
+    "body_pressure": ("Body / 主体", "主体压力", "0..1", "Idle + Load / 待机负载", "控制低频与中低频压力感"),
+    "cavity_structure": ("Structure / 结构", "腔体结构", "0..1", "Cruise + Load / 巡航负载", "控制座舱/车体腔体共振"),
+    "mechanical_texture": ("Structure / 结构", "机械纹理", "0..1", "Load / 加速", "控制中频机械结构"),
+    "hf_edge": ("Tone / 音色", "高频边缘", "0..1", "High RPM / 高转", "控制高转锐度与边缘感"),
+    "load_depth": ("Response / 响应", "负载深度", "0..1", "Load / 加速", "控制油门和负载对层次的推动"),
+    "release_mass": ("Response / 响应", "收油质量感", "0..1", "Lift / 收油", "控制收油时的低频惯性"),
+    "ready_bed": ("Ready / 待机", "待机底床", "0..1", "Idle / Ready", "控制点火后的低声电磁底床"),
+    "powertrain_level_db": ("Output / 输出", "DNA 输出电平", "dB", "All / 全场景", "仅调整 Sound DNA 模块输出电平"),
 }
 
 IONIQ6N_DNA_DEFAULTS = {
@@ -859,7 +917,6 @@ IONIQ6N_DNA_DEFAULTS = {
     "ready_bed": 0.42,
     "stereo_width": 0.62,
     "saturation": 0.24,
-    "powertrain_level_db": -4.0,
 }
 
 MEDIA_FRAMES = {
@@ -1473,19 +1530,26 @@ def make_sound_dna(profile: str) -> dict[str, Any]:
         column = index % 4
         row = index // 4
         x = 35 + column * 300
-        y = 165 + row * 125
+        y = 135 + row * 110
+        group, chinese, unit, context, description = DNA_CONTROL_METADATA[name]
         p.add(
-            "comment", label, x, y, 220, 20, numinlets=1, numoutlets=0,
-            presentation=1, presentation_rect=[x, y, 220.0, 20.0],
+            "comment", f"{group} · {label} / {chinese} [{unit}]",
+            x, y, 285, 20, numinlets=1, numoutlets=0,
+            presentation=1, presentation_rect=[x, y, 285.0, 20.0],
         )
         value = p.add(
-            "flonum", None, x, y + 25, 90, numinlets=1, numoutlets=2,
+            "flonum", None, x, y + 24, 90, numinlets=1, numoutlets=2,
             minimum=low, maximum=high, varname=f"dna_{name}",
-            presentation=1, presentation_rect=[x, y + 25, 90.0, 22.0],
+            presentation=1, presentation_rect=[x, y + 24, 90.0, 22.0],
         )
-        bounded = p.new(f"clip {low:g} {high:g}", x + 100, y + 25, 90, numinlets=3, numoutlets=1)
-        named = p.new(f"prepend {name}", x + 195, y + 25, 100, numinlets=1, numoutlets=1)
-        default_message = p.message(f"{defaults[name]:g}", x, y + 60, 65)
+        p.add(
+            "comment", f"Audible / 可听: {context} — {description}",
+            x + 96, y + 24, 194, 38, numinlets=1, numoutlets=0,
+            presentation=1, presentation_rect=[x + 96, y + 22, 194.0, 40.0],
+        )
+        bounded = p.new(f"clip {low:g} {high:g}", x + 100, y + 68, 90, numinlets=3, numoutlets=1)
+        named = p.new(f"prepend {name}", x + 195, y + 68, 100, numinlets=1, numoutlets=1)
+        default_message = p.message(f"{defaults[name]:g}", x, y + 68, 65)
         p.connect(router, value, index)
         p.connect(value, bounded)
         p.connect(bounded, named)
@@ -5451,7 +5515,7 @@ def make_ioniq6n_powertrain() -> dict[str, Any]:
     )
     control = inlet(p, 35, 65)
     state_names = ("rpm", "throttle", "load", "accel", "engine_running", "shift_cut")
-    dna_names = tuple(item[0] for item in DNA_PARAMETER_SPECS["ioniq6n"][:-1])
+    dna_names = tuple(item[0] for item in DNA_PARAMETER_SPECS["ioniq6n"])
     names = state_names + dna_names + ("powertrain_level_db",)
     router = route(p, names, 35, 105, 1180)
     gen = p.new(
@@ -5463,7 +5527,7 @@ def make_ioniq6n_powertrain() -> dict[str, Any]:
         "rpm": (0.0, 10000.0), "throttle": (0.0, 1.0),
         "load": (-1.0, 1.0), "accel": (-1.0, 1.0),
         "engine_running": (0.0, 1.0), "shift_cut": (0.0, 1.0),
-        **{name: (low, high) for name, _label, low, high in DNA_PARAMETER_SPECS["ioniq6n"][:-1]},
+        **{name: (low, high) for name, _label, low, high in DNA_PARAMETER_SPECS["ioniq6n"]},
     }
     for index, name in enumerate(state_names + dna_names):
         low, high = bounds[name]
@@ -8614,10 +8678,11 @@ def add_eq_band(
     engine: str,
     *,
     q: float | None = None,
-) -> None:
+) -> tuple[str, str, str | None]:
     p.comment(f"{label} — Hz / dB" + (" / Q" if q is not None else ""), x, y, 185)
     frequency = p.add("flonum", None, x, y + 24, 65, numinlets=1, numoutlets=2)
     gain = p.add("flonum", None, x + 72, y + 24, 55, numinlets=1, numoutlets=2)
+    q_control = None
     if q is None:
         values = p.new(f"pak {default_frequency:g} 0.", x, y + 58, 115, numinlets=2, numoutlets=1)
     else:
@@ -8633,34 +8698,624 @@ def add_eq_band(
     p.connect(values, named)
     p.connect(named, engine)
     p.connect(frequency_default, frequency)
+    return frequency, gain, q_control
+
+
+def make_drive_console() -> dict[str, Any]:
+    """Build the shared lifecycle, input, and live-state page for Main."""
+    p = Patcher(1120, 610)
+    p.comment("DRIVE / 驾驶 — common lifecycle and exclusive Keyboard/Gamepad input", 20, 12, 760)
+    feedback = inlet(p, 1060, 20)
+    output = outlet(p, 1060, 565)
+
+    p.comment("Audio On / 音频总开关", 20, 50, 150)
+    audio = p.add(
+        "toggle", None, 20, 75, 24, 24, numinlets=1, numoutlets=1,
+        presentation=1, presentation_rect=[20.0, 44.0, 24.0, 24.0],
+    )
+    audio_named = p.new("prepend audio_enable", 55, 75, 145, numinlets=1, numoutlets=1)
+    audio_off = p.new("loadmess 0", 205, 75, 80, numinlets=1, numoutlets=1)
+    p.connect(audio, audio_named)
+    p.connect(audio_named, output)
+    p.connect(audio_off, audio)
+
+    p.comment("Lifecycle / 点火与启动", 310, 50, 170)
+    ignition = p.add(
+        "message", "Ignition On / 点火", 310, 75, 125,
+        numinlets=2, numoutlets=1, presentation=1,
+        presentation_rect=[150.0, 44.0, 125.0, 24.0],
+    )
+    ignition_named = p.message("ignition 1", 310, 110, 75)
+    start = p.add(
+        "message", "Start / 启动", 445, 75, 95,
+        numinlets=2, numoutlets=1, presentation=1,
+        presentation_rect=[285.0, 44.0, 95.0, 24.0],
+    )
+    start_named = p.message("start 1", 445, 110, 60)
+    stop = p.add(
+        "message", "Ignition Off / 熄火", 550, 75, 130,
+        numinlets=2, numoutlets=1, presentation=1,
+        presentation_rect=[390.0, 44.0, 130.0, 24.0],
+    )
+    stop_named = p.message("ignition 0", 550, 110, 75)
+    for button, command in ((ignition, ignition_named), (start, start_named), (stop, stop_named)):
+        p.connect(button, command)
+        p.connect(command, output)
+
+    p.comment("Drive Source / 控制模式", 710, 50, 170)
+    source_menu = p.add(
+        "umenu", None, 710, 75, 210, numinlets=1, numoutlets=3,
+        items=["Internal Manual / 手动", ",", "Internal Auto / 自动", ",", "External / 外部"],
+        presentation=1, presentation_rect=[540.0, 44.0, 210.0, 24.0],
+    )
+    source_default = p.new("loadmess 0", 930, 75, 80, numinlets=1, numoutlets=1)
+    source_named = p.new("prepend drive_source", 710, 110, 150, numinlets=1, numoutlets=1)
+    manual_enabled = p.new("== 0", 870, 110, 45, numinlets=2, numoutlets=1)
+    p.connect(source_default, source_menu)
+    p.connect(source_menu, source_named)
+    p.connect(source_named, output)
+    p.connect(source_menu, manual_enabled)
+
+    p.comment("Live State / 实时状态（只读）", 20, 150, 250)
+    state_names = ("audio_enable", "speed_kph", "rpm", "throttle", "brake", "load", "gear")
+    state_route = route(p, state_names, 20, 178, 560)
+    p.connect(feedback, state_route)
+    audio_set = p.new("prepend set", 590, 178, 80, numinlets=1, numoutlets=1)
+    p.connect(state_route, audio_set, 0)
+    p.connect(audio_set, audio)
+    for index, (label, unit) in enumerate((
+        ("Speed / 速度", "km/h"), ("RPM / 转速", "rpm"),
+        ("Throttle / 油门", "0..1"), ("Brake / 刹车", "0..1"),
+        ("Load / 负载", "-1..1"), ("Gear / 档位", "gear"),
+    ), start=1):
+        x = 20 + (index - 1) * 172
+        p.add(
+            "comment", f"{label} [{unit}]", x, 215, 160, 18,
+            numinlets=1, numoutlets=0, presentation=1,
+            presentation_rect=[float(x), 95.0, 160.0, 18.0],
+        )
+        number = p.add(
+            "flonum", None, x, 238, 92, numinlets=1, numoutlets=2,
+            ignoreclick=1, presentation=1,
+            presentation_rect=[float(x), 116.0, 92.0, 22.0],
+        )
+        setter = p.new("prepend set", x + 98, 238, 75, numinlets=1, numoutlets=1)
+        p.connect(state_route, setter, index)
+        p.connect(setter, number)
+
+    p.add(
+        "comment",
+        "Input Device / 输入设备 — 仅 Manual 激活；切换模式或设备会立即清零踏板",
+        20, 285, 720, 20, numinlets=1, numoutlets=0,
+        presentation=1, presentation_rect=[20.0, 155.0, 720.0, 20.0],
+    )
+    manual_input = p.add(
+        "bpatcher", None, 20, 315, 1000, 250, numinlets=1, numoutlets=2,
+        name="Patcher:/patchers/manual_input.maxpat",
+        presentation=1, presentation_rect=[20.0, 180.0, 1000.0, 390.0],
+    )
+    throttle_named = p.new("prepend throttle", 820, 575, 115, numinlets=1, numoutlets=1)
+    brake_named = p.new("prepend brake", 940, 575, 105, numinlets=1, numoutlets=1)
+    p.connect(manual_enabled, manual_input)
+    p.connect(manual_input, throttle_named, 0, 0)
+    p.connect(manual_input, brake_named, 1, 0)
+    p.connect(throttle_named, output)
+    p.connect(brake_named, output)
+    return p.document(presentation=True)
+
+
+def make_mix_eq_console() -> dict[str, Any]:
+    """Build the shared seven-stem, EQ, and compressor control page."""
+    p = Patcher(1120, 610)
+    p.comment("MIX + EQ / 混音与均衡 — active profile values; units and safe ranges are explicit", 20, 12, 820)
+    feedback = inlet(p, 1060, 20)
+    output = outlet(p, 1060, 565)
+
+    mix_names = tuple(spec[1] for spec in MODULE_MIX_SPECS)
+    mix_route = route(p, mix_names, 20, 520, 750)
+    p.connect(feedback, mix_route)
+    for index, (label, name, low, high, unit) in enumerate(MODULE_MIX_SPECS):
+        x = 20 + (index % 4) * 260
+        y = 50 + (index // 4) * 78
+        p.add(
+            "comment", f"{label} [{unit}]", x, y, 245, 18,
+            numinlets=1, numoutlets=0, presentation=1,
+            presentation_rect=[float(x), float(y - 18), 245.0, 18.0],
+        )
+        value = p.add(
+            "flonum", None, x, y + 23, 82, numinlets=1, numoutlets=2,
+            minimum=low, maximum=high, presentation=1,
+            presentation_rect=[float(x), float(y + 3), 82.0, 22.0],
+        )
+        bounded = p.new(f"clip {low:g} {high:g}", x + 90, y + 23, 90, numinlets=3, numoutlets=1)
+        named = p.new(f"prepend {name}", x + 185, y + 23, 155, numinlets=1, numoutlets=1)
+        setter = p.new("prepend set", x + 90, y + 50, 80, numinlets=1, numoutlets=1)
+        p.connect(value, bounded)
+        p.connect(bounded, named)
+        p.connect(named, output)
+        p.connect(mix_route, setter, index)
+        p.connect(setter, value)
+
+    p.add(
+        "comment", "Master EQ / 主均衡 — Frequency Hz, Gain dB, Q", 20, 215, 520, 20,
+        numinlets=1, numoutlets=0, presentation=1,
+        presentation_rect=[20.0, 185.0, 520.0, 20.0],
+    )
+    eq_controls = (
+        add_eq_band(p, "Low Shelf / 低频架", "eq_low", 20, 245, 90.0, output),
+        add_eq_band(p, "Low-Mid / 中低频", "eq_lowmid", 280, 245, 250.0, output, q=0.8),
+        add_eq_band(p, "High-Mid / 中高频", "eq_highmid", 540, 245, 3800.0, output, q=1.0),
+        add_eq_band(p, "High Shelf / 高频架", "eq_high", 800, 245, 9000.0, output),
+    )
+    eq_bypass = p.add(
+        "toggle", None, 1010, 268, 24, 24, numinlets=1, numoutlets=1,
+        presentation=1, presentation_rect=[1010.0, 240.0, 24.0, 24.0],
+    )
+    eq_named = p.new("prepend eq_bypass", 1010, 300, 120, numinlets=1, numoutlets=1)
+    p.connect(eq_bypass, eq_named)
+    p.connect(eq_named, output)
+    p.add(
+        "comment", "EQ Bypass / 旁路", 980, 245, 130, 18,
+        numinlets=1, numoutlets=0, presentation=1,
+        presentation_rect=[960.0, 218.0, 145.0, 18.0],
+    )
+    eq_names = ("eq_low", "eq_lowmid", "eq_highmid", "eq_high", "eq_bypass")
+    eq_route = route(p, eq_names, 20, 370, 575)
+    p.connect(feedback, eq_route)
+    for index, controls in enumerate(eq_controls):
+        unpack = p.new(
+            "unpack 0. 0. 0." if controls[2] is not None else "unpack 0. 0.",
+            610 + index * 115, 370, 105,
+            numinlets=1, numoutlets=3 if controls[2] is not None else 2,
+        )
+        p.connect(eq_route, unpack, index)
+        for outlet_index, control in enumerate(item for item in controls if item is not None):
+            setter = p.new("prepend set", 610 + index * 115, 395 + outlet_index * 24, 80,
+                           numinlets=1, numoutlets=1)
+            p.connect(unpack, setter, outlet_index)
+            p.connect(setter, control)
+    eq_bypass_set = p.new("prepend set", 1010, 335, 80, numinlets=1, numoutlets=1)
+    p.connect(eq_route, eq_bypass_set, 4)
+    p.connect(eq_bypass_set, eq_bypass)
+
+    p.add(
+        "comment", "Master Compressor / 总线压缩（Rate 越大响应越快）", 20, 405, 560, 20,
+        numinlets=1, numoutlets=0, presentation=1,
+        presentation_rect=[20.0, 390.0, 560.0, 20.0],
+    )
+    compressor_names = tuple(spec[1] for spec in COMPRESSOR_CONTROL_SPECS) + ("compressor_bypass",)
+    compressor_route = route(
+        p, compressor_names,
+        20, 550, 760,
+    )
+    p.connect(feedback, compressor_route)
+    for index, (label, name, default, low, high, unit) in enumerate(COMPRESSOR_CONTROL_SPECS):
+        x = 20 + index * 205
+        p.add(
+            "comment", f"{label} [{unit}]", x, 435, 195, 18,
+            numinlets=1, numoutlets=0, presentation=1,
+            presentation_rect=[float(x), 420.0, 195.0, 18.0],
+        )
+        value = p.add(
+            "flonum", None, x, 458, 78, numinlets=1, numoutlets=2,
+            minimum=low, maximum=high, presentation=1,
+            presentation_rect=[float(x), 442.0, 78.0, 22.0],
+        )
+        bounded = p.new(f"clip {low:g} {high:g}", x + 84, 458, 88, numinlets=3, numoutlets=1)
+        named = p.new(f"prepend {name}", x, 488, 175, numinlets=1, numoutlets=1)
+        initial = p.new(f"loadmess {default:g}", x + 84, 488, 92, numinlets=1, numoutlets=1)
+        setter = p.new("prepend set", x + 84, 518, 80, numinlets=1, numoutlets=1)
+        p.connect(value, bounded)
+        p.connect(bounded, named)
+        p.connect(named, output)
+        p.connect(initial, value)
+        p.connect(compressor_route, setter, index)
+        p.connect(setter, value)
+    bypass = p.add(
+        "toggle", None, 1040, 458, 24, 24, numinlets=1, numoutlets=1,
+        presentation=1, presentation_rect=[1040.0, 442.0, 24.0, 24.0],
+    )
+    bypass_named = p.new("prepend compressor_bypass", 940, 488, 175, numinlets=1, numoutlets=1)
+    bypass_set = p.new("prepend set", 940, 518, 80, numinlets=1, numoutlets=1)
+    p.connect(bypass, bypass_named)
+    p.connect(bypass_named, output)
+    p.connect(compressor_route, bypass_set, len(compressor_names) - 1)
+    p.connect(bypass_set, bypass)
+
+    for index, (label, command, x) in enumerate((
+        ("Save Profile / 保存", "save_profile_sound", 20),
+        ("Reload / 重载", "reload_profile_sound", 190),
+        ("Reset Mix / 重置混音", "reset_profile_sound", 330),
+    )):
+        button = p.add(
+            "message", label, x, 570, 150, numinlets=2, numoutlets=1,
+            presentation=1, presentation_rect=[float(x), 540.0, 155.0, 24.0],
+        )
+        named = p.message(command, x, 598, 145)
+        p.connect(button, named)
+        p.connect(named, output)
+    return p.document(presentation=True)
+
+
+def make_sound_design_console() -> dict[str, Any]:
+    """Build shared designer actions and deterministic listening contexts."""
+    p = Patcher(1120, 610)
+    p.comment("SOUND DESIGN / 声音设计 — profile DSP stays independent; this page only controls it", 20, 12, 820)
+    feedback = inlet(p, 1060, 20)
+    output = outlet(p, 1060, 565)
+    profile_route = route(p, ("profile",), 850, 20, 90)
+    profile_set = p.new("prepend set", 945, 20, 80, numinlets=1, numoutlets=1)
+    profile_status = p.add(
+        "message", "No active profile / 未选择车型", 780, 50, 240,
+        numinlets=2, numoutlets=1, presentation=1,
+        presentation_rect=[800.0, 20.0, 260.0, 24.0],
+    )
+    p.connect(feedback, profile_route)
+    p.connect(profile_route, profile_set, 0)
+    p.connect(profile_set, profile_status)
+
+    p.add(
+        "comment", "Sound DNA / 核心声纹", 20, 55, 240, 20,
+        numinlets=1, numoutlets=0, presentation=1,
+        presentation_rect=[20.0, 20.0, 240.0, 20.0],
+    )
+    open_dna = p.add(
+        "message", "Open Sound DNA / 打开 DNA", 20, 82, 180,
+        numinlets=2, numoutlets=1, presentation=1,
+        presentation_rect=[20.0, 48.0, 190.0, 24.0],
+    )
+    open_dna_named = p.message("dna_open", 20, 112, 70)
+    dna_solo = p.add(
+        "toggle", None, 220, 82, 24, 24, numinlets=1, numoutlets=1,
+        presentation=1, presentation_rect=[225.0, 48.0, 24.0, 24.0],
+    )
+    dna_solo_named = p.new("prepend dna_solo", 255, 82, 120, numinlets=1, numoutlets=1)
+    p.connect(open_dna, open_dna_named)
+    p.connect(open_dna_named, output)
+    p.connect(dna_solo, dna_solo_named)
+    p.connect(dna_solo_named, output)
+    p.add(
+        "comment", "Solo / 独听", 255, 55, 100, 18,
+        numinlets=1, numoutlets=0, presentation=1,
+        presentation_rect=[255.0, 50.0, 100.0, 18.0],
+    )
+
+    open_start = p.add(
+        "message", "Open Start / 打开启动设计器", 400, 82, 190,
+        numinlets=2, numoutlets=1, presentation=1,
+        presentation_rect=[380.0, 48.0, 200.0, 24.0],
+    )
+    open_start_named = p.message("start_open", 400, 112, 80)
+    audition_start = p.add(
+        "message", "Audition Start / 试听启动", 600, 82, 175,
+        numinlets=2, numoutlets=1, presentation=1,
+        presentation_rect=[590.0, 48.0, 180.0, 24.0],
+    )
+    audition_start_named = p.message("start_audition", 600, 112, 95)
+    p.connect(open_start, open_start_named)
+    p.connect(open_start_named, output)
+    p.connect(audition_start, audition_start_named)
+    p.connect(audition_start_named, output)
+
+    p.add(
+        "comment",
+        "Audition Context / 试听场景 — Live, Idle, Cruise, Load, Lift, High RPM；不写入 preset",
+        20, 145, 850, 20, numinlets=1, numoutlets=0,
+        presentation=1, presentation_rect=[20.0, 92.0, 850.0, 20.0],
+    )
+    context = p.add(
+        "umenu", None, 20, 173, 280, numinlets=1, numoutlets=3,
+        items=["Live / 实时", ",", "Idle / 怠速", ",", "Cruise / 巡航", ",",
+               "Load / 高负载", ",", "Lift / 收油", ",", "High RPM / 高转"],
+        presentation=1, presentation_rect=[20.0, 116.0, 280.0, 24.0],
+    )
+    context_select = p.new("sel 0 1 2 3 4 5", 310, 173, 105, numinlets=1, numoutlets=7)
+    context_default = p.new("loadmess 0", 425, 173, 80, numinlets=1, numoutlets=1)
+    for index, name in enumerate(TUNING_CONTEXTS):
+        message = p.message(f"tuning_context {name}", 510, 145 + index * 26, 145)
+        p.connect(context_select, message, index)
+        p.connect(message, output)
+    p.connect(context_default, context)
+    p.connect(context, context_select)
+
+    soundscape = p.add(
+        "bpatcher", None, 20, 245, 980, 115, numinlets=1, numoutlets=1,
+        name="Patcher:/patchers/soundscape_control.maxpat", args=["main"],
+        presentation=1, presentation_rect=[20.0, 165.0, 1040.0, 120.0],
+    )
+    p.connect(feedback, soundscape)
+    p.connect(soundscape, output)
+    p.add(
+        "comment",
+        "参数提示：控件仅在其标注场景可听；Sound DNA 与 Soundscape 保持独立路由。",
+        20, 385, 820, 20, numinlets=1, numoutlets=0,
+        presentation=1, presentation_rect=[20.0, 310.0, 820.0, 20.0],
+    )
+    return p.document(presentation=True)
+
+
+def make_runtime_console() -> dict[str, Any]:
+    """Build one tabbed Main console whose pages share one command interface."""
+    p = Patcher(1160, 720)
+    p.comment("V6 SHARED RUNTIME CONSOLE — one control surface for all four profile adapters", 20, 10, 760)
+    feedback = inlet(p, 1120, 20)
+    output = outlet(p, 1120, 680)
+    tabs = p.add(
+        "tab", None, 20, 42, 650, 36, numinlets=1, numoutlets=3,
+        tabs=["Drive / 驾驶", "Mix + EQ / 混音与均衡", "Sound Design / 声音设计"],
+        presentation=1, presentation_rect=[20.0, 10.0, 650.0, 36.0],
+    )
+    tab_default = p.new("loadmess 0", 680, 42, 80, numinlets=1, numoutlets=1)
+    tab_select = p.new("sel 0 1 2", 770, 42, 70, numinlets=1, numoutlets=4)
+    p.connect(tab_default, tabs)
+    p.connect(tabs, tab_select)
+
+    pages = (
+        ("drive_page", "Patcher:/patchers/drive_console.maxpat"),
+        ("mix_page", "Patcher:/patchers/mix_eq_console.maxpat"),
+        ("design_page", "Patcher:/patchers/sound_design_console.maxpat"),
+    )
+    page_boxes: list[str] = []
+    for varname, name in pages:
+        page = p.add(
+            "bpatcher", None, 20, 95, 1120, 590, numinlets=1, numoutlets=1,
+            name=name, varname=varname, presentation=1,
+            presentation_rect=[20.0, 55.0, 1120.0, 590.0],
+        )
+        page_boxes.append(page)
+        p.connect(feedback, page)
+        p.connect(page, output)
+    patcher_control = p.new("thispatcher", 1040, 42, 85, numinlets=1, numoutlets=2)
+    visibility_messages = (
+        "script sendbox drive_page hidden 0, script sendbox mix_page hidden 1, script sendbox design_page hidden 1",
+        "script sendbox drive_page hidden 1, script sendbox mix_page hidden 0, script sendbox design_page hidden 1",
+        "script sendbox drive_page hidden 1, script sendbox mix_page hidden 1, script sendbox design_page hidden 0",
+    )
+    for index, value in enumerate(visibility_messages):
+        message = p.message(value, 850, 85 + index * 42, 280)
+        p.connect(tab_select, message, index)
+        p.connect(message, patcher_control)
+    # Keep the stable selector vocabulary visible in this shared interface.
+    p.comment(
+        "audio_enable | ignition | drive_source | powertrain_level_db | eq_low | compressor_threshold_db",
+        20, 690, 900,
+    )
+    return p.document(presentation=True)
+
+
+def make_profile_runtime_host(profile: str) -> dict[str, Any]:
+    """Materialize the common runtime topology with Max-safe literal objects."""
+    config = PROFILE_CONFIG[profile]
+    p = Patcher(1500, 980)
+    p.comment(
+        f"V6 PROFILE RUNTIME HOST {profile.upper()} — shared drive, mix, output, persistence and feedback",
+        20, 12, 900,
+    )
+    local_control = inlet(p, 20, 55)
+    shared_control = p.new(f"r vss.runtime.control.{profile}", 130, 55, 190, numinlets=0, numoutlets=1)
+    mix_names = tuple(spec[1] for spec in MODULE_MIX_SPECS)
+    command_names = (
+        "audio_enable", "drive_source", "save_profile_sound",
+        "reload_profile_sound", "reset_profile_sound", "tuning_context", "dna_open",
+        *mix_names,
+    )
+    command_route = route(p, command_names, 20, 100, 1360)
+    p.connect(local_control, command_route)
+    p.connect(shared_control, command_route)
+
+    runtime_feedback = p.new(f"s vss.runtime.feedback.{profile}", 1250, 900, 205, numinlets=1, numoutlets=0)
+    soundscape_feedback = p.new(f"s vss.soundscape.feedback.{profile}", 1250, 930, 220, numinlets=1, numoutlets=0)
+    profile_load = p.new(f"loadmess {profile}", 1120, 900, 105, numinlets=1, numoutlets=1)
+    profile_named = p.new("prepend profile", 1120, 930, 110, numinlets=1, numoutlets=1)
+    p.connect(profile_load, profile_named)
+    p.connect(profile_named, runtime_feedback)
+
+    # Echo shared tone/dynamics commands so Main always displays the active
+    # runtime state instead of stale values from the previously open profile.
+    feedback_names = (
+        "eq_low", "eq_lowmid", "eq_highmid", "eq_high", "eq_bypass",
+        *(spec[1] for spec in COMPRESSOR_CONTROL_SPECS),
+        "compressor_bypass",
+    )
+    feedback_route = route(p, feedback_names, 20, 205, 980)
+    p.connect(local_control, feedback_route)
+    p.connect(shared_control, feedback_route)
+    for index, name in enumerate(feedback_names):
+        rebuild = p.new(f"prepend {name}", 1015, 205 + index * 24, 180,
+                        numinlets=1, numoutlets=1)
+        p.connect(feedback_route, rebuild, index)
+        p.connect(rebuild, runtime_feedback)
+
+    eq_reader = p.new(
+        f"js Patcher:/code/eq_feedback_reader.js {profile}",
+        1015, 540, 260, numinlets=1, numoutlets=1,
+    )
+    eq_load = p.new("loadbang", 1285, 540, 60, numinlets=1, numoutlets=1)
+    eq_load_delay = p.new("delay 260", 1355, 540, 75, numinlets=2, numoutlets=1)
+    p.connect(eq_load, eq_load_delay)
+    p.connect(eq_load_delay, eq_reader)
+    p.connect(eq_reader, runtime_feedback)
+
+    compressor_defaults = p.message(
+        "compressor_threshold_db -12., compressor_ratio 2., "
+        "compressor_attack_rate 85., compressor_release_rate 35., "
+        "compressor_makeup_db 0., compressor_bypass 0",
+        1015, 575, 405,
+    )
+    p.connect(eq_load, compressor_defaults)
+    p.connect(compressor_defaults, runtime_feedback)
+
+    drive = p.new(f"drive_simulator_{profile}", 20, 250, 145, numinlets=1, numoutlets=1)
+    external = p.new(f"r vss.{profile}.input", 180, 250, 120, numinlets=0, numoutlets=1)
+    source = p.new("switch 2", 315, 250, 75, numinlets=3, numoutlets=1)
+    source_default = p.new("loadmess 1", 400, 250, 80, numinlets=1, numoutlets=1)
+    live_gate = p.new("gate 1", 500, 250, 55, numinlets=2, numoutlets=1)
+    live_default = p.new("loadmess 1", 565, 250, 80, numinlets=1, numoutlets=1)
+    engine = p.new(f"vehicle_engine_{profile}~", 660, 250, 160, numinlets=1, numoutlets=3)
+    module_mixer = p.new(f"module_mixer {profile}", 20, 430, 135, numinlets=1, numoutlets=1)
+    p.connect(source_default, source, 0, 0)
+    p.connect(drive, source, 0, 1)
+    p.connect(external, source, 0, 2)
+    p.connect(live_default, live_gate, 0, 0)
+    p.connect(source, live_gate, 0, 1)
+    p.connect(live_gate, engine)
+    p.connect(live_gate, runtime_feedback)
+    p.connect(module_mixer, engine)
+    p.connect(module_mixer, runtime_feedback)
+    p.connect(engine, runtime_feedback, 2, 0)
+    p.connect(engine, soundscape_feedback, 2, 0)
+
+    # Audio is explicit, defaults off, and is local to the only active runtime.
+    audio_clip = p.new("clip 0 1", 20, 155, 65, numinlets=3, numoutlets=1)
+    audio_change = p.new("change", 95, 155, 55, numinlets=1, numoutlets=3)
+    audio_order = p.new("t i i i", 160, 155, 60, numinlets=1, numoutlets=3)
+    audio_pack = p.new("pack 0. 60", 230, 155, 85, numinlets=2, numoutlets=1)
+    audio_line = p.new("line~", 325, 155, 50, numinlets=2, numoutlets=2)
+    audio_named = p.new("prepend audio_enable", 385, 155, 145, numinlets=1, numoutlets=1)
+    audio_off = p.new("loadmess 0", 540, 155, 80, numinlets=1, numoutlets=1)
+    p.connect(command_route, audio_clip, 0)
+    p.connect(audio_off, audio_clip)
+    p.connect(audio_clip, audio_change)
+    p.connect(audio_change, audio_order)
+    p.connect(audio_order, audio_pack, 2)
+    p.connect(audio_order, audio_named, 1)
+    p.connect(audio_named, runtime_feedback)
+    p.connect(audio_pack, audio_line)
+
+    # 0 manual, 1 auto, 2 external.  Only the source selector changes; public
+    # throttle/brake messages remain normalized 0..1.
+    source_clip = p.new("clip 0 2", 650, 155, 65, numinlets=3, numoutlets=1)
+    source_int = p.new("i", 725, 155, 35, numinlets=2, numoutlets=1)
+    source_order = p.new("t i i i", 770, 155, 60, numinlets=1, numoutlets=3)
+    source_switch = p.new("expr 1+($i1==2)", 840, 155, 125, numinlets=1, numoutlets=1)
+    source_auto = p.new("== 1", 975, 155, 45, numinlets=2, numoutlets=1)
+    auto_named = p.new("prepend auto", 1030, 155, 100, numinlets=1, numoutlets=1)
+    source_named = p.new("prepend drive_source", 1140, 155, 150, numinlets=1, numoutlets=1)
+    source_load = p.new("loadmess 0", 1300, 155, 80, numinlets=1, numoutlets=1)
+    p.connect(command_route, source_clip, 1)
+    p.connect(source_load, source_clip)
+    p.connect(source_clip, source_int)
+    p.connect(source_int, source_order)
+    p.connect(source_order, source_switch, 2)
+    p.connect(source_order, source_auto, 1)
+    p.connect(source_order, source_named, 0)
+    p.connect(source_switch, source, 0, 0)
+    p.connect(source_auto, auto_named)
+    p.connect(auto_named, drive)
+    p.connect(source_named, runtime_feedback)
+
+    save_command = p.message("save_profile_sound", 180, 430, 125)
+    reload_command = p.message("reload_profile_sound", 315, 430, 135)
+    reset_command = p.message("reset_profile_sound", 460, 430, 130)
+    p.connect(command_route, save_command, 2)
+    p.connect(command_route, reload_command, 3)
+    p.connect(command_route, reset_command, 4)
+    for command in (save_command, reload_command, reset_command):
+        p.connect(command, engine)
+        p.connect(command, module_mixer)
+    # Reload reads the already-persisted state immediately. Save needs no disk
+    # round-trip because live commands have already been echoed to Main.
+    eq_reset_feedback = p.message("reset", 610, 430, 55)
+    p.connect(command_route, eq_reader, 3)
+    p.connect(command_route, eq_reset_feedback, 4)
+    p.connect(eq_reset_feedback, eq_reader)
+    p.connect(command_route, compressor_defaults, 4)
+    p.connect(compressor_defaults, engine)
+
+    context_select = p.new("sel live idle cruise load lift high_rpm", 20, 520, 260, numinlets=1, numoutlets=7)
+    context_feedback = p.new("prepend tuning_context", 290, 520, 150, numinlets=1, numoutlets=1)
+    context_live = p.message("1", 450, 510, 30)
+    context_hold = p.message("0", 450, 540, 30)
+    p.connect(command_route, context_select, 5)
+    p.connect(command_route, context_feedback, 5)
+    p.connect(context_feedback, runtime_feedback)
+    p.connect(context_select, context_live, 0)
+    for index in range(1, 6):
+        p.connect(context_select, context_hold, index)
+    p.connect(context_live, live_gate, 0, 0)
+    p.connect(context_hold, live_gate, 0, 0)
+    context_messages = (
+        f"ignition 1, engine_running 1, combustion_gain 1., shift_cut 1., rpm {config['idle_rpm']}, speed_kph 0., throttle 0., brake 0., load 0., accel 0.",
+        "ignition 1, engine_running 1, combustion_gain 1., shift_cut 1., rpm 2200., speed_kph 60., throttle 0.28, brake 0., load 0.22, accel 0.",
+        "ignition 1, engine_running 1, combustion_gain 1., shift_cut 1., rpm 3500., speed_kph 100., throttle 0.85, brake 0., load 0.85, accel 0.65",
+        "ignition 1, engine_running 1, combustion_gain 1., shift_cut 1., rpm 3200., speed_kph 100., throttle 0., brake 0., load -0.15, accel -0.45, overrun 0.6",
+        "ignition 1, engine_running 1, combustion_gain 1., shift_cut 1., rpm 6500., speed_kph 180., throttle 0.75, brake 0., load 0.72, accel 0.3",
+    )
+    for index, value in enumerate(context_messages, start=1):
+        message = p.message(value, 20, 565 + (index - 1) * 45, 920)
+        p.connect(context_select, message, index)
+        p.connect(message, engine)
+
+    dna_open = p.new(f"s open.{profile}.sound_dna", 960, 520, 170, numinlets=1, numoutlets=0)
+    p.connect(command_route, dna_open, 6)
+    for index, (_label, name, _low, _high, _unit) in enumerate(MODULE_MIX_SPECS, start=7):
+        rebuild = p.new(f"prepend {name}", 960, 565 + (index - 7) * 32, 175, numinlets=1, numoutlets=1)
+        p.connect(command_route, rebuild, index)
+        p.connect(rebuild, module_mixer)
+
+    # All remaining selectors pass through the deterministic drive model.  It
+    # forwards non-drive design controls unchanged to the active engine.
+    p.connect(command_route, drive, len(command_names))
+
+    gain_l = p.new("*~", 760, 360, 40, numinlets=2, numoutlets=1)
+    gain_r = p.new("*~", 870, 360, 40, numinlets=2, numoutlets=1)
+    dac = p.new("ezdac~", 820, 450, 60, numinlets=2, numoutlets=0)
+    meter_l = p.add("meter~", None, 730, 420, 18, 75, numinlets=1, numoutlets=1)
+    meter_r = p.add("meter~", None, 920, 420, 18, 75, numinlets=1, numoutlets=1)
+    spectrum = p.new("spectroscope~", 960, 360, 300, numinlets=2, numoutlets=0)
+    p.connect(engine, gain_l, 0, 0)
+    p.connect(engine, gain_r, 1, 0)
+    p.connect(audio_line, gain_l, 0, 1)
+    p.connect(audio_line, gain_r, 0, 1)
+    p.connect(audio_order, dac, 0, 0)
+    p.connect(gain_l, dac, 0, 0)
+    p.connect(gain_r, dac, 0, 1)
+    p.connect(gain_l, meter_l)
+    p.connect(gain_r, meter_r)
+    p.connect(gain_l, spectrum, 0, 0)
+    p.connect(gain_r, spectrum, 0, 1)
+
+    safety_select = p.new("r vss.runtime.select", 1120, 55, 145, numinlets=0, numoutlets=1)
+    safety_match = p.new(f"sel {profile}", 1275, 55, 65, numinlets=1, numoutlets=2)
+    safety_commands = p.message(
+        "audio_enable 0, throttle 0., brake 0., save_profile_sound",
+        1120, 90, 270,
+    )
+    close = p.new("closebang", 1400, 55, 65, numinlets=0, numoutlets=1)
+    p.connect(safety_select, safety_match)
+    p.connect(safety_match, safety_commands, 1)
+    p.connect(close, safety_commands)
+    p.connect(safety_commands, command_route)
+    return p.document()
 
 
 def make_launcher() -> dict[str, Any]:
-    """Build a DSP-free project switchboard for the independent demos."""
-    p = Patcher(1040, 645)
-    p.comment("VehicleSoundSynth V6 — choose one independent runtime", 30, 25, 520)
+    """Build the DSP-free V6 launcher and its one shared control surface."""
+    p = Patcher(1240, 850)
+    p.comment("VehicleSoundSynth V6 — one shared console, four profile adapters", 30, 20, 650)
     p.comment(
-        "The launcher owns no audio objects. Selecting a profile closes the previous runtime before opening one instance.",
-        30,
-        58,
-        650,
-        40,
+        "Main owns lifecycle, input, Mix/EQ and sound-design controls. Selecting a profile safely closes the previous runtime.",
+        30, 48, 830, 40,
     )
-    controller = p.new("pcontrol", 570, 175, 70, numinlets=1, numoutlets=0)
-    selection = p.new("s vss.runtime.select", 360, 285, 145, numinlets=1, numoutlets=0)
+    controller = p.new("pcontrol", 1030, 100, 70, numinlets=1, numoutlets=0)
+    selection = p.new("s vss.runtime.select", 860, 100, 145, numinlets=1, numoutlets=0)
     selection_map = p.new(
-        "sel ev v10 v12 ioniq6n none", 690, 285, 200,
+        "sel ev v10 v12 ioniq6n none", 860, 130, 200,
         numinlets=1, numoutlets=6,
     )
     for index, profile in enumerate(PROFILE_ORDER):
         config = PROFILE_CONFIG[profile]
-        y = 120 + index * 68
-        p.comment(config["title"], 45, y, 210)
-        button = p.message(f"Open {config['title']}", 270, y, 190)
-        order = p.new("t b b", 470, y, 50, numinlets=1, numoutlets=2)
-        select_message = p.message(profile, 360, y + 30, 55)
-        open_delay = p.new("delay 40", 530, y + 30, 65, numinlets=2, numoutlets=1)
-        open_message = p.message(f"loadunique {config['runtime']}", 270, y + 30, 260)
+        x = 30 + index * 245
+        p.comment(config["title"], x, 92, 225)
+        button = p.add(
+            "message", f"Open {config['title']}", x, 118, 220,
+            numinlets=2, numoutlets=1, presentation=1,
+            presentation_rect=[float(x), 66.0, 220.0, 24.0],
+        )
+        order = p.new("t b b", x, 150, 50, numinlets=1, numoutlets=2)
+        select_message = p.message(profile, x + 60, 150, 65)
+        open_delay = p.new("delay 40", x + 130, 150, 65, numinlets=2, numoutlets=1)
+        open_message = p.message(f"loadunique {config['runtime']}", x, 180, 230)
         p.connect(button, order)
         p.connect(order, select_message, 1)
         p.connect(select_message, selection)
@@ -8668,32 +9323,37 @@ def make_launcher() -> dict[str, Any]:
         p.connect(order, open_delay, 0)
         p.connect(open_delay, open_message)
         p.connect(open_message, controller)
-    close_all = p.message("Close active runtime", 510, 285, 145)
-    close_symbol = p.message("none", 510, 315, 55)
+    close_all = p.add(
+        "message", "Close Active / 关闭当前车型", 1010, 118, 200,
+        numinlets=2, numoutlets=1, presentation=1,
+        presentation_rect=[1010.0, 66.0, 200.0, 24.0],
+    )
+    close_symbol = p.message("none", 1090, 150, 55)
     p.connect(close_all, close_symbol)
     p.connect(close_symbol, selection)
     p.connect(close_symbol, selection_map)
-    main_soundscape = p.add(
-        "bpatcher", None, 30, 350, 980, 115,
+    runtime_console = p.add(
+        "bpatcher", None, 30, 220, 1180, 600,
         numinlets=1, numoutlets=1,
-        name="Patcher:/patchers/soundscape_control.maxpat",
-        args=["main"], varname="main_soundscape_control",
+        name="Patcher:/patchers/runtime_console.maxpat",
+        varname="runtime_console", presentation=1,
+        presentation_rect=[30.0, 115.0, 1180.0, 600.0],
     )
     selected_index = [
-        p.message(str(index), 710 + index * 38, 315, 30)
+        p.message(str(index), 860 + index * 38, 190, 30)
         for index in range(1, len(PROFILE_ORDER) + 1)
     ]
-    selection_off = p.message("0", 710, 315, 30)
+    selection_off = p.message("0", 860, 190, 30)
     selection_default = p.new(
-        "loadmess 0", 710, 345, 80,
+        "loadmess 0", 860, 220, 80,
         numinlets=1, numoutlets=1,
     )
     command_gate = p.new(
-        f"gate {len(PROFILE_ORDER)}", 735, 490, 65,
+        f"gate {len(PROFILE_ORDER)}", 1030, 700, 65,
         numinlets=2, numoutlets=len(PROFILE_ORDER),
     )
     feedback_selector = p.new(
-        f"switch {len(PROFILE_ORDER)}", 735, 565, 75,
+        f"switch {len(PROFILE_ORDER)}", 1030, 750, 75,
         numinlets=len(PROFILE_ORDER) + 1, numoutlets=1,
     )
     for index, index_message in enumerate(selected_index):
@@ -8705,24 +9365,24 @@ def make_launcher() -> dict[str, Any]:
     p.connect(selection_off, feedback_selector, 0, 0)
     p.connect(selection_default, command_gate, 0, 0)
     p.connect(selection_default, feedback_selector, 0, 0)
-    p.connect(main_soundscape, command_gate, 0, 1)
+    p.connect(runtime_console, command_gate, 0, 1)
     for index, profile in enumerate(PROFILE_ORDER):
         runtime_control = p.new(
-            f"s vss.runtime.control.{profile}", 815, 480 + index * 25, 190,
+            f"s vss.runtime.control.{profile}", 1020, 530 + index * 25, 190,
             numinlets=1, numoutlets=0,
         )
-        soundscape_feedback = p.new(
-            f"r vss.soundscape.feedback.{profile}", 420, 545 + index * 25, 220,
+        runtime_feedback = p.new(
+            f"r vss.runtime.feedback.{profile}", 780, 530 + index * 25, 220,
             numinlets=0, numoutlets=1,
         )
         p.connect(command_gate, runtime_control, index, 0)
-        p.connect(soundscape_feedback, feedback_selector, 0, index + 1)
-    p.connect(feedback_selector, main_soundscape)
+        p.connect(runtime_feedback, feedback_selector, 0, index + 1)
+    p.connect(feedback_selector, runtime_console)
     p.comment(
-        "Main Soundscape controls use profile-scoped buses; overlap during runtime switching cannot touch the old profile.",
-        30, 615, 760,
+        "Main is intentionally DSP-free. Audio starts OFF; command and feedback buses are scoped to the selected profile.",
+        30, 825, 900,
     )
-    return p.document()
+    return p.document(presentation=True)
 
 
 def make_keyboard_drive_ws() -> dict[str, Any]:
@@ -8757,7 +9417,7 @@ def make_keyboard_drive_ws() -> dict[str, Any]:
     s_state = p.new("sel 1 0", 165, 300, 55, numinlets=1, numoutlets=3)
     throttle_up = p.message("1.", 25, 340, 35)
     throttle_off = p.message("0.", 70, 340, 35)
-    brake_on = p.message("0.65", 165, 340, 45)
+    brake_on = p.message("0.85", 165, 340, 45)
     brake_off = p.message("0.", 220, 340, 35)
     throttle_line = p.new("line 0.", 320, 340, 60, numinlets=2, numoutlets=2)
     brake_line = p.new("line 0.", 410, 340, 60, numinlets=2, numoutlets=2)
@@ -8947,10 +9607,14 @@ def make_module_mixer() -> dict[str, Any]:
         15, 8, 720,
     )
     control = inlet(p, 720, 8)
+    control_names = (
+        "save_profile_sound", "reload_profile_sound", "reset_profile_sound",
+        *(spec[1] for spec in MODULE_MIX_SPECS),
+    )
     control_route = route(
         p,
-        ("save_profile_sound", "reload_profile_sound", "reset_profile_sound"),
-        720, 35, 300,
+        control_names,
+        650, 35, 370,
     )
     p.connect(control, control_route)
     output = outlet(p, 985, 195)
@@ -8985,10 +9649,13 @@ def make_module_mixer() -> dict[str, Any]:
     p.connect(control_route, restore_order, 1)
 
     profile_load = p.new("loadmess #1", 15, 205, 85, numinlets=1, numoutlets=1)
-    profile_select = p.new("sel ev v10 v12", 105, 205, 105, numinlets=1, numoutlets=4)
+    profile_select = p.new(
+        "sel ev v10 v12 ioniq6n", 105, 205, 145,
+        numinlets=1, numoutlets=5,
+    )
     reset_profile = p.message("#1", 215, 205, 35)
     defaults_messages: list[str] = []
-    for index, profile in enumerate(("ev", "v10", "v12")):
+    for index, profile in enumerate(PROFILE_ORDER):
         values = " ".join(f"{value:g}" for value in MODULE_MIX_DEFAULTS[profile])
         message = p.message(values, 255 + index * 165, 205, 155)
         defaults_messages.append(message)
@@ -9027,16 +9694,7 @@ def make_module_mixer() -> dict[str, Any]:
     p.connect(auto_save_order, auto_save_delay, 0)
     p.connect(auto_save_delay, save)
 
-    specs = (
-        ("Sound DNA", "powertrain_level_db", -60.0, 6.0),
-        ("Start", "start_level_db", -60.0, 6.0),
-        ("Pop / Event", "transient_level_db", -60.0, 6.0),
-        ("Soundscape", "soundscape_level_db", -60.0, 6.0),
-        ("Road / Air", "road_level_db", -60.0, 6.0),
-        ("Cabin Rumble", "rumble_level_db", -60.0, 6.0),
-        ("Master", "master_trim_db", -24.0, 0.0),
-    )
-    for index, (label, name, low, high) in enumerate(specs):
+    for index, (label, name, low, high, _unit) in enumerate(MODULE_MIX_SPECS):
         x = 15 + index * 102
         p.add(
             "comment", label, x, 35, 95, 18, numinlets=1, numoutlets=0,
@@ -9064,6 +9722,7 @@ def make_module_mixer() -> dict[str, Any]:
             numinlets=1, numoutlets=1,
         )
         p.connect(defaults_unpack, from_db, index)
+        p.connect(control_route, from_db, index + 3)
         p.connect(from_db, slider)
         p.connect(slider, to_db)
         p.connect(slider, auto_save_order)
@@ -9074,332 +9733,193 @@ def make_module_mixer() -> dict[str, Any]:
 
 
 def make_profile_main(profile: str, root: Path | None = None) -> dict[str, Any]:
-    """Build one self-contained, profile-fixed runnable patcher."""
+    """Build a thin profile adapter; Main owns every common runtime control."""
+    del root
     config = PROFILE_CONFIG[profile]
-    p = Patcher(1500, 1320)
-    p.comment(f"VehicleSoundSynth V6 — {config['title']} independent runtime", 25, 18, 720)
-    p.comment("Audio starts OFF. This patch contains only this profile's DSP graph.", 25, 48, 620)
-    active_profile = p.new("r vss.runtime.select", 850, 25, 145, numinlets=0, numoutlets=1)
-    active_match = p.new(f"sel {profile}", 850, 60, 65, numinlets=1, numoutlets=2)
-    save_then_close = p.new("t b b", 930, 95, 50, numinlets=1, numoutlets=2)
-    save_profile = p.message("save_profile_sound", 990, 70, 125)
-    close_delay = p.new("delay 300", 990, 105, 70, numinlets=2, numoutlets=1)
-    close_message = p.message("wclose", 1070, 105, 55)
-    patcher_control = p.new("thispatcher", 1070, 140, 85, numinlets=1, numoutlets=2)
-    close_save = p.new("closebang", 850, 140, 65, numinlets=0, numoutlets=1)
+    p = Patcher(980, 420)
+    p.add(
+        "comment", f"VehicleSoundSynth V6 — {config['title']}", 20, 18, 620, 24,
+        numinlets=1, numoutlets=0, presentation=1,
+        presentation_rect=[20.0, 15.0, 620.0, 24.0],
+    )
+    p.add(
+        "comment",
+        "Common Audio / Ignition / Drive / Mix / EQ controls live in main.maxpat.  此窗口仅保留车型模式。",
+        20, 48, 860, 36, numinlets=1, numoutlets=0, presentation=1,
+        presentation_rect=[20.0, 48.0, 860.0, 36.0],
+    )
+    host = p.add(
+        "bpatcher", None, 20, 330, 220, 55, numinlets=1, numoutlets=0,
+        name=f"Patcher:/patchers/profile_runtime_host_{profile}.maxpat",
+        varname=f"{profile}_runtime_host",
+    )
+
+    # The launcher publishes the next selection before opening it.  The old
+    # profile window closes itself; the host performs audio/pedal/save safety.
+    active_profile = p.new("r vss.runtime.select", 700, 330, 145, numinlets=0, numoutlets=1)
+    active_match = p.new(f"sel {profile}", 850, 330, 75, numinlets=1, numoutlets=2)
+    close_delay = p.new("delay 120", 850, 365, 75, numinlets=2, numoutlets=1)
+    close_message = p.message("wclose", 850, 395, 55)
+    patcher_control = p.new("thispatcher", 915, 395, 85, numinlets=1, numoutlets=2)
     p.connect(active_profile, active_match)
-    p.connect(active_match, save_then_close, 1)
-    p.connect(save_then_close, save_profile, 1)
-    p.connect(save_then_close, close_delay, 0)
+    p.connect(active_match, close_delay, 1)
     p.connect(close_delay, close_message)
     p.connect(close_message, patcher_control)
-    p.connect(close_save, save_profile)
 
-    drive = p.add(
-        "bpatcher", None, 1210, 330, 210, 55, numinlets=1, numoutlets=1,
-        name=f"Patcher:/patchers/{config['drive']}.maxpat",
-    )
-    external = p.new(f"r vss.{profile}.input", 1210, 395, 130, numinlets=0, numoutlets=1)
-    source = p.new("switch 2", 1210, 430, 75, numinlets=3, numoutlets=1)
-    source_default = p.new("loadmess 1", 1300, 430, 80, numinlets=1, numoutlets=1)
-    engine = p.add(
-        "bpatcher", None, 1210, 470, 220, 55, numinlets=1, numoutlets=3,
-        name=f"Patcher:/patchers/{config['engine']}.maxpat",
-    )
-    shared_runtime_control = p.new(
-        f"r vss.runtime.control.{profile}", 1210, 535, 190,
-        numinlets=0, numoutlets=1,
-    )
-    shared_soundscape_feedback = p.new(
-        f"s vss.soundscape.feedback.{profile}", 1210, 565, 220,
-        numinlets=1, numoutlets=0,
-    )
-    p.connect(source_default, source, 0, 0)
-    p.connect(drive, source, 0, 1)
-    p.connect(external, source, 0, 2)
-    p.connect(source, engine)
-    p.connect(shared_runtime_control, engine)
-    p.connect(engine, shared_soundscape_feedback, 2, 0)
-    p.connect(save_profile, engine)
-
-    module_mixer = p.add(
-        "bpatcher", None, 25, 875, 1000, 190,
-        numinlets=1, numoutlets=1,
-        name="Patcher:/patchers/module_mixer.maxpat",
-        args=[profile], varname=f"{profile}_module_mixer",
-    )
-    p.connect(module_mixer, engine)
-    p.connect(save_profile, module_mixer)
-    save_profile_button = p.message("Save Profile Sound", 1040, 880, 125)
-    reload_profile_button = p.message("Reload Profile Sound", 1175, 880, 135)
-    reload_profile = p.message("reload_profile_sound", 1175, 910, 135)
-    p.connect(save_profile_button, save_profile)
-    p.connect(reload_profile_button, reload_profile)
-    p.connect(reload_profile, engine)
-    p.connect(reload_profile, module_mixer)
-
-    p.comment("Lifecycle", 25, 105, 120)
-    ignition_on = p.message("ignition 1", 25, 135, 75)
-    start = p.message("start 1", 115, 135, 60)
-    stop = p.message("ignition 0", 190, 135, 75)
-    for message in (ignition_on, start, stop):
-        p.connect(message, drive)
-
-    p.comment("Drive source", 300, 105, 120)
-    source_menu = p.add(
-        "umenu",
-        None,
-        300,
-        135,
-        155,
-        numinlets=1,
-        numoutlets=3,
-        items=["Internal Manual", ",", "Internal Auto", ",", f"External vss.{profile}.input"],
-    )
-    source_select = p.new("expr 1+($i1==2)", 470, 135, 120, numinlets=1, numoutlets=1)
-    auto_select = p.new("== 1", 470, 170, 45, numinlets=2, numoutlets=1)
-    auto_named = p.new("prepend auto", 525, 170, 95, numinlets=1, numoutlets=1)
-    source_load = p.new("loadmess 0", 600, 135, 80, numinlets=1, numoutlets=1)
-    manual_select = p.new("== 0", 630, 170, 45, numinlets=2, numoutlets=1)
-    p.connect(source_load, source_menu)
-    p.connect(source_menu, source_select)
-    p.connect(source_select, source, 0, 0)
-    p.connect(source_menu, auto_select)
-    p.connect(auto_select, auto_named)
-    p.connect(auto_named, drive)
-    p.connect(source_menu, manual_select)
-
-    pedal_numbers: dict[str, str] = {}
-    for index, (label, name, default) in enumerate(
-        (("Throttle", "throttle", 0.0), ("Brake", "brake", 0.0))
-    ):
-        x = 25 + index * 150
-        p.comment(label, x, 205, 100)
-        number = p.add("flonum", None, x, 232, 75, numinlets=1, numoutlets=2)
-        clip = p.new("clip 0. 1.", x, 266, 75, numinlets=3, numoutlets=1)
-        named = p.new(f"prepend {name}", x, 300, 110, numinlets=1, numoutlets=1)
-        initial = p.new(f"loadmess {default:g}", x + 80, 232, 80, numinlets=1, numoutlets=1)
-        p.connect(number, clip)
-        p.connect(clip, named)
-        p.connect(named, drive)
-        p.connect(initial, number)
-        pedal_numbers[name] = number
-
-    manual_input = p.add(
-        "bpatcher", None, 25, 430, 1000, 430, numinlets=1, numoutlets=2,
-        name="Patcher:/patchers/manual_input.maxpat",
-    )
-    p.connect(manual_select, manual_input)
-    p.connect(manual_input, pedal_numbers["throttle"], 0, 0)
-    p.connect(manual_input, pedal_numbers["brake"], 1, 0)
-
-    soundscape_control = p.add(
-        "bpatcher", None, 330, 205, 800, 115, numinlets=1, numoutlets=1,
-        name="Patcher:/patchers/soundscape_control.maxpat",
-        args=[profile], varname=f"{profile}_soundscape_control",
-    )
-    p.connect(soundscape_control, engine, 0, 0)
-    p.connect(engine, soundscape_control, 2, 0)
-    open_dna = p.message("Open Sound DNA", 1180, 230, 125)
-    open_dna_instance = p.new(
-        f"s open.{profile}.sound_dna", 1180, 260, 180,
-        numinlets=1, numoutlets=0,
-    )
-    p.comment("Sound DNA Solo", 1180, 290, 115)
-    dna_solo = p.add("toggle", None, 1180, 315, 24, 24, numinlets=1, numoutlets=1)
-    dna_solo_named = p.new("prepend dna_solo", 1210, 315, 140, numinlets=1, numoutlets=1)
-    dna_solo_default = p.new("loadmess 0", 1210, 342, 80, numinlets=1, numoutlets=1)
-    p.connect(dna_solo, dna_solo_named)
-    p.connect(dna_solo_named, engine)
-    p.connect(dna_solo_default, dna_solo)
-    p.connect(open_dna, open_dna_instance)
-
-    open_start = p.message("Open Start Designer", 1180, 375, 135)
-    open_start_named = p.message("start_open", 1325, 375, 80)
-    audition_start = p.message("Audition Start", 1180, 405, 100)
-    audition_start_named = p.message("start_audition", 1290, 405, 95)
-    p.connect(open_start, open_start_named)
-    p.connect(open_start_named, engine)
-    p.connect(audition_start, audition_start_named)
-    p.connect(audition_start_named, engine)
+    def add_mode_menu(
+        label: str,
+        items: list[str],
+        messages: tuple[str, ...],
+        default: int,
+        x: int,
+        y: int,
+        width: int = 220,
+    ) -> None:
+        p.add(
+            "comment", label, x, y, width, 20, numinlets=1, numoutlets=0,
+            presentation=1, presentation_rect=[float(x), float(y), float(width), 20.0],
+        )
+        menu = p.add(
+            "umenu", None, x, y + 28, width, numinlets=1, numoutlets=3,
+            items=sum(([item, ","] for item in items), [])[:-1],
+            presentation=1,
+            presentation_rect=[float(x), float(y + 28), float(width), 24.0],
+        )
+        selector = p.new(
+            "sel " + " ".join(str(index) for index in range(len(messages))),
+            x, y + 62, max(70, len(messages) * 28),
+            numinlets=1, numoutlets=len(messages) + 1,
+        )
+        initial = p.new(f"loadmess {default}", x + width + 10, y + 28, 80, numinlets=1, numoutlets=1)
+        p.connect(initial, menu)
+        p.connect(menu, selector)
+        for index, value in enumerate(messages):
+            message = p.message(value, x + index * 170, y + 92, 165)
+            p.connect(selector, message, index)
+            p.connect(message, host)
 
     if profile == "ev":
-        p.comment("Legacy EV macro preset", 330, 315, 150)
-        mode = p.add(
-            "umenu", None, 330, 340, 145, numinlets=1, numoutlets=3,
-            items=["Relax", ",", "Expressive", ",", "Sport"],
+        add_mode_menu(
+            "EV Macro Mode / 电动车宏模式",
+            ["Relax / 舒缓", "Expressive / 表现", "Sport / 运动"],
+            ("ev_mode relax", "ev_mode expressive", "ev_mode sport"),
+            0, 20, 105, 260,
         )
-        mode_messages = (
-            p.message("ev_mode relax", 485, 330, 105),
-            p.message("ev_mode expressive", 485, 355, 135),
-            p.message("ev_mode sport", 625, 355, 105),
-        )
-        selector = p.new("sel 0 1 2", 740, 340, 70, numinlets=1, numoutlets=4)
-        mode_default = p.new("loadmess 0", 820, 340, 80, numinlets=1, numoutlets=1)
-        p.connect(mode_default, mode)
-        p.connect(mode, selector)
-        for index, message in enumerate(mode_messages):
-            p.connect(selector, message, index)
-            p.connect(message, engine)
     elif profile == "ioniq6n":
-        p.comment("N Active Sound — Ignition / Evolution / Lightspeed", 330, 315, 330)
-        mode = p.add(
-            "umenu", None, 330, 340, 165, numinlets=1, numoutlets=3,
-            items=["Ignition", ",", "Evolution", ",", "Lightspeed"],
+        add_mode_menu(
+            "N Active Sound Mode / N 主动声浪模式",
+            ["Ignition", "Evolution", "Lightspeed"],
+            ("n_sound_mode ignition", "n_sound_mode evolution", "n_sound_mode lightspeed"),
+            1, 20, 105, 260,
         )
-        mode_selector = p.new("sel 0 1 2", 505, 340, 70, numinlets=1, numoutlets=4)
-        mode_messages = (
-            p.message("n_sound_mode ignition", 585, 325, 150),
-            p.message("n_sound_mode evolution", 585, 350, 155),
-            p.message("n_sound_mode lightspeed", 745, 350, 165),
+        p.add(
+            "comment", "N e-Shift / 8 虚拟档位", 330, 105, 220, 20,
+            numinlets=1, numoutlets=0, presentation=1,
+            presentation_rect=[330.0, 105.0, 220.0, 20.0],
         )
-        mode_default = p.new("loadmess 1", 755, 325, 80, numinlets=1, numoutlets=1)
-        p.connect(mode_default, mode)
-        p.connect(mode, mode_selector)
-        for index, message in enumerate(mode_messages):
-            p.connect(mode_selector, message, index)
-            p.connect(message, engine)
-
-        p.comment("N e-Shift (8 virtual gears)", 25, 315, 210)
-        eshift = p.add("toggle", None, 25, 340, 24, 24, numinlets=1, numoutlets=1)
-        eshift_named = p.new("prepend eshift_enable", 60, 340, 155, numinlets=1, numoutlets=1)
-        eshift_default = p.new("loadmess 1", 225, 340, 80, numinlets=1, numoutlets=1)
+        eshift = p.add(
+            "toggle", None, 330, 133, 24, 24, numinlets=1, numoutlets=1,
+            presentation=1, presentation_rect=[330.0, 133.0, 24.0, 24.0],
+        )
+        eshift_named = p.new("prepend eshift_enable", 365, 133, 155, numinlets=1, numoutlets=1)
+        eshift_default = p.new("loadmess 1", 530, 133, 80, numinlets=1, numoutlets=1)
         p.connect(eshift_default, eshift)
         p.connect(eshift, eshift_named)
-        p.connect(eshift_named, drive)
+        p.connect(eshift_named, host)
 
-        p.comment("N Events Enable / Intensity", 25, 375, 205)
-        event_enable = p.add("toggle", None, 25, 400, 24, 24, numinlets=1, numoutlets=1)
-        event_enable_named = p.new("prepend event_enable", 60, 400, 145, numinlets=1, numoutlets=1)
-        event_enable_default = p.new("loadmess 1", 215, 400, 80, numinlets=1, numoutlets=1)
-        event_intensity = p.add("flonum", None, 310, 400, 70, numinlets=1, numoutlets=2)
-        event_intensity_clip = p.new("clip 0. 1.", 390, 400, 75, numinlets=3, numoutlets=1)
-        event_intensity_named = p.new("prepend event_intensity", 475, 400, 165, numinlets=1, numoutlets=1)
-        event_intensity_default = p.new("loadmess 0.72", 650, 400, 95, numinlets=1, numoutlets=1)
+        p.add(
+            "comment", "N Events / 戏剧瞬态：Enable + Intensity [0..1]", 330, 180, 410, 20,
+            numinlets=1, numoutlets=0, presentation=1,
+            presentation_rect=[330.0, 180.0, 410.0, 20.0],
+        )
+        event_enable = p.add(
+            "toggle", None, 330, 208, 24, 24, numinlets=1, numoutlets=1,
+            presentation=1, presentation_rect=[330.0, 208.0, 24.0, 24.0],
+        )
+        event_enable_named = p.new("prepend event_enable", 365, 208, 145, numinlets=1, numoutlets=1)
+        event_enable_default = p.new("loadmess 1", 520, 208, 80, numinlets=1, numoutlets=1)
+        event_intensity = p.add(
+            "flonum", None, 610, 208, 75, numinlets=1, numoutlets=2,
+            minimum=0.0, maximum=1.0, presentation=1,
+            presentation_rect=[610.0, 208.0, 75.0, 24.0],
+        )
+        event_intensity_named = p.new("prepend event_intensity", 695, 208, 165, numinlets=1, numoutlets=1)
+        event_intensity_default = p.new("loadmess 0.72", 610, 240, 95, numinlets=1, numoutlets=1)
         p.connect(event_enable_default, event_enable)
         p.connect(event_enable, event_enable_named)
-        p.connect(event_enable_named, engine)
+        p.connect(event_enable_named, host)
         p.connect(event_intensity_default, event_intensity)
-        p.connect(event_intensity, event_intensity_clip)
-        p.connect(event_intensity_clip, event_intensity_named)
-        p.connect(event_intensity_named, engine)
-        event_open = p.message("Open N Event Designer", 760, 400, 145)
-        event_open_named = p.message("event_open", 915, 400, 75)
-        event_audition = p.message("Audition N Event", 760, 430, 120)
-        event_audition_named = p.message("event_audition", 890, 430, 100)
-        p.connect(event_open, event_open_named)
-        p.connect(event_open_named, engine)
-        p.connect(event_audition, event_audition_named)
-        p.connect(event_audition_named, engine)
+        p.connect(event_intensity, event_intensity_named)
+        p.connect(event_intensity_named, host)
+        for label, value, x in (
+            ("Open Event Designer / 打开事件设计器", "event_open", 330),
+            ("Audition Event / 试听事件", "event_audition", 610),
+        ):
+            button = p.add(
+                "message", label, x, 275, 250, numinlets=2, numoutlets=1,
+                presentation=1, presentation_rect=[float(x), 275.0, 250.0, 24.0],
+            )
+            message = p.message(value, x, 305, 110)
+            p.connect(button, message)
+            p.connect(message, host)
     else:
-        p.comment("Start sound", 330, 315, 120)
-        style = p.add(
-            "umenu", None, 330, 340, 145, numinlets=1, numoutlets=3,
-            items=["Cinematic BEAP", ",", "Realistic Sample"],
+        add_mode_menu(
+            "Start Style / 启动音色",
+            ["Cinematic BEAP / 程序合成", "Realistic Sample / 真实采样"],
+            ("start_style cinematic", "start_style realistic"),
+            0, 20, 105, 290,
         )
-        style_selector = p.new("sel 0 1", 485, 340, 55, numinlets=1, numoutlets=3)
-        cinematic = p.message("start_style cinematic", 550, 330, 145)
-        realistic = p.message("start_style realistic", 550, 355, 135)
-        style_default = p.new("loadmess 0", 700, 340, 80, numinlets=1, numoutlets=1)
-        p.connect(style_default, style)
-        p.connect(style, style_selector)
-        p.connect(style_selector, cinematic, 0)
-        p.connect(style_selector, realistic, 1)
-        p.connect(cinematic, engine)
-        p.connect(realistic, engine)
-
-        p.comment("Backfire Enable / Intensity", 25, 315, 185)
-        backfire_enable = p.add("toggle", None, 25, 340, 24, 24, numinlets=1, numoutlets=1)
-        backfire_enable_named = p.new("prepend backfire_enable", 60, 340, 155, numinlets=1, numoutlets=1)
-        backfire_enable_default = p.new("loadmess 1", 225, 340, 80, numinlets=1, numoutlets=1)
-        backfire_intensity = p.add("flonum", None, 25, 375, 70, numinlets=1, numoutlets=2)
-        backfire_intensity_clip = p.new("clip 0. 1.", 105, 375, 75, numinlets=3, numoutlets=1)
-        backfire_intensity_named = p.new("prepend backfire_intensity", 190, 375, 175, numinlets=1, numoutlets=1)
-        backfire_intensity_default = p.new(
+        p.add(
+            "comment", "Backfire / 回火：Enable + Intensity [0..1] + Solo", 380, 105, 440, 20,
+            numinlets=1, numoutlets=0, presentation=1,
+            presentation_rect=[380.0, 105.0, 440.0, 20.0],
+        )
+        enable = p.add(
+            "toggle", None, 380, 133, 24, 24, numinlets=1, numoutlets=1,
+            presentation=1, presentation_rect=[380.0, 133.0, 24.0, 24.0],
+        )
+        enable_named = p.new("prepend backfire_enable", 415, 133, 155, numinlets=1, numoutlets=1)
+        enable_default = p.new("loadmess 1", 575, 133, 80, numinlets=1, numoutlets=1)
+        intensity = p.add(
+            "flonum", None, 665, 133, 75, numinlets=1, numoutlets=2,
+            minimum=0.0, maximum=1.0, presentation=1,
+            presentation_rect=[665.0, 133.0, 75.0, 24.0],
+        )
+        intensity_named = p.new("prepend backfire_intensity", 750, 133, 175, numinlets=1, numoutlets=1)
+        intensity_default = p.new(
             f"loadmess {0.82 if profile == 'v10' else 0.55:g}",
-            375, 375, 100, numinlets=1, numoutlets=1,
+            665, 165, 100, numinlets=1, numoutlets=1,
         )
-        p.connect(backfire_enable, backfire_enable_named)
-        p.connect(backfire_enable_named, engine)
-        p.connect(backfire_enable_default, backfire_enable)
-        p.connect(backfire_intensity, backfire_intensity_clip)
-        p.connect(backfire_intensity_clip, backfire_intensity_named)
-        p.connect(backfire_intensity_named, engine)
-        p.connect(backfire_intensity_default, backfire_intensity)
-
-        p.comment("Backfire Solo / Test Pop", 500, 315, 175)
-        backfire_solo = p.add("toggle", None, 500, 340, 24, 24, numinlets=1, numoutlets=1)
-        backfire_solo_named = p.new("prepend backfire_solo", 535, 340, 150, numinlets=1, numoutlets=1)
-        backfire_solo_default = p.new("loadmess 0", 695, 340, 80, numinlets=1, numoutlets=1)
-        backfire_test = p.add("button", None, 500, 375, 24, 24, numinlets=1, numoutlets=1)
-        backfire_test_message = p.message("backfire_test 1", 535, 375, 105)
-        p.connect(backfire_solo, backfire_solo_named)
-        p.connect(backfire_solo_named, engine)
-        p.connect(backfire_solo_default, backfire_solo)
-        p.connect(backfire_test, backfire_test_message)
-        p.connect(backfire_test_message, engine)
-        open_pop = p.message("Open Pop Designer", 800, 340, 130)
-        open_pop_instance = p.new(
-            f"s open.{profile}.backfire", 800, 375, 180,
-            numinlets=1, numoutlets=0,
+        solo = p.add(
+            "toggle", None, 380, 190, 24, 24, numinlets=1, numoutlets=1,
+            presentation=1, presentation_rect=[380.0, 190.0, 24.0, 24.0],
         )
-        p.connect(open_pop, open_pop_instance)
+        solo_named = p.new("prepend backfire_solo", 415, 190, 150, numinlets=1, numoutlets=1)
+        solo_default = p.new("loadmess 0", 575, 190, 80, numinlets=1, numoutlets=1)
+        for initial, control in (
+            (enable_default, enable), (intensity_default, intensity), (solo_default, solo),
+        ):
+            p.connect(initial, control)
+        for control, named in ((enable, enable_named), (intensity, intensity_named), (solo, solo_named)):
+            p.connect(control, named)
+            p.connect(named, host)
+        test_button = p.add(
+            "message", "Test Pop / 测试回火", 665, 190, 150,
+            numinlets=2, numoutlets=1, presentation=1,
+            presentation_rect=[665.0, 190.0, 150.0, 24.0],
+        )
+        test_message = p.message("backfire_test 1", 665, 220, 110)
+        open_button = p.add(
+            "message", "Open Pop Designer / 打开回火设计器", 380, 250, 260,
+            numinlets=2, numoutlets=1, presentation=1,
+            presentation_rect=[380.0, 250.0, 260.0, 24.0],
+        )
+        open_bus = p.new(f"s open.{profile}.backfire", 380, 285, 180, numinlets=1, numoutlets=0)
+        p.connect(test_button, test_message)
+        p.connect(test_message, host)
+        p.connect(open_button, open_bus)
 
-    p.comment("Audio + Output", 760, 105, 120)
-    audio_toggle = p.add("toggle", None, 760, 135, 24, 24, numinlets=1, numoutlets=1)
-    audio_off = p.new("loadmess 0", 795, 135, 80, numinlets=1, numoutlets=1)
-    audio_pack = p.new("pack 0. 60", 760, 175, 85, numinlets=2, numoutlets=1)
-    audio_line = p.new("line~", 760, 210, 50, numinlets=2, numoutlets=2)
-    gain_l = p.new("*~", 1060, 540, 40, numinlets=2, numoutlets=1)
-    gain_r = p.new("*~", 1175, 540, 40, numinlets=2, numoutlets=1)
-    dac = p.new("ezdac~", 1115, 635, 65, numinlets=2, numoutlets=0)
-    meter_l = p.add("meter~", None, 1035, 585, 18, 80, numinlets=1, numoutlets=1)
-    meter_r = p.add("meter~", None, 1225, 585, 18, 80, numinlets=1, numoutlets=1)
-    spectrum_l = p.new("spectroscope~", 1260, 540, 220, numinlets=2, numoutlets=0)
-    spectrum_r = p.new("spectroscope~", 1260, 680, 220, numinlets=2, numoutlets=0)
-    p.connect(audio_off, audio_toggle)
-    p.connect(audio_toggle, audio_pack)
-    p.connect(audio_toggle, dac)
-    p.connect(audio_pack, audio_line)
-    p.connect(engine, gain_l, 0, 0)
-    p.connect(engine, gain_r, 1, 0)
-    p.connect(audio_line, gain_l, 0, 1)
-    p.connect(audio_line, gain_r, 0, 1)
-    p.connect(gain_l, dac, 0, 0)
-    p.connect(gain_r, dac, 0, 1)
-    p.connect(gain_l, meter_l)
-    p.connect(gain_r, meter_r)
-    p.connect(gain_l, spectrum_l)
-    p.connect(gain_r, spectrum_r)
-
-    p.comment("Master compressor (attack/release are OMX rates: higher = faster)", 25, 1090, 620)
-    compressor_ui = (
-        ("Threshold dB", "compressor_threshold_db", -12.0, -36.0, 0.0),
-        ("Ratio", "compressor_ratio", 2.0, 1.0, 50.0),
-        ("Attack rate", "compressor_attack_rate", 85.0, 0.0, 150.0),
-        ("Release rate", "compressor_release_rate", 35.0, 0.0, 150.0),
-        ("Makeup dB", "compressor_makeup_db", 0.0, -12.0, 12.0),
-    )
-    for index, (label, name, default, low, high) in enumerate(compressor_ui):
-        x = 25 + index * 180
-        p.comment(label, x, 1118, 130)
-        number = p.add("flonum", None, x, 1142, 75, numinlets=1, numoutlets=2)
-        bounded = p.new(f"clip {low:g} {high:g}", x, 1174, 90, numinlets=3, numoutlets=1)
-        named = p.new(f"prepend {name}", x, 1206, 155, numinlets=1, numoutlets=1)
-        initial = p.new(f"loadmess {default:g}", x + 82, 1142, 85, numinlets=1, numoutlets=1)
-        p.connect(number, bounded)
-        p.connect(initial, number)
-        p.connect(bounded, named)
-        p.connect(named, engine)
-    p.comment("Bypass", 930, 1118, 70)
-    compressor_bypass = p.add("toggle", None, 930, 1142, 24, 24, numinlets=1, numoutlets=1)
-    compressor_bypass_named = p.new("prepend compressor_bypass", 965, 1142, 175, numinlets=1, numoutlets=1)
-    compressor_bypass_default = p.new("loadmess 0", 930, 1174, 80, numinlets=1, numoutlets=1)
-    p.connect(compressor_bypass_default, compressor_bypass)
-    p.connect(compressor_bypass, compressor_bypass_named)
-    p.connect(compressor_bypass_named, engine)
-    p.comment(f"External control: send named messages to vss.{profile}.input", 650, 1090, 480)
-    return p.document()
+    return p.document(presentation=True)
 
 
 def make_legacy_main() -> dict[str, Any]:
@@ -10333,7 +10853,15 @@ def project_file() -> dict[str, Any]:
         "patchers/manual_input.maxpat",
         "patchers/module_mixer.maxpat",
         "patchers/soundscape_control.maxpat",
+        "patchers/drive_console.maxpat",
+        "patchers/mix_eq_console.maxpat",
+        "patchers/sound_design_console.maxpat",
+        "patchers/runtime_console.maxpat",
     ]
+    patchers.extend(
+        f"patchers/profile_runtime_host_{profile}.maxpat"
+        for profile in PROFILE_ORDER
+    )
     for profile in ("ev", "v10", "v12"):
         patchers.extend(
             (
@@ -10362,6 +10890,7 @@ def project_file() -> dict[str, Any]:
     contents["code"]["code/drive_model.js"] = {"kind": "javascript", "local": 1}
     contents["code"]["code/manual_input.js"] = {"kind": "javascript", "local": 1}
     contents["code"]["code/eq_state_path.js"] = {"kind": "javascript", "local": 1}
+    contents["code"]["code/eq_feedback_reader.js"] = {"kind": "javascript", "local": 1}
     contents["code"]["code/dna_state_path.js"] = {"kind": "javascript", "local": 1}
     contents["code"]["code/pop_state_path.js"] = {"kind": "javascript", "local": 1}
     contents["code"]["code/module_mixer_state_path.js"] = {"kind": "javascript", "local": 1}
@@ -10464,12 +10993,20 @@ def build_project(root: Path) -> None:
         "patchers/manual_input.maxpat": make_manual_input(),
         "patchers/module_mixer.maxpat": make_module_mixer(),
         "patchers/soundscape_control.maxpat": make_soundscape_control(),
+        "patchers/drive_console.maxpat": make_drive_console(),
+        "patchers/mix_eq_console.maxpat": make_mix_eq_console(),
+        "patchers/sound_design_console.maxpat": make_sound_design_console(),
+        "patchers/runtime_console.maxpat": make_runtime_console(),
         "presets/sound_dna.json": PRESETS,
         "presets/vehicle_bus_eq_default.json": VEHICLE_BUS_EQ_DEFAULT,
         "presets/ioniq6n_soundscape_modes_factory.json": make_ioniq6n_soundscape_factory(),
         "presets/ioniq6n_n_event_factory.json": make_ioniq6n_event_factory(),
         PROJECT_FILENAME: project_file(),
     }
+    for profile in PROFILE_ORDER:
+        outputs[f"patchers/profile_runtime_host_{profile}.maxpat"] = (
+            make_profile_runtime_host(profile)
+        )
     for profile in ("ev", "v10", "v12"):
         outputs[f"presets/{profile}_soundscape_factory.json"] = (
             make_soundscape_factory(profile)

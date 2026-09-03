@@ -3,6 +3,49 @@
 > Deterministically generated repository/project memory for cross-agent handoff.
 > Update after every material project change and before final reporting.
 
+## V6 system cleanup (2026-09-03)
+
+Branch `codex/v6-system-cleanup` centralizes the four runtimes without changing
+their accepted sound design. `main.maxpat` is now the only shared operator
+surface for Audio, Ignition, input, module balance, master EQ and Sound Design.
+Each vehicle patcher is a thin profile/mode adapter over a
+`patchers/profile_runtime_host_<profile>.maxpat` file materialized from the same
+generator topology. Literal profile binding is required because Max resolves
+object class names before abstraction arguments; the common host owns the
+engine, drivetrain, input, mixer, EQ, output and diagnostics chain. Profile-scoped
+command/feedback buses prevent a closing runtime from receiving the newly
+selected profile's controls, while `vss.<profile>.input` remains available.
+
+Sound DNA panels received bilingual parameter names, units, audible-context
+guidance and help text. The generator treats every existing Sound DNA panel as
+seed-once user property and never migrates or overwrites it. IONIQ6N now uses
+Main's seven-stem Mixer as the sole DNA output-gain authority; its duplicate DNA
+fader was removed while the six embedded BEAP module hash stayed exactly
+`292e7072a4f924e10ba5b6350ac9e6757269c44806e69fc183808e05c860c939`.
+Main also reads the active profile's persisted four-band EQ state back into the
+visible controls on open/save/reload/reset. No Gen/BEAP synthesis algorithm,
+Soundscape factory preset, audio asset, EQ default or module-gain default was
+retuned.
+
+The public throttle/brake range remains 0..1. Full throttle now retains
+15--25% more high-speed drive reserve, abrupt release creates a short lift-brake
+and faster ICE RPM fall, gradual release preserves coasting, and the service
+brake is stronger. EV and IONIQ6N with N e-Shift disabled remain strictly
+speed-coupled. All 197 tests pass. Two post-fix generator runs produced the same
+114-file patch/project/Gen/preset digest
+`8d371799786bd85cece6679e41893dfd30b8f6ec93e5f8ed75cd561434aa02d7`.
+
+Max 8.6.5 opened Main with EV, V10, V12 and IONIQ6N from a correctly named,
+exact runtime-tree `git archive` copy after the final EQ-feedback/gain-authority
+cleanup. Each top-level patcher recorded `savedserialnumber=0`, and the new log
+contains no missing-object, Gen, patchcord, JavaScript-function or
+project-category blocker. Optional local Ferrari one-shot misses and Max's
+known read-only object-database warning remain environment diagnostics. The
+five earlier empty task processes were force-terminated after explicit user
+authorization; the final smoke process exited normally after every runtime,
+Main, Project and Console window was closed. Pre-existing user PID `65075` and
+its four original probe windows remain untouched.
+
 ## V6 audio baseline (2026-09-03)
 
 The accepted four-profile sound at `3708c08` is promoted to the V6 line through

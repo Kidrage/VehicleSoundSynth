@@ -131,6 +131,7 @@ DriveModel.prototype.reset = function () {
     this.overrunReleaseFrom = 0.0;
     this.overrunPeakThrottle = 0.0;
     this.overrunCooldown = 0.0;
+    this.liftBrake = 0.0;
 };
 
 DriveModel.prototype.clearOverrun = function () {
@@ -169,6 +170,7 @@ DriveModel.prototype.handle = function (name, args) {
             this.shiftCut = 1.0;
             this.clearOverrun();
             this.overrunCooldown = 0.0;
+            this.liftBrake = 0.0;
             events.push(["shift_cut", 1.0]);
         }
     } else if (name === "start" && value && this.ignition) {
@@ -186,6 +188,7 @@ DriveModel.prototype.handle = function (name, args) {
         this.lastShiftEnd = -999.0;
         this.clearOverrun();
         this.overrunCooldown = 0.0;
+        this.liftBrake = 0.0;
         events.push(["gear", 1]);
         events.push(["start", 1]);
     } else {
@@ -349,6 +352,7 @@ DriveModel.prototype.tick = function (dt) {
     var pedals;
     var force;
     var drag;
+    var liftDrag;
     var serviceBrake;
     var target;
     var alpha;
@@ -359,15 +363,31 @@ DriveModel.prototype.tick = function (dt) {
     pedals = this.effectivePedals();
     this.throttle = pedals[0];
     this.brake = pedals[1];
+    if (this.running && this.speed >= 25.0 && this.brake < 0.05 &&
+            previousThrottle >= 0.35 && previousThrottle - this.throttle >= 0.18) {
+        // A fast pedal edge requests temporary engine braking. Progressive
+        // trigger release arrives as small steps and therefore preserves the
+        // existing natural coast curve.
+        this.liftBrake = Math.max(
+            this.liftBrake,
+            clamp((previousThrottle - this.throttle) / 0.8, 0.0, 1.0)
+        );
+    } else {
+        this.liftBrake = Math.max(0.0, this.liftBrake - dt / 0.8);
+    }
+    if (this.throttle > 0.25 || this.brake >= 0.05) {
+        this.liftBrake = 0.0;
+    }
     drag = drivetrainDrag(this.speed, this.throttle);
-    serviceBrake = 31.0 * Math.pow(this.brake, 1.35);
-    force = this.throttle * (34.0 - 0.07 * this.speed) - drag - serviceBrake;
+    serviceBrake = 33.0 * Math.pow(this.brake, 1.35);
+    liftDrag = this.liftBrake * (5.0 + 0.055 * this.speed);
+    force = this.throttle * (37.5 - 0.065 * this.speed) - drag - serviceBrake - liftDrag;
     if (this.running) {
         this.speed = clamp(this.speed + dt * force, 0.0, 300.0);
     } else {
         this.speed = clamp(this.speed - dt * (drag + serviceBrake), 0.0, 300.0);
     }
-    this.accel = clamp(force / 34.0, -1.0, 1.0);
+    this.accel = clamp(force / 37.5, -1.0, 1.0);
 
     if (this.startElapsed >= 0.0 && this.startElapsed < this.config.catchSeconds) {
         this.startElapsed += dt;
@@ -382,7 +402,15 @@ DriveModel.prototype.tick = function (dt) {
         this.updateShift(dt, events);
     } else {
         target = this.normalIceTarget();
-        alpha = 1.0 - Math.exp(-dt / (target >= this.rpm ? 0.12 : 0.16));
+        if (this.liftBrake > 0.0) {
+            target = Math.max(
+                this.config.idle,
+                target * (1.0 - 0.18 * this.liftBrake)
+            );
+        }
+        alpha = 1.0 - Math.exp(
+            -dt / (target >= this.rpm ? 0.12 : (this.liftBrake > 0.0 ? 0.08 : 0.16))
+        );
         this.rpm += (target - this.rpm) * alpha;
         this.rpm = clamp(this.rpm, this.config.idle, 10000.0);
         this.maybeShift(events);
@@ -410,7 +438,8 @@ DriveModel.prototype.snapshot = function () {
         accel: this.accel,
         gear: this.gear,
         shifting: this.shift ? 1 : 0,
-        shiftCut: this.shiftCut
+        shiftCut: this.shiftCut,
+        liftBrake: this.liftBrake
     };
     if (this.profile === "ioniq6n") {
         state.eShiftEnabled = this.eShiftEnabled;

@@ -312,7 +312,7 @@ const model = new input.ManualInputModel();
 model.handle('manual', [1]);
 model.handle('keyboard_throttle', [1]);
 const throttle = model.snapshot();
-model.handle('keyboard_brake', [0.65]);
+model.handle('keyboard_brake', [0.85]);
 const overlap = model.snapshot();
 model.handle('keyboard_brake', [0]);
 const resumed = model.snapshot();
@@ -322,7 +322,7 @@ console.log(JSON.stringify({throttle, overlap, resumed, released: model.snapshot
         )
         self.assertEqual(1.0, result["throttle"]["throttle"])
         self.assertEqual(0.0, result["overlap"]["throttle"])
-        self.assertEqual(0.65, result["overlap"]["brake"])
+        self.assertEqual(0.85, result["overlap"]["brake"])
         self.assertEqual(1.0, result["resumed"]["throttle"])
         self.assertEqual(0.0, result["released"]["throttle"])
         self.assertEqual(0.0, result["released"]["brake"])
@@ -460,16 +460,16 @@ function stopTime(brake) {
   }
   return ticks * 0.02;
 }
-console.log(JSON.stringify({full: stopTime(1), half: stopTime(0.5), keyboard: stopTime(0.65)}));
+console.log(JSON.stringify({full: stopTime(1), half: stopTime(0.5), keyboard: stopTime(0.85)}));
 """,
             DRIVE_MODEL_JS,
         )
-        self.assertGreaterEqual(result["full"], 3.0)
-        self.assertLessEqual(result["full"], 4.0)
+        self.assertGreaterEqual(result["full"], 2.8)
+        self.assertLessEqual(result["full"], 3.3)
         self.assertGreaterEqual(result["half"], 6.0)
         self.assertLessEqual(result["half"], 9.0)
-        self.assertGreaterEqual(result["keyboard"], 5.0)
-        self.assertLessEqual(result["keyboard"], 7.0)
+        self.assertGreaterEqual(result["keyboard"], 3.5)
+        self.assertLessEqual(result["keyboard"], 4.2)
         self.assertGreater(result["half"], result["keyboard"])
         self.assertGreater(result["keyboard"], result["full"])
 
@@ -486,7 +486,12 @@ function coastTime(fromSpeed, toSpeed) {
   for (let i = 0; i < 30000 && model.snapshot().speed < fromSpeed; i += 1) {
     model.tick(0.02);
   }
-  model.handle('throttle', [0]);
+  // A 1.5 s progressive release explicitly requests natural coasting.
+  for (let i = 0; i < 75; i += 1) {
+    model.handle('throttle', [1 - (i + 1) / 75]);
+    model.tick(0.02);
+  }
+  model.speed = fromSpeed;
   let ticks = 0;
   while (model.snapshot().speed > toSpeed && ticks < 10000) {
     model.tick(0.02);
@@ -511,7 +516,7 @@ console.log(JSON.stringify({
         self.assertGreater(result["veryHigh"], result["high"])
         self.assertGreater(result["high"], result["low"])
 
-    def test_natural_coast_curve_does_not_change_full_throttle_acceleration(self):
+    def test_sporty_drive_curve_reaches_more_speed_under_sustained_full_throttle(self):
         result = run_node(
             """
 const drive = require(process.argv[1]);
@@ -530,7 +535,80 @@ console.log(JSON.stringify(speeds));
             DRIVE_MODEL_JS,
         )
         for profile in ("ev", "v10", "v12"):
-            self.assertAlmostEqual(192.99922998164607, result[profile], places=9)
+            self.assertGreaterEqual(result[profile], 210.0)
+            self.assertLessEqual(result[profile], 220.0)
+
+    def test_high_speed_full_throttle_has_sporty_acceleration_reserve(self):
+        result = run_node(
+            """
+const drive = require(process.argv[1]);
+const deltas = {};
+for (const profile of ['ev', 'v10', 'v12', 'ioniq6n']) {
+  const model = new drive.DriveModel(profile);
+  model.handle('ignition', [1]);
+  model.handle('start', [1]);
+  for (let i = 0; i < 60; i += 1) model.tick(0.02);
+  model.speed = 120;
+  model.handle('throttle', [1]);
+  for (let i = 0; i < 50; i += 1) model.tick(0.02);
+  deltas[profile] = model.snapshot().speed - 120;
+}
+console.log(JSON.stringify(deltas));
+""",
+            DRIVE_MODEL_JS,
+        )
+        for profile in ("ev", "v10", "v12", "ioniq6n"):
+            self.assertGreaterEqual(result[profile], 26.0)
+            self.assertLessEqual(result[profile], 30.0)
+
+    def test_abrupt_lift_adds_temporary_engine_brake_but_slow_release_coasts(self):
+        result = run_node(
+            """
+const drive = require(process.argv[1]);
+function prepared(profile) {
+  const model = new drive.DriveModel(profile);
+  model.handle('ignition', [1]);
+  model.handle('start', [1]);
+  for (let i = 0; i < 60; i += 1) model.tick(0.02);
+  model.speed = 100;
+  model.rpm = profile === 'v10' ? 4200 : 3900;
+  model.gear = 3;
+  model.handle('throttle', [1]);
+  for (let i = 0; i < 20; i += 1) model.tick(0.02);
+  return model;
+}
+const abrupt = prepared('v10');
+const rpmBefore = abrupt.snapshot().rpm;
+abrupt.handle('throttle', [0]);
+let abruptPeak = 0;
+for (let i = 0; i < 20; i += 1) {
+  abrupt.tick(0.02);
+  abruptPeak = Math.max(abruptPeak, abrupt.snapshot().liftBrake);
+}
+const gradual = prepared('v10');
+let gradualPeak = 0;
+for (let i = 0; i < 75; i += 1) {
+  gradual.handle('throttle', [1 - (i + 1) / 75]);
+  gradual.tick(0.02);
+  gradualPeak = Math.max(gradualPeak, gradual.snapshot().liftBrake);
+}
+const ev = prepared('ev');
+ev.handle('throttle', [0]);
+for (let i = 0; i < 20; i += 1) ev.tick(0.02);
+console.log(JSON.stringify({
+  abruptPeak,
+  abruptRpmDrop: rpmBefore - abrupt.snapshot().rpm,
+  gradualPeak,
+  evRpm: ev.snapshot().rpm,
+  evExpected: 650 + ev.snapshot().speed * 31
+}));
+""",
+            DRIVE_MODEL_JS,
+        )
+        self.assertGreaterEqual(result["abruptPeak"], 0.9)
+        self.assertGreaterEqual(result["abruptRpmDrop"], 450.0)
+        self.assertLessEqual(result["gradualPeak"], 0.01)
+        self.assertAlmostEqual(result["evExpected"], result["evRpm"], places=9)
 
     def test_generated_manual_input_is_the_only_manual_pedal_adapter(self):
         source = MANUAL_INPUT_JS.read_text()
@@ -558,11 +636,19 @@ console.log(JSON.stringify(speeds));
             self.assertNotIn(removed, manual_text)
         self.assertTrue(any(name.endswith("/patchers/keyboard_drive_ws.maxpat") for name in manual_names))
 
-        for label in ("EV", "V10", "V12"):
+        drive_console = json.loads(
+            (ROOT / "patchers" / "drive_console.maxpat").read_text()
+        )["patcher"]
+        console_names = [item["box"].get("name", "") for item in drive_console["boxes"]]
+        self.assertTrue(any(name.endswith("/patchers/manual_input.maxpat") for name in console_names))
+        self.assertFalse(any(name.endswith("/patchers/keyboard_drive_ws.maxpat") for name in console_names))
+        for profile, label in (("ev", "EV"), ("v10", "V10"), ("v12", "V12"), ("ioniq6n", "IONIQ6N")):
             runtime = json.loads((ROOT / f"VehicleSoundSynth-{label}.maxpat").read_text())["patcher"]
             names = [item["box"].get("name", "") for item in runtime["boxes"]]
-            self.assertTrue(any(name.endswith("/patchers/manual_input.maxpat") for name in names))
-            self.assertFalse(any(name.endswith("/patchers/keyboard_drive_ws.maxpat") for name in names))
+            self.assertTrue(any(
+                name.endswith(f"/patchers/profile_runtime_host_{profile}.maxpat")
+                for name in names
+            ))
 
         project = json.loads((ROOT / "VehicleSoundSynth-V6.maxproj").read_text())
         self.assertIn("patchers/manual_input.maxpat", project["contents"]["patchers"])

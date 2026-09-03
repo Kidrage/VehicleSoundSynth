@@ -15,6 +15,10 @@
         "kind": "javascript",
         "local": 1
       },
+      "code/eq_feedback_reader.js": {
+        "kind": "javascript",
+        "local": 1
+      },
       "code/eq_state_path.js": {
         "kind": "javascript",
         "local": 1
@@ -209,6 +213,10 @@
         "kind": "patcher",
         "local": 1
       },
+      "patchers/drive_console.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
       "patchers/drive_simulator_ev.maxpat": {
         "kind": "patcher",
         "local": 1
@@ -309,6 +317,10 @@
         "kind": "patcher",
         "local": 1
       },
+      "patchers/mix_eq_console.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
       "patchers/mix_master~.maxpat": {
         "kind": "patcher",
         "local": 1
@@ -317,7 +329,31 @@
         "kind": "patcher",
         "local": 1
       },
+      "patchers/profile_runtime_host_ev.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/profile_runtime_host_ioniq6n.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/profile_runtime_host_v10.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/profile_runtime_host_v12.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
       "patchers/road_air~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/runtime_console.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/sound_design_console.maxpat": {
         "kind": "patcher",
         "local": 1
       },

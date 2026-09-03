@@ -7,23 +7,29 @@ Max/MSP 8.6.5 vehicle-sound project with four independent runtimes:
 - `VehicleSoundSynth-V12.maxpat`
 - `VehicleSoundSynth-IONIQ6N.maxpat`
 
-`main.maxpat` is a DSP-free launcher. It does not contain the four engines and
-does not keep inactive profiles running. Selecting another profile first sends
-`write` and closes the active runtime, then opens one unique replacement; this
-is the supported low-CPU workflow. Its visible Soundscape strip sends controls
-to the currently open runtime and receives live state feedback; it does not add
-a second Soundscape or any launcher-side DSP.
+`main.maxpat` is the DSP-free launcher and the only common control surface. Its
+three pages own Drive, Mix + EQ, and Sound Design for the selected runtime; it
+does not contain an engine or keep inactive profiles running. Each profile
+window is now a thin adapter containing only its profile-specific modes. All
+four hosts are materialized from one shared runtime topology as
+`patchers/profile_runtime_host_<profile>.maxpat`; they differ only in literal
+profile binding required by Max, while drive, persistence, monitoring, output
+and command/feedback structure stays identical.
 
 ## Quick start
+
+Before opening Max, keep the project file inside a folder named
+`VehicleSoundSynth-V6`; Max 8.6.5 uses that name to resolve the project search
+paths reliably.
 
 1. Open `VehicleSoundSynth-V6.maxproj` and wait for the Project window. Directly
    opening one of the four runtime `.maxpat` files is also supported: their
    root-level abstractions use explicit `patchers/` paths.
-2. Open `main.maxpat` from the Project window, then click one profile. Audio
-   starts off. The Main Soundscape strip controls that selected runtime;
-   Soundscape itself defaults enabled and becomes audible after ignition.
-3. In V10/V12, choose `Cinematic BEAP` or `Realistic Sample`, click
-   `ignition 1`, then `start 1`. Start catch settles to 740 RPM for V10 and
+2. Open `main.maxpat`, then click one profile. On Main's `Drive / 驾驶` page,
+   choose the input source and use `Ignition On`, `Start`, and `Audio On`.
+   Audio always starts off; ignition/start alone never enable monitoring.
+3. In the V10/V12 profile window, choose `Cinematic BEAP` or `Realistic Sample`.
+   Start catch settles to 740 RPM for V10 and
    780 RPM for V12; it no longer enters a high-rev default after ignition.
 4. In EV, choose Relax, Expressive, or Sport, then enable ignition/start when
    the selected BEAP layer should sound.
@@ -32,22 +38,24 @@ a second Soundscape or any launcher-side DSP.
    continuous EV pitch without virtual shifts. Its Sound DNA, three
    Soundscapes, activation and N-event designer are sample-free and independent
    of V10.
-6. Use Internal Manual for direct throttle/brake control, Internal Auto for the
+6. On Main's Drive page, use Internal Manual for direct throttle/brake control, Internal Auto for the
    guarded drive cycle, or send messages to `vss.ev.input`, `vss.v10.input`, or
    `vss.v12.input` in External mode. IONIQ6N uses `vss.ioniq6n.input`.
-7. After lowering the monitoring level, enable the single `Audio + Output`
+7. After lowering the monitoring level, enable Main's single `Audio On`
    toggle. It opens the output ramp and Max DSP together; ignition/start alone
    intentionally do not enable monitoring.
-8. Use `Open Sound DNA` plus `Sound DNA Solo` to tune the procedural engine, or
-   use Main Soundscape `Enable`, macros, `Open Designer` and `Solo` for the
-   active pad. The same controls remain visible in the runtime page. In
-   V10/V12 use `Open Pop Designer`, `Backfire Solo`, and `Test Pop` to tune the
+8. On Main's Sound Design page use `Open Sound DNA` plus `Solo` to tune the
+   procedural engine, or use Soundscape `Enable`, macros, `Open Designer` and
+   `Solo`. In the V10/V12 profile window use `Open Pop Designer`, Backfire
+   Solo, and `Test Pop` to tune the
    active Pop voice without driving the car. These buttons open the audible
    instances; use the matching `Save` control, or `Save Profile Sound` for the
    Mixer, Soundscape and EQ together, after an edit.
-9. Balance the seven audible modules in the `MODULE MIXER`: Sound DNA, Start,
+9. On Main's Mix + EQ page balance the seven audible modules: Sound DNA, Start,
    Pop/Event, Soundscape, Road/Air, Cabin Rumble, and Master. Each profile
-   restores its own local mixer state automatically.
+   restores its own local mixer and four-band EQ state automatically. The DNA
+   output fader lives here as the sole output-gain authority; it is not duplicated
+   inside a Sound DNA designer.
 10. Save intentional BEAP subpatcher edits. The launcher saves/closes the active
    top-level runtime when switching; when finished, close the runtime and Project
    windows and quit Max.
@@ -107,14 +115,13 @@ click, while the BEAP graph remains the editable colour layer. No backfire sampl
 is used, and slowing to zero cannot trigger the former low-resolution event
 sample.
 
-Every runtime embeds one generated `patchers/module_mixer.maxpat` control
-surface. It does not synthesize sound: it converts the seven labelled faders to
-the existing public dB messages and keeps the main page readable. The six stem
+Every runtime host owns one generated `patchers/module_mixer.maxpat`; Main's
+Mix + EQ page is its remote control surface. It does not synthesize sound: it
+converts the seven labelled values to the existing public dB messages. The six stem
 faders cover Sound DNA, Start, Pop/Event, Soundscape, Road/Air and Cabin Rumble;
 Master is the final bus trim. Values auto-save per profile under the ignored
-`presets/local/` directory, so EV, V10 and V12 may keep different balances.
-The launcher Soundscape strip is a stateless remote view of those same active
-profile values; switching profile does not copy or merge their saved states.
+`presets/local/` directory, so all four profiles keep independent balances.
+Changing profile does not copy or merge saved values.
 
 The signal path per runtime is:
 
@@ -131,9 +138,9 @@ See `SOUND_DESIGN_GUIDE.md` for the exact sound-design controls, the files that
 are safe to edit, plastic-tone troubleshooting, EQ ranges, and the BEAP/MSP
 division inside the cinematic Soundscape.
 
-In `Internal Manual`, focus the runtime window. `W` is a binary pedal: key-down
+In `Internal Manual`, keep a Max patcher window focused. `W` is a binary pedal: key-down
 sends full throttle (`1.0`) and key-up releases it (`0.0`). `S` applies a fixed
-normal/strong service-brake pedal (`0.65`) and has priority if both keys are
+strong service-brake pedal (`0.85`) and has priority if both keys are
 held; releasing `S` resumes `W` if it is still down. Keyboard pedals are
 disabled, and both are released, when leaving Manual mode. These immediate
 pedal commands still enter the same 20 ms physical integrator, so vehicle speed
@@ -169,11 +176,13 @@ leave the drivetrain accelerating. The gamepad adapter changes pedal inputs
 only: the unchanged 20 ms drivetrain still integrates speed, drag, RPM, and
 seven-speed DCT state.
 
-With both pedals released, V6 uses a shared progressive coast law: low speed
-settles more decisively (about 10 seconds from 20 km/h to rest), while highway
-speed retains noticeably more inertia (about 24 seconds from 100 to 80 km/h).
-The curve blends back to the original powered drag below 0.08 throttle, so
-normal acceleration, active braking, RPM coupling, and shifting do not jump.
+With a gradual 1--2 second pedal release, V6 uses the shared progressive coast
+law: low speed settles more decisively while highway speed retains noticeably
+more inertia. A fast release from meaningful throttle adds a short engine-brake
+impulse and faster ICE RPM drop; EV and IONIQ6N with e-Shift disabled remain
+strictly speed-coupled. Full-throttle high-speed drive is roughly 15--25%
+stronger than the V6 audio baseline. The public throttle/brake range remains
+linear `0..1`.
 
 For GameSir Nova 2 Lite, use the manufacturer's macOS-compatible
 [`Wireless Controller`/DS4 Bluetooth mode](https://gamesir.com/pages/tutorials-how-to-connect-nova-2-lite)

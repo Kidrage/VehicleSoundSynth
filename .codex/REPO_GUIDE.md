@@ -30,10 +30,18 @@ events, short cabin IR, adjustable stereo compression, EQ, and peak protection.
 - `code/manual_input.js` — ES5/Node-testable fixed LT-throttle/RT-brake
   normalization, smoothing, source exclusivity, and safe pedal-release state.
 - `assets/asset_manifest.json` / `ASSET_LICENSES.md` — runtime-audio provenance authority.
-- `main.maxpat` — DSP-free launcher; it must never instantiate an engine. Its
-  Soundscape control is only a send/receive view of the selected runtime.
-- `VehicleSoundSynth-{EV,V10,V12,IONIQ6N}.maxpat` — independent runnable UIs; the
-  single `Audio + Output` toggle enables both DSP and the output ramp.
+- `main.maxpat` — sole shared operator console and DSP-free launcher. It owns
+  profile selection plus common Audio, Ignition, input, Mix/EQ and Sound Design
+  controls, but never instantiates an engine.
+- `patchers/runtime_console.maxpat`, `drive_console.maxpat`,
+  `mix_eq_console.maxpat`, and `sound_design_console.maxpat` — the four tabbed
+  Main pages. Their messages are scoped to the selected profile.
+- `VehicleSoundSynth-{EV,V10,V12,IONIQ6N}.maxpat` — thin profile adapters that
+  expose only profile-specific modes and embed one shared runtime host.
+- `patchers/profile_runtime_host_<profile>.maxpat` — four Max-safe literal
+  bindings materialized from one common engine, drivetrain, input, mixer, EQ,
+  output and feedback topology. They accept profile-scoped Main commands and
+  retain the public `vss.<profile>.input` seam.
 - `patchers/keyboard_drive_ws.maxpat` — focus-aware Manual-mode binary W/S
   pedals with forced release when leaving Manual. Its Max `gate` control is
   inlet 0 and key-state data is inlet 1.
@@ -46,9 +54,13 @@ events, short cabin IR, adjustable stereo compression, EQ, and peak protection.
 - `patchers/{ev,v10,v12}_powertrain~.maxpat` — exactly one Gen per profile.
 - `patchers/vehicle_bus_eq~.maxpat` — seed-once, user-editable four-band EQ
   topology with per-profile ignored state; `patchers/mix_master~.maxpat`
-  contains generated safety dynamics only.
+  contains generated safety dynamics only. `code/eq_feedback_reader.js` reads
+  the selected profile's saved state back into Main without owning or rewriting
+  the EQ patch.
 - `patchers/module_mixer.maxpat` — generated seven-stem main-page balance UI;
   per-profile ignored state is resolved by `code/module_mixer_state_path.js`.
+  Its Sound DNA fader is the only profile output-gain authority, including for
+  IONIQ6N.
 - `patchers/{ev,v10,v12}_cinematic_soundscape_host~.maxpat` — generated profile
   mapping, persistence and cancellable DSP suspension around a direct embedded
   instance of the shared runtime Soundscape; there is no detached voice wrapper.
@@ -117,9 +129,10 @@ legacy full-travel RPM laws (`55+.032*rpm`, `36.7+.014*rpm`, and
 `32.7+.012*rpm`) with 90 ms smoothing. Restrained LFO motion affects
 filter/waveform/high-band pan rather than root pitch or level. The launcher uses
 profile-scoped `vss.runtime.control.<profile>` and
-`vss.soundscape.feedback.<profile>` buses selected by `vss.runtime.select`, so
-runtime-close overlap cannot edit the old profile; do not instantiate DSP or a
-second Soundscape in the launcher.
+`vss.runtime.feedback.<profile>` buses selected by `vss.runtime.select`, so
+runtime-close overlap cannot edit the old profile. Legacy Soundscape feedback
+is bridged inside the shared host; do not instantiate DSP or a second
+Soundscape in the launcher.
 
 Runtime smoke-check the generated project in Max 8.6.5 after structural tests.
 On macOS, Max writes load diagnostics to
@@ -146,11 +159,13 @@ On macOS, Max writes load diagnostics to
   selection writes/closes the prior top-level runtime before opening one unique
   replacement. In Internal Manual, choose Keyboard and focus the runtime for
   W/S, or choose Gamepad for fixed LT throttle / RT brake. Keyboard W is an
-  immediate 1/0 pedal and S is a 0.65 brake with brake priority; Gamepad keeps
+  immediate 1/0 pedal and S is a 0.85 brake with brake priority; Gamepad keeps
   both pedals analog and permits overlap. Both adapters feed only
-  throttle/brake into the existing fixed-step drivetrain interface;
-  its 20 ms RPM/shift integration remains unchanged while V6 uses a gentler,
-  progressive service-brake law. The ICE drive model emits one bounded
+  throttle/brake into the existing fixed-step drivetrain interface. The V6
+  calibration adds 15--25% high-speed full-throttle reserve, a stronger service
+  brake and a short lift-brake state for abrupt pedal release; gradual release
+  preserves the established coast feel. EV and IONIQ6N with N e-Shift disabled
+  remain speed-coupled. The ICE drive model emits one bounded
   `overrun 0..1` event for a sufficiently fast loaded lift-off; generated hosts
   translate that event through `code/backfire_burst.js` into 1--5 decaying hits
   at random 140--200 ms intervals. Test Pop uses the same burst, while shifts
@@ -174,7 +189,7 @@ On macOS, Max writes load diagnostics to
 - Keep `main.maxpat` DSP-free and maintain one-runtime-at-a-time CPU behavior.
 - Keep Keyboard and fixed semantic macOS gamepad pedals mutually exclusive,
   with immediate zero release on source or Manual-mode exit. Keyboard is a
-  binary full-throttle adapter with 0.65 brake priority; Gamepad pedals remain
+  binary full-throttle adapter with 0.85 brake priority; Gamepad pedals remain
   independent continuous 0..1 values.
 - Keep natural coast inside the shared 20 ms drive model: released low-speed
   settling is stronger than high-speed coasting, blends to the original powered
@@ -182,6 +197,11 @@ On macOS, Max writes load diagnostics to
 - Add IONIQ6N as a fourth isolated profile without modifying the committed
   EV/V10/V12 acoustic graphs. Keep N e-Shift optional, default it on, and keep
   Sound DNA, the three N Sound modes, activation and N events as separate stems.
+- Centralize common Audio, Ignition, input, Mix/EQ and Sound Design controls in
+  Main; keep the four profile windows as mode-only adapters over one generated
+  shared runtime topology.
+- Give every Sound DNA parameter bilingual meaning, units and listening context
+  without changing its synthesis graph or persisted factory values.
 
 ## Repository State
 

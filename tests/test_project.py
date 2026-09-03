@@ -151,7 +151,7 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
             self.assertIn(f"{profile}_backfire_v2_beap~", host_text)
             runtime = self.load_json(f"VehicleSoundSynth-{profile.upper()}.maxpat")["patcher"]
             runtime_text = "\n".join(item["box"].get("text", "") for item in runtime["boxes"])
-            for token in ("Backfire Solo / Test Pop", "prepend backfire_solo", "backfire_test 1"):
+            for token in ("Backfire / 回火", "prepend backfire_solo", "backfire_test 1"):
                 self.assertIn(token, runtime_text)
             engine = self.load_json(f"patchers/vehicle_engine_{profile}~.maxpat")["patcher"]
             engine_text = "\n".join(item["box"].get("text", "") for item in engine["boxes"])
@@ -530,13 +530,15 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
             self.assertIn(f"{profile}_cinematic_soundscape_host~", engine_text)
             runtime = self.load_json(f"VehicleSoundSynth-{profile.upper()}.maxpat")["patcher"]
             self.assertTrue(any(
-                item["box"].get("name") == "Patcher:/patchers/soundscape_control.maxpat"
+                item["box"].get("name")
+                == f"Patcher:/patchers/profile_runtime_host_{profile}.maxpat"
                 for item in runtime["boxes"]
             ))
-            self.assertTrue(any(
-                item["box"].get("name") == "Patcher:/patchers/module_mixer.maxpat"
-                for item in runtime["boxes"]
+            runtime_host = json.dumps(self.load_json(
+                f"patchers/profile_runtime_host_{profile}.maxpat"
             ))
+            self.assertIn(f"module_mixer {profile}", runtime_host)
+            self.assertIn(f"vehicle_engine_{profile}~", runtime_host)
 
     def test_v5_vehicle_bus_eq_has_profile_local_persistent_state(self):
         self.assertTrue((ROOT / "presets" / "local" / ".gitkeep").is_file())
@@ -696,10 +698,22 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
             ]
             subprocess.run(command, check=True, cwd=ROOT, capture_output=True, text=True)
             paths = [destination / "patchers" / "vehicle_bus_eq~.maxpat"]
-            paths.extend(destination / "patchers" / f"{p}_sound_dna~.maxpat" for p in ("ev", "v10", "v12"))
+            paths.extend(
+                destination / "patchers" / f"{profile}_sound_dna~.maxpat"
+                for profile in ("ev", "v10", "v12", "ioniq6n")
+            )
             for path in paths:
                 payload = json.loads(path.read_text())
                 payload["patcher"]["description"] = "user-tuning-must-survive"
+                if "sound_dna" in path.name:
+                    # A legacy/custom panel without the V6 help marker is still
+                    # seed-once user property and must never be auto-migrated.
+                    payload["patcher"]["boxes"] = [
+                        item for item in payload["patcher"]["boxes"]
+                        if not item["box"].get("text", "").startswith(
+                            "Audible / 可听:"
+                        )
+                    ]
                 path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
                 before = path.read_bytes()
                 subprocess.run(command, check=True, cwd=ROOT, capture_output=True, text=True)
@@ -785,12 +799,15 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
                 )
 
     def test_runtime_open_sound_dna_targets_the_audible_instance(self):
-        for profile in ("ev", "v10", "v12"):
-            runtime = json.dumps(self.load_json(f"VehicleSoundSynth-{profile.upper()}.maxpat"))
+        design_console = json.dumps(self.load_json("patchers/sound_design_console.maxpat"))
+        self.assertIn("dna_open", design_console)
+        for profile in ("ev", "v10", "v12", "ioniq6n"):
+            runtime_host = json.dumps(self.load_json(
+                f"patchers/profile_runtime_host_{profile}.maxpat"
+            ))
+            self.assertIn(f"s open.{profile}.sound_dna", runtime_host)
             dna = json.dumps(self.load_json(f"patchers/{profile}_sound_dna~.maxpat"))
             address = f"open.{profile}.sound_dna"
-            self.assertIn(f"s {address}", runtime)
-            self.assertNotIn(f"loadunique Patcher:/patchers/{profile}_sound_dna~.maxpat", runtime)
             self.assertIn(f"r {address}", dna)
             self.assertIn('"text": "front"', dna)
             self.assertIn('"text": "thispatcher"', dna)
@@ -805,14 +822,14 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
             self.assertIn('"text": "thispatcher"', core)
             self.assertIn('"text": "Save Graph Layout"', core)
             self.assertNotIn("r open.cinematic_soundscape", core)
-            runtime = json.dumps(
-                self.load_json(f"VehicleSoundSynth-{profile.upper()}.maxpat")
+            design_console = json.dumps(
+                self.load_json("patchers/sound_design_console.maxpat")
             )
-            self.assertIn("Patcher:/patchers/soundscape_control.maxpat", runtime)
-            self.assertNotIn("s open.cinematic_soundscape", runtime)
+            self.assertIn("Patcher:/patchers/soundscape_control.maxpat", design_console)
+            self.assertNotIn("s open.cinematic_soundscape", design_console)
             self.assertNotIn(
                 "loadunique Patcher:/patchers/cinematic_soundscape_v3_beap~.maxpat",
-                runtime,
+                design_console,
             )
             host = json.dumps(
                 self.load_json(
@@ -890,7 +907,7 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
         lines = [item["patchline"] for item in launcher["lines"]]
         control_id = next(
             box_id for box_id, box in boxes.items()
-            if box.get("name") == "Patcher:/patchers/soundscape_control.maxpat"
+            if box.get("name") == "Patcher:/patchers/runtime_console.maxpat"
         )
         selection_map = next(
             box_id for box_id, box in boxes.items()
@@ -914,13 +931,13 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
         feedback_buses = {
             profile: next(
                 box_id for box_id, box in boxes.items()
-                if box.get("text") == f"r vss.soundscape.feedback.{profile}"
+                if box.get("text") == f"r vss.runtime.feedback.{profile}"
             )
             for profile in ("ev", "v10", "v12", "ioniq6n")
         }
         texts = {box.get("text") for box in boxes.values()}
         self.assertNotIn("s vss.runtime.control", texts)
-        self.assertNotIn("r vss.soundscape.feedback", texts)
+        self.assertNotIn("r vss.runtime.feedback", texts)
         self.assertIn(
             ((control_id, 0), (command_gate, 1)),
             {(tuple(line["source"]), tuple(line["destination"])) for line in lines},
@@ -954,37 +971,17 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
             "Profile selection must also drive the Main control/feedback selector",
         )
 
-        for profile in ("ev", "v10", "v12"):
-            runtime = self.load_json(
-                f"VehicleSoundSynth-{profile.upper()}.maxpat"
-            )["patcher"]
-            runtime_boxes = {
-                item["box"]["id"]: item["box"] for item in runtime["boxes"]
-            }
-            runtime_lines = [item["patchline"] for item in runtime["lines"]]
-            engine_id = next(
-                box_id for box_id, box in runtime_boxes.items()
-                if box.get("name", "").endswith(
-                    f"/patchers/vehicle_engine_{profile}~.maxpat"
-                )
-            )
-            command_receive = next(
-                box_id for box_id, box in runtime_boxes.items()
-                if box.get("text") == f"r vss.runtime.control.{profile}"
-            )
-            feedback_send = next(
-                box_id for box_id, box in runtime_boxes.items()
-                if box.get("text") == f"s vss.soundscape.feedback.{profile}"
-            )
-            runtime_texts = {box.get("text") for box in runtime_boxes.values()}
-            self.assertNotIn("r vss.runtime.control", runtime_texts)
-            self.assertNotIn("s vss.soundscape.feedback", runtime_texts)
-            cords = {
-                (tuple(line["source"]), tuple(line["destination"]))
-                for line in runtime_lines
-            }
-            self.assertIn(((command_receive, 0), (engine_id, 0)), cords)
-            self.assertIn(((engine_id, 2), (feedback_send, 0)), cords)
+        for profile in ("ev", "v10", "v12", "ioniq6n"):
+            runtime_host = json.dumps(self.load_json(
+                f"patchers/profile_runtime_host_{profile}.maxpat"
+            ))
+            for token in (
+                f"r vss.runtime.control.{profile}",
+                f"s vss.runtime.feedback.{profile}",
+                f"s vss.soundscape.feedback.{profile}",
+                f"vehicle_engine_{profile}~",
+            ):
+                self.assertIn(token, runtime_host)
 
     def test_soundscape_live_instance_owns_profile_local_parameter_state(self):
         project = self.load_json("VehicleSoundSynth-V6.maxproj")["contents"]
@@ -1166,16 +1163,22 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
                     for item in host["boxes"]
                 ))
 
-            runtime = self.load_json(
+            runtime = json.dumps(self.load_json(
                 f"VehicleSoundSynth-{profile.upper()}.maxpat"
-            )["patcher"]
-            control_box = next(
-                item["box"] for item in runtime["boxes"]
-                if item["box"].get("name")
-                == "Patcher:/patchers/soundscape_control.maxpat"
+            ))
+            self.assertIn(
+                f"Patcher:/patchers/profile_runtime_host_{profile}.maxpat",
+                runtime,
             )
-            self.assertEqual([profile], control_box.get("args"))
-            self.assertNotIn("s open.cinematic_soundscape", json.dumps(runtime))
+            self.assertNotIn("s open.cinematic_soundscape", runtime)
+
+        design = self.load_json("patchers/sound_design_console.maxpat")["patcher"]
+        control_box = next(
+            item["box"] for item in design["boxes"]
+            if item["box"].get("name")
+            == "Patcher:/patchers/soundscape_control.maxpat"
+        )
+        self.assertEqual(["main"], control_box.get("args"))
 
     def test_soundscape_solo_feedback_keeps_main_and_runtime_views_consistent(self):
         control_text = "\n".join(
@@ -1223,13 +1226,12 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
             self.assertIn(((feedback, 0), (state_out, 0)), cords)
 
     def test_dna_solo_isolates_the_audible_powertrain_from_every_other_stem(self):
+        design_text = json.dumps(
+            self.load_json("patchers/sound_design_console.maxpat")
+        )
+        self.assertIn("Solo /", design_text)
+        self.assertIn("prepend dna_solo", design_text)
         for profile in ("ev", "v10", "v12"):
-            runtime_text = json.dumps(
-                self.load_json(f"VehicleSoundSynth-{profile.upper()}.maxpat")
-            )
-            self.assertIn("Sound DNA Solo", runtime_text)
-            self.assertIn("prepend dna_solo", runtime_text)
-
             engine = self.load_json(f"patchers/vehicle_engine_{profile}~.maxpat")["patcher"]
             text = "\n".join(item["box"].get("text", "") for item in engine["boxes"])
             self.assertIn(
@@ -1959,12 +1961,16 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
             )
             self.assertNotIn("engine_type", text)
             profile = name.removeprefix("VehicleSoundSynth-").removesuffix(".maxpat").lower()
-            self.assertIn(f"drive_simulator_{profile}", text)
-            self.assertIn(f"vehicle_engine_{profile}~", text)
-            self.assertIn("manual_input", text)
-            self.assertIn(f"patchers/drive_simulator_{profile}", text)
-            self.assertIn(f"patchers/vehicle_engine_{profile}~", text)
-            self.assertIn("patchers/manual_input", text)
+            self.assertIn(
+                f"Patcher:/patchers/profile_runtime_host_{profile}.maxpat", text
+            )
+            host = json.dumps(self.load_json(
+                f"patchers/profile_runtime_host_{profile}.maxpat"
+            ))
+            self.assertIn(f"drive_simulator_{profile}", host)
+            self.assertIn(f"vehicle_engine_{profile}~", host)
+            drive_console = json.dumps(self.load_json("patchers/drive_console.maxpat"))
+            self.assertIn("patchers/manual_input", drive_console)
 
         launcher = self.load_json("main.maxpat")["patcher"]
         launcher_text = "\n".join(
@@ -1984,7 +1990,7 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
             )
             self.assertIn("r vss.runtime.select", runtime_text)
             self.assertIn(f"sel {profile}", runtime_text)
-            self.assertIn("save_profile_sound", runtime_text)
+            self.assertIn("save_profile_sound", host)
             self.assertNotIn("write", runtime_text)
             self.assertIn("wclose", runtime_text)
             self.assertIn("thispatcher", runtime_text)
@@ -1995,8 +2001,11 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
         self.assertIn(runtime, project["patchers"])
 
         runtime_text = json.dumps(self.load_json(runtime))
-        self.assertIn("drive_simulator_ioniq6n", runtime_text)
-        self.assertIn("vehicle_engine_ioniq6n~", runtime_text)
+        self.assertIn(
+            "Patcher:/patchers/profile_runtime_host_ioniq6n.maxpat",
+            runtime_text,
+        )
+        self.assertNotIn('"args": ["ioniq6n", 650.0]', runtime_text)
         self.assertIn("r vss.runtime.select", runtime_text)
         self.assertNotIn("engine_type", runtime_text)
 
@@ -2006,11 +2015,11 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
         self.assertIn("gate 4", launcher_text)
         self.assertIn("switch 4", launcher_text)
 
-    def test_existing_drive_profile_traces_remain_byte_stable(self):
+    def test_v6_sporty_drive_profile_traces_remain_byte_stable(self):
         expected = {
-            "ev": "ce5bab2d9635c1c4393ff7daa7973d8b1aa2a60160eb07114e26eac363690126",
-            "v10": "1a27c233017370da23c3b5a8a655a7d8e15285737ceb80ae4a11e1ca781a9aa9",
-            "v12": "2aaff823ee38abf26d1eaec609562b8f067a5f9c9b886c10ebf13661bb6e2f2c",
+            "ev": "6663b07a5ec10daff9f4b313039a3cb9d789d6c21725efd3cfeb05914c2ffa60",
+            "v10": "6895ca2cb258f44e6f3bc857607eae08e969dfbbc561bef96c65ae7b9a8913f9",
+            "v12": "8eff31724085a971cb1556c9117af4ea8016bf0e4cab6c123e6b7645e287d6f5",
         }
         for profile, digest in expected.items():
             trace = json.dumps(
@@ -2063,9 +2072,10 @@ process.stdout.write(JSON.stringify({defaultState: defaultModel.snapshot(), on: 
         for control in (
             "motor_order", "body_pressure", "cavity_structure",
             "mechanical_texture", "hf_edge", "load_depth", "release_mass",
-            "ready_bed", "stereo_width", "saturation", "powertrain_level_db",
+            "ready_bed", "stereo_width", "saturation",
         ):
             self.assertIn(control, dna_text)
+        self.assertNotIn("dna_powertrain_level_db", dna_text)
         for module in (
             "DNA_Body_Modal", "DNA_Cavity", "DNA_Mechanical",
             "DNA_HF_Ceiling", "DNA_Layer_Mixer", "DNA_Output_VCA",
@@ -2184,10 +2194,13 @@ process.stdout.write(JSON.stringify({defaultState: defaultModel.snapshot(), on: 
             self.assertIn("engine_running 1", text)
 
     def test_ioniq6n_reuses_verified_manual_inputs_and_keeps_soundscape_lifecycle_gated(self):
-        runtime = json.dumps(self.load_json("VehicleSoundSynth-IONIQ6N.maxpat"))
-        self.assertIn("Patcher:/patchers/manual_input.maxpat", runtime)
-        self.assertIn("Patcher:/patchers/drive_simulator_ioniq6n.maxpat", runtime)
-        self.assertIn("switch 2", runtime)
+        drive_console = json.dumps(self.load_json("patchers/drive_console.maxpat"))
+        runtime_host = json.dumps(self.load_json(
+            "patchers/profile_runtime_host_ioniq6n.maxpat"
+        ))
+        self.assertIn("Patcher:/patchers/manual_input.maxpat", drive_console)
+        self.assertIn("drive_simulator_ioniq6n", runtime_host)
+        self.assertIn("switch 2", runtime_host)
 
         controller = json.dumps(
             self.load_json("patchers/engine_controller_ioniq6n.maxpat")
@@ -2495,9 +2508,11 @@ process.stdout.write(JSON.stringify({defaultState: defaultModel.snapshot(), on: 
             self.assertIn("delay 5", text)
             for command in ("start_open", "start_save", "start_reload", "start_reset", "start_audition"):
                 self.assertIn(command, text)
-            runtime = json.dumps(self.load_json(f"VehicleSoundSynth-{profile.upper()}.maxpat"))
-            self.assertIn("Open Start Designer", runtime)
-            self.assertIn("Audition Start", runtime)
+            design_console = json.dumps(
+                self.load_json("patchers/sound_design_console.maxpat")
+            )
+            self.assertIn("Open Start /", design_console)
+            self.assertIn("Audition Start /", design_console)
             if profile == "ev":
                 self.assertNotIn("play~ starter_", text)
             else:
@@ -2724,12 +2739,15 @@ process.stdout.write(JSON.stringify({defaultState: defaultModel.snapshot(), on: 
             main = self.load_json(f"VehicleSoundSynth-{profile.upper()}.maxpat")["patcher"]
             self.assertTrue(
                 any(
-                    item["box"].get("name", "").endswith(
-                        f"/patchers/vehicle_engine_{profile}~.maxpat"
-                    )
+                    item["box"].get("name")
+                    == f"Patcher:/patchers/profile_runtime_host_{profile}.maxpat"
                     for item in main["boxes"]
                 )
             )
+        runtime_host = json.dumps(self.load_json(
+            "patchers/profile_runtime_host_ev.maxpat"
+        ))
+        self.assertIn("vehicle_engine_ev~", runtime_host)
 
     def test_v4_combustion_models_use_phase_stable_stereo_orders(self):
         for name, bank_events in (("v12_powertrain", "3"), ("v10_powertrain", "2.5")):
@@ -3490,87 +3508,45 @@ process.stdout.write(JSON.stringify({defaultState: defaultModel.snapshot(), on: 
         )
 
     def test_demo_starts_muted(self):
-        for name in ("EV", "V10", "V12"):
-            main = self.load_json(f"VehicleSoundSynth-{name}.maxpat")
-            boxes = {item["box"]["id"]: item["box"] for item in main["patcher"]["boxes"]}
-            text = "\n".join(box.get("text", "") for box in boxes.values())
-            self.assertIn("Audio starts OFF", text)
-            cords = {
-                (line["patchline"]["source"][0], line["patchline"]["destination"][0])
-                for line in main["patcher"]["lines"]
-            }
-            toggles = {box["id"] for box in boxes.values() if box["maxclass"] == "toggle"}
-            loads = {box["id"] for box in boxes.values() if box.get("text") == "loadmess 0"}
-            self.assertTrue(any((load, toggle) in cords for load in loads for toggle in toggles))
-            self.assertTrue(
-                any(
-                    box.get("text") == "ezdac~" or box.get("maxclass") == "ezdac~"
-                    for box in boxes.values()
-                )
-            )
+        drive = self.load_json("patchers/drive_console.maxpat")["patcher"]
+        drive_boxes = {item["box"]["id"]: item["box"] for item in drive["boxes"]}
+        drive_cords = {
+            (line["patchline"]["source"][0], line["patchline"]["destination"][0])
+            for line in drive["lines"]
+        }
+        audio_toggle = next(
+            box["id"] for box in drive_boxes.values()
+            if box.get("maxclass") == "toggle"
+            and box.get("presentation_rect") == [20.0, 44.0, 24.0, 24.0]
+        )
+        audio_default = next(
+            box["id"] for box in drive_boxes.values()
+            if box.get("text") == "loadmess 0"
+            and (box["id"], audio_toggle) in drive_cords
+        )
+        self.assertIn((audio_default, audio_toggle), drive_cords)
+        host = json.dumps(self.load_json("patchers/profile_runtime_host_ev.maxpat"))
+        self.assertIn("loadmess 0", host)
+        self.assertIn("ezdac~", host)
 
     def test_profile_runtime_has_one_step_audio_enable_and_unified_manual_input(self):
-        for name in ("EV", "V10", "V12"):
-            main = self.load_json(f"VehicleSoundSynth-{name}.maxpat")["patcher"]
-            boxes = {item["box"]["id"]: item["box"] for item in main["boxes"]}
-            lines = [item["patchline"] for item in main["lines"]]
-
-            dac_id = next(
-                box_id
-                for box_id, box in boxes.items()
-                if box.get("text") == "ezdac~" or box.get("maxclass") == "ezdac~"
-            )
-            audio_pack_id = next(
-                box_id
-                for box_id, box in boxes.items()
-                if box.get("text") == "pack 0. 60"
-            )
-            audio_toggle_id = next(
-                line["source"][0]
-                for line in lines
-                if line["destination"] == [audio_pack_id, 0]
-                and boxes[line["source"][0]].get("maxclass") == "toggle"
-            )
-            self.assertTrue(
-                any(
-                    line["source"][0] == audio_toggle_id
-                    and line["destination"] == [dac_id, 0]
-                    for line in lines
-                ),
-                f"{name} Audio toggle must enable both the output ramp and DSP",
-            )
-
-            manual_input_id = next(
-                box_id
-                for box_id, box in boxes.items()
-                if box.get("name", "").endswith("/patchers/manual_input.maxpat")
-            )
-            throttle_number_id = next(
-                box_id
-                for box_id, box in boxes.items()
-                if box.get("maxclass") == "flonum"
-                and box.get("patching_rect", [None])[0] == 25
-            )
-            brake_number_id = next(
-                box_id
-                for box_id, box in boxes.items()
-                if box.get("maxclass") == "flonum"
-                and box.get("patching_rect", [None])[0] == 175
-            )
-            self.assertTrue(
-                any(
-                    line["source"] == [manual_input_id, 0]
-                    and line["destination"] == [throttle_number_id, 0]
-                    for line in lines
-                )
-            )
-            self.assertTrue(
-                any(
-                    line["source"] == [manual_input_id, 1]
-                    and line["destination"] == [brake_number_id, 0]
-                    for line in lines
-                )
-            )
+        drive_console = json.dumps(self.load_json("patchers/drive_console.maxpat"))
+        self.assertIn("Patcher:/patchers/manual_input.maxpat", drive_console)
+        self.assertIn("prepend throttle", drive_console)
+        self.assertIn("prepend brake", drive_console)
+        host = self.load_json("patchers/profile_runtime_host_ev.maxpat")["patcher"]
+        boxes = {item["box"]["id"]: item["box"] for item in host["boxes"]}
+        lines = [item["patchline"] for item in host["lines"]]
+        dac_id = next(
+            box_id for box_id, box in boxes.items() if box.get("text") == "ezdac~"
+        )
+        audio_order = next(
+            box_id for box_id, box in boxes.items() if box.get("text") == "t i i i"
+        )
+        self.assertTrue(any(
+            line["source"] == [audio_order, 0] and line["destination"] == [dac_id, 0]
+            for line in lines
+        ))
 
         keyboard = self.load_json("patchers/keyboard_drive_ws.maxpat")["patcher"]
         keyboard_text = "\n".join(
@@ -3857,17 +3833,20 @@ process.stdout.write(JSON.stringify({defaultState: defaultModel.snapshot(), on: 
             self.assertTrue((ROOT / relative_path).is_file(), relative_path)
 
     def test_demo_ui_and_engine_deep_modules_cover_the_mvp(self):
+        drive_console = self.load_json("patchers/drive_console.maxpat")["patcher"]
+        drive_items = [
+            item for box in (entry["box"] for entry in drive_console["boxes"])
+            for item in box.get("items", [])
+        ]
+        self.assertIn("Internal Manual / 手动", drive_items)
+        self.assertIn("Internal Auto / 自动", drive_items)
+        self.assertIn("External / 外部", drive_items)
+        host_text = json.dumps(self.load_json(
+            "patchers/profile_runtime_host_ev.maxpat"
+        ))
+        self.assertIn("meter~", host_text)
+        self.assertIn("spectroscope~", host_text)
         for profile, label in (("ev", "EV"), ("v10", "V10"), ("v12", "V12")):
-            main = self.load_json(f"VehicleSoundSynth-{label}.maxpat")
-            main_text = "\n".join(item["box"].get("text", "") for item in main["patcher"]["boxes"])
-            main_boxes = [item["box"] for item in main["patcher"]["boxes"]]
-            menu_items = [item for box in main_boxes for item in box.get("items", [])]
-            self.assertIn("Internal Manual", menu_items)
-            self.assertIn("Internal Auto", menu_items)
-            self.assertIn(f"External vss.{profile}.input", menu_items)
-            self.assertEqual(2, sum(box["maxclass"] == "meter~" for box in main_boxes))
-            self.assertEqual(2, main_text.count("spectroscope~"))
-
             engine = self.load_json(f"patchers/vehicle_engine_{profile}~.maxpat")
             engine_text = "\n".join(item["box"].get("text", "") for item in engine["patcher"]["boxes"])
             for abstraction in (
@@ -3898,19 +3877,19 @@ process.stdout.write(JSON.stringify({defaultState: defaultModel.snapshot(), on: 
         self.assertNotIn("pow($f1/300., 0.7) * 0.12", text)
 
     def test_demo_opens_with_visible_controls_and_internal_source_selected(self):
-        for name in ("EV", "V10", "V12"):
-            patcher = self.load_json(f"VehicleSoundSynth-{name}.maxpat")["patcher"]
-            boxes = {item["box"]["id"]: item["box"] for item in patcher["boxes"]}
-            mode = next(
-                box for box in boxes.values()
-                if box["maxclass"] == "umenu" and "Internal Manual" in box.get("items", [])
-            )
-            incoming = [
-                line["patchline"]["source"][0]
-                for line in patcher["lines"]
-                if line["patchline"]["destination"][0] == mode["id"]
-            ]
-            self.assertTrue(any(boxes[source].get("text") == "loadmess 0" for source in incoming))
+        patcher = self.load_json("patchers/drive_console.maxpat")["patcher"]
+        boxes = {item["box"]["id"]: item["box"] for item in patcher["boxes"]}
+        mode = next(
+            box for box in boxes.values()
+            if box["maxclass"] == "umenu"
+            and "Internal Manual / 手动" in box.get("items", [])
+        )
+        incoming = [
+            line["patchline"]["source"][0]
+            for line in patcher["lines"]
+            if line["patchline"]["destination"][0] == mode["id"]
+        ]
+        self.assertTrue(any(boxes[source].get("text") == "loadmess 0" for source in incoming))
 
     def test_manual_mode_keyboard_has_immediate_binary_pedal_messages(self):
         keyboard = self.load_json("patchers/keyboard_drive_ws.maxpat")["patcher"]
@@ -3918,11 +3897,11 @@ process.stdout.write(JSON.stringify({defaultState: defaultModel.snapshot(), on: 
             item["box"].get("text", "") for item in keyboard["boxes"]
         )
         for token in (
-            "key", "keyup", "1.", "0.", "0.65",
+            "key", "keyup", "1.", "0.", "0.85",
             "t b b", "set 0", "0.",
         ):
             self.assertIn(token, keyboard_text)
-        for removed in ("1. 1800", "0. 900", "0.65 280", "0. 240"):
+        for removed in ("1. 1800", "0. 900", "0.85 280", "0. 240"):
             self.assertNotIn(removed, keyboard_text)
         boxes = {item["box"]["id"]: item["box"] for item in keyboard["boxes"]}
         edges = {
@@ -4007,32 +3986,29 @@ process.stdout.write(JSON.stringify({defaultState: defaultModel.snapshot(), on: 
         )
         self.assertEqual(241, master_slider.get("size"))
 
-        for profile in ("ev", "v10", "v12"):
-            runtime = self.load_json(
-                f"VehicleSoundSynth-{profile.upper()}.maxpat"
-            )["patcher"]
-            boxes = {item["box"]["id"]: item["box"] for item in runtime["boxes"]}
-            mixer_box = next(
-                box for box in boxes.values()
-                if box.get("name") == "Patcher:/patchers/module_mixer.maxpat"
+        runtime_host = self.load_json(
+            "patchers/profile_runtime_host_ioniq6n.maxpat"
+        )["patcher"]
+        host_boxes = {item["box"]["id"]: item["box"] for item in runtime_host["boxes"]}
+        mixer_box = next(
+            box for box in host_boxes.values()
+            if box.get("text") == "module_mixer ioniq6n"
+        )
+        engine_box = next(
+            box for box in host_boxes.values()
+            if box.get("text") == "vehicle_engine_ioniq6n~"
+        )
+        host_edges = {
+            (
+                line["patchline"]["source"][0], line["patchline"]["source"][1],
+                line["patchline"]["destination"][0], line["patchline"]["destination"][1],
             )
-            self.assertEqual([profile], mixer_box.get("args"))
-            engine_box = next(
-                box for box in boxes.values()
-                if box.get("name", "").endswith(
-                    f"/patchers/vehicle_engine_{profile}~.maxpat"
-                )
-            )
-            edges = {
-                (
-                    line["patchline"]["source"][0],
-                    line["patchline"]["source"][1],
-                    line["patchline"]["destination"][0],
-                    line["patchline"]["destination"][1],
-                )
-                for line in runtime["lines"]
-            }
-            self.assertIn((mixer_box["id"], 0, engine_box["id"], 0), edges)
+            for line in runtime_host["lines"]
+        }
+        self.assertIn((mixer_box["id"], 0, engine_box["id"], 0), host_edges)
+        self.assertIn("sel ev v10 v12 ioniq6n", mixer_text)
+
+        for profile in ("ev", "v10", "v12", "ioniq6n"):
             transient = self.load_json(
                 f"patchers/transient_{profile}~.maxpat"
             )["patcher"]
@@ -4047,13 +4023,17 @@ process.stdout.write(JSON.stringify({defaultState: defaultModel.snapshot(), on: 
             "route save_profile_sound reload_profile_sound reset_profile_sound",
             mixer,
         )
-        for profile in ("ev", "v10", "v12"):
-            runtime = json.dumps(
-                self.load_json(f"VehicleSoundSynth-{profile.upper()}.maxpat")
-            )
-            self.assertIn("Save Profile Sound", runtime)
-            self.assertIn("Reload Profile Sound", runtime)
-            self.assertNotIn('"text": "write"', runtime)
+        mix_console = json.dumps(self.load_json("patchers/mix_eq_console.maxpat"))
+        self.assertIn("Save Profile /", mix_console)
+        self.assertIn("Reload /", mix_console)
+        runtime_host = json.dumps(self.load_json(
+            "patchers/profile_runtime_host_ev.maxpat"
+        ))
+        for command in (
+            "save_profile_sound", "reload_profile_sound", "reset_profile_sound",
+        ):
+            self.assertIn(command, runtime_host)
+        for profile in ("ev", "v10", "v12", "ioniq6n"):
             engine = json.dumps(
                 self.load_json(f"patchers/vehicle_engine_{profile}~.maxpat")
             )
@@ -5404,6 +5384,215 @@ process.stdout.write(JSON.stringify({defaultState: defaultModel.snapshot(), on: 
         self.assertIn("_pop_v2.json", (
             ROOT / "code" / "pop_v2_state_path.js"
         ).read_text(encoding="utf-8"))
+
+    def test_v6_main_owns_common_controls_and_profiles_share_one_host_topology(self):
+        project = self.load_json("VehicleSoundSynth-V6.maxproj")["contents"]
+        console_paths = (
+            "patchers/runtime_console.maxpat",
+            "patchers/drive_console.maxpat",
+            "patchers/mix_eq_console.maxpat",
+            "patchers/sound_design_console.maxpat",
+        )
+        host_paths = tuple(
+            f"patchers/profile_runtime_host_{profile}.maxpat"
+            for profile in ("ev", "v10", "v12", "ioniq6n")
+        )
+        for path in (*console_paths, *host_paths):
+            self.assertIn(path, project["patchers"])
+
+        launcher = json.dumps(self.load_json("main.maxpat"))
+        self.assertIn("Patcher:/patchers/runtime_console.maxpat", launcher)
+        self.assertNotIn('"maxclass": "ezdac~"', launcher)
+
+        console = "\n".join(
+            json.dumps(self.load_json(path), ensure_ascii=False)
+            for path in console_paths
+        )
+        for token in (
+            "Drive / 驾驶", "Mix + EQ / 混音与均衡", "Sound Design / 声音设计",
+            "audio_enable", "ignition 1", "drive_source",
+            "Patcher:/patchers/manual_input.maxpat", "powertrain_level_db",
+            "eq_low", "compressor_threshold_db", "Open Sound DNA / 打开 DNA",
+        ):
+            self.assertIn(token, console)
+
+        normalized_hosts = []
+        idle_rpms = {"ev": 650.0, "v10": 740.0, "v12": 780.0, "ioniq6n": 650.0}
+        for profile, path in zip(("ev", "v10", "v12", "ioniq6n"), host_paths):
+            host = json.dumps(self.load_json(path))
+            for token in (
+                f"drive_simulator_{profile}", f"vehicle_engine_{profile}~",
+                f"module_mixer {profile}", f"r vss.{profile}.input",
+                f"r vss.runtime.control.{profile}",
+                f"s vss.runtime.feedback.{profile}",
+                "audio_enable", "drive_source", "ezdac~",
+            ):
+                self.assertIn(token, host)
+            normalized = self.load_json(path)
+            for item in normalized["patcher"]["boxes"]:
+                box = item["box"]
+                for key in ("text", "name", "varname"):
+                    value = box.get(key)
+                    if not isinstance(value, str):
+                        continue
+                    value = value.replace(profile.upper(), "<PROFILE>")
+                    for prefix in ("_", ".", " "):
+                        value = value.replace(
+                            f"{prefix}{profile}", f"{prefix}<profile>"
+                        )
+                    value = value.replace(
+                        f"rpm {idle_rpms[profile]}", "rpm <idle_rpm>"
+                    )
+                    box[key] = value
+            normalized_hosts.append(json.dumps(normalized, sort_keys=True))
+        self.assertEqual(1, len(set(normalized_hosts)))
+
+        forbidden_runtime_tokens = (
+            "Audio + Output", "Drive source", "Master compressor",
+            "Patcher:/patchers/manual_input.maxpat",
+            "Patcher:/patchers/module_mixer.maxpat", "ezdac~",
+        )
+        for profile, runtime_name in (
+            ("ev", "VehicleSoundSynth-EV.maxpat"),
+            ("v10", "VehicleSoundSynth-V10.maxpat"),
+            ("v12", "VehicleSoundSynth-V12.maxpat"),
+            ("ioniq6n", "VehicleSoundSynth-IONIQ6N.maxpat"),
+        ):
+            runtime = json.dumps(self.load_json(runtime_name))
+            self.assertIn(
+                f"Patcher:/patchers/profile_runtime_host_{profile}.maxpat",
+                runtime,
+            )
+            for token in forbidden_runtime_tokens:
+                self.assertNotIn(token, runtime, (profile, token))
+
+    def test_v6_dna_controls_are_documented_routed_and_ioniq_has_one_gain_authority(self):
+        runtime_host = json.dumps(self.load_json(
+            "patchers/profile_runtime_host_ioniq6n.maxpat"
+        ))
+        self.assertIn("module_mixer ioniq6n", runtime_host)
+        mixer = self.load_json("patchers/module_mixer.maxpat")["patcher"]
+        mixer_boxes = {item["box"]["id"]: item["box"] for item in mixer["boxes"]}
+        mixer_lines = [item["patchline"] for item in mixer["lines"]]
+        control_route = next(
+            box_id for box_id, box in mixer_boxes.items()
+            if box.get("text", "").startswith(
+                "route save_profile_sound reload_profile_sound reset_profile_sound powertrain_level_db"
+            )
+        )
+        external_mix_routes = {
+            line["source"][1]
+            for line in mixer_lines
+            if line["source"][0] == control_route
+            and mixer_boxes[line["destination"][0]].get("text", "").startswith("expr ($f1-")
+        }
+        self.assertEqual(set(range(3, 10)), external_mix_routes)
+        self.assertIn(
+            "sel ev v10 v12 ioniq6n",
+            "\n".join(box.get("text", "") for box in mixer_boxes.values()),
+        )
+
+        for profile in ("ev", "v10", "v12", "ioniq6n"):
+            dna = self.load_json(f"patchers/{profile}_sound_dna~.maxpat")["patcher"]
+            boxes = [item["box"] for item in dna["boxes"]]
+            controls = {
+                box["varname"].removeprefix("dna_")
+                for box in boxes if box.get("varname", "").startswith("dna_")
+            }
+            text = "\n".join(box.get("text", "") for box in boxes)
+            self.assertEqual(len(controls), text.count("Audible / 可听:"), profile)
+            for name in controls:
+                self.assertIn(f"prepend {name}", text, (profile, name))
+            if profile == "ioniq6n":
+                self.assertNotIn("powertrain_level_db", controls)
+                self.assertNotIn("DNA Output Level dB / DNA 输出电平 [dB]", text)
+                route_box = next(
+                    box for box in boxes
+                    if box.get("text", "").startswith("route motor_order")
+                )
+                self.assertTrue(route_box["text"].endswith("stereo_width saturation"))
+                self.assertEqual(11, route_box["numoutlets"])
+                line_pairs = {
+                    (line["patchline"]["source"][0], line["patchline"]["source"][1],
+                     line["patchline"]["destination"][0])
+                    for line in dna["lines"]
+                }
+                powertrain_id = next(
+                    box["id"] for box in boxes
+                    if box.get("text") == "ioniq6n_powertrain~"
+                )
+                self.assertIn((route_box["id"], 10, powertrain_id), line_pairs)
+
+    def test_v6_main_eq_feedback_reads_active_profile_state(self):
+        project = self.load_json("VehicleSoundSynth-V6.maxproj")["contents"]
+        self.assertIn("code/eq_feedback_reader.js", project["code"])
+        console_text = "\n".join(
+            item["box"].get("text", "")
+            for item in self.load_json("patchers/mix_eq_console.maxpat")["patcher"]["boxes"]
+        )
+        self.assertIn("route eq_low eq_lowmid eq_highmid eq_high eq_bypass", console_text)
+        self.assertIn("route compressor_threshold_db compressor_ratio", console_text)
+        for profile in ("ev", "v10", "v12", "ioniq6n"):
+            host_text = json.dumps(self.load_json(
+                f"patchers/profile_runtime_host_{profile}.maxpat"
+            ))
+            self.assertIn(
+                f"js Patcher:/code/eq_feedback_reader.js {profile}", host_text
+            )
+            self.assertIn("delay 260", host_text)
+            self.assertNotIn("delay 100", host_text)
+            self.assertNotIn("delay 220", host_text)
+
+            host = self.load_json(
+                f"patchers/profile_runtime_host_{profile}.maxpat"
+            )["patcher"]
+            boxes = {item["box"]["id"]: item["box"] for item in host["boxes"]}
+            lines = {
+                (line["patchline"]["source"][0], line["patchline"]["destination"][0])
+                for line in host["lines"]
+            }
+            compressor_defaults = next(
+                box_id for box_id, box in boxes.items()
+                if box.get("text", "").startswith("compressor_threshold_db -12.")
+            )
+            engine = next(
+                box_id for box_id, box in boxes.items()
+                if box.get("text") == f"vehicle_engine_{profile}~"
+            )
+            feedback = next(
+                box_id for box_id, box in boxes.items()
+                if box.get("text") == f"s vss.runtime.feedback.{profile}"
+            )
+            self.assertIn((compressor_defaults, engine), lines)
+            self.assertIn((compressor_defaults, feedback), lines)
+
+        script = r"""
+const reader = require(process.argv[1]);
+const payload = {pattrstorage:{slots:{"1":{data:{
+  vehicle_bus_eq_bypass:[1],
+  vehicle_bus_eq_graph:[
+    4,
+    0,6,1,0,0,100,0.5011872336272722,0.7,
+    1,5,1,0,0,300,1,1.2,
+    2,5,1,0,0,4200,1.9952623149688795,1.4,
+    3,7,1,0,0,11000,1,0.7
+  ]
+}}}}};
+process.stdout.write(JSON.stringify(reader.decodeEqState(payload)));
+"""
+        result = subprocess.run(
+            ["node", "-e", script, str(ROOT / "code" / "eq_feedback_reader.js")],
+            check=True, cwd=ROOT, capture_output=True, text=True,
+        )
+        state = json.loads(result.stdout)
+        self.assertEqual([100, -3.0], [state["eq_low"][0], round(state["eq_low"][1], 6)])
+        self.assertEqual([300, 0, 1.2], state["eq_lowmid"])
+        self.assertEqual([4200, 3.0, 1.4], [
+            state["eq_highmid"][0], round(state["eq_highmid"][1], 6),
+            state["eq_highmid"][2],
+        ])
+        self.assertEqual([11000, 0], state["eq_high"])
+        self.assertEqual([1], state["eq_bypass"])
 
 
 if __name__ == "__main__":

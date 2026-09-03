@@ -469,18 +469,18 @@
           "numoutlets": 0,
           "patching_rect": [
             35.0,
-            165.0,
-            220.0,
+            135.0,
+            285.0,
             20.0
           ],
           "presentation": 1,
           "presentation_rect": [
             35,
-            165,
-            220.0,
+            135,
+            285.0,
             20.0
           ],
-          "text": "Aggression"
+          "text": "Response / \u54cd\u5e94 \u00b7 Aggression / \u6fc0\u8fdb\u5ea6 [0..1]"
         }
       },
       {
@@ -497,14 +497,14 @@
           ],
           "patching_rect": [
             35.0,
-            190.0,
+            159.0,
             90.0,
             22.0
           ],
           "presentation": 1,
           "presentation_rect": [
             35,
-            190,
+            159,
             90.0,
             22.0
           ],
@@ -573,18 +573,18 @@
           "numoutlets": 0,
           "patching_rect": [
             335.0,
-            165.0,
-            220.0,
+            135.0,
+            285.0,
             20.0
           ],
           "presentation": 1,
           "presentation_rect": [
             335,
-            165,
-            220.0,
+            135,
+            285.0,
             20.0
           ],
-          "text": "Brightness"
+          "text": "Tone / \u97f3\u8272 \u00b7 Brightness / \u660e\u4eae\u5ea6 [0..1]"
         }
       },
       {
@@ -601,14 +601,14 @@
           ],
           "patching_rect": [
             335.0,
-            190.0,
+            159.0,
             90.0,
             22.0
           ],
           "presentation": 1,
           "presentation_rect": [
             335,
-            190,
+            159,
             90.0,
             22.0
           ],
@@ -677,18 +677,18 @@
           "numoutlets": 0,
           "patching_rect": [
             635.0,
-            165.0,
-            220.0,
+            135.0,
+            285.0,
             20.0
           ],
           "presentation": 1,
           "presentation_rect": [
             635,
-            165,
-            220.0,
+            135,
+            285.0,
             20.0
           ],
-          "text": "Body"
+          "text": "Body / \u4e3b\u4f53 \u00b7 Body / \u539a\u5ea6 [0..1]"
         }
       },
       {
@@ -705,14 +705,14 @@
           ],
           "patching_rect": [
             635.0,
-            190.0,
+            159.0,
             90.0,
             22.0
           ],
           "presentation": 1,
           "presentation_rect": [
             635,
-            190,
+            159,
             90.0,
             22.0
           ],
@@ -781,18 +781,18 @@
           "numoutlets": 0,
           "patching_rect": [
             935.0,
-            165.0,
-            220.0,
+            135.0,
+            285.0,
             20.0
           ],
           "presentation": 1,
           "presentation_rect": [
             935,
-            165,
-            220.0,
+            135,
+            285.0,
             20.0
           ],
-          "text": "Texture"
+          "text": "Structure / \u7ed3\u6784 \u00b7 Texture / \u7ed3\u6784\u7eb9\u7406 [0..1]"
         }
       },
       {
@@ -809,14 +809,14 @@
           ],
           "patching_rect": [
             935.0,
-            190.0,
+            159.0,
             90.0,
             22.0
           ],
           "presentation": 1,
           "presentation_rect": [
             935,
-            190,
+            159,
             90.0,
             22.0
           ],
@@ -885,18 +885,18 @@
           "numoutlets": 0,
           "patching_rect": [
             35.0,
-            290.0,
-            220.0,
+            245.0,
+            285.0,
             20.0
           ],
           "presentation": 1,
           "presentation_rect": [
             35,
-            290,
-            220.0,
+            245,
+            285.0,
             20.0
           ],
-          "text": "Air Detail"
+          "text": "Air / \u7a7a\u6c14 \u00b7 Air Detail / \u7a7a\u6c14\u7ec6\u8282 [0..1]"
         }
       },
       {
@@ -913,14 +913,14 @@
           ],
           "patching_rect": [
             35.0,
-            315.0,
+            269.0,
             90.0,
             22.0
           ],
           "presentation": 1,
           "presentation_rect": [
             35,
-            315,
+            269,
             90.0,
             22.0
           ],
@@ -989,18 +989,18 @@
           "numoutlets": 0,
           "patching_rect": [
             335.0,
-            290.0,
-            220.0,
+            245.0,
+            285.0,
             20.0
           ],
           "presentation": 1,
           "presentation_rect": [
             335,
-            290,
-            220.0,
+            245,
+            285.0,
             20.0
           ],
-          "text": "Cycle Irregularity"
+          "text": "Motion / \u5f8b\u52a8 \u00b7 Cycle Irregularity / \u5468\u671f\u4e0d\u89c4\u5219\u5ea6 [0..1]"
         }
       },
       {
@@ -1017,14 +1017,14 @@
           ],
           "patching_rect": [
             335.0,
-            315.0,
+            269.0,
             90.0,
             22.0
           ],
           "presentation": 1,
           "presentation_rect": [
             335,
-            315,
+            269,
             90.0,
             22.0
           ],
@@ -1093,18 +1093,18 @@
           "numoutlets": 0,
           "patching_rect": [
             635.0,
-            290.0,
-            220.0,
+            245.0,
+            285.0,
             20.0
           ],
           "presentation": 1,
           "presentation_rect": [
             635,
-            290,
-            220.0,
+            245,
+            285.0,
             20.0
           ],
-          "text": "Stereo / Bank Separation"
+          "text": "Space / \u7a7a\u95f4 \u00b7 Stereo / Bank Separation / \u7acb\u4f53\u58f0\u5bbd\u5ea6 [0..1]"
         }
       },
       {
@@ -1121,14 +1121,14 @@
           ],
           "patching_rect": [
             635.0,
-            315.0,
+            269.0,
             90.0,
             22.0
           ],
           "presentation": 1,
           "presentation_rect": [
             635,
-            315,
+            269,
             90.0,
             22.0
           ],
@@ -1197,18 +1197,18 @@
           "numoutlets": 0,
           "patching_rect": [
             935.0,
-            290.0,
-            220.0,
+            245.0,
+            285.0,
             20.0
           ],
           "presentation": 1,
           "presentation_rect": [
             935,
-            290,
-            220.0,
+            245,
+            285.0,
             20.0
           ],
-          "text": "Throttle Loudness Depth dB"
+          "text": "Response / \u54cd\u5e94 \u00b7 Throttle Loudness Depth dB / \u6cb9\u95e8\u54cd\u5ea6\u6df1\u5ea6 [dB]"
         }
       },
       {
@@ -1225,14 +1225,14 @@
           ],
           "patching_rect": [
             935.0,
-            315.0,
+            269.0,
             90.0,
             22.0
           ],
           "presentation": 1,
           "presentation_rect": [
             935,
-            315,
+            269,
             90.0,
             22.0
           ],
@@ -1301,18 +1301,18 @@
           "numoutlets": 0,
           "patching_rect": [
             35.0,
-            415.0,
-            220.0,
+            355.0,
+            285.0,
             20.0
           ],
           "presentation": 1,
           "presentation_rect": [
             35,
-            415,
-            220.0,
+            355,
+            285.0,
             20.0
           ],
-          "text": "Saturation"
+          "text": "Dynamics / \u52a8\u6001 \u00b7 Saturation / \u9971\u548c\u5ea6 [0..1]"
         }
       },
       {
@@ -1329,14 +1329,14 @@
           ],
           "patching_rect": [
             35.0,
-            440.0,
+            379.0,
             90.0,
             22.0
           ],
           "presentation": 1,
           "presentation_rect": [
             35,
-            440,
+            379,
             90.0,
             22.0
           ],
@@ -1405,18 +1405,18 @@
           "numoutlets": 0,
           "patching_rect": [
             335.0,
-            415.0,
-            220.0,
+            355.0,
+            285.0,
             20.0
           ],
           "presentation": 1,
           "presentation_rect": [
             335,
-            415,
-            220.0,
+            355,
+            285.0,
             20.0
           ],
-          "text": "Idle Level"
+          "text": "Idle / \u6020\u901f \u00b7 Idle Level / \u6020\u901f\u5c42\u7535\u5e73 [0..1]"
         }
       },
       {
@@ -1433,14 +1433,14 @@
           ],
           "patching_rect": [
             335.0,
-            440.0,
+            379.0,
             90.0,
             22.0
           ],
           "presentation": 1,
           "presentation_rect": [
             335,
-            440,
+            379,
             90.0,
             22.0
           ],
@@ -1509,18 +1509,18 @@
           "numoutlets": 0,
           "patching_rect": [
             635.0,
-            415.0,
-            220.0,
+            355.0,
+            285.0,
             20.0
           ],
           "presentation": 1,
           "presentation_rect": [
             635,
-            415,
-            220.0,
+            355,
+            285.0,
             20.0
           ],
-          "text": "Idle Body"
+          "text": "Idle / \u6020\u901f \u00b7 Idle Body / \u6020\u901f\u4e3b\u4f53 [0..1]"
         }
       },
       {
@@ -1537,14 +1537,14 @@
           ],
           "patching_rect": [
             635.0,
-            440.0,
+            379.0,
             90.0,
             22.0
           ],
           "presentation": 1,
           "presentation_rect": [
             635,
-            440,
+            379,
             90.0,
             22.0
           ],
@@ -1613,18 +1613,18 @@
           "numoutlets": 0,
           "patching_rect": [
             935.0,
-            415.0,
-            220.0,
+            355.0,
+            285.0,
             20.0
           ],
           "presentation": 1,
           "presentation_rect": [
             935,
-            415,
-            220.0,
+            355,
+            285.0,
             20.0
           ],
-          "text": "Idle Metal"
+          "text": "Idle / \u6020\u901f \u00b7 Idle Metal / \u6020\u901f\u91d1\u5c5e [0..1]"
         }
       },
       {
@@ -1641,14 +1641,14 @@
           ],
           "patching_rect": [
             935.0,
-            440.0,
+            379.0,
             90.0,
             22.0
           ],
           "presentation": 1,
           "presentation_rect": [
             935,
-            440,
+            379,
             90.0,
             22.0
           ],
@@ -1717,18 +1717,18 @@
           "numoutlets": 0,
           "patching_rect": [
             35.0,
-            540.0,
-            220.0,
+            465.0,
+            285.0,
             20.0
           ],
           "presentation": 1,
           "presentation_rect": [
             35,
-            540,
-            220.0,
+            465,
+            285.0,
             20.0
           ],
-          "text": "Idle Irregularity"
+          "text": "Idle / \u6020\u901f \u00b7 Idle Irregularity / \u6020\u901f\u4e0d\u89c4\u5219\u5ea6 [0..1]"
         }
       },
       {
@@ -1745,14 +1745,14 @@
           ],
           "patching_rect": [
             35.0,
-            565.0,
+            489.0,
             90.0,
             22.0
           ],
           "presentation": 1,
           "presentation_rect": [
             35,
-            565,
+            489,
             90.0,
             22.0
           ],
@@ -1821,18 +1821,18 @@
           "numoutlets": 0,
           "patching_rect": [
             335.0,
-            540.0,
-            220.0,
+            465.0,
+            285.0,
             20.0
           ],
           "presentation": 1,
           "presentation_rect": [
             335,
-            540,
-            220.0,
+            465,
+            285.0,
             20.0
           ],
-          "text": "Idle Air"
+          "text": "Idle / \u6020\u901f \u00b7 Idle Air / \u6020\u901f\u7a7a\u6c14 [0..1]"
         }
       },
       {
@@ -1849,14 +1849,14 @@
           ],
           "patching_rect": [
             335.0,
-            565.0,
+            489.0,
             90.0,
             22.0
           ],
           "presentation": 1,
           "presentation_rect": [
             335,
-            565,
+            489,
             90.0,
             22.0
           ],
@@ -1925,18 +1925,18 @@
           "numoutlets": 0,
           "patching_rect": [
             635.0,
-            540.0,
-            220.0,
+            465.0,
+            285.0,
             20.0
           ],
           "presentation": 1,
           "presentation_rect": [
             635,
-            540,
-            220.0,
+            465,
+            285.0,
             20.0
           ],
-          "text": "Idle Width"
+          "text": "Idle / \u6020\u901f \u00b7 Idle Width / \u6020\u901f\u5bbd\u5ea6 [0..1]"
         }
       },
       {
@@ -1953,14 +1953,14 @@
           ],
           "patching_rect": [
             635.0,
-            565.0,
+            489.0,
             90.0,
             22.0
           ],
           "presentation": 1,
           "presentation_rect": [
             635,
-            565,
+            489,
             90.0,
             22.0
           ],
@@ -2029,18 +2029,18 @@
           "numoutlets": 0,
           "patching_rect": [
             935.0,
-            540.0,
-            220.0,
+            465.0,
+            285.0,
             20.0
           ],
           "presentation": 1,
           "presentation_rect": [
             935,
-            540,
-            220.0,
+            465,
+            285.0,
             20.0
           ],
-          "text": "Torque Ripple"
+          "text": "EV Structure / \u7535\u9a71\u7ed3\u6784 \u00b7 Torque Ripple / \u626d\u77e9\u8109\u52a8 [0..1]"
         }
       },
       {
@@ -2057,14 +2057,14 @@
           ],
           "patching_rect": [
             935.0,
-            565.0,
+            489.0,
             90.0,
             22.0
           ],
           "presentation": 1,
           "presentation_rect": [
             935,
-            565,
+            489,
             90.0,
             22.0
           ],
@@ -2133,18 +2133,18 @@
           "numoutlets": 0,
           "patching_rect": [
             35.0,
-            665.0,
-            220.0,
+            575.0,
+            285.0,
             20.0
           ],
           "presentation": 1,
           "presentation_rect": [
             35,
-            665,
-            220.0,
+            575,
+            285.0,
             20.0
           ],
-          "text": "Gear Mesh"
+          "text": "EV Structure / \u7535\u9a71\u7ed3\u6784 \u00b7 Gear Mesh / \u9f7f\u8f6e\u556e\u5408 [0..1]"
         }
       },
       {
@@ -2161,14 +2161,14 @@
           ],
           "patching_rect": [
             35.0,
-            690.0,
+            599.0,
             90.0,
             22.0
           ],
           "presentation": 1,
           "presentation_rect": [
             35,
-            690,
+            599,
             90.0,
             22.0
           ],
@@ -2237,18 +2237,18 @@
           "numoutlets": 0,
           "patching_rect": [
             335.0,
-            665.0,
-            220.0,
+            575.0,
+            285.0,
             20.0
           ],
           "presentation": 1,
           "presentation_rect": [
             335,
-            665,
-            220.0,
+            575,
+            285.0,
             20.0
           ],
-          "text": "Electrical Detail"
+          "text": "EV Structure / \u7535\u9a71\u7ed3\u6784 \u00b7 Electrical Detail / \u7535\u6c14\u7ec6\u8282 [0..1]"
         }
       },
       {
@@ -2265,14 +2265,14 @@
           ],
           "patching_rect": [
             335.0,
-            690.0,
+            599.0,
             90.0,
             22.0
           ],
           "presentation": 1,
           "presentation_rect": [
             335,
-            690,
+            599,
             90.0,
             22.0
           ],
@@ -2331,6 +2331,402 @@
             22.0
           ],
           "text": "0.64"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-114",
+          "maxclass": "comment",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            131.0,
+            159.0,
+            194.0,
+            38.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            131,
+            157,
+            194.0,
+            40.0
+          ],
+          "text": "Audible / \u53ef\u542c: Load / \u52a0\u901f \u2014 \u589e\u52a0\u8d1f\u8f7d\u54cd\u5e94\u4e0e\u52a8\u6001\u5b58\u5728\u611f"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-115",
+          "maxclass": "comment",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            431.0,
+            159.0,
+            194.0,
+            38.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            431,
+            157,
+            194.0,
+            40.0
+          ],
+          "text": "Audible / \u53ef\u542c: High RPM / \u9ad8\u8f6c \u2014 \u63d0\u5347\u9ad8\u9636\u8c10\u6ce2\uff0c\u4e0d\u76f4\u63a5\u6539\u53d8\u4e3b\u97f3\u9ad8"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-116",
+          "maxclass": "comment",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            731.0,
+            159.0,
+            194.0,
+            38.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            731,
+            157,
+            194.0,
+            40.0
+          ],
+          "text": "Audible / \u53ef\u542c: Idle + Cruise / \u6020\u901f\u5de1\u822a \u2014 \u586b\u5145\u4f4e\u9891\u4e0e\u4e2d\u4f4e\u9891\u4e3b\u4f53"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-117",
+          "maxclass": "comment",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            1031.0,
+            159.0,
+            194.0,
+            38.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            1031,
+            157,
+            194.0,
+            40.0
+          ],
+          "text": "Audible / \u53ef\u542c: Load / \u8d1f\u8f7d \u2014 \u589e\u52a0\u673a\u68b0\u4e0e\u8868\u9762\u7ec6\u8282"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-118",
+          "maxclass": "comment",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            131.0,
+            269.0,
+            194.0,
+            38.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            131,
+            267,
+            194.0,
+            40.0
+          ],
+          "text": "Audible / \u53ef\u542c: High RPM / \u9ad8\u8f6c \u2014 \u63a7\u5236\u9ad8\u9891\u7a7a\u6c14\u5c42"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-119",
+          "maxclass": "comment",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            431.0,
+            269.0,
+            194.0,
+            38.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            431,
+            267,
+            194.0,
+            40.0
+          ],
+          "text": "Audible / \u53ef\u542c: Idle / \u6020\u901f \u2014 \u6539\u53d8\u5fae\u5c0f\u5468\u671f\u8d77\u4f0f\uff0c\u4e0d\u6539\u53d8\u5e73\u5747\u8f6c\u901f"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-120",
+          "maxclass": "comment",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            731.0,
+            269.0,
+            194.0,
+            38.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            731,
+            267,
+            194.0,
+            40.0
+          ],
+          "text": "Audible / \u53ef\u542c: All / \u5168\u573a\u666f \u2014 \u63a7\u5236\u4e2d\u9ad8\u9891\u58f0\u50cf\u4e0e\u7f38\u7ec4\u5206\u79bb"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-121",
+          "maxclass": "comment",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            1031.0,
+            269.0,
+            194.0,
+            38.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            1031,
+            267,
+            194.0,
+            40.0
+          ],
+          "text": "Audible / \u53ef\u542c: Load / \u52a0\u901f \u2014 \u6cb9\u95e8\u4ece 0 \u5230 1 \u7684\u54cd\u5ea6\u589e\u91cf"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-122",
+          "maxclass": "comment",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            131.0,
+            379.0,
+            194.0,
+            38.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            131,
+            377,
+            194.0,
+            40.0
+          ],
+          "text": "Audible / \u53ef\u542c: Load / \u9ad8\u8d1f\u8f7d \u2014 \u589e\u52a0\u5bc6\u5ea6\u4e0e\u8f6f\u524a\u6ce2\u5f3a\u5ea6"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-123",
+          "maxclass": "comment",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            431.0,
+            379.0,
+            194.0,
+            38.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            431,
+            377,
+            194.0,
+            40.0
+          ],
+          "text": "Audible / \u53ef\u542c: Idle / \u6020\u901f \u2014 \u63a7\u5236\u4e13\u7528\u6020\u901f\u5c42\u603b\u4f53\u5b58\u5728\u611f"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-124",
+          "maxclass": "comment",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            731.0,
+            379.0,
+            194.0,
+            38.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            731,
+            377,
+            194.0,
+            40.0
+          ],
+          "text": "Audible / \u53ef\u542c: Idle / \u6020\u901f \u2014 \u63a7\u5236\u6020\u901f\u4f4e\u9891\u4e0e\u4e2d\u4f4e\u9891\u6a21\u6001"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-125",
+          "maxclass": "comment",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            1031.0,
+            379.0,
+            194.0,
+            38.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            1031,
+            377,
+            194.0,
+            40.0
+          ],
+          "text": "Audible / \u53ef\u542c: Idle / \u6020\u901f \u2014 \u63a7\u5236\u6020\u901f\u7ed3\u6784\u4e0e\u91d1\u5c5e\u4fa7\u5e26"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-126",
+          "maxclass": "comment",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            131.0,
+            489.0,
+            194.0,
+            38.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            131,
+            487,
+            194.0,
+            40.0
+          ],
+          "text": "Audible / \u53ef\u542c: Idle / \u6020\u901f \u2014 \u63a7\u5236\u71c3\u70e7/\u7535\u78c1\u80fd\u91cf\u7684\u7ec6\u5fae\u6ce2\u52a8"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-127",
+          "maxclass": "comment",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            431.0,
+            489.0,
+            194.0,
+            38.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            431,
+            487,
+            194.0,
+            40.0
+          ],
+          "text": "Audible / \u53ef\u542c: Idle / \u6020\u901f \u2014 \u63a7\u5236\u6020\u901f\u9ad8\u9891\u7a7a\u6c14\u7ec6\u8282"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-128",
+          "maxclass": "comment",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            731.0,
+            489.0,
+            194.0,
+            38.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            731,
+            487,
+            194.0,
+            40.0
+          ],
+          "text": "Audible / \u53ef\u542c: Idle / \u6020\u901f \u2014 \u63a7\u5236\u6020\u901f\u4e2d\u9ad8\u9891\u7a7a\u95f4\u5bbd\u5ea6"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-129",
+          "maxclass": "comment",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            1031.0,
+            489.0,
+            194.0,
+            38.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            1031,
+            487,
+            194.0,
+            40.0
+          ],
+          "text": "Audible / \u53ef\u542c: Load / \u52a0\u901f \u2014 \u63a7\u5236\u7535\u673a\u8f6c\u77e9\u8109\u52a8\u5c42"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-130",
+          "maxclass": "comment",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            131.0,
+            599.0,
+            194.0,
+            38.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            131,
+            597,
+            194.0,
+            40.0
+          ],
+          "text": "Audible / \u53ef\u542c: Cruise + Load / \u5de1\u822a\u8d1f\u8f7d \u2014 \u63a7\u5236\u51cf\u901f\u9f7f\u8f6e\u5578\u53eb\u7ed3\u6784"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-131",
+          "maxclass": "comment",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            431.0,
+            599.0,
+            194.0,
+            38.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            431,
+            597,
+            194.0,
+            40.0
+          ],
+          "text": "Audible / \u53ef\u542c: High RPM / \u9ad8\u8f6c \u2014 \u63a7\u5236\u9006\u53d8\u5668\u4e0e\u7535\u78c1\u9ad8\u9636\u7ec6\u8282"
         }
       }
     ],

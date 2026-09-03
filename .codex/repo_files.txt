@@ -29,6 +29,7 @@ assets/raw/README.md
 code/backfire_burst.js
 code/dna_state_path.js
 code/drive_model.js
+code/eq_feedback_reader.js
 code/eq_state_path.js
 code/ioniq6n_event_state_path.js
 code/ioniq6n_soundscape_state_path.js
@@ -50,6 +51,7 @@ patchers/cabin_master~.maxpat
 patchers/cabin_rumble~.maxpat
 patchers/cinematic_soundscape_beap~.maxpat
 patchers/cinematic_soundscape_v3_beap~.maxpat
+patchers/drive_console.maxpat
 patchers/drive_simulator.maxpat
 patchers/drive_simulator_ev.maxpat
 patchers/drive_simulator_ioniq6n.maxpat
@@ -88,11 +90,18 @@ patchers/ioniq6n_soundscape_ignition_beap~.maxpat
 patchers/ioniq6n_soundscape_lightspeed_beap~.maxpat
 patchers/keyboard_drive_ws.maxpat
 patchers/manual_input.maxpat
+patchers/mix_eq_console.maxpat
 patchers/mix_master~.maxpat
 patchers/module_mixer.maxpat
 patchers/powertrain~.maxpat
+patchers/profile_runtime_host_ev.maxpat
+patchers/profile_runtime_host_ioniq6n.maxpat
+patchers/profile_runtime_host_v10.maxpat
+patchers/profile_runtime_host_v12.maxpat
 patchers/reference_texture~.maxpat
 patchers/road_air~.maxpat
+patchers/runtime_console.maxpat
+patchers/sound_design_console.maxpat
 patchers/soundscape_control.maxpat
 patchers/transient_ev~.maxpat
 patchers/transient_ioniq6n~.maxpat
