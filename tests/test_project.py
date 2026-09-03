@@ -57,14 +57,14 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
         )
         return json.loads(result.stdout)
 
-    def test_v5_identity_and_frozen_v4_lineage(self):
-        project = self.load_json("VehicleSoundSynth-V5.maxproj")
-        self.assertEqual("VehicleSoundSynth-V5", project["name"])
+    def test_v6_identity_and_frozen_v4_lineage(self):
+        project = self.load_json("VehicleSoundSynth-V6.maxproj")
+        self.assertEqual("VehicleSoundSynth-V6", project["name"])
         self.assertTrue((ROOT / ".codex" / "MAINLINE.md").is_file())
         self.assertIn("v4.0.0", (ROOT / ".codex" / "MAINLINE.md").read_text())
 
     def test_v5_runtime_events_are_procedural_and_never_play_shift_pop_samples(self):
-        project = self.load_json("VehicleSoundSynth-V5.maxproj")
+        project = self.load_json("VehicleSoundSynth-V6.maxproj")
         declared_media = set(project["contents"]["media"])
         self.assertEqual(
             {
@@ -101,7 +101,7 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
                 self.assertNotIn(f"groove~ {token}", text)
 
     def test_v5_ice_backfire_is_editable_beap_and_profile_tuned(self):
-        project = self.load_json("VehicleSoundSynth-V5.maxproj")
+        project = self.load_json("VehicleSoundSynth-V6.maxproj")
         declared = set(project["contents"]["patchers"])
         for profile in ("v10", "v12"):
             beap_path = f"patchers/{profile}_backfire_beap~.maxpat"
@@ -214,7 +214,7 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
             self.assertNotIn("*~ 115" if profile == "v10" else "*~ 92", host_text)
 
     def test_pop_designer_controls_the_live_beap_and_dominant_pressure_core(self):
-        project = self.load_json("VehicleSoundSynth-V5.maxproj")
+        project = self.load_json("VehicleSoundSynth-V6.maxproj")
         self.assertIn("code/pop_state_path.js", project["contents"]["code"])
         state_helper = (ROOT / "code" / "pop_state_path.js").read_text(
             encoding="utf-8"
@@ -495,7 +495,7 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
                 self.assertIn(token, host_text)
 
     def test_v5_archives_v3_while_each_profile_uses_its_v4_core(self):
-        project = self.load_json("VehicleSoundSynth-V5.maxproj")
+        project = self.load_json("VehicleSoundSynth-V6.maxproj")
         declared = set(project["contents"]["patchers"])
         core_path = "patchers/cinematic_soundscape_v3_beap~.maxpat"
         voice_path = "patchers/cinematic_soundscape_voice.maxpat"
@@ -637,7 +637,7 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
                 self.assertEqual(before, path.read_bytes())
 
     def test_sound_design_is_split_into_user_owned_dna_eq_and_soundscape_modules(self):
-        project = self.load_json("VehicleSoundSynth-V5.maxproj")
+        project = self.load_json("VehicleSoundSynth-V6.maxproj")
         declared = set(project["contents"]["patchers"])
         self.assertIn("patchers/vehicle_bus_eq~.maxpat", declared)
         for profile in ("ev", "v10", "v12"):
@@ -987,7 +987,7 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
             self.assertIn(((engine_id, 2), (feedback_send, 0)), cords)
 
     def test_soundscape_live_instance_owns_profile_local_parameter_state(self):
-        project = self.load_json("VehicleSoundSynth-V5.maxproj")["contents"]
+        project = self.load_json("VehicleSoundSynth-V6.maxproj")["contents"]
         self.assertIn("code/soundscape_state_path.js", project["code"])
         self.assertNotIn(
             "patchers/cinematic_soundscape_voice.maxpat",
@@ -1130,7 +1130,7 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
             self.assertIn("expr $i1*$i2", host_text)
 
     def test_soundscape_control_is_a_view_of_persistent_profile_host_state(self):
-        project = self.load_json("VehicleSoundSynth-V5.maxproj")["contents"]
+        project = self.load_json("VehicleSoundSynth-V6.maxproj")["contents"]
         self.assertIn("patchers/soundscape_control.maxpat", project["patchers"])
         control = json.dumps(self.load_json("patchers/soundscape_control.maxpat"))
         for label in (
@@ -1640,7 +1640,7 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
             ):
                 self.assertNotIn(forbidden, text.lower(), (profile, forbidden))
 
-        project = self.load_json("VehicleSoundSynth-V5.maxproj")
+        project = self.load_json("VehicleSoundSynth-V6.maxproj")
         declared = {
             path for category in project["contents"].values() for path in category
         }
@@ -1666,7 +1666,7 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
         )
 
     def test_profile_drive_patchers_use_one_control_clock(self):
-        project = self.load_json("VehicleSoundSynth-V5.maxproj")
+        project = self.load_json("VehicleSoundSynth-V6.maxproj")
         self.assertIn("code/drive_model.js", project["contents"]["code"])
         for profile in ("ev", "v10", "v12"):
             patcher = self.load_json(
@@ -1805,7 +1805,7 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
             self.assertLessEqual(node["harsh_ratio_2000_6000"], 1.0)
             self.assertGreater(node["spectral_rolloff_95_hz"], 0.0)
 
-        project_text = json.dumps(self.load_json("VehicleSoundSynth-V5.maxproj"))
+        project_text = json.dumps(self.load_json("VehicleSoundSynth-V6.maxproj"))
         self.assertIn("assets/ferrari_v10_lifecycle_targets.json", project_text)
         self.assertNotIn("media/local/ferrari_v10_", project_text)
 
@@ -1941,7 +1941,7 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
         )
 
     def test_v4_has_three_independent_runtime_patchers_and_a_dsp_free_launcher(self):
-        project = self.load_json("VehicleSoundSynth-V5.maxproj")
+        project = self.load_json("VehicleSoundSynth-V6.maxproj")
         declared = {
             path for category in project["contents"].values() for path in category
         }
@@ -1990,7 +1990,7 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
             self.assertIn("thispatcher", runtime_text)
 
     def test_ioniq6n_is_a_fourth_independent_runtime_and_launcher_target(self):
-        project = self.load_json("VehicleSoundSynth-V5.maxproj")["contents"]
+        project = self.load_json("VehicleSoundSynth-V6.maxproj")["contents"]
         runtime = "VehicleSoundSynth-IONIQ6N.maxpat"
         self.assertIn(runtime, project["patchers"])
 
@@ -2053,7 +2053,7 @@ process.stdout.write(JSON.stringify({defaultState: defaultModel.snapshot(), on: 
         self.assertEqual(1, outcome["off"]["minCut"])
 
     def test_ioniq6n_sound_dna_is_a_sample_free_tunable_beap_chain(self):
-        project = self.load_json("VehicleSoundSynth-V5.maxproj")["contents"]
+        project = self.load_json("VehicleSoundSynth-V6.maxproj")["contents"]
         dna_path = "patchers/ioniq6n_sound_dna~.maxpat"
         powertrain_path = "patchers/ioniq6n_powertrain~.maxpat"
         self.assertIn(dna_path, project["patchers"])
@@ -2082,7 +2082,7 @@ process.stdout.write(JSON.stringify({defaultState: defaultModel.snapshot(), on: 
         self.assertIn("Param shift_cut", gen_text)
 
     def test_ioniq6n_soundscape_has_three_decoupled_crossfaded_beap_instruments(self):
-        project = self.load_json("VehicleSoundSynth-V5.maxproj")["contents"]
+        project = self.load_json("VehicleSoundSynth-V6.maxproj")["contents"]
         modes = {
             "ignition": ("Synthetic_Orders", "Induction_Resonator", "Gear_Mesh_Air"),
             "evolution": ("Score_Body", "Evolution_Harmonics", "Dramatic_Transient"),
@@ -2115,7 +2115,7 @@ process.stdout.write(JSON.stringify({defaultState: defaultModel.snapshot(), on: 
         self.assertNotIn("powertrain", host_text.lower())
 
     def test_ioniq6n_activation_and_n_events_are_separate_sample_free_beap_buses(self):
-        project = self.load_json("VehicleSoundSynth-V5.maxproj")["contents"]
+        project = self.load_json("VehicleSoundSynth-V6.maxproj")["contents"]
         required = (
             "patchers/ioniq6n_activation_beap~.maxpat",
             "patchers/ioniq6n_n_event_beap~.maxpat",
@@ -2333,7 +2333,7 @@ process.stdout.write(JSON.stringify({defaultState: defaultModel.snapshot(), on: 
                 sum(item["box"]["maxclass"] == "bpatcher" for item in patcher["boxes"]),
                 10,
             )
-        project = self.load_json("VehicleSoundSynth-V5.maxproj")
+        project = self.load_json("VehicleSoundSynth-V6.maxproj")
         declared = set(project["contents"]["patchers"])
         self.assertNotIn("patchers/ev_soundscape_host~.maxpat", declared)
         host = self.load_json("patchers/ev_cinematic_soundscape_host~.maxpat")["patcher"]
@@ -2451,7 +2451,7 @@ process.stdout.write(JSON.stringify({defaultState: defaultModel.snapshot(), on: 
 
 
     def test_ice_start_defaults_to_cinematic_beap_with_realistic_sample_option(self):
-        project = self.load_json("VehicleSoundSynth-V5.maxproj")
+        project = self.load_json("VehicleSoundSynth-V6.maxproj")
         declared = project["contents"]["patchers"]
         self.assertIn("code/start_v3_state_path.js", project["contents"]["code"])
         self.assertNotIn("patchers/engine_start_core~.maxpat", declared)
@@ -2557,7 +2557,7 @@ process.stdout.write(JSON.stringify({defaultState: defaultModel.snapshot(), on: 
             self.assertIn("backfire_test 1", runtime_text)
 
     def test_overrun_and_test_pop_use_burst_scheduler_while_shift_stays_single(self):
-        project = self.load_json("VehicleSoundSynth-V5.maxproj")
+        project = self.load_json("VehicleSoundSynth-V6.maxproj")
         self.assertIn(
             "patchers/backfire_burst_scheduler.maxpat",
             project["contents"]["patchers"],
@@ -2671,7 +2671,7 @@ process.stdout.write(JSON.stringify({defaultState: defaultModel.snapshot(), on: 
             self.assertEqual(hashes[0], hashes[1])
 
     def test_v10_uses_lifecycle_targets_while_v12_remains_independent(self):
-        project = json.dumps(self.load_json("VehicleSoundSynth-V5.maxproj"))
+        project = json.dumps(self.load_json("VehicleSoundSynth-V6.maxproj"))
         self.assertIn("ferrari_v10_lifecycle_targets.json", project)
         self.assertNotIn("v10_state_renderer", project)
         self.assertNotIn("v12_texture_renderer", project)
@@ -2835,7 +2835,7 @@ process.stdout.write(JSON.stringify({defaultState: defaultModel.snapshot(), on: 
         self.assertIn("reference_texture~", power_text)
 
     def test_v4_reference_texture_is_retained_only_as_an_undeclared_offline_archive(self):
-        project = self.load_json("VehicleSoundSynth-V5.maxproj")
+        project = self.load_json("VehicleSoundSynth-V6.maxproj")
         declared = {
             path for category in project["contents"].values() for path in category
         }
@@ -2845,7 +2845,7 @@ process.stdout.write(JSON.stringify({defaultState: defaultModel.snapshot(), on: 
         self.assertIn("offline", text.lower())
 
     def test_v4_reference_texture_uses_normalized_multi_anchor_stereo_bank(self):
-        project = self.load_json("VehicleSoundSynth-V5.maxproj")
+        project = self.load_json("VehicleSoundSynth-V6.maxproj")
         declared = {path for category in project["contents"].values() for path in category}
         patcher = self.load_json("patchers/reference_texture~.maxpat")["patcher"]
         text = "\n".join(item["box"].get("text", "") for item in patcher["boxes"])
@@ -3048,10 +3048,10 @@ process.stdout.write(JSON.stringify({defaultState: defaultModel.snapshot(), on: 
             self.assertNotIn("clamp(tanh", code)
 
     def test_v3_project_identity_and_public_entrypoint(self):
-        project_path = ROOT / "VehicleSoundSynth-V5.maxproj"
+        project_path = ROOT / "VehicleSoundSynth-V6.maxproj"
         self.assertTrue(project_path.is_file())
-        project = self.load_json("VehicleSoundSynth-V5.maxproj")
-        self.assertEqual("VehicleSoundSynth-V5", project["name"])
+        project = self.load_json("VehicleSoundSynth-V6.maxproj")
+        self.assertEqual("VehicleSoundSynth-V6", project["name"])
         self.assertTrue((ROOT / "main.maxpat").is_file())
 
     def test_v2_public_engine_contract_covers_lifecycle_events_and_master_eq(self):
@@ -3143,7 +3143,7 @@ process.stdout.write(JSON.stringify({defaultState: defaultModel.snapshot(), on: 
             self.assertEqual(value, presets[name]["cabin_ir_mix"])
 
     def test_v3_cabin_rumble_module_is_declared_and_runnable(self):
-        project = self.load_json("VehicleSoundSynth-V5.maxproj")
+        project = self.load_json("VehicleSoundSynth-V6.maxproj")
         declared = {
             relative_path
             for category in project["contents"].values()
@@ -3326,7 +3326,7 @@ process.stdout.write(JSON.stringify({defaultState: defaultModel.snapshot(), on: 
 
     def test_runnable_project_has_public_engine_interface(self):
         required = [
-            "VehicleSoundSynth-V5.maxproj",
+            "VehicleSoundSynth-V6.maxproj",
             "main.maxpat",
             "patchers/vehicle_engine~.maxpat",
         ]
@@ -3741,7 +3741,7 @@ process.stdout.write(JSON.stringify({defaultState: defaultModel.snapshot(), on: 
             self.assertTrue(output_ids.issubset(destinations), path.name)
 
     def test_shared_soundscape_replaces_legacy_ev_pad_in_declared_runtime(self):
-        project = self.load_json("VehicleSoundSynth-V5.maxproj")
+        project = self.load_json("VehicleSoundSynth-V6.maxproj")
         declared = {
             relative_path
             for category in project["contents"].values()
@@ -3817,7 +3817,7 @@ process.stdout.write(JSON.stringify({defaultState: defaultModel.snapshot(), on: 
         self.assertIn("loadmess -3", driver_text)
 
     def test_project_search_path_schema_and_runtime_resources_are_declared(self):
-        project = self.load_json("VehicleSoundSynth-V5.maxproj")
+        project = self.load_json("VehicleSoundSynth-V6.maxproj")
         # Max 8.6.x expects a dictionary here and can crash while opening a
         # project whose searchpath is encoded as an array. Explicit relative
         # paths avoid collisions with Max's own patchers/gen/media folders.
@@ -3971,7 +3971,7 @@ process.stdout.write(JSON.stringify({defaultState: defaultModel.snapshot(), on: 
                 self.assertNotIn(removed, text)
 
     def test_profile_runtimes_expose_persistent_seven_stem_module_mixer(self):
-        project = self.load_json("VehicleSoundSynth-V5.maxproj")
+        project = self.load_json("VehicleSoundSynth-V6.maxproj")
         self.assertIn(
             "patchers/module_mixer.maxpat",
             project["contents"]["patchers"],
@@ -5214,7 +5214,7 @@ process.stdout.write(JSON.stringify({defaultState: defaultModel.snapshot(), on: 
             self.assertEqual(b"curated-audio-sentinel", protected.read_bytes())
 
     def test_soundscape_v4_uses_new_state_namespaces_and_visible_version(self):
-        project = self.load_json("VehicleSoundSynth-V5.maxproj")["contents"]
+        project = self.load_json("VehicleSoundSynth-V6.maxproj")["contents"]
         # V3 remains an editable archive; only the three V4 cores are audible.
         self.assertIn(
             "patchers/cinematic_soundscape_v3_beap~.maxpat",
@@ -5329,7 +5329,7 @@ process.stdout.write(JSON.stringify({defaultState: defaultModel.snapshot(), on: 
         self.assertEqual(3, len(hashes))
 
     def test_soundscape_v4_has_three_independent_profile_cores(self):
-        project = self.load_json("VehicleSoundSynth-V5.maxproj")["contents"]
+        project = self.load_json("VehicleSoundSynth-V6.maxproj")["contents"]
         core_hashes = set()
         identity_tokens = {
             "ev": ("EVOLUTION SCORE", "DRAMATIC TRANSIENT", "Motor_Inverter"),
@@ -5383,7 +5383,7 @@ process.stdout.write(JSON.stringify({defaultState: defaultModel.snapshot(), on: 
             )
 
     def test_v4_start_and_backfire_designers_are_version_isolated(self):
-        project = self.load_json("VehicleSoundSynth-V5.maxproj")["contents"]
+        project = self.load_json("VehicleSoundSynth-V6.maxproj")["contents"]
         for profile in ("ev", "v10", "v12"):
             start = f"patchers/{profile}_engine_start_v3_beap~.maxpat"
             self.assertIn(start, project["patchers"])

@@ -1,4 +1,4 @@
-# VehicleSoundSynth V5
+# VehicleSoundSynth V6
 
 Max/MSP 8.6.5 vehicle-sound project with four independent runtimes:
 
@@ -16,7 +16,7 @@ a second Soundscape or any launcher-side DSP.
 
 ## Quick start
 
-1. Open `VehicleSoundSynth-V5.maxproj` and wait for the Project window. Directly
+1. Open `VehicleSoundSynth-V6.maxproj` and wait for the Project window. Directly
    opening one of the four runtime `.maxpat` files is also supported: their
    root-level abstractions use explicit `patchers/` paths.
 2. Open `main.maxpat` from the Project window, then click one profile. Audio
@@ -88,7 +88,7 @@ also receive a Start-latched combustion cadence at idle; ignition alone cannot
 self-start that pulse layer. EV uses a restrained ready-state bed instead of a
 fake combustion idle.
 
-V5 adds visible per-profile `Open Sound DNA` panels, low-order crankcase/manifold motion to the ICE models and torque-ripple/
+V6 adds visible per-profile `Open Sound DNA` panels, low-order crankcase/manifold motion to the ICE models and torque-ripple/
 gear-mesh motion to the EV model. These remain phase-continuous and are driven by
 RPM, load, acceleration and throttle; no saw/square oscillator or lifecycle loop
 is used. The stronger idle signature is deliberately concentrated in the body
@@ -144,7 +144,7 @@ reset or threshold jump.
 
 ## Gamepad Manual Control
 
-V5 keeps W/S and adds a fixed, deliberately small gamepad adapter in the
+V6 keeps W/S and adds a fixed, deliberately small gamepad adapter in the
 independent `patchers/manual_input.maxpat` subpatcher. It uses Max 8.6.5's
 built-in [`gamepad`](https://docs.cycling74.com/max8/refpages/gamepad) object;
 there is no external package, HID element learning, or device-specific axis
@@ -169,7 +169,7 @@ leave the drivetrain accelerating. The gamepad adapter changes pedal inputs
 only: the unchanged 20 ms drivetrain still integrates speed, drag, RPM, and
 seven-speed DCT state.
 
-With both pedals released, V5 uses a shared progressive coast law: low speed
+With both pedals released, V6 uses a shared progressive coast law: low speed
 settles more decisively (about 10 seconds from 20 km/h to rest), while highway
 speed retains noticeably more inertia (about 24 seconds from 100 to 80 km/h).
 The curve blends back to the original powered drag below 0.08 throttle, so

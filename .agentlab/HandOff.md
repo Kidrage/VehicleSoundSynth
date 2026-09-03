@@ -1,15 +1,17 @@
-# VehicleSoundSynth V5 Repository HandOff
+# VehicleSoundSynth V6 Repository HandOff
 
 ## Repository Identity
 
 - Canonical remote: `git@github.com:Kidrage/VehicleSoundSynth.git`
 - Target runtime: Max 8.6.5 on macOS.
-- Feature branch: `codex/v5-ioniq6n-profile`.
-- Fixed point: `d3dbad6513e2c9b37076ca8959c8cf119bfee3bf`.
-- Feature implementation: `ba830a8827b001e8f88b9751909e4e36fc9f9bec`.
+- Canonical branch: `main`.
+- V6 audio baseline source: `3708c086a5d414665ee533db7ed8067bdeafc68b`.
+- Release tag: `v6.0.0`.
 
 ## Delivered Change
 
+- Renames the project/runtime identity to V6 without changing synthesis,
+  factory presets, audio routing, controls, or drivetrain behavior.
 - Adds `VehicleSoundSynth-IONIQ6N.maxpat` as a fourth independent runtime and
   launcher target. It does not replace or retune V10.
 - Adds an electric IONIQ6N Sound DNA with independent motor-order, low-mid
@@ -59,5 +61,8 @@
 
 - The original dirty V10/V12 working tree is untouched and archived under
   `/Users/saintpeter/Downloads/.VehicleSoundSynth-Backups/20260902-ioniq6n-profile/`.
+- V6-baseline Max serialization saves are archived under
+  `/Users/saintpeter/Downloads/.VehicleSoundSynth-Backups/20260903-v6-baseline/`
+  and excluded from Git after their SHA-256 values were verified.
 - Never commit or sync the supplied MP3, Ferrari material, local presets,
   recovery files or temporary renders.

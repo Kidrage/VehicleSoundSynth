@@ -13,7 +13,7 @@ VehicleSoundSynth-EV.maxpat
 VehicleSoundSynth-IONIQ6N.maxpat
 VehicleSoundSynth-V10.maxpat
 VehicleSoundSynth-V12.maxpat
-VehicleSoundSynth-V5.maxproj
+VehicleSoundSynth-V6.maxproj
 "VehicleSoundSynthV2_\345\256\214\346\225\264\344\275\277\347\224\250\346\211\213\345\206\214.docx"
 "VehicleSoundSynthV3_\345\256\214\346\225\264\344\275\277\347\224\250\346\211\213\345\206\214.docx"
 "VehicleSoundSynthV3_\350\275\246\346\234\272RTPC_DSP\351\223\276\350\267\257\346\212\200\346\234\257\350\257\264\346\230\216.docx"

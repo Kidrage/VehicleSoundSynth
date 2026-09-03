@@ -3,6 +3,16 @@
 > Deterministically generated repository/project memory for cross-agent handoff.
 > Update after every material project change and before final reporting.
 
+## V6 audio baseline (2026-09-03)
+
+The accepted four-profile sound at `3708c08` is promoted to the V6 line through
+a version-only project rename to `VehicleSoundSynth-V6.maxproj`. No synthesis,
+BEAP graph, factory preset, audio routing, control mapping, or drivetrain value
+changes in this release commit. Two locally re-saved top-level Max patchers were
+SHA-verified and archived outside Git before restoring the portable generated
+versions. The clean baseline passes all 192 tests and deterministic double
+generation.
+
 ## Independent IONIQ 6 N profile (2026-09-02)
 
 Branch `codex/v5-ioniq6n-profile` adds a fourth fixed runtime,
@@ -68,9 +78,9 @@ probe instances exited; pre-existing windowless PID `22230` was preserved.
 
 ## Repository Identity
 
-- Repository ID: `VehicleSoundSynth-V5-8de441799e7b`
+- Repository ID: `VehicleSoundSynth-V6-8de441799e7b`
 - Working root: `.`
-- Repository name: `VehicleSoundSynth-V5`
+- Repository name: `VehicleSoundSynth-V6`
 - Git repository: `true`
 - Generated at: `2026-08-29T07:30:16.928757+00:00`
 

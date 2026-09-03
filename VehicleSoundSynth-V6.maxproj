@@ -440,7 +440,7 @@
     }
   },
   "hideprojectwindow": 0,
-  "name": "VehicleSoundSynth-V5",
+  "name": "VehicleSoundSynth-V6",
   "searchpath": {
     "code": {
       "path": "./code",

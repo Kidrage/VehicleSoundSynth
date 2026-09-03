@@ -21,7 +21,7 @@
             720.0,
             22.0
           ],
-          "text": "VehicleSoundSynth V5 \u2014 Ferrari-referenced V10 independent runtime"
+          "text": "VehicleSoundSynth V6 \u2014 Ferrari-referenced V10 independent runtime"
         }
       },
       {

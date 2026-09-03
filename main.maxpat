@@ -21,7 +21,7 @@
             520.0,
             22.0
           ],
-          "text": "VehicleSoundSynth V5 \u2014 choose one independent runtime"
+          "text": "VehicleSoundSynth V6 \u2014 choose one independent runtime"
         }
       },
       {

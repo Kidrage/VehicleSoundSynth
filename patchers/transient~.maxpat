@@ -21,7 +21,7 @@
             560.0,
             22.0
           ],
-          "text": "V5 procedural event seam \u2014 no runtime shift/pop/crackle sample players"
+          "text": "V6 procedural event seam \u2014 no runtime shift/pop/crackle sample players"
         }
       },
       {

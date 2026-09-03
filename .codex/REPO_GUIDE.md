@@ -1,8 +1,8 @@
-# VehicleSoundSynth V5 Repository Guide
+# VehicleSoundSynth V6 Repository Guide
 
 ## Purpose
 
-Max 8.6.5 vehicle-sound V5, forked from stable V4 tag `v4.0.0`, with four independent fixed-profile runtimes. V10
+Max 8.6.5 vehicle-sound V6, forked from stable V4 tag `v4.0.0`, with four independent fixed-profile runtimes. V10
 and V12 continuous audio are procedural; Ferrari.wav is a V10 lifecycle-analysis
 target and may supply only the optional ignored realistic-start one-shot. EV,
 V10 and V12 retain their independent Soundscape V4 instruments. IONIQ6N is a
@@ -149,7 +149,7 @@ On macOS, Max writes load diagnostics to
   immediate 1/0 pedal and S is a 0.65 brake with brake priority; Gamepad keeps
   both pedals analog and permits overlap. Both adapters feed only
   throttle/brake into the existing fixed-step drivetrain interface;
-  its 20 ms RPM/shift integration remains unchanged while V5 uses a gentler,
+  its 20 ms RPM/shift integration remains unchanged while V6 uses a gentler,
   progressive service-brake law. The ICE drive model emits one bounded
   `overrun 0..1` event for a sufficiently fast loaded lift-off; generated hosts
   translate that event through `code/backfire_burst.js` into 1--5 decaying hits
@@ -164,7 +164,7 @@ On macOS, Max writes load diagnostics to
   subpatchers, close every task-opened
   patcher, and quit Max after a smoke test.
 
-## V5 Mainline
+## V6 Mainline
 
 - Remove runtime shift/pop/crackle sample playback; keep only licensed starter one-shots.
 - Deepen EV/V10/V12 idle and acceleration realism without discontinuous pitch or plastic high-frequency oscillators.
@@ -185,7 +185,7 @@ On macOS, Max writes load diagnostics to
 
 ## Repository State
 
-- Canonical branch: `main`; it contains the complete V5 history and is based on
+- Canonical branch: `main`; it contains the complete V6 history and is based on
   the frozen V4 stable tag `v4.0.0` at `6aa49d0`.
 - Canonical remote: `git@github.com:Kidrage/VehicleSoundSynth.git`; use
   `origin/main` as the only operator/development entry point. Historical V3/V4
@@ -193,4 +193,4 @@ On macOS, Max writes load diagnostics to
 - `media/local/` is ignored and must never be committed or mirrored; missing
   Ferrari layers intentionally fall back to the tracked CC0 paths.
 - Avoid cache files such as `tests/__pycache__/`.
-- Never edit sibling V1, V2, V3, or frozen V4 while implementing V5.
+- Never edit sibling V1, V2, V3, or frozen V4 while implementing V6.

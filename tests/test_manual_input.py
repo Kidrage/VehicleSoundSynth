@@ -564,7 +564,7 @@ console.log(JSON.stringify(speeds));
             self.assertTrue(any(name.endswith("/patchers/manual_input.maxpat") for name in names))
             self.assertFalse(any(name.endswith("/patchers/keyboard_drive_ws.maxpat") for name in names))
 
-        project = json.loads((ROOT / "VehicleSoundSynth-V5.maxproj").read_text())
+        project = json.loads((ROOT / "VehicleSoundSynth-V6.maxproj").read_text())
         self.assertIn("patchers/manual_input.maxpat", project["contents"]["patchers"])
         self.assertIn("code/manual_input.js", project["contents"]["code"])
 

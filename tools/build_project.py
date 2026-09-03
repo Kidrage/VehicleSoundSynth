@@ -23,7 +23,7 @@ APP_VERSION = {
     "architecture": "x64",
     "modernui": 1,
 }
-PROJECT_NAME = "VehicleSoundSynth-V5"
+PROJECT_NAME = "VehicleSoundSynth-V6"
 PROJECT_FILENAME = f"{PROJECT_NAME}.maxproj"
 VEHICLE_BUS_EQ_DEFAULT = {
     "schema_version": 1,
@@ -6073,7 +6073,7 @@ def make_v10_state_renderer() -> dict[str, Any]:
 def make_reference_texture() -> dict[str, Any]:
     """Build the superseded V4 reference renderer for offline comparison only."""
     p = Patcher(2300, 1080)
-    p.comment("OFFLINE V4 ARCHIVE — never declared or loaded by a V5 runtime", 25, 15, 1050)
+    p.comment("OFFLINE V4 ARCHIVE — never declared or loaded by a V6 runtime", 25, 15, 1050)
     control = inlet(p, 35, 65)
     names = (
         "throttle", "engine_running", "v12_weight", "v10_weight",
@@ -7761,7 +7761,7 @@ def make_legacy_transient() -> dict[str, Any]:
 def make_transient() -> dict[str, Any]:
     """Compatibility seam for EV: shift/decel motion now stays in continuous DSP."""
     p = Patcher(620, 300)
-    p.comment("V5 procedural event seam — no runtime shift/pop/crackle sample players", 25, 15, 560)
+    p.comment("V6 procedural event seam — no runtime shift/pop/crackle sample players", 25, 15, 560)
     control = inlet(p, 35, 65)
     names = (
         "starter", "shift", "shift_dir", "pop", "intake_backfire",
@@ -8638,7 +8638,7 @@ def add_eq_band(
 def make_launcher() -> dict[str, Any]:
     """Build a DSP-free project switchboard for the independent demos."""
     p = Patcher(1040, 645)
-    p.comment("VehicleSoundSynth V5 — choose one independent runtime", 30, 25, 520)
+    p.comment("VehicleSoundSynth V6 — choose one independent runtime", 30, 25, 520)
     p.comment(
         "The launcher owns no audio objects. Selecting a profile closes the previous runtime before opening one instance.",
         30,
@@ -9077,7 +9077,7 @@ def make_profile_main(profile: str, root: Path | None = None) -> dict[str, Any]:
     """Build one self-contained, profile-fixed runnable patcher."""
     config = PROFILE_CONFIG[profile]
     p = Patcher(1500, 1320)
-    p.comment(f"VehicleSoundSynth V5 — {config['title']} independent runtime", 25, 18, 720)
+    p.comment(f"VehicleSoundSynth V6 — {config['title']} independent runtime", 25, 18, 720)
     p.comment("Audio starts OFF. This patch contains only this profile's DSP graph.", 25, 48, 620)
     active_profile = p.new("r vss.runtime.select", 850, 25, 145, numinlets=0, numoutlets=1)
     active_match = p.new(f"sel {profile}", 850, 60, 65, numinlets=1, numoutlets=2)
