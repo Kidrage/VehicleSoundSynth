@@ -272,9 +272,11 @@ cannot re-voice the live instance.
 `Soundscape Enable`, dB, `Motion`, `Space`,
 `Pitch Follow`, `Transpose`, `Brightness`, and `Solo` are exposed on every
 runtime. `Open Designer` fronts the exact embedded instance feeding that
-runtime—there is no detached editor or `poly~` copy. `Save` stores the active
-profile to ignored `presets/local/<profile>_soundscape_v4.json`; EV, V10 and V12
-have independent graph topologies, factory states and local user states.
+runtime—there is no detached editor or `poly~` copy. For EV, V10 and V12,
+`Save` writes the active profile to ignored
+`presets/local/<profile>_soundscape_v4.json`; Ferrari instead writes the V5
+path named above. All four have independent graph topologies, factory states
+and local user states.
 
 IONIQ6N instead persists all three mode graphs through
 `presets/ioniq6n_soundscape_modes_factory.json` and the ignored local

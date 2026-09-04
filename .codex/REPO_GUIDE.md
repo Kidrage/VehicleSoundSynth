@@ -53,9 +53,15 @@ events, short cabin IR, adjustable stereo compression, EQ, and peak protection.
   keyboard adapter or Max's built-in macOS `gamepad` adapter and exposes only
   normalized throttle/brake to the existing drivetrain.
 - `patchers/vehicle_engine_{ev,v10,v12,ioniq6n,ferrari}~.maxpat` — fixed public seams.
-- `patchers/{ev,v10,v12,ioniq6n,ferrari}_sound_dna~.maxpat` — seed-once, user-editable profile
-  sound-design panels that own synthesis macros and wrap one generated powertrain.
-- `patchers/{ev,v10,v12,ioniq6n,ferrari}_powertrain~.maxpat` — exactly one Gen per profile.
+- `patchers/{ev,v10,v12,ioniq6n}_sound_dna~.maxpat` — seed-once,
+  user-editable profile sound-design panels that own synthesis macros and wrap
+  one generated powertrain.
+- `patchers/ferrari_sound_dna_v2~.maxpat` — current Ferrari seed-once Sound DNA;
+  it wraps the generated `gen/ferrari_exciter_v2.gendsp` with editable BEAP
+  body/cavity/mechanical bands and uses the `ferrari_realism_v2` local state.
+- `patchers/{ev,v10,v12,ioniq6n}_powertrain~.maxpat` — exactly one Gen per
+  profile; `patchers/ferrari_powertrain~.maxpat` is retained for Ferrari V1
+  rollback while the current Ferrari V2 path is described above.
 - `patchers/vehicle_bus_eq~.maxpat` — seed-once, user-editable four-band EQ
   topology with per-profile ignored state; `patchers/mix_master~.maxpat`
   contains generated safety dynamics only. `code/eq_feedback_reader.js` reads
@@ -77,8 +83,12 @@ events, short cabin IR, adjustable stereo compression, EQ, and peak protection.
   DNA audio or DNA parameter messages.
 - `assets/ferrari_sf90_v10_interpretation_targets.json` — sanitized numeric
   cadence/band/envelope target; contains no source path, audio, or derivative.
-- `patchers/ferrari_{soundscape_v4,engine_start_v3,backfire_v2}_beap~.maxpat` —
-  independent Ferrari seed-once designers; the start and backfire paths are
+- `patchers/ferrari_soundscape_v5_beap~.maxpat` — current independent Ferrari
+  seed-once Soundscape designer with its own V5 state and factory authority.
+- `patchers/ferrari_sound_dna~.maxpat`,
+  `patchers/ferrari_soundscape_v4_beap~.maxpat`, and
+  `patchers/ferrari_{engine_start_v3,backfire_v2}_beap~.maxpat` — preserved
+  seed-once rollback/start/event designers; the start and backfire paths are
   procedural-only.
 - `patchers/ioniq6n_soundscape_{ignition,evolution,lightspeed}_beap~.maxpat` —
   seed-once N Sound instruments. `presets/ioniq6n_soundscape_modes_factory.json`
@@ -106,8 +116,9 @@ python3 tools/validate_v10_lifecycle.py --drive-lifecycle-wav v10_v10-lifecycle-
 ```
 
 Regenerate twice and compare hashes when generator determinism matters. Never
-hand-edit generated `.maxpat`, `.gendsp`, or `.wav` files. The four Sound DNA
-panels, bus EQ, and seed-once BEAP patchers named above are explicit
+hand-edit generated `.maxpat`, `.gendsp`, or `.wav` files. The five current
+Sound DNA panels (including Ferrari V2), bus EQ, and seed-once BEAP patchers
+named above are explicit
 user-owned exceptions. The project generator preserves those files after their
 first seed. The project generator
 never overwrites curated runtime WAVs already present in `media/`.

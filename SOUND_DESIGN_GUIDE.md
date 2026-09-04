@@ -313,17 +313,21 @@ deliberately use different palettes:
   load-opened mechanical air and upper-band roadside reflection; it is not a
   chord Pad and does not receive Sound DNA audio.
 
-The tracked JSON contains the complete V4 state. At load,
+For EV, V10 and V12, the tracked JSON contains the complete V4 state. At load,
 the helper reads slot 99 from that authority, waits for the nested BEAP clients,
-recalls it, and then
-applies the ignored `presets/local/{profile}_soundscape_v4.json` slot 1 when it
-exists. After every local read it re-reads slot 99 from tracked JSON, so a legacy
-local slot 99 cannot shadow a newer shipped voicing. `Factory Reset` recalls the
-reloaded slot 99 and saves that complete result as the new local slot 1. Saving
-deletes slot 99 before writing; the user file therefore contains only slot 1.
-The three Osc `Freq` controls are then continuously owned by the runtime RPM
-pitch law; tune chord intervals with `Offset`, and tune global travel with
+recalls it, and then applies the ignored
+`presets/local/{profile}_soundscape_v4.json` slot 1 when it exists. After every
+local read it re-reads slot 99 from tracked JSON, so a legacy local slot 99
+cannot shadow a newer shipped voicing. `Factory Reset` recalls the reloaded
+slot 99 and saves that complete result as the new local slot 1. Saving deletes
+slot 99 before writing; the user file therefore contains only slot 1. Their
+three Osc `Freq` controls are continuously owned by the runtime RPM pitch law;
+tune chord intervals with `Offset`, and tune global travel with
 `Pitch Follow`/`Transpose` rather than trying to hold those three dials fixed.
+
+Ferrari V5 uses the same slot-99/local-slot-1 safety contract under its V5
+paths, but its pitch authority drives one quiet Pressure Reinforcement voice
+plus cadence-excited body/cavity resonators rather than a three-Osc chord set.
 
 Use the Main macros first:
 
