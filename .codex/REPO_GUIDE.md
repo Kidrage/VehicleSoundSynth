@@ -9,7 +9,8 @@ V10 and V12 retain their independent Soundscape V4 instruments. IONIQ6N is a
 separate fourth electric profile with one Sound DNA, three crossfaded N Sound
 BEAP instruments, a ready activation voice and a mode-aware N-event bus.
 Ferrari is a fifth, analysis-envelope-derived V10 acoustic interpretation with
-independent Sound DNA, Soundscape V4, procedural start and backfire; it has no
+independent realism-V2 Sound DNA, Soundscape V5, procedural start and backfire;
+its live graphs use fresh local-state namespaces and it has no
 runtime reference-audio dependency and is not a physical SF90 engine claim.
 The project also contains a
 start-relative single-speed/seven-speed drivetrain, cabin rumble, licensed

@@ -47,9 +47,11 @@ code/pop_state_path.js
 code/pop_v2_state_path.js
 code/soundscape_state_path.js
 code/soundscape_v4_state_path.js
+code/soundscape_v5_state_path.js
 code/start_state_path.js
 code/start_v3_state_path.js
 gen/ev_powertrain.gendsp
+gen/ferrari_exciter_v2.gendsp
 gen/ferrari_powertrain.gendsp
 gen/ioniq6n_powertrain.gendsp
 gen/v10_powertrain.gendsp
@@ -133,7 +135,9 @@ patchers/ferrari_engine_start_beap~.maxpat
 patchers/ferrari_engine_start_v3_beap~.maxpat
 patchers/ferrari_powertrain~.maxpat
 patchers/ferrari_sound_dna~.maxpat
+patchers/ferrari_sound_dna_v2~.maxpat
 patchers/ferrari_soundscape_v4_beap~.maxpat
+patchers/ferrari_soundscape_v5_beap~.maxpat
 patchers/ioniq6n_activation_beap~.maxpat
 patchers/ioniq6n_cinematic_soundscape_host~.maxpat
 patchers/ioniq6n_n_event_beap~.maxpat
@@ -204,6 +208,7 @@ presets/ev_soundscape_v2_factory.json
 presets/ev_soundscape_v3_factory.json
 presets/ev_soundscape_v4_factory.json
 presets/ferrari_soundscape_v4_factory.json
+presets/ferrari_soundscape_v5_factory.json
 presets/ioniq6n_n_event_factory.json
 presets/ioniq6n_soundscape_modes_factory.json
 presets/local/.gitkeep

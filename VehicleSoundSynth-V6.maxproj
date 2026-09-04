@@ -55,6 +55,10 @@
         "kind": "javascript",
         "local": 1
       },
+      "code/soundscape_v5_state_path.js": {
+        "kind": "javascript",
+        "local": 1
+      },
       "code/start_state_path.js": {
         "kind": "javascript",
         "local": 1
@@ -64,6 +68,10 @@
         "local": 1
       },
       "gen/ev_powertrain.gendsp": {
+        "kind": "gendsp",
+        "local": 1
+      },
+      "gen/ferrari_exciter_v2.gendsp": {
         "kind": "gendsp",
         "local": 1
       },
@@ -118,6 +126,10 @@
         "local": 1
       },
       "presets/ferrari_soundscape_v4_factory.json": {
+        "kind": "data",
+        "local": 1
+      },
+      "presets/ferrari_soundscape_v5_factory.json": {
         "kind": "data",
         "local": 1
       },
@@ -325,11 +337,19 @@
         "kind": "patcher",
         "local": 1
       },
+      "patchers/ferrari_sound_dna_v2~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
       "patchers/ferrari_sound_dna~.maxpat": {
         "kind": "patcher",
         "local": 1
       },
       "patchers/ferrari_soundscape_v4_beap~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/ferrari_soundscape_v5_beap~.maxpat": {
         "kind": "patcher",
         "local": 1
       },

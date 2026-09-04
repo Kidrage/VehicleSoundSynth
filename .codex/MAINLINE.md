@@ -25,3 +25,7 @@ Base: frozen V4 tag `v4.0.0` (`6aa49d0`).
     analysis-envelope-derived V10 acoustic interpretation with independent
     Sound DNA, Soundscape V4, procedural start and procedural backfire. Preserve
     the four accepted profiles byte-for-byte and keep all reference audio local.
+12. Replace only Ferrari's live acoustic pair with versioned realism-V2 Sound
+    DNA and Soundscape V5: soften square-like high-load energy, restore idle
+    low-mid mass, expose the active Soundscape location/level in Main, and prove
+    normal-mix audibility without changing the other four profile sounds.

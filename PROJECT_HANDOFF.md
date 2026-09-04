@@ -3,6 +3,55 @@
 > Deterministically generated repository/project memory for cross-agent handoff.
 > Update after every material project change and before final reporting.
 
+## Ferrari realism V2 / Soundscape V5 repair (2026-09-04)
+
+Branch `codex/v6-ferrari-realism-v2` starts from Ferrari V1 commit `38bcf10`
+and preserves the accepted V6 rollback tag
+`v6-accepted-2026-09-04-672ad62`. Only Ferrari's live continuous/Soundscape
+pair is version-switched: `ferrari_sound_dna_v2~` wraps
+`ferrari_exciter_v2.gendsp`, while the independent exterior stem uses
+`ferrari_soundscape_v5_beap~`. EV, V10, V12 and IONIQ6N synthesis graphs,
+factories and profile runtimes remain byte-identical to `38bcf10`.
+
+The V2 exciter keeps the exact `rpm/12` four-stroke cadence but replaces the
+narrow eighth-power pressure spike with a broader fifth-power pulse, removes
+most half-order oscillator reinforcement, reduces factory Presence/Edge, and
+adds a stereo-matched 1.35 kHz output presence ceiling. The audible result is
+pressure/body first instead of a bright periodic block. V5 Soundscape is not a
+chord pad: one quiet sine reinforcement and the shared pressure cadence excite
+body/cavity resonators; load/throttle reveal mechanical air, speed expands only
+the upper reflection field, and sub-120 Hz energy stays centred. Its state lives
+in fresh `ferrari_soundscape_v5` files, and Main visibly reports the active
+profile/version/location plus a -12 dB factory stem level.
+
+All 205 Python tests pass, including Ferrari-specific live-instance,
+Open/Save/Reload/Reset, default-enable, no-sample and normal-mix probe contracts.
+Real Max 8.6.5 diagnostic renders are unclipped. At the installed driver's
+actual 44.1 kHz, DNA idle measures 91.9% low-mid energy, 91.5% rumble,
+`0.000422` harshness and 11 spectral peaks; high-load DNA measures `0.002685`
+harshness, a 1.00 kHz 95% rolloff and 21 peaks. Soundscape Solo high-load is
+non-silent with `0.000431` harshness. In the normal high-load A/B, enabling
+Soundscape changes the SHA-256, raises low-mid ratio from 65.4% to 93.7%,
+raises rumble from 0.2% to 69.5%, and remains unclipped with 0.43 dB mono-fold
+loss. The probes request 48 kHz, but this installed NonRealTime driver again
+writes 44.1 kHz; metrics therefore report the actual rate rather than claiming
+a 48 kHz acceptance render.
+
+Post-fix verification generated two fresh 158-file project trees with identical
+combined SHA-256
+`ed7cef14842ae29fc33361d1e9773a71e22419518e5f4aa19f239f4de6c59679`;
+the checked-in Ferrari V2 DNA, V5 Soundscape and V2 Gen seeds match that clean
+generator output byte-for-byte. A final isolated Max 8.6.5 project launch closed
+the crash-restored Ferrari window, reopened Ferrari through Main, confirmed the
+active `ferrari` binding and visible `"Local V5" ferrari` / `-12 dB` state, then
+opened the live `[ferrari_soundscape_v5_beap~]` and
+`[ferrari_sound_dna_v2~]` instances. The project-qualified
+`Patcher:/gen/ferrari_exciter_v2.gendsp` lookup produced no Gen-missing,
+patchcord/outlet or rejected-parameter errors. Only the known Max read-only
+object-database warnings and the optional untracked startup one-shot miss remain.
+All task-owned Max windows/processes were exited; pre-existing user PID `38515`
+was preserved.
+
 ## Independent Ferrari V10 acoustic interpretation (2026-09-04)
 
 Accepted V6 is frozen at annotated tag `v6-accepted-2026-09-04-672ad62`

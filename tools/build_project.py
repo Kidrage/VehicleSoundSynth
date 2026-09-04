@@ -269,7 +269,7 @@ MODULE_MIX_DEFAULTS = {
     "v10": (-3.0, -5.0, -7.0, -20.0, -16.0, -4.0, -8.0),
     "v12": (-3.0, -5.0, -8.0, -20.0, -16.0, -5.0, -8.0),
     "ioniq6n": (-4.0, -7.0, -8.0, -22.0, -18.0, -60.0, -8.0),
-    "ferrari": (-3.0, -5.0, -8.0, -19.0, -16.0, -4.0, -8.0),
+    "ferrari": (-3.0, -5.0, -8.0, -12.0, -16.0, -4.0, -8.0),
 }
 
 # V6 control-registry seam.  These selectors already exist in the audio
@@ -646,6 +646,83 @@ SOUNDSCAPE_V4_FACTORY = {
     },
 }
 
+# Ferrari V5 deliberately stops using a musical oscillator bank as the body.
+# The visible BEAP controls now shape pulse-excited exterior/cavity structure;
+# the single sine reinforcement is kept far below those layers.
+FERRARI_SOUNDSCAPE_V5_FACTORY = {
+    "macros": (1.0, 0.18, 0.34, 0.42, 0.0, 0.28),
+    "mix": (-2.0, -4.0, -12.0, -24.0),
+    "filter": (920.0, 0.72),
+    "mmf": (1650.0, 0.68),
+    "env": (55.0, 780.0, 97.0, 2100.0),
+    "chorus": (390.0, 0.003, 4.0),
+    "reverb": (2850.0, 25.0, 52.0),
+}
+
+FERRARI_SOUNDSCAPE_V5_MODULES = {
+    "tone": "Pressure_Reinforcement",
+    "noise": "Combustion_Texture",
+    "mixer": "Exterior_Layers",
+    "ladder": "Body_Cavity_Valve",
+    "mmf": "Mechanical_Air_Sculpt",
+    "adsr": "Ferrari_Run_Envelope",
+    "vca": "Ferrari_Output_VCA",
+    "lfo": "Ferrari_Colour_Motion",
+    "chorus": "Bank_Reflection",
+    "reverb": "Roadside_Space",
+}
+
+
+def make_ferrari_soundscape_v5_factory() -> dict[str, Any]:
+    """Return Ferrari V5's independent slot-99 factory state."""
+    spec = FERRARI_SOUNDSCAPE_V5_FACTORY
+    modules = FERRARI_SOUNDSCAPE_V5_MODULES
+    macro_names = (
+        "soundscape_enable_state", "soundscape_motion_state",
+        "soundscape_space_state", "soundscape_pitch_follow_state",
+        "soundscape_transpose_state", "soundscape_brightness_state",
+    )
+    data = {name: [value] for name, value in zip(macro_names, spec["macros"])}
+    module_values = {
+        modules["tone"]: {"Waveform": 0, "Offset": 0, "Mute": 0},
+        modules["noise"]: {"Mute": 0, "manCVa": 0.0},
+        modules["mixer"]: {
+            f"in{index + 1}": value for index, value in enumerate(spec["mix"])
+        },
+        modules["ladder"]: {
+            "Freq": spec["filter"][0], "Res": spec["filter"][1], "CV1": 14.0,
+        },
+        modules["mmf"]: {
+            "Freq": spec["mmf"][0], "Res": spec["mmf"][1],
+            "FilterType": 0, "power[1]": 1,
+        },
+        modules["adsr"]: {
+            "Attack": spec["env"][0], "Decay": spec["env"][1],
+            "Sustain": spec["env"][2], "Release": spec["env"][3],
+        },
+        modules["vca"]: {"Response": 0.0},
+        modules["lfo"]: {"Frequency": 0.005, "Mute": 0},
+        modules["chorus"]: {
+            "Center": spec["chorus"][0], "Rate": spec["chorus"][1],
+            "Regen": 0.004, "Width": spec["chorus"][2], "bypass": 0,
+        },
+        modules["reverb"]: {
+            "Damping": spec["reverb"][0], "Decay": spec["reverb"][1],
+            "Diffusion": 0.82, "Mix": 100, "Size": spec["reverb"][2],
+            "bypass": 0,
+        },
+    }
+    core_name = "ferrari_soundscape_v5_beap~"
+    for module, values in module_values.items():
+        for name, value in values.items():
+            data[f"{core_name}::{module}::{name}"] = [value]
+    return {
+        "pattrstorage": {
+            "name": "soundscape_ferrari_v5",
+            "slots": {"99": {"id": 99, "data": data}},
+        }
+    }
+
 IONIQ6N_SOUNDSCAPE_MODES = {
     "ignition": {
         "title": "IGNITION — synthetic racing orders, induction pressure and restrained gear-mesh air",
@@ -1013,6 +1090,28 @@ FERRARI_DNA_DEFAULTS = {
     "idle_metal": 0.45,
     "idle_irregularity": 0.32,
     "idle_air": 0.18,
+}
+
+FERRARI_DNA_V2_DEFAULTS = {
+    "order_core": 0.62,
+    "body_band": 0.94,
+    "cavity_band": 0.92,
+    "mechanical_band": 0.52,
+    "presence_band": 0.04,
+    "edge_band": 0.03,
+    "band_load_depth": 0.86,
+    "lift_mass": 0.80,
+    "intake_detail": 0.78,
+    "exhaust_detail": 0.90,
+    "cycle_irregularity": 0.34,
+    "stereo_width": 0.44,
+    "throttle_loudness_depth": 4.0,
+    "saturation": 0.18,
+    "idle_level": 0.92,
+    "idle_body": 0.96,
+    "idle_metal": 0.36,
+    "idle_irregularity": 0.28,
+    "idle_air": 0.12,
 }
 
 MEDIA_FRAMES = {
@@ -1722,6 +1821,250 @@ def make_sound_dna(profile: str) -> dict[str, Any]:
     else:
         p.connect(powertrain, left, 0, 0)
         p.connect(powertrain, right, 1, 0)
+    return p.document(presentation=True)
+
+
+def make_ferrari_sound_dna_v2() -> dict[str, Any]:
+    """Seed Ferrari's pressure-excited DNA panel with visible BEAP structure."""
+    p = Patcher(3040, 1720)
+    p.comment(
+        "FERRARI SOUND DNA V2 — exact RPM/12 pressure exciter; BEAP owns the audible body/cavity/mechanical bands",
+        25, 15, 1220,
+    )
+    p.comment(
+        "TUNE ORDER: Combustion Core > 120–250 Body > 250–600 Cavity > 600–1200 Mechanical > Presence/Edge > Output",
+        25, 42, 1260,
+    )
+    control = inlet(p, 35, 75)
+    specs = DNA_PARAMETER_SPECS["ferrari"]
+    dna_names = tuple(item[0] for item in specs)
+    dna_router = route(p, dna_names, 35, 110, 1160)
+    state_names = (
+        "rpm", "throttle", "load", "accel", "engine_running",
+        "combustion_gain", "shift_cut", "powertrain_level_db",
+    )
+    state_router = route(p, state_names, 1260, 110, 760)
+    p.connect(control, dna_router)
+    p.connect(dna_router, state_router, len(dna_names), 0)
+
+    gen = p.new(
+        "gen~ @gen Patcher:/gen/ferrari_exciter_v2.gendsp",
+        1180, 700, 330, numinlets=1, numoutlets=8,
+    )
+    state_bounds = {
+        "rpm": (0.0, 10000.0), "throttle": (0.0, 1.0),
+        "load": (-1.0, 1.0), "accel": (-1.0, 1.0),
+        "engine_running": (0.0, 1.0), "combustion_gain": (0.0, 1.0),
+        "shift_cut": (0.0, 1.0),
+    }
+    for index, name in enumerate(state_names[:-1]):
+        low, high = state_bounds[name]
+        bounded = p.new(
+            f"clip {low:g} {high:g}", 1260 + (index % 4) * 190,
+            155 + (index // 4) * 62, 85, numinlets=3, numoutlets=1,
+        )
+        named = p.new(
+            f"prepend {name}", 1350 + (index % 4) * 190,
+            155 + (index // 4) * 62, 150, numinlets=1, numoutlets=1,
+        )
+        p.connect(state_router, bounded, index)
+        p.connect(bounded, named)
+        p.connect(named, gen)
+
+    p.new("autopattr @autorestore 0", 2090, 15, 155, numinlets=1, numoutlets=4)
+    open_request = p.new(
+        "r open.ferrari.sound_dna", 1890, 15, 190, numinlets=0, numoutlets=1,
+    )
+    front = p.message("front", 1890, 45, 45)
+    patcher_window = p.new("thispatcher", 1945, 45, 75, numinlets=1, numoutlets=2)
+    p.connect(open_request, front)
+    p.connect(front, patcher_window)
+    storage = p.new(
+        "pattrstorage ferrari_sound_dna_v2 @savemode 3 @changemode 1 @autorestore 0",
+        2090, 50, 390, numinlets=1, numoutlets=4,
+    )
+    state_path = p.new(
+        "js Patcher:/code/dna_state_path.js ferrari_realism_v2",
+        2090, 85, 340, numinlets=1, numoutlets=1,
+    )
+    load = p.new("loadbang", 2090, 120, 60, numinlets=1, numoutlets=1)
+    restore_delay = p.new("delay 180", 2160, 120, 70, numinlets=2, numoutlets=1)
+    restore_order = p.new("t b b", 2240, 120, 50, numinlets=1, numoutlets=2)
+    restore = p.message("restore", 2300, 120, 55)
+    recall_delay = p.new("delay 45", 2240, 155, 65, numinlets=2, numoutlets=1)
+    recall = p.message("1", 2315, 155, 30)
+    save = p.message("save", 2090, 190, 45)
+    close = p.new("closebang", 2145, 190, 65, numinlets=0, numoutlets=1)
+    p.connect(load, restore_delay)
+    p.connect(restore_delay, restore_order)
+    p.connect(restore_order, restore, 1)
+    p.connect(restore, state_path)
+    p.connect(state_path, storage)
+    p.connect(restore_order, recall_delay, 0)
+    p.connect(recall_delay, recall)
+    p.connect(recall, storage)
+    p.connect(close, save)
+    p.connect(save, state_path)
+
+    reset_button = p.add(
+        "message", "Reset DNA V2", 2240, 210, 90, numinlets=2, numoutlets=1,
+        presentation=1, presentation_rect=[1090.0, 690.0, 95.0, 22.0],
+    )
+    save_button = p.add(
+        "message", "Save DNA V2", 2090, 210, 85, numinlets=2, numoutlets=1,
+        presentation=1, presentation_rect=[900.0, 690.0, 90.0, 22.0],
+    )
+    reload_button = p.add(
+        "message", "Reload DNA V2", 2175, 210, 100, numinlets=2, numoutlets=1,
+        presentation=1, presentation_rect=[995.0, 690.0, 90.0, 22.0],
+    )
+    p.connect(save_button, save)
+    p.connect(reload_button, restore_order)
+
+    for index, (name, label, low, high) in enumerate(specs):
+        column = index % 4
+        row = index // 4
+        x = 35 + column * 300
+        y = 145 + row * 105
+        group, chinese, unit, context, description = DNA_CONTROL_METADATA[name]
+        p.add(
+            "comment", f"{group} · {label} / {chinese} [{unit}]",
+            x, y, 285, 20, numinlets=1, numoutlets=0,
+            presentation=1, presentation_rect=[x, y, 285.0, 20.0],
+        )
+        value = p.add(
+            "flonum", None, x, y + 24, 90, numinlets=1, numoutlets=2,
+            minimum=low, maximum=high, varname=f"dna_{name}",
+            presentation=1, presentation_rect=[x, y + 24, 90.0, 22.0],
+        )
+        p.add(
+            "comment", f"Audible / 可听: {context} — {description}",
+            x + 96, y + 24, 194, 38, numinlets=1, numoutlets=0,
+            presentation=1, presentation_rect=[x + 96, y + 22, 194.0, 40.0],
+        )
+        bounded = p.new(
+            f"clip {low:g} {high:g}", x + 100, y + 67, 90,
+            numinlets=3, numoutlets=1,
+        )
+        named = p.new(
+            f"prepend {name}", x + 195, y + 67, 100,
+            numinlets=1, numoutlets=1,
+        )
+        default_message = p.message(
+            f"{FERRARI_DNA_V2_DEFAULTS[name]:g}", x, y + 67, 65,
+        )
+        p.connect(dna_router, value, index)
+        p.connect(value, bounded)
+        p.connect(bounded, named)
+        p.connect(named, gen)
+        p.connect(load, default_message)
+        p.connect(reset_button, default_message)
+        p.connect(default_message, value)
+
+    p.comment(
+        "VISIBLE BEAP ACOUSTIC STRUCTURE — every band below is in the live audio path",
+        25, 690, 1120,
+    )
+    order_filter = add_beap_module(
+        p, "Filter/bp.Ladder.maxpat", 25, 735, "Combustion_Core_Sculpt",
+        initial={"Freq": 290.0, "Res": 0.58, "CV1": 0.0},
+    )
+    body_filter = add_beap_module(
+        p, "Filter/bp.MMF.maxpat", 340, 735, "Body_120_250",
+        initial={"Freq": 185.0, "Res": 0.78, "FilterType": 2, "power[1]": 1},
+    )
+    cavity_l = add_beap_module(
+        p, "Filter/bp.MMF.maxpat", 655, 735, "Cavity_L_250_600",
+        initial={"Freq": 355.0, "Res": 0.92, "FilterType": 2, "power[1]": 1},
+    )
+    cavity_r = add_beap_module(
+        p, "Filter/bp.MMF.maxpat", 970, 735, "Cavity_R_250_600",
+        initial={"Freq": 405.0, "Res": 0.88, "FilterType": 2, "power[1]": 1},
+    )
+    mechanical_l = add_beap_module(
+        p, "Filter/bp.MMF.maxpat", 1285, 735, "Mechanical_L_600_1200",
+        initial={"Freq": 820.0, "Res": 0.76, "FilterType": 2, "power[1]": 1},
+    )
+    mechanical_r = add_beap_module(
+        p, "Filter/bp.MMF.maxpat", 1600, 735, "Mechanical_R_600_1200",
+        initial={"Freq": 930.0, "Res": 0.72, "FilterType": 2, "power[1]": 1},
+    )
+    presence_l = add_beap_module(
+        p, "Filter/bp.MMF.maxpat", 1915, 735, "Presence_L_1200_2000",
+        initial={"Freq": 1480.0, "Res": 0.66, "FilterType": 2, "power[1]": 1},
+    )
+    presence_r = add_beap_module(
+        p, "Filter/bp.MMF.maxpat", 2230, 735, "Presence_R_1200_2000",
+        initial={"Freq": 1660.0, "Res": 0.64, "FilterType": 2, "power[1]": 1},
+    )
+    edge_l = add_beap_module(
+        p, "Filter/bp.MMF.maxpat", 1915, 980, "Edge_L_2000_6000",
+        initial={"Freq": 3400.0, "Res": 0.56, "FilterType": 2, "power[1]": 1},
+    )
+    edge_r = add_beap_module(
+        p, "Filter/bp.MMF.maxpat", 2230, 980, "Edge_R_2000_6000",
+        initial={"Freq": 3800.0, "Res": 0.54, "FilterType": 2, "power[1]": 1},
+    )
+    for source, target, source_outlet in (
+        (gen, order_filter, 0), (gen, body_filter, 1),
+        (gen, cavity_l, 2), (gen, cavity_r, 3),
+        (gen, mechanical_l, 4), (gen, mechanical_r, 5),
+        (gen, presence_l, 6), (gen, presence_r, 7),
+        (gen, edge_l, 6), (gen, edge_r, 7),
+    ):
+        p.connect(source, target, source_outlet, 0)
+
+    center = p.new("+~", 420, 1035, 40, numinlets=2, numoutlets=1)
+    upper_l = p.new("+~", 2050, 1215, 40, numinlets=2, numoutlets=1)
+    upper_r = p.new("+~", 2370, 1215, 40, numinlets=2, numoutlets=1)
+    p.connect(order_filter, center, 0, 0)
+    p.connect(body_filter, center, 0, 1)
+    p.connect(presence_l, upper_l, 0, 0)
+    p.connect(edge_l, upper_l, 0, 1)
+    p.connect(presence_r, upper_r, 0, 0)
+    p.connect(edge_r, upper_r, 0, 1)
+
+    mixers = []
+    vcas = []
+    for channel, x, cavity, mechanical, upper in (
+        ("L", 420, cavity_l, mechanical_l, upper_l),
+        ("R", 1180, cavity_r, mechanical_r, upper_r),
+    ):
+        mixer = add_beap_module(
+            p, "Mixers/bp.Audio Mixer.maxpat", x, 1260,
+            f"{channel}_Acoustic_Band_Mixer",
+            initial={"in1": -2.0, "in2": -4.0, "in3": -12.0, "in4": -18.0},
+        )
+        vca = add_beap_module(
+            p, "Level/bp.VCA.maxpat", x + 255, 1260,
+            f"{channel}_DNA_Output_VCA", initial={"Response": 0.0},
+        )
+        gate = p.new("sig~ 5.", x + 520, 1320, 60, numinlets=1, numoutlets=1)
+        p.connect(center, mixer, 0, 0)
+        p.connect(cavity, mixer, 0, 1)
+        p.connect(mechanical, mixer, 0, 2)
+        p.connect(upper, mixer, 0, 3)
+        p.connect(mixer, vca, 0, 0)
+        p.connect(gate, vca, 0, 1)
+        mixers.append(mixer)
+        vcas.append(vca)
+
+    level = add_db_gain_control(p, state_router, 7, 2520, 220, -3.0)
+    for channel, x, source in ((0, 830, vcas[0]), (1, 1590, vcas[1])):
+        calibration = p.new("*~ 0.72", x, 1510, 65, numinlets=2, numoutlets=1)
+        gain = p.new("*~", x + 75, 1510, 40, numinlets=2, numoutlets=1)
+        presence_ceiling = p.new(
+            "svf~ 1350 0.55", x + 125, 1510, 115,
+            numinlets=3, numoutlets=4,
+        )
+        infra = p.new("svf~ 28 0.7", x + 250, 1510, 95, numinlets=3, numoutlets=4)
+        output = outlet(p, x + 355, 1510, signal=True)
+        p.connect(source, calibration)
+        p.connect(calibration, gain, 0, 0)
+        p.connect(level, gain, 0, 1)
+        p.connect(gain, presence_ceiling)
+        p.connect(presence_ceiling, infra, 0, 0)
+        p.connect(infra, output, 1, 0)
     return p.document(presentation=True)
 
 
@@ -2506,6 +2849,307 @@ def make_soundscape_v4_beap(profile: str) -> dict[str, Any]:
     return p.document()
 
 
+def make_ferrari_soundscape_v5_beap() -> dict[str, Any]:
+    """Seed Ferrari V5's pulse-excited exterior Soundscape instrument."""
+    spec = FERRARI_SOUNDSCAPE_V5_FACTORY
+    modules = FERRARI_SOUNDSCAPE_V5_MODULES
+    p = Patcher(3120, 1180)
+    p.comment(
+        "FERRARI SOUNDSCAPE V5 — pressure-excited exterior body / exhaust cavity / mechanical-air / roadside space",
+        25, 15, 1280,
+    )
+    p.comment(
+        "TUNE ORDER: Combustion Texture > Exterior Body > Exhaust Cavity > Mechanical/Air > High-band Space > Output",
+        25, 42, 1280,
+    )
+    pitch_cv = inlet(p, 30, 80, signal=True)
+    gate_cv = inlet(p, 110, 80, signal=True)
+    colour_cv = inlet(p, 190, 80, signal=True)
+    motion_cv = inlet(p, 270, 80, signal=True)
+    space_cv = inlet(p, 350, 80, signal=True)
+    cadence_cv = inlet(p, 430, 80, signal=True)
+    idle_cv = inlet(p, 510, 80, signal=True)
+    load_cv = inlet(p, 590, 80, signal=True)
+    speed_cv = inlet(p, 670, 80, signal=True)
+    transient_cv = inlet(p, 750, 80, signal=True)
+    control = inlet(p, 830, 80)
+    for label, x in (
+        ("Modal pitch", 20), ("Run gate", 100), ("Colour", 180),
+        ("Motion", 260), ("Space", 340), ("RPM/12 cadence", 420),
+        ("Idle mass", 500), ("Load", 580), ("Speed air", 660),
+        ("Transient", 740), ("Commands", 820),
+    ):
+        p.comment(label, x, 110, 95)
+
+    commands = route(p, ("open", "save", "reload", "reset"), 1370, 15, 280)
+    p.connect(control, commands)
+    front = p.message("front", 1660, 15, 45)
+    thispatcher = p.new("thispatcher", 1715, 15, 75, numinlets=1, numoutlets=2)
+    action = outlet(p, 3010, 105)
+    p.connect(commands, front, 0)
+    p.connect(front, thispatcher)
+    for index, name in enumerate(("save", "reload", "reset"), start=1):
+        button = p.message(name.capitalize(), 1810 + index * 100, 15, 85)
+        request = p.message(
+            f"soundscape_action {name}", 1810 + index * 150, 45, 145,
+        )
+        p.connect(commands, request, index)
+        p.connect(button, request)
+        p.connect(request, action)
+    graph_button = p.message("Save Graph Layout", 2330, 15, 120)
+    graph_write = p.message("write", 2460, 15, 45)
+    p.connect(graph_button, graph_write)
+    p.connect(graph_write, thispatcher)
+
+    tone = add_beap_module(
+        p, "Oscillator/bp.Oscillator.maxpat", 25, 155, modules["tone"],
+        initial={"Waveform": 0, "Offset": 0, "Mute": 0},
+    )
+    noise = add_beap_module(
+        p, "Random/bp.Noise.maxpat", 355, 155, modules["noise"],
+        initial={"Mute": 0, "manCVa": 0.0},
+    )
+    mixer = add_beap_module(
+        p, "Mixers/bp.Audio Mixer.maxpat", 630, 155, modules["mixer"],
+        initial={f"in{index + 1}": value for index, value in enumerate(spec["mix"])},
+    )
+    ladder = add_beap_module(
+        p, "Filter/bp.Ladder.maxpat", 875, 155, modules["ladder"],
+        initial={"Freq": spec["filter"][0], "Res": spec["filter"][1], "CV1": 14},
+    )
+    mmf = add_beap_module(
+        p, "Filter/bp.MMF.maxpat", 1190, 155, modules["mmf"],
+        initial={
+            "Freq": spec["mmf"][0], "Res": spec["mmf"][1],
+            "FilterType": 0, "power[1]": 1,
+        },
+    )
+    envelope = add_beap_module(
+        p, "Envelope/bp.ADSR.maxpat", 1470, 155, modules["adsr"],
+        initial={
+            "Attack": spec["env"][0], "Decay": spec["env"][1],
+            "Sustain": spec["env"][2], "Release": spec["env"][3],
+        },
+    )
+    vca = add_beap_module(
+        p, "Level/bp.VCA.maxpat", 1725, 155, modules["vca"],
+        initial={"Response": 0.0},
+    )
+    lfo = add_beap_module(
+        p, "LFO/bp.LFO.maxpat", 1995, 155, modules["lfo"],
+        initial={"Frequency": 0.005, "Mute": 0},
+    )
+    chorus = add_beap_module(
+        p, "Effects/bp.Chorus.maxpat", 2290, 155, modules["chorus"],
+        initial={
+            "Center": spec["chorus"][0], "Rate": spec["chorus"][1],
+            "Regen": 0.004, "Width": spec["chorus"][2], "bypass": 0,
+        },
+    )
+    reverb = add_beap_module(
+        p, "Effects/bp.Reverb 2.maxpat", 2680, 155, modules["reverb"],
+        initial={
+            "Damping": spec["reverb"][0], "Decay": spec["reverb"][1],
+            "Diffusion": 0.82, "Mix": 100, "Size": spec["reverb"][2],
+            "bypass": 0,
+        },
+    )
+
+    # Pitch Follow/Transpose only move the quiet sine reinforcement and the
+    # physical modal centers. They never alter the RPM/12 firing clock.
+    p.connect(pitch_cv, tone)
+    pitch_semitones = p.new("*~ 12.", 25, 355, 65, numinlets=2, numoutlets=1)
+    pitch_midi = p.new("+~ 60.", 100, 355, 65, numinlets=2, numoutlets=1)
+    root_hz = p.new("mtof~", 175, 355, 55, numinlets=1, numoutlets=1)
+    p.connect(pitch_cv, pitch_semitones)
+    p.connect(pitch_semitones, pitch_midi)
+    p.connect(pitch_midi, root_hz)
+
+    p.comment(
+        "1 EXTERIOR PRESSURE BED — continuous RPM/12 timing; stochastic pulse energy, not a musical oscillator",
+        25, 395, 1040,
+    )
+    cadence_abs = p.new("abs~", 25, 430, 45, numinlets=1, numoutlets=1)
+    phase = p.new("phasor~", 80, 430, 60, numinlets=2, numoutlets=1)
+    phase_cos = p.new("cos~", 150, 430, 45, numinlets=1, numoutlets=1)
+    pulse_half = p.new("*~ 0.5", 205, 430, 60, numinlets=2, numoutlets=1)
+    pulse_positive = p.new("+~ 0.5", 275, 430, 60, numinlets=2, numoutlets=1)
+    pulse_power = p.new("pow~ 5.", 345, 430, 65, numinlets=2, numoutlets=1)
+    pulse = p.new("-~ 0.24609375", 420, 430, 95, numinlets=2, numoutlets=1)
+    pulse_abs = p.new("abs~", 525, 430, 45, numinlets=1, numoutlets=1)
+    textured = p.new("*~", 580, 430, 40, numinlets=2, numoutlets=1)
+    textured_trim = p.new("*~ 0.42", 630, 430, 65, numinlets=2, numoutlets=1)
+    pressure_trim = p.new("*~ 0.58", 705, 430, 65, numinlets=2, numoutlets=1)
+    pressure = p.new("+~", 780, 430, 40, numinlets=2, numoutlets=1)
+    p.connect(cadence_cv, cadence_abs)
+    p.connect(cadence_abs, phase)
+    p.connect(phase, phase_cos)
+    p.connect(phase_cos, pulse_half)
+    p.connect(pulse_half, pulse_positive)
+    p.connect(pulse_positive, pulse_power)
+    p.connect(pulse_power, pulse)
+    p.connect(pulse, pulse_abs)
+    p.connect(noise, textured, 0, 0)
+    p.connect(pulse_abs, textured, 0, 1)
+    p.connect(textured, textured_trim)
+    p.connect(pulse, pressure_trim)
+    p.connect(pressure_trim, pressure, 0, 0)
+    p.connect(textured_trim, pressure, 0, 1)
+
+    modal_offsets = (
+        ("*~ 0.12", "+~ 138.", "reson~ 2.5 145 4.4", 25),
+        ("*~ 0.18", "+~ 205.", "reson~ 2.1 218 5.2", 235),
+        ("*~ 0.24", "+~ 300.", "reson~ 1.8 330 6.2", 445),
+        ("*~ 0.31", "+~ 455.", "reson~ 1.5 510 7.4", 655),
+    )
+    modes = []
+    for scale_text, offset_text, resonator_text, x in modal_offsets:
+        scale = p.new(scale_text, x, 480, 65, numinlets=2, numoutlets=1)
+        offset = p.new(offset_text, x + 75, 480, 75, numinlets=2, numoutlets=1)
+        resonator = p.new(
+            resonator_text, x, 515, 145, numinlets=4, numoutlets=1,
+        )
+        p.connect(root_hz, scale)
+        p.connect(scale, offset)
+        p.connect(pressure, resonator, 0, 0)
+        p.connect(offset, resonator, 0, 2)
+        modes.append(resonator)
+    body_sum = p.new("+~", 25, 560, 40, numinlets=2, numoutlets=1)
+    cavity_sum = p.new("+~", 445, 560, 40, numinlets=2, numoutlets=1)
+    p.connect(modes[0], body_sum, 0, 0)
+    p.connect(modes[1], body_sum, 0, 1)
+    p.connect(modes[2], cavity_sum, 0, 0)
+    p.connect(modes[3], cavity_sum, 0, 1)
+
+    body_load = p.new("*~ 0.33", 85, 560, 65, numinlets=2, numoutlets=1)
+    body_idle = p.new("*~ 0.20", 160, 560, 65, numinlets=2, numoutlets=1)
+    body_gain_sum = p.new("+~", 235, 560, 40, numinlets=2, numoutlets=1)
+    body_gain = p.new("+~ 0.47", 285, 560, 70, numinlets=2, numoutlets=1)
+    body_dynamic = p.new("*~", 365, 560, 40, numinlets=2, numoutlets=1)
+    p.connect(load_cv, body_load)
+    p.connect(idle_cv, body_idle)
+    p.connect(body_load, body_gain_sum, 0, 0)
+    p.connect(body_idle, body_gain_sum, 0, 1)
+    p.connect(body_gain_sum, body_gain)
+    p.connect(body_sum, body_dynamic, 0, 0)
+    p.connect(body_gain, body_dynamic, 0, 1)
+
+    cavity_load = p.new("*~ 0.48", 505, 560, 65, numinlets=2, numoutlets=1)
+    cavity_idle = p.new("*~ 0.16", 580, 560, 65, numinlets=2, numoutlets=1)
+    cavity_gain_sum = p.new("+~", 655, 560, 40, numinlets=2, numoutlets=1)
+    cavity_gain = p.new("+~ 0.30", 705, 560, 70, numinlets=2, numoutlets=1)
+    cavity_dynamic = p.new("*~", 785, 560, 40, numinlets=2, numoutlets=1)
+    p.connect(load_cv, cavity_load)
+    p.connect(idle_cv, cavity_idle)
+    p.connect(cavity_load, cavity_gain_sum, 0, 0)
+    p.connect(cavity_idle, cavity_gain_sum, 0, 1)
+    p.connect(cavity_gain_sum, cavity_gain)
+    p.connect(cavity_sum, cavity_dynamic, 0, 0)
+    p.connect(cavity_gain, cavity_dynamic, 0, 1)
+
+    p.comment(
+        "2 MECHANICAL / AIR HALO — filtered combustion texture; load opens density, speed opens air only",
+        900, 395, 960,
+    )
+    mechanical_load = p.new("*~ 0.30", 900, 430, 65, numinlets=2, numoutlets=1)
+    mechanical_transient = p.new("*~ 0.24", 975, 430, 65, numinlets=2, numoutlets=1)
+    mechanical_amount = p.new("+~", 1050, 430, 40, numinlets=2, numoutlets=1)
+    mechanical_floor = p.new("+~ 0.07", 1100, 430, 70, numinlets=2, numoutlets=1)
+    mechanical_noise = p.new("*~", 1180, 430, 40, numinlets=2, numoutlets=1)
+    mechanical_band = p.new("svf~ 860 0.74", 1230, 430, 115, numinlets=3, numoutlets=4)
+    mechanical_reson = p.new("reson~ 1.2 1080 7.5", 1355, 430, 145, numinlets=4, numoutlets=1)
+    mechanical_sum = p.new("+~", 1510, 430, 40, numinlets=2, numoutlets=1)
+    p.connect(load_cv, mechanical_load)
+    p.connect(transient_cv, mechanical_transient)
+    p.connect(mechanical_load, mechanical_amount, 0, 0)
+    p.connect(mechanical_transient, mechanical_amount, 0, 1)
+    p.connect(mechanical_amount, mechanical_floor)
+    p.connect(noise, mechanical_noise, 0, 0)
+    p.connect(mechanical_floor, mechanical_noise, 0, 1)
+    p.connect(mechanical_noise, mechanical_band)
+    p.connect(mechanical_noise, mechanical_reson)
+    p.connect(mechanical_band, mechanical_sum, 2, 0)
+    p.connect(mechanical_reson, mechanical_sum, 0, 1)
+
+    reinforcement_load = p.new("*~", 1570, 430, 40, numinlets=2, numoutlets=1)
+    reinforcement_trim = p.new("*~ 0.06", 1620, 430, 65, numinlets=2, numoutlets=1)
+    p.connect(tone, reinforcement_load, 0, 0)
+    p.connect(load_cv, reinforcement_load, 0, 1)
+    p.connect(reinforcement_load, reinforcement_trim)
+    p.connect(body_dynamic, mixer, 0, 0)
+    p.connect(cavity_dynamic, mixer, 0, 1)
+    p.connect(mechanical_sum, mixer, 0, 2)
+    p.connect(reinforcement_trim, mixer, 0, 3)
+
+    colour_lfo = p.new("*~ 0.010", 1995, 355, 70, numinlets=2, numoutlets=1)
+    colour_motion = p.new("*~", 2075, 355, 40, numinlets=2, numoutlets=1)
+    colour_sum = p.new("+~", 2125, 355, 40, numinlets=2, numoutlets=1)
+    p.connect(lfo, colour_lfo)
+    p.connect(colour_lfo, colour_motion, 0, 0)
+    p.connect(motion_cv, colour_motion, 0, 1)
+    p.connect(colour_cv, colour_sum, 0, 0)
+    p.connect(colour_motion, colour_sum, 0, 1)
+    p.connect(mixer, ladder, 0, 0)
+    p.connect(colour_sum, ladder, 0, 1)
+    p.connect(ladder, mmf, 0, 0)
+    p.connect(colour_sum, mmf, 0, 1)
+    p.connect(gate_cv, envelope, 0, 0)
+    p.connect(mmf, vca, 0, 0)
+    p.connect(envelope, vca, 0, 1)
+
+    air_speed = p.new("*~ 0.18", 1760, 535, 65, numinlets=2, numoutlets=1)
+    air_load = p.new("*~ 0.09", 1835, 535, 65, numinlets=2, numoutlets=1)
+    air_amount = p.new("+~", 1910, 535, 40, numinlets=2, numoutlets=1)
+    air_floor = p.new("+~ 0.025", 1960, 535, 75, numinlets=2, numoutlets=1)
+    air_noise = p.new("*~", 2045, 535, 40, numinlets=2, numoutlets=1)
+    air_high = p.new("svf~ 1600 0.62", 2095, 535, 120, numinlets=3, numoutlets=4)
+    air_trim = p.new("*~ 0.18", 2225, 535, 65, numinlets=2, numoutlets=1)
+    spatial_source = p.new("+~", 2300, 535, 40, numinlets=2, numoutlets=1)
+    p.connect(speed_cv, air_speed)
+    p.connect(load_cv, air_load)
+    p.connect(air_speed, air_amount, 0, 0)
+    p.connect(air_load, air_amount, 0, 1)
+    p.connect(air_amount, air_floor)
+    p.connect(noise, air_noise, 0, 0)
+    p.connect(air_floor, air_noise, 0, 1)
+    p.connect(air_noise, air_high)
+    p.connect(air_high, air_trim, 1, 0)
+    p.connect(vca, spatial_source, 0, 0)
+    p.connect(air_trim, spatial_source, 0, 1)
+
+    p.comment(
+        "3 ROADSIDE SPACE — below 120 Hz centered; only high structure enters Bank Reflection/Roadside Space",
+        25, 650, 1150,
+    )
+    split = p.new("svf~ 120 0.7", 25, 690, 100, numinlets=3, numoutlets=4)
+    p.connect(spatial_source, split)
+    p.connect(split, chorus, 1, 0)
+    p.connect(split, reverb, 1, 0)
+    space_depth = p.new("*~ 0.30", 430, 690, 65, numinlets=2, numoutlets=1)
+    p.connect(space_cv, space_depth)
+    for channel, x in ((0, 850), (1, 1560)):
+        chorus_gain = p.new("*~ 0.38", x, 755, 65, numinlets=2, numoutlets=1)
+        reverb_gain = p.new("*~", x + 75, 755, 40, numinlets=2, numoutlets=1)
+        wet = p.new("+~", x + 125, 755, 40, numinlets=2, numoutlets=1)
+        width = p.new("*~ 0.94" if channel == 0 else "*~ 0.90", x + 175, 755, 65, numinlets=2, numoutlets=1)
+        full = p.new("+~", x + 250, 755, 40, numinlets=2, numoutlets=1)
+        infra = p.new("svf~ 28 0.7", x + 300, 755, 95, numinlets=3, numoutlets=4)
+        trim = p.new("*~ 0.62", x + 405, 755, 65, numinlets=2, numoutlets=1)
+        output = outlet(p, x + 480, 755, signal=True)
+        p.connect(chorus, chorus_gain, channel, 0)
+        p.connect(reverb, reverb_gain, channel, 0)
+        p.connect(space_depth, reverb_gain, 0, 1)
+        p.connect(chorus_gain, wet, 0, 0)
+        p.connect(reverb_gain, wet, 0, 1)
+        p.connect(wet, width)
+        p.connect(split, full, 0, 0)
+        p.connect(width, full, 0, 1)
+        p.connect(full, infra)
+        p.connect(infra, trim, 1, 0)
+        p.connect(trim, output)
+    return p.document()
+
+
 def make_ioniq6n_soundscape_beap(mode: str) -> dict[str, Any]:
     """Build one user-owned IONIQ mode instrument with BEAP sources and structure."""
     spec = IONIQ6N_SOUNDSCAPE_MODES[mode]
@@ -3038,31 +3682,72 @@ def make_ioniq6n_soundscape_host() -> dict[str, Any]:
 
 def make_soundscape_control() -> dict[str, Any]:
     """Build the stateless Main-page view for one profile Soundscape host."""
-    p = Patcher(980, 235)
-    p.comment("SOUNDSCAPE V4 CONTROL — live profile-owned instrument state", 15, 8, 760)
+    p = Patcher(1080, 275)
+    p.comment("SOUNDSCAPE CONTROL — Main > Sound Design; live profile-owned instrument state", 15, 8, 800)
     p.add(
-        "comment", "Soundscape V4", 735, 8, 120, 18,
+        "comment", "Soundscape V4 / Ferrari V5", 735, 8, 190, 18,
         numinlets=1, numoutlets=0, presentation=1,
-        presentation_rect=[790.0, 8.0, 150.0, 18.0],
+        presentation_rect=[820.0, 8.0, 200.0, 18.0],
     )
-    feedback = inlet(p, 15, 205)
-    output = outlet(p, 945, 205)
-    feedback_route = route(p, ("soundscape_state", "soundscape_status"), 690, 175, 245)
+    feedback = inlet(p, 15, 240)
+    output = outlet(p, 1035, 240)
+    feedback_route = route(
+        p,
+        ("soundscape_state", "soundscape_status", "soundscape_level_db", "profile"),
+        670, 205, 355,
+    )
     state_route = route(
         p,
         ("enable", "motion", "space", "pitch_follow", "transpose", "brightness", "solo"),
-        470, 205, 465,
+        430, 240, 465,
     )
-    status_set = p.new("prepend set", 805, 205, 85, numinlets=1, numoutlets=1)
+    status_set = p.new("prepend set", 805, 240, 85, numinlets=1, numoutlets=1)
     status = p.add(
-        "message", "Factory V4", 895, 175, 70, 22,
+        "message", "Factory V4 / Ferrari V5", 895, 205, 145, 22,
         numinlets=2, numoutlets=1, presentation=1,
-        presentation_rect=[650.0, 68.0, 310.0, 22.0],
+        presentation_rect=[820.0, 70.0, 200.0, 22.0],
     )
     p.connect(feedback, feedback_route)
     p.connect(feedback_route, state_route, 0)
     p.connect(feedback_route, status_set, 1)
     p.connect(status_set, status)
+
+    p.add(
+        "comment", "Soundscape Level / 氛围电平", 595, 155, 185, 18,
+        numinlets=1, numoutlets=0, presentation=1,
+        presentation_rect=[585.0, 70.0, 180.0, 18.0],
+    )
+    level = p.add(
+        "flonum", None, 775, 155, 70, numinlets=1, numoutlets=2,
+        minimum=-60.0, maximum=6.0, presentation=1,
+        presentation_rect=[745.0, 68.0, 68.0, 22.0],
+    )
+    level_clip = p.new("clip -60. 6.", 775, 180, 85, numinlets=3, numoutlets=1)
+    level_named = p.new(
+        "prepend soundscape_level_db", 865, 180, 190,
+        numinlets=1, numoutlets=1,
+    )
+    level_set = p.new("prepend set", 865, 205, 80, numinlets=1, numoutlets=1)
+    p.connect(level, level_clip)
+    p.connect(level_clip, level_named)
+    p.connect(level_named, output)
+    p.connect(feedback_route, level_set, 2)
+    p.connect(level_set, level)
+
+    profile_set = p.new("prepend set", 945, 205, 80, numinlets=1, numoutlets=1)
+    profile_status = p.add(
+        "message", "No active profile", 945, 155, 115, 22,
+        numinlets=2, numoutlets=1, presentation=1,
+        presentation_rect=[820.0, 98.0, 200.0, 22.0],
+    )
+    p.connect(feedback_route, profile_set, 3)
+    p.connect(profile_set, profile_status)
+    p.add(
+        "comment",
+        "Main > Sound Design：Enable → Level → Open Designer；Ferrari 使用独立 V5 状态。",
+        15, 215, 620, 18, numinlets=1, numoutlets=0, presentation=1,
+        presentation_rect=[15.0, 102.0, 620.0, 18.0],
+    )
 
     p.add(
         "comment", "Enable / 开启", 15, 38, 80, 18,
@@ -3156,9 +3841,28 @@ def make_soundscape_control() -> dict[str, Any]:
 
 
 def make_cinematic_soundscape_host(profile: str) -> dict[str, Any]:
-    """Map read-only vehicle state into one profile-owned V4 instrument."""
+    """Map read-only vehicle state into one profile-owned Soundscape instrument."""
+    soundscape_version = 5 if profile == "ferrari" else 4
+    voice_name = (
+        "ferrari_soundscape_v5_beap~"
+        if profile == "ferrari"
+        else f"{profile}_soundscape_v4_beap~"
+    )
+    factory_spec = (
+        FERRARI_SOUNDSCAPE_V5_FACTORY
+        if profile == "ferrari"
+        else SOUNDSCAPE_V4_FACTORY[profile]
+    )
+    state_helper = (
+        "soundscape_v5_state_path.js"
+        if profile == "ferrari"
+        else "soundscape_v4_state_path.js"
+    )
     p = Patcher(1900, 1050)
-    p.comment(f"{profile.upper()} CINEMATIC SOUNDSCAPE V4 HOST — state-only coupling; no Sound DNA audio or parameters", 25, 15, 1120)
+    p.comment(
+        f"{profile.upper()} CINEMATIC SOUNDSCAPE V{soundscape_version} HOST — state-only coupling; no Sound DNA audio or parameters",
+        25, 15, 1180 if profile == "ferrari" else 1120,
+    )
     control = inlet(p, 35, 65)
     status = outlet(p, 1320, 825)
     names = (
@@ -3201,7 +3905,7 @@ def make_cinematic_soundscape_host(profile: str) -> dict[str, Any]:
         "v12": ("32.7", "0.012"),
         "ferrari": ("36.7", "0.014"),
     }[profile]
-    pitch_follow_default_value = 1.0
+    pitch_follow_default_value = factory_spec["macros"][3]
     rpm = p.new("clip 0. 10000.", 35, 170, 105, numinlets=3, numoutlets=1)
     pitch_follow_input = p.new("clip 0. 1.", 230, 250, 75, numinlets=3, numoutlets=1)
     pitch_follow_state = p.add(
@@ -3251,7 +3955,7 @@ def make_cinematic_soundscape_host(profile: str) -> dict[str, Any]:
     p.connect(pitch_pack, pitch_line)
 
     state = p.new("pak 0. 0. 0. 0.5", 450, 170, 125, numinlets=4, numoutlets=1)
-    brightness_default_value = SOUNDSCAPE_V4_FACTORY[profile]["macros"][5]
+    brightness_default_value = factory_spec["macros"][5]
     brightness_input = p.new("clip 0. 1.", 580, 170, 75, numinlets=3, numoutlets=1)
     brightness_state = p.add(
         "flonum", None, 665, 170, 65, numinlets=1, numoutlets=2,
@@ -3291,7 +3995,7 @@ def make_cinematic_soundscape_host(profile: str) -> dict[str, Any]:
     )
     motion_pack = p.new("pack 0. 180", 35, 425, 95, numinlets=2, numoutlets=1)
     motion_line = p.new("line~", 35, 465, 50, numinlets=2, numoutlets=2)
-    motion_default_value = SOUNDSCAPE_V4_FACTORY[profile]["macros"][1]
+    motion_default_value = factory_spec["macros"][1]
     motion_input = p.new("clip 0. 1.", 145, 345, 75, numinlets=3, numoutlets=1)
     motion_macro = p.add(
         "flonum", None, 230, 345, 65, numinlets=1, numoutlets=2,
@@ -3314,7 +4018,7 @@ def make_cinematic_soundscape_host(profile: str) -> dict[str, Any]:
     space_map = p.new("expr min(1.,max(0.,0.08+0.62*$f1+0.30*$f2))", 420, 385, 355, numinlets=2, numoutlets=1)
     space_pack = p.new("pack 0. 220", 420, 425, 95, numinlets=2, numoutlets=1)
     space_line = p.new("line~", 420, 465, 50, numinlets=2, numoutlets=2)
-    space_default_value = SOUNDSCAPE_V4_FACTORY[profile]["macros"][2]
+    space_default_value = factory_spec["macros"][2]
     space_input = p.new("clip 0. 1.", 530, 345, 75, numinlets=3, numoutlets=1)
     space_macro = p.add(
         "flonum", None, 615, 345, 65, numinlets=1, numoutlets=2,
@@ -3435,7 +4139,7 @@ def make_cinematic_soundscape_host(profile: str) -> dict[str, Any]:
     p.connect(transient_shape, transient_line)
 
     voice = p.new(
-        f"{profile}_soundscape_v4_beap~", 370, 590, 250,
+        voice_name, 370, 590, 250,
         numinlets=11, numoutlets=3,
     )
     for source, inlet_index in (
@@ -3456,12 +4160,12 @@ def make_cinematic_soundscape_host(profile: str) -> dict[str, Any]:
 
     p.new("autopattr @autorestore 0", 1180, 695, 155, numinlets=1, numoutlets=4)
     storage = p.new(
-        f"pattrstorage soundscape_{profile}_v4 @greedy 1 @savemode 3 @changemode 1 "
+        f"pattrstorage soundscape_{profile}_v{soundscape_version} @greedy 1 @savemode 3 @changemode 1 "
         "@outputmode 6 @backupmode 1 @autorestore 0",
         1180, 725, 455, numinlets=1, numoutlets=1,
     )
     state_path = p.new(
-        f"js Patcher:/code/soundscape_v4_state_path.js {profile}",
+        f"js Patcher:/code/{state_helper} {profile}",
         1180, 760, 285, numinlets=1, numoutlets=2,
     )
     save_request = p.message("save", 1370, 660, 45)
@@ -4943,7 +5647,11 @@ def make_profile_engine(profile: str) -> dict[str, Any]:
     else:
         contract_names.append("start_style")
     contract = route(p, tuple(contract_names), 190, 150, 990)
-    power = p.new(f"{profile}_sound_dna~", 95, 260, 145, numinlets=1, numoutlets=2)
+    dna_voice = "ferrari_sound_dna_v2~" if profile == "ferrari" else f"{profile}_sound_dna~"
+    power = p.new(
+        dna_voice, 95, 260, 175 if profile == "ferrari" else 145,
+        numinlets=1, numoutlets=2,
+    )
     pad = p.new(
         f"{profile}_cinematic_soundscape_host~", 95, 305, 220,
         numinlets=1, numoutlets=3,
@@ -9267,17 +9975,17 @@ def make_sound_design_console() -> dict[str, Any]:
     p.connect(context, context_select)
 
     soundscape = p.add(
-        "bpatcher", None, 20, 245, 980, 115, numinlets=1, numoutlets=1,
+        "bpatcher", None, 20, 245, 1040, 155, numinlets=1, numoutlets=1,
         name="Patcher:/patchers/soundscape_control.maxpat", args=["main"],
-        presentation=1, presentation_rect=[20.0, 165.0, 1040.0, 120.0],
+        presentation=1, presentation_rect=[20.0, 165.0, 1040.0, 160.0],
     )
     p.connect(feedback, soundscape)
     p.connect(soundscape, output)
     p.add(
         "comment",
         "参数提示：控件仅在其标注场景可听；Sound DNA 与 Soundscape 保持独立路由。",
-        20, 385, 820, 20, numinlets=1, numoutlets=0,
-        presentation=1, presentation_rect=[20.0, 310.0, 820.0, 20.0],
+        20, 425, 820, 20, numinlets=1, numoutlets=0,
+        presentation=1, presentation_rect=[20.0, 340.0, 820.0, 20.0],
     )
     return p.document(presentation=True)
 
@@ -9285,7 +9993,7 @@ def make_sound_design_console() -> dict[str, Any]:
 def make_runtime_console() -> dict[str, Any]:
     """Build one tabbed Main console whose pages share one command interface."""
     p = Patcher(1160, 720)
-    p.comment("V6 SHARED RUNTIME CONSOLE — one control surface for all four profile adapters", 20, 10, 760)
+    p.comment("V6 SHARED RUNTIME CONSOLE — one control surface for all five profile adapters", 20, 10, 760)
     feedback = inlet(p, 1120, 20)
     output = outlet(p, 1120, 680)
     tabs = p.add(
@@ -9999,6 +10707,13 @@ def make_profile_main(profile: str, root: Path | None = None) -> dict[str, Any]:
         20, 48, 860, 36, numinlets=1, numoutlets=0, presentation=1,
         presentation_rect=[20.0, 48.0, 860.0, 36.0],
     )
+    if profile == "ferrari":
+        p.add(
+            "comment",
+            "Ferrari Soundscape V5: Main → Sound Design；电平也在该页直接显示和调整。",
+            20, 82, 860, 24, numinlets=1, numoutlets=0, presentation=1,
+            presentation_rect=[20.0, 82.0, 860.0, 24.0],
+        )
     host = p.add(
         "bpatcher", None, 20, 330, 220, 55, numinlets=1, numoutlets=0,
         name=f"Patcher:/patchers/profile_runtime_host_{profile}.maxpat",
@@ -10479,6 +11194,88 @@ LEGACY_GEN_CODE = {
 # solely as migration context and cannot leak into generated project artifacts.
 GEN_CODE: dict[str, str] = {}
 GEN_CODE.update({
+    "ferrari_exciter_v2": """// Ferrari realism V2: exact RPM/12 pressure clock feeding separate acoustic buses.
+Param rpm(740, min=0, max=10000);
+Param throttle(0, min=0, max=1);
+Param load(0, min=-1, max=1);
+Param accel(0, min=-1, max=1);
+Param engine_running(0, min=0, max=1);
+Param combustion_gain(0, min=0, max=1);
+Param shift_cut(1, min=0, max=1);
+Param order_core(0.62, min=0, max=1);
+Param body_band(0.94, min=0, max=1);
+Param cavity_band(0.92, min=0, max=1);
+Param mechanical_band(0.52, min=0, max=1);
+Param presence_band(0.04, min=0, max=1);
+Param edge_band(0.03, min=0, max=1);
+Param band_load_depth(0.86, min=0, max=1);
+Param lift_mass(0.80, min=0, max=1);
+Param intake_detail(0.78, min=0, max=1);
+Param exhaust_detail(0.90, min=0, max=1);
+Param cycle_irregularity(0.34, min=0, max=1);
+Param stereo_width(0.44, min=0, max=1);
+Param throttle_loudness_depth(4.0, min=0, max=8);
+Param saturation(0.18, min=0, max=1);
+Param idle_level(0.92, min=0, max=1);
+Param idle_body(0.96, min=0, max=1);
+Param idle_metal(0.36, min=0, max=1);
+Param idle_irregularity(0.28, min=0, max=1);
+Param idle_air(0.12, min=0, max=1);
+r = slide(clamp(rpm, 0, 10000), 620, 980);
+t_fast = slide(clamp(throttle, 0, 1), 90, 220);
+l_fast = slide(max(clamp(load, -1, 1), 0), 100, 300);
+l_body = slide(max(clamp(load, -1, 1), 0), 520, 1150);
+motion = slide(clamp(accel, -1, 1), 120, 520);
+drive = max(motion, 0);
+lift_fast = max(-motion, 0);
+lift_slow = slide(lift_fast, 3600, 9800);
+run = slide(clamp(engine_running * combustion_gain * shift_cut, 0, 1), 420, 1750);
+crank = clamp(r / 60, 6, 170);
+fire = clamp(r / 12, 58, 850);
+phase = phasor(fire);
+pressure = pow(0.5 + 0.5*cos(phase*6.283185307179586), 5) - 0.24609375;
+energy_motion = 1 + cycle(crank*0.37)*cycle_irregularity*0.050 + cycle(crank*0.71)*cycle_irregularity*0.022;
+idle_weight = 1-clamp((r-740)/1550,0,1);
+idle_motion = 1 + cycle(crank*0.31)*idle_irregularity*0.045 + cycle(crank*0.83)*idle_irregularity*0.018;
+idle_gain = idle_level*idle_weight*(1-0.34*t_fast);
+load_depth = clamp(0.30 + band_load_depth*(0.24*t_fast+0.22*l_fast+0.10*drive),0.25,0.82);
+throttle_gain = pow(10,(t_fast*throttle_loudness_depth)/20);
+body_release = 1+0.28*lift_slow*lift_mass;
+hf_release = 1-0.62*lift_fast*lift_mass;
+pressure_texture = pressure*(0.78+0.22*noise());
+order_raw = (pressure*0.34 + cycle(fire)*0.070 + cycle(clamp(fire*2,116,1700))*0.025) * order_core;
+body_raw = (pressure_texture*0.54 + noise()*abs(pressure)*0.30 + cycle(clamp(fire*0.5,29,425))*0.025) * body_band;
+cavity_l_raw = (noise()*abs(pressure)*0.62 + pressure*0.24 + cycle(clamp(fire*1.37,80,1160))*0.070) * cavity_band;
+cavity_r_raw = (noise()*abs(pressure)*0.62 + pressure*0.24 + cycle(clamp(fire*1.43,83,1210))*0.070) * cavity_band;
+mechanical_l_raw = (noise()*abs(pressure)*0.70 + cycle(clamp(fire*4.73,285,4020))*abs(pressure)*0.20) * mechanical_band;
+mechanical_r_raw = (noise()*abs(pressure)*0.70 + cycle(clamp(fire*4.91,295,4170))*abs(pressure)*0.20) * mechanical_band;
+intake_l = (noise()*abs(pressure)*0.38 + cycle(clamp(fire*2.61,158,2220))*0.12) * intake_detail;
+intake_r = (noise()*abs(pressure)*0.38 + cycle(clamp(fire*2.73,164,2320))*0.12) * intake_detail;
+exhaust_body = (pressure*0.30 + cycle(clamp(fire*0.72,43,612))*0.12) * exhaust_detail;
+presence_l = (noise()*abs(pressure)*0.58 + intake_l*0.42) * presence_band;
+presence_r = (noise()*abs(pressure)*0.58 + intake_r*0.42) * presence_band;
+edge_l = noise()*abs(pressure)*edge_band*hf_release*(0.18+0.42*sqrt(max(t_fast,l_fast)));
+edge_r = noise()*abs(pressure)*edge_band*hf_release*(0.18+0.42*sqrt(max(t_fast,l_fast)));
+idle_body_gain = idle_gain*(0.55+0.45*idle_body)*idle_motion;
+idle_metal_gain = idle_gain*idle_metal*(0.28+0.36*stereo_width);
+drive_gain = load_depth*throttle_gain*run;
+order_bus = (order_raw*(0.68+0.32*energy_motion) + exhaust_body*0.22) * drive_gain + order_raw*idle_gain*0.56;
+body_bus = body_raw*drive_gain*(0.74+0.26*l_body)*body_release + body_raw*idle_body_gain*0.86;
+cavity_l = cavity_l_raw*drive_gain*(0.62+0.38*l_fast) + cavity_l_raw*idle_body_gain*0.50;
+cavity_r = cavity_r_raw*drive_gain*(0.62+0.38*l_fast) + cavity_r_raw*idle_body_gain*0.50;
+mechanical_l = mechanical_l_raw*drive_gain*(0.18+0.62*l_fast) + mechanical_l_raw*idle_metal_gain*0.40;
+mechanical_r = mechanical_r_raw*drive_gain*(0.18+0.62*l_fast) + mechanical_r_raw*idle_metal_gain*0.40;
+upper_l = (presence_l*(0.24+0.64*l_fast)+edge_l*idle_air)*drive_gain + presence_l*idle_metal_gain*0.16;
+upper_r = (presence_r*(0.24+0.64*l_fast)+edge_r*idle_air)*drive_gain + presence_r*idle_metal_gain*0.16;
+soft = 1+saturation*0.28;
+out1 = tanh(order_bus*soft)*run/soft;
+out2 = tanh(body_bus*soft)*run/soft;
+out3 = tanh(cavity_l*soft)*run/soft;
+out4 = tanh(cavity_r*soft)*run/soft;
+out5 = tanh(mechanical_l*soft)*run/soft;
+out6 = tanh(mechanical_r*soft)*run/soft;
+out7 = tanh(upper_l*soft)*run/soft;
+out8 = tanh(upper_r*soft)*run/soft;""",
     "ev_powertrain": """// Procedural EV motor: RPM owns pitch; pedal owns bounded torque loudness.
 Param rpm(650, min=0, max=10000);
 Param throttle(0, min=0, max=1);
@@ -10860,34 +11657,31 @@ def make_gen(code: str) -> dict[str, Any]:
         code,
         flags=re.MULTILINE,
     )
-    boxes = [
-        {
+    output_numbers = [int(value) for value in re.findall(r"\bout(\d+)\s*=", code)]
+    output_count = max(output_numbers, default=2)
+    boxes = [{
+        "box": {
+            "code": code,
+            "id": "obj-1",
+            "maxclass": "codebox",
+            "numinlets": 1,
+            "numoutlets": output_count,
+            "outlettype": [""] * output_count,
+            "patching_rect": [40.0, 40.0, 760.0, 580.0],
+        }
+    }]
+    for output_index in range(output_count):
+        boxes.append({
             "box": {
-                "code": code,
-                "id": "obj-1",
-                "maxclass": "codebox",
-                "numinlets": 1,
-                "numoutlets": 2,
-                "outlettype": ["", ""],
-                "patching_rect": [40.0, 40.0, 760.0, 580.0],
+                "id": f"obj-{output_index + 2}", "maxclass": "newobj",
+                "numinlets": 1, "numoutlets": 0,
+                "patching_rect": [40.0 + output_index * 80.0, 640.0, 45.0, 22.0],
+                "text": f"out {output_index + 1}",
             }
-        },
-        {
-            "box": {
-                "id": "obj-2", "maxclass": "newobj", "numinlets": 1,
-                "numoutlets": 0, "patching_rect": [40.0, 640.0, 45.0, 22.0],
-                "text": "out 1",
-            }
-        },
-        {
-            "box": {
-                "id": "obj-3", "maxclass": "newobj", "numinlets": 1,
-                "numoutlets": 0, "patching_rect": [120.0, 640.0, 45.0, 22.0],
-                "text": "out 2",
-            }
-        },
-    ]
-    for index, (name, default, minimum, maximum) in enumerate(matches, start=4):
+        })
+    for index, (name, default, minimum, maximum) in enumerate(
+        matches, start=output_count + 2
+    ):
         boxes.append({
             "box": {
                 "id": f"obj-{index}", "maxclass": "newobj", "numinlets": 0,
@@ -10903,8 +11697,13 @@ def make_gen(code: str) -> dict[str, Any]:
             "classnamespace": "dsp.gen",
             "fileversion": 1,
             "lines": [
-                {"patchline": {"source": ["obj-1", 0], "destination": ["obj-2", 0]}},
-                {"patchline": {"source": ["obj-1", 1], "destination": ["obj-3", 0]}},
+                {
+                    "patchline": {
+                        "source": ["obj-1", output_index],
+                        "destination": [f"obj-{output_index + 2}", 0],
+                    }
+                }
+                for output_index in range(output_count)
             ],
             "rect": [50.0, 50.0, 850.0, 680.0],
         }
@@ -11172,6 +11971,8 @@ def project_file() -> dict[str, Any]:
         "patchers/v12_powertrain~.maxpat",
         "patchers/ioniq6n_powertrain~.maxpat",
         "patchers/ferrari_powertrain~.maxpat",
+        "patchers/ferrari_sound_dna_v2~.maxpat",
+        "patchers/ferrari_soundscape_v5_beap~.maxpat",
         "patchers/ioniq6n_sound_dna~.maxpat",
         "patchers/ioniq6n_soundscape_ignition_beap~.maxpat",
         "patchers/ioniq6n_soundscape_evolution_beap~.maxpat",
@@ -11243,6 +12044,7 @@ def project_file() -> dict[str, Any]:
     contents["code"]["code/module_mixer_state_path.js"] = {"kind": "javascript", "local": 1}
     contents["code"]["code/soundscape_state_path.js"] = {"kind": "javascript", "local": 1}
     contents["code"]["code/soundscape_v4_state_path.js"] = {"kind": "javascript", "local": 1}
+    contents["code"]["code/soundscape_v5_state_path.js"] = {"kind": "javascript", "local": 1}
     contents["code"]["code/ioniq6n_soundscape_state_path.js"] = {"kind": "javascript", "local": 1}
     contents["code"]["code/ioniq6n_event_state_path.js"] = {"kind": "javascript", "local": 1}
     contents["code"]["code/start_state_path.js"] = {"kind": "javascript", "local": 1}
@@ -11272,6 +12074,10 @@ def project_file() -> dict[str, Any]:
             "local": 1,
         }
     contents["data"]["presets/ferrari_soundscape_v4_factory.json"] = {
+        "kind": "data",
+        "local": 1,
+    }
+    contents["data"]["presets/ferrari_soundscape_v5_factory.json"] = {
         "kind": "data",
         "local": 1,
     }
@@ -11378,6 +12184,9 @@ def build_project(root: Path) -> None:
     outputs["presets/ferrari_soundscape_v4_factory.json"] = (
         make_soundscape_factory("ferrari", version=4)
     )
+    outputs["presets/ferrari_soundscape_v5_factory.json"] = (
+        make_ferrari_soundscape_v5_factory()
+    )
     for profile in ("v10", "v12"):
         outputs[f"patchers/{profile}_pad_voice.maxpat"] = make_ice_pad_voice(profile)
         outputs[f"patchers/{profile}_pad_host~.maxpat"] = make_ice_pad_host(profile)
@@ -11420,6 +12229,9 @@ def build_project(root: Path) -> None:
         user_soundscape = root / "patchers" / f"{profile}_soundscape_v4_beap~.maxpat"
         if not user_soundscape.exists():
             write_json(user_soundscape, make_soundscape_v4_beap(profile))
+    ferrari_soundscape_v5 = root / "patchers" / "ferrari_soundscape_v5_beap~.maxpat"
+    if not ferrari_soundscape_v5.exists():
+        write_json(ferrari_soundscape_v5, make_ferrari_soundscape_v5_beap())
     shared_soundscape = root / "patchers" / "cinematic_soundscape_v3_beap~.maxpat"
     if not shared_soundscape.exists():
         write_json(shared_soundscape, make_cinematic_soundscape_v3_beap())
@@ -11430,6 +12242,9 @@ def build_project(root: Path) -> None:
         user_dna = root / "patchers" / f"{profile}_sound_dna~.maxpat"
         if not user_dna.exists():
             write_json(user_dna, make_sound_dna(profile))
+    ferrari_dna_v2 = root / "patchers" / "ferrari_sound_dna_v2~.maxpat"
+    if not ferrari_dna_v2.exists():
+        write_json(ferrari_dna_v2, make_ferrari_sound_dna_v2())
     ioniq_dna = root / "patchers" / "ioniq6n_sound_dna~.maxpat"
     if not ioniq_dna.exists():
         write_json(ioniq_dna, make_sound_dna("ioniq6n"))

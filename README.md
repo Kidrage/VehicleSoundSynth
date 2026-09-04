@@ -89,13 +89,17 @@ layers and colour, while speed only increases air and space. Activation and
 N-event buses are separately tunable, persistent and lifecycle-gated.
 
 Ferrari is a fifth, separately persisted V10 acoustic interpretation derived
-from analysis envelopes only. Its Sound DNA uses an exact four-stroke `rpm/12`
+from analysis envelopes only. The live realism-V2 Sound DNA uses an exact
+four-stroke `rpm/12`
 cadence with independently tunable body (120--250 Hz), cavity (250--600 Hz),
 mechanical (600--1200 Hz), presence (1.2--2 kHz) and edge (2--6 kHz) bands.
-Its Soundscape V4 is a separate exterior-projection stem: load reveals cavity,
-mechanical-order and air/reflection layers while RPM alone owns the root. Start
-and backfire each have their own seed-once BEAP designer. No reference recording,
-continuous derivative, or Ferrari sample is loaded by this runtime.
+Its output uses a dedicated 1.35 kHz presence ceiling after band summing, so
+high load keeps combustion texture without exposing a broad square-like edge.
+Its Soundscape V5 is a separate exterior-projection stem: cadence impulses
+excite body/cavity resonators, load reveals mechanical air and roadside
+reflection, and RPM alone owns the reinforcement pitch. Start and backfire each
+have their own seed-once BEAP designer. No reference recording, continuous
+derivative, or Ferrari sample is loaded by this runtime.
 
 V10 and V12 continuous sound is procedural. No idle, acceleration, deceleration,
 or shift-recovery recording is loaded or looped. Both engines use phase-locked
@@ -234,7 +238,8 @@ These files are seeded only when absent and are not overwritten by project
 regeneration:
 
 - `patchers/{ev,v10,v12,ferrari}_engine_start_v3_beap~.maxpat` — independent current cinematic starts
-- `patchers/{ev,v10,v12,ferrari}_soundscape_v4_beap~.maxpat` — four independent current Soundscape V4 instruments
+- `patchers/{ev,v10,v12}_soundscape_v4_beap~.maxpat` — three independent current Soundscape V4 instruments
+- `patchers/ferrari_soundscape_v5_beap~.maxpat` — Ferrari's current cadence-excited exterior Soundscape
 - `patchers/ioniq6n_soundscape_{ignition,evolution,lightspeed}_beap~.maxpat` — independent IONIQ6N N Sound instruments
 - `patchers/ioniq6n_activation_beap~.maxpat` / `patchers/ioniq6n_n_event_beap~.maxpat` — ready activation and mode-aware N events
 - `patchers/ev_pad_beap~.maxpat` — EV Relax
@@ -244,7 +249,7 @@ regeneration:
 - `patchers/v10_backfire_v2_beap~.maxpat` / `patchers/v12_backfire_v2_beap~.maxpat` — current physical backfire voices
 - `patchers/ferrari_backfire_v2_beap~.maxpat` — Ferrari profile's independent procedural pressure-release voice
 
-The current runtime instantiates exactly one profile-owned V4 instrument. EV is
+The current runtime instantiates exactly one profile-owned instrument. EV is
 an Evolution-style cinematic energy bed with fixed-ratio score voices, motor /
 inverter texture, and short spectral transients. V10 uses an exact `rpm/12`
 firing clock to excite body modes, then adds a continuous Ignition-style order
@@ -259,10 +264,11 @@ centred and stereo processing is upper-band only. Factory oscillators are
 sine/triangle; firing pulses excite filters/resonators and are never exposed as
 bare square waves. There is no Soundscape full-mix waveshaper.
 
-EV, V10, V12 and Ferrari load tracked factories from
-`presets/<profile>_soundscape_v4_factory.json` and optionally apply ignored
-`presets/local/<profile>_soundscape_v4.json`. `Factory Reset` reloads the V4
-authority; V1--V3 graphs and presets remain archived and cannot re-voice V4.
+EV, V10 and V12 load tracked V4 factories and optionally apply their ignored
+V4 local state. Ferrari uses `presets/ferrari_soundscape_v5_factory.json` and
+ignored `presets/local/ferrari_soundscape_v5.json`. `Factory Reset` reloads the
+matching versioned authority; older graphs and presets remain archived and
+cannot re-voice the live instance.
 `Soundscape Enable`, dB, `Motion`, `Space`,
 `Pitch Follow`, `Transpose`, `Brightness`, and `Solo` are exposed on every
 runtime. `Open Designer` fronts the exact embedded instance feeding that

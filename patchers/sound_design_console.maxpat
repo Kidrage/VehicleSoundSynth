@@ -560,15 +560,15 @@
           "patching_rect": [
             20.0,
             245.0,
-            980.0,
-            115.0
+            1040.0,
+            155.0
           ],
           "presentation": 1,
           "presentation_rect": [
             20.0,
             165.0,
             1040.0,
-            120.0
+            160.0
           ]
         }
       },
@@ -580,14 +580,14 @@
           "numoutlets": 0,
           "patching_rect": [
             20.0,
-            385.0,
+            425.0,
             820.0,
             20.0
           ],
           "presentation": 1,
           "presentation_rect": [
             20.0,
-            310.0,
+            340.0,
             820.0,
             20.0
           ],

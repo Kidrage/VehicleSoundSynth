@@ -21,7 +21,7 @@
             760.0,
             22.0
           ],
-          "text": "V6 SHARED RUNTIME CONSOLE \u2014 one control surface for all four profile adapters"
+          "text": "V6 SHARED RUNTIME CONSOLE \u2014 one control surface for all five profile adapters"
         }
       },
       {

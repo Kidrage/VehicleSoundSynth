@@ -189,10 +189,10 @@
           "patching_rect": [
             95.0,
             260.0,
-            145.0,
+            175.0,
             22.0
           ],
-          "text": "ferrari_sound_dna~"
+          "text": "ferrari_sound_dna_v2~"
         }
       },
       {

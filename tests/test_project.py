@@ -105,6 +105,211 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
         ):
             self.assertIn(token, host)
 
+    def test_ferrari_realism_v2_uses_versioned_live_graphs_and_fresh_state(self):
+        project = self.load_json("VehicleSoundSynth-V6.maxproj")["contents"]
+        for path in (
+            "patchers/ferrari_sound_dna_v2~.maxpat",
+            "patchers/ferrari_soundscape_v5_beap~.maxpat",
+            "gen/ferrari_exciter_v2.gendsp",
+        ):
+            category = "code" if path.startswith("gen/") else "patchers"
+            self.assertIn(path, project[category])
+        self.assertIn(
+            "presets/ferrari_soundscape_v5_factory.json", project["data"]
+        )
+
+        engine = json.dumps(
+            self.load_json("patchers/vehicle_engine_ferrari~.maxpat")
+        )
+        host = json.dumps(
+            self.load_json("patchers/ferrari_cinematic_soundscape_host~.maxpat")
+        )
+        self.assertIn("ferrari_sound_dna_v2~", engine)
+        self.assertNotIn('"text": "ferrari_sound_dna~"', engine)
+        self.assertIn("ferrari_soundscape_v5_beap~", host)
+        self.assertIn("pattrstorage soundscape_ferrari_v5", host)
+        self.assertIn("soundscape_v5_state_path.js ferrari", host)
+
+        dna = json.dumps(
+            self.load_json("patchers/ferrari_sound_dna_v2~.maxpat")
+        )
+        self.assertIn(
+            "gen~ @gen Patcher:/gen/ferrari_exciter_v2.gendsp", dna
+        )
+        self.assertNotIn("gen~ @gen ferrari_exciter_v2.gendsp", dna)
+        self.assertNotIn("../gen/ferrari_exciter_v2.gendsp", dna)
+        self.assertIn("dna_state_path.js ferrari_realism_v2", dna)
+        self.assertIn("pattrstorage ferrari_sound_dna_v2", dna)
+        self.assertEqual(2, dna.count("svf~ 1350 0.55"))
+
+        exciter = json.dumps(self.load_json("gen/ferrari_exciter_v2.gendsp"))
+        self.assertIn("fire = clamp(r / 12, 58, 850)", exciter)
+        self.assertIn("), 5) - 0.24609375", exciter)
+        self.assertIn("Param presence_band(0.04", exciter)
+        self.assertIn("Param edge_band(0.03", exciter)
+        self.assertNotIn("), 8) - 0.1963806152", exciter)
+        soundscape = json.dumps(
+            self.load_json("patchers/ferrari_soundscape_v5_beap~.maxpat")
+        )
+        self.assertIn("pow~ 5.", soundscape)
+        self.assertIn("-~ 0.24609375", soundscape)
+
+        mixer_helper = (
+            ROOT / "code" / "module_mixer_state_path.js"
+        ).read_text(encoding="utf-8")
+        self.assertIn('profile === "ferrari"', mixer_helper)
+        self.assertIn('"ferrari_realism_v2"', mixer_helper)
+
+        # The previously shipped graphs stay declared for branch/tag rollback;
+        # only the live Ferrari engine/host switch to the versioned pair.
+        for path in (
+            "patchers/ferrari_sound_dna~.maxpat",
+            "patchers/ferrari_soundscape_v4_beap~.maxpat",
+        ):
+            self.assertIn(path, project["patchers"])
+
+    def test_main_exposes_ferrari_v5_soundscape_level_and_location(self):
+        control = json.dumps(
+            self.load_json("patchers/soundscape_control.maxpat"),
+            ensure_ascii=False,
+        )
+        for token in (
+            "Soundscape Level / 氛围电平",
+            "prepend soundscape_level_db",
+            "route soundscape_state soundscape_status soundscape_level_db profile",
+            "Main > Sound Design",
+        ):
+            self.assertIn(token, control)
+
+        ferrari = json.dumps(self.load_json("VehicleSoundSynth-Ferrari.maxpat"))
+        self.assertIn("Ferrari Soundscape V5: Main", ferrari)
+        self.assertIn("Sound Design", ferrari)
+
+        mixer = json.dumps(self.load_json("patchers/module_mixer.maxpat"))
+        self.assertIn('"text": "-3 -5 -8 -12 -16 -4 -8"', mixer)
+        self.assertNotIn('"text": "-3 -5 -8 -19 -16 -4 -8"', mixer)
+
+    def test_ferrari_v5_soundscape_live_path_and_factory_are_complete(self):
+        host = self.load_json(
+            "patchers/ferrari_cinematic_soundscape_host~.maxpat"
+        )["patcher"]
+        boxes = {item["box"]["id"]: item["box"] for item in host["boxes"]}
+        cords = {
+            (tuple(line["patchline"]["source"]), tuple(line["patchline"]["destination"]))
+            for line in host["lines"]
+        }
+        voice_id = next(
+            box_id for box_id, box in boxes.items()
+            if box.get("text") == "ferrari_soundscape_v5_beap~"
+        )
+        route_id = next(
+            box_id for box_id, box in boxes.items()
+            if box.get("text", "").startswith("route rpm throttle load accel")
+        )
+        storage_id = next(
+            box_id for box_id, box in boxes.items()
+            if box.get("text", "").startswith("pattrstorage soundscape_ferrari_v5 ")
+        )
+        state_id = next(
+            box_id for box_id, box in boxes.items()
+            if box.get("text")
+            == "js Patcher:/code/soundscape_v5_state_path.js ferrari"
+        )
+        for route_outlet in range(19, 23):
+            command_id = next(
+                destination[0] for source, destination in cords
+                if source == (route_id, route_outlet)
+            )
+            self.assertIn(((command_id, 0), (voice_id, 10)), cords)
+        self.assertIn(((state_id, 0), (storage_id, 0)), cords)
+        self.assertIn(((voice_id, 2), next(
+            destination for source, destination in cords if source == (voice_id, 2)
+        )), cords)
+
+        enable_id = next(
+            box_id for box_id, box in boxes.items()
+            if box.get("varname") == "soundscape_enable_state"
+        )
+        defaults = {
+            boxes[source[0]].get("text") for source, destination in cords
+            if destination == (enable_id, 0)
+            and boxes[source[0]].get("text", "").startswith("loadmess ")
+        }
+        self.assertEqual({"loadmess 1"}, defaults)
+
+        output_ids = {
+            box_id for box_id, box in boxes.items()
+            if box.get("maxclass") == "outlet"
+        }
+        self.assertTrue(any(
+            source == (voice_id, 0) for source, _ in cords
+        ))
+        self.assertTrue(any(
+            source == (voice_id, 1) for source, _ in cords
+        ))
+        self.assertTrue(all(any(
+            destination == (outlet_id, 0) for _, destination in cords
+        ) for outlet_id in output_ids))
+
+        factory = self.load_json("presets/ferrari_soundscape_v5_factory.json")
+        self.assertEqual("soundscape_ferrari_v5", factory["pattrstorage"]["name"])
+        data = factory["pattrstorage"]["slots"]["99"]["data"]
+        self.assertEqual([1.0], data["soundscape_enable_state"])
+        self.assertEqual(
+            [0],
+            data["ferrari_soundscape_v5_beap~::Pressure_Reinforcement::Waveform"],
+        )
+        self.assertNotIn("buffer~", json.dumps(host))
+        self.assertNotIn("play~", json.dumps(host))
+
+    def test_ferrari_runtime_probe_targets_v2_dna_and_normal_soundscape_mix(self):
+        expected = {
+            "ferrari-dna-v2-idle",
+            "ferrari-dna-v2-high-load",
+            "ferrari-soundscape-mix-low-load",
+            "ferrari-soundscape-mix-low-load-off",
+            "ferrari-soundscape-mix-high-load",
+            "ferrari-soundscape-mix-high-load-off",
+        }
+        self.assertTrue(expected.issubset(SCENARIOS))
+        for scenario in expected:
+            self.assertEqual("ferrari", SCENARIOS[scenario]["profile"])
+        for scenario in (
+            "ferrari-soundscape-mix-low-load",
+            "ferrari-soundscape-mix-high-load",
+        ):
+            self.assertEqual(1, SCENARIOS[scenario]["soundscape_enable"])
+            self.assertEqual(-12.0, SCENARIOS[scenario]["soundscape_level_db"])
+            self.assertNotIn("soundscape_solo", SCENARIOS[scenario])
+        for scenario in (
+            "ferrari-soundscape-mix-low-load-off",
+            "ferrari-soundscape-mix-high-load-off",
+        ):
+            self.assertEqual(0, SCENARIOS[scenario]["soundscape_enable"])
+            self.assertNotIn("soundscape_solo", SCENARIOS[scenario])
+
+        with tempfile.TemporaryDirectory() as directory:
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / "tools" / "build_runtime_probe.py"),
+                    "--bundle-root", directory,
+                    "--scenario", "ferrari-soundscape-mix-high-load",
+                    "--render-ms", "1000",
+                ],
+                check=True,
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+            )
+            probe = next(Path(directory).glob("runtime_probe_ferrari*.maxpat"))
+            text = probe.read_text(encoding="utf-8")
+            self.assertIn("ferrari_sound_dna_v2~", text)
+            self.assertIn("ferrari_cinematic_soundscape_host~", text)
+            self.assertIn("soundscape_enable 1", text)
+            self.assertIn("soundscape_level_db -12", text)
+            self.assertNotIn("soundscape_solo 1", text)
+
     def test_ferrari_acoustic_interpretation_is_procedural_and_band_owned(self):
         gen = self.load_json("gen/ferrari_powertrain.gendsp")["patcher"]
         gen_text = "\n".join(
@@ -3777,7 +3982,7 @@ process.stdout.write(JSON.stringify({defaultState: defaultModel.snapshot(), on: 
 
     def test_gen_patchers_expose_bounded_required_parameters(self):
         gen_paths = sorted((ROOT / "gen").glob("*.gendsp"))
-        self.assertEqual(5, len(gen_paths))
+        self.assertEqual(6, len(gen_paths))
         for path in gen_paths:
             patcher = self.load_json(path.relative_to(ROOT))["patcher"]
             code = "\n".join(
@@ -3794,6 +3999,16 @@ process.stdout.write(JSON.stringify({defaultState: defaultModel.snapshot(), on: 
                     "rpm", "throttle", "load", "order_core", "body_band",
                     "cavity_band", "mechanical_band", "presence_band", "edge_band",
                 }
+            elif path.name == "ferrari_exciter_v2.gendsp":
+                required = {
+                    "rpm", "throttle", "load", "accel", "order_core",
+                    "body_band", "cavity_band", "mechanical_band",
+                    "presence_band", "edge_band", "band_load_depth",
+                    "lift_mass", "intake_detail", "exhaust_detail",
+                    "cycle_irregularity", "stereo_width",
+                    "throttle_loudness_depth", "saturation", "idle_level",
+                    "idle_body", "idle_metal", "idle_irregularity", "idle_air",
+                }
             else:
                 required = {"rpm", "throttle", "load", "aggression", "body"}
                 required |= {"brightness", "texture"}
@@ -3807,6 +4022,10 @@ process.stdout.write(JSON.stringify({defaultState: defaultModel.snapshot(), on: 
                 ), f"{path.name}: {name} is not exposed by a top-level Gen param")
             self.assertIn("clamp(", code, path.name)
             self.assertIn("cycle(", code, path.name)
+            if path.name == "ferrari_exciter_v2.gendsp":
+                self.assertIn("out 8", {
+                    item["box"].get("text", "") for item in patcher["boxes"]
+                })
 
             boxes = {item["box"]["id"]: item["box"] for item in patcher["boxes"]}
             output_ids = {

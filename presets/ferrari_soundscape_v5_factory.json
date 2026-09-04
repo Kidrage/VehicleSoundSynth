@@ -1,0 +1,132 @@
+{
+  "pattrstorage": {
+    "name": "soundscape_ferrari_v5",
+    "slots": {
+      "99": {
+        "data": {
+          "ferrari_soundscape_v5_beap~::Bank_Reflection::Center": [
+            390.0
+          ],
+          "ferrari_soundscape_v5_beap~::Bank_Reflection::Rate": [
+            0.003
+          ],
+          "ferrari_soundscape_v5_beap~::Bank_Reflection::Regen": [
+            0.004
+          ],
+          "ferrari_soundscape_v5_beap~::Bank_Reflection::Width": [
+            4.0
+          ],
+          "ferrari_soundscape_v5_beap~::Bank_Reflection::bypass": [
+            0
+          ],
+          "ferrari_soundscape_v5_beap~::Body_Cavity_Valve::CV1": [
+            14.0
+          ],
+          "ferrari_soundscape_v5_beap~::Body_Cavity_Valve::Freq": [
+            920.0
+          ],
+          "ferrari_soundscape_v5_beap~::Body_Cavity_Valve::Res": [
+            0.72
+          ],
+          "ferrari_soundscape_v5_beap~::Combustion_Texture::Mute": [
+            0
+          ],
+          "ferrari_soundscape_v5_beap~::Combustion_Texture::manCVa": [
+            0.0
+          ],
+          "ferrari_soundscape_v5_beap~::Exterior_Layers::in1": [
+            -2.0
+          ],
+          "ferrari_soundscape_v5_beap~::Exterior_Layers::in2": [
+            -4.0
+          ],
+          "ferrari_soundscape_v5_beap~::Exterior_Layers::in3": [
+            -12.0
+          ],
+          "ferrari_soundscape_v5_beap~::Exterior_Layers::in4": [
+            -24.0
+          ],
+          "ferrari_soundscape_v5_beap~::Ferrari_Colour_Motion::Frequency": [
+            0.005
+          ],
+          "ferrari_soundscape_v5_beap~::Ferrari_Colour_Motion::Mute": [
+            0
+          ],
+          "ferrari_soundscape_v5_beap~::Ferrari_Output_VCA::Response": [
+            0.0
+          ],
+          "ferrari_soundscape_v5_beap~::Ferrari_Run_Envelope::Attack": [
+            55.0
+          ],
+          "ferrari_soundscape_v5_beap~::Ferrari_Run_Envelope::Decay": [
+            780.0
+          ],
+          "ferrari_soundscape_v5_beap~::Ferrari_Run_Envelope::Release": [
+            2100.0
+          ],
+          "ferrari_soundscape_v5_beap~::Ferrari_Run_Envelope::Sustain": [
+            97.0
+          ],
+          "ferrari_soundscape_v5_beap~::Mechanical_Air_Sculpt::FilterType": [
+            0
+          ],
+          "ferrari_soundscape_v5_beap~::Mechanical_Air_Sculpt::Freq": [
+            1650.0
+          ],
+          "ferrari_soundscape_v5_beap~::Mechanical_Air_Sculpt::Res": [
+            0.68
+          ],
+          "ferrari_soundscape_v5_beap~::Mechanical_Air_Sculpt::power[1]": [
+            1
+          ],
+          "ferrari_soundscape_v5_beap~::Pressure_Reinforcement::Mute": [
+            0
+          ],
+          "ferrari_soundscape_v5_beap~::Pressure_Reinforcement::Offset": [
+            0
+          ],
+          "ferrari_soundscape_v5_beap~::Pressure_Reinforcement::Waveform": [
+            0
+          ],
+          "ferrari_soundscape_v5_beap~::Roadside_Space::Damping": [
+            2850.0
+          ],
+          "ferrari_soundscape_v5_beap~::Roadside_Space::Decay": [
+            25.0
+          ],
+          "ferrari_soundscape_v5_beap~::Roadside_Space::Diffusion": [
+            0.82
+          ],
+          "ferrari_soundscape_v5_beap~::Roadside_Space::Mix": [
+            100
+          ],
+          "ferrari_soundscape_v5_beap~::Roadside_Space::Size": [
+            52.0
+          ],
+          "ferrari_soundscape_v5_beap~::Roadside_Space::bypass": [
+            0
+          ],
+          "soundscape_brightness_state": [
+            0.28
+          ],
+          "soundscape_enable_state": [
+            1.0
+          ],
+          "soundscape_motion_state": [
+            0.18
+          ],
+          "soundscape_pitch_follow_state": [
+            0.42
+          ],
+          "soundscape_space_state": [
+            0.34
+          ],
+          "soundscape_transpose_state": [
+            0.0
+          ]
+        },
+        "id": 99
+      }
+    }
+  }
+}

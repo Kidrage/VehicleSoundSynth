@@ -2,6 +2,7 @@ autowatch = 1;
 outlets = 1;
 
 var profile = String(jsarguments.length > 1 ? jsarguments[1] : "ev");
+var stateNamespace = profile === "ferrari" ? "ferrari_realism_v2" : profile;
 
 function statePath() {
     var patchPath = String(this.patcher.filepath || "");
@@ -10,7 +11,7 @@ function statePath() {
     if (/\/patchers$/.test(directory)) {
         directory = directory.slice(0, -9);
     }
-    return directory + "/presets/local/" + profile + "_module_mixer.json";
+    return directory + "/presets/local/" + stateNamespace + "_module_mixer.json";
 }
 
 function save() {

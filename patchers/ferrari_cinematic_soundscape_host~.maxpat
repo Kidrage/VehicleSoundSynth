@@ -18,10 +18,10 @@
           "patching_rect": [
             25.0,
             15.0,
-            1120.0,
+            1180.0,
             22.0
           ],
-          "text": "FERRARI CINEMATIC SOUNDSCAPE V4 HOST \u2014 state-only coupling; no Sound DNA audio or parameters"
+          "text": "FERRARI CINEMATIC SOUNDSCAPE V5 HOST \u2014 state-only coupling; no Sound DNA audio or parameters"
         }
       },
       {
@@ -279,7 +279,7 @@
             100.0,
             22.0
           ],
-          "text": "loadmess 1"
+          "text": "loadmess 0.42"
         }
       },
       {
@@ -352,7 +352,7 @@
             125.0,
             22.0
           ],
-          "text": "pak 0. 1 0."
+          "text": "pak 0. 0.42 0."
         }
       },
       {
@@ -516,7 +516,7 @@
             100.0,
             22.0
           ],
-          "text": "loadmess 0.32"
+          "text": "loadmess 0.28"
         }
       },
       {
@@ -717,7 +717,7 @@
             95.0,
             22.0
           ],
-          "text": "loadmess 0.14"
+          "text": "loadmess 0.18"
         }
       },
       {
@@ -863,7 +863,7 @@
             95.0,
             22.0
           ],
-          "text": "loadmess 0.36"
+          "text": "loadmess 0.34"
         }
       },
       {
@@ -1546,7 +1546,7 @@
             250.0,
             22.0
           ],
-          "text": "ferrari_soundscape_v4_beap~"
+          "text": "ferrari_soundscape_v5_beap~"
         }
       },
       {
@@ -1697,7 +1697,7 @@
             455.0,
             22.0
           ],
-          "text": "pattrstorage soundscape_ferrari_v4 @greedy 1 @savemode 3 @changemode 1 @outputmode 6 @backupmode 1 @autorestore 0"
+          "text": "pattrstorage soundscape_ferrari_v5 @greedy 1 @savemode 3 @changemode 1 @outputmode 6 @backupmode 1 @autorestore 0"
         }
       },
       {
@@ -1716,7 +1716,7 @@
             285.0,
             22.0
           ],
-          "text": "js Patcher:/code/soundscape_v4_state_path.js ferrari"
+          "text": "js Patcher:/code/soundscape_v5_state_path.js ferrari"
         }
       },
       {

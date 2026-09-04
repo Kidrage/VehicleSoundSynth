@@ -292,6 +292,42 @@ SCENARIOS = {
         "lock_rpm": True, "direct_soundscape_state": True, "soundscape_enable": 1,
         "soundscape_level_db": -6.0, "soundscape_solo": 1,
     },
+    "ferrari-dna-v2-idle": {
+        "profile": "ferrari", "rpm": 740.0, "throttle": 0.04, "load": 0.12,
+        "lock_rpm": True, "direct_powertrain": True,
+        "extra_messages": (
+            "accel 0", "engine_running 1", "combustion_gain 1",
+            "shift_cut 1", "powertrain_level_db -3",
+        ),
+    },
+    "ferrari-dna-v2-high-load": {
+        "profile": "ferrari", "rpm": 4200.0, "throttle": 0.82, "load": 0.78,
+        "lock_rpm": True, "direct_powertrain": True,
+        "extra_messages": (
+            "accel 0", "engine_running 1", "combustion_gain 1",
+            "shift_cut 1", "powertrain_level_db -3",
+        ),
+    },
+    "ferrari-soundscape-mix-low-load": {
+        "profile": "ferrari", "rpm": 1800.0, "throttle": 0.20, "load": 0.18,
+        "lock_rpm": True, "soundscape_enable": 1,
+        "soundscape_level_db": -12.0,
+    },
+    "ferrari-soundscape-mix-low-load-off": {
+        "profile": "ferrari", "rpm": 1800.0, "throttle": 0.20, "load": 0.18,
+        "lock_rpm": True, "soundscape_enable": 0,
+        "soundscape_level_db": -12.0,
+    },
+    "ferrari-soundscape-mix-high-load": {
+        "profile": "ferrari", "rpm": 4200.0, "throttle": 0.82, "load": 0.78,
+        "lock_rpm": True, "soundscape_enable": 1,
+        "soundscape_level_db": -12.0,
+    },
+    "ferrari-soundscape-mix-high-load-off": {
+        "profile": "ferrari", "rpm": 4200.0, "throttle": 0.82, "load": 0.78,
+        "lock_rpm": True, "soundscape_enable": 0,
+        "soundscape_level_db": -12.0,
+    },
     "ferrari-start-cinematic": start_scenario("ferrari", "cinematic"),
     "ferrari-start-controller-cinematic": controller_start_scenario("ferrari", "cinematic"),
     "ferrari-backfire-solo": backfire_solo_scenario("ferrari", 0.65),
@@ -601,7 +637,11 @@ def make_probe(
     rpm_select = p.new("switch 2", 190, 290, 70, numinlets=3, numoutlets=1)
     rpm_select_default = p.new("loadmess 1", 190, 260, 80, numinlets=1, numoutlets=1)
     rpm_named = p.new("prepend rpm", 190, 320, 90, numinlets=1, numoutlets=1)
-    powertrain = p.new(f"{profile}_powertrain~", 300, 330, 135, numinlets=1, numoutlets=2)
+    powertrain_name = (
+        "ferrari_sound_dna_v2~" if profile == "ferrari"
+        else f"{profile}_powertrain~"
+    )
+    powertrain = p.new(powertrain_name, 300, 330, 185, numinlets=1, numoutlets=2)
     soundscape = p.new(
         f"{profile}_cinematic_soundscape_host~", 445, 330, 205,
         numinlets=1, numoutlets=2,
@@ -1072,6 +1112,10 @@ def main() -> None:
         root / "presets" / "ferrari_soundscape_v4_factory.json",
         presets / "ferrari_soundscape_v4_factory.json",
     )
+    shutil.copy2(
+        root / "presets" / "ferrari_soundscape_v5_factory.json",
+        presets / "ferrari_soundscape_v5_factory.json",
+    )
     for factory_name in (
         "ioniq6n_soundscape_modes_factory.json", "ioniq6n_n_event_factory.json",
     ):
@@ -1202,11 +1246,15 @@ def main() -> None:
             trace,
         )
     project_name = bundle.name
+    powertrain_name = (
+        "ferrari_sound_dna_v2~.maxpat" if profile == "ferrari"
+        else f"{profile}_powertrain~.maxpat"
+    )
     required_patchers = {
         patch.name,
         f"drive_simulator_{profile}.maxpat",
         f"engine_controller_{profile}.maxpat",
-        f"{profile}_powertrain~.maxpat",
+        powertrain_name,
         f"transient_{profile}~.maxpat",
         "transient~.maxpat",
         "road_air~.maxpat",
@@ -1232,6 +1280,8 @@ def main() -> None:
             f"{profile}_engine_start_beap~.maxpat",
             "cinematic_soundscape_v3_beap~.maxpat",
         })
+    if profile == "ferrari":
+        required_patchers.add("ferrari_soundscape_v5_beap~.maxpat")
     if profile not in {"ev", "ioniq6n"}:
         required_patchers.update({
             f"{profile}_backfire_host~.maxpat",

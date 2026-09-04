@@ -198,7 +198,10 @@ intake/exhaust, irregularity, width, saturation and idle controls. Tune in that
 order: establish 120--600 Hz mass first, add 600 Hz--2 kHz structure next, and
 raise 2--6 kHz Edge last. Load opens all five bands by different bounded
 amounts; Lift Mass deliberately releases body/cavity more slowly while dropping
-the edge quickly. Soundscape is a separate stem and never receives these DNA
+the edge quickly. The current realism-V2 graph then applies a 1.35 kHz
+presence-ceiling filter to the complete DNA bus. This is intentional: adjust
+Body/Cavity/Mechanical for mass before trying to recover brightness with
+Presence/Edge. Soundscape is a separate stem and never receives these DNA
 parameters.
 
 ## IONIQ6N independent profile
@@ -269,7 +272,7 @@ first-run migration fallback.
 
 ## Cinematic Soundscape
 
-Soundscape V4 is a BEAP/MSP hybrid divided into Body/Modal, Harmonic/Macro,
+EV/V10/V12 Soundscape V4 is a BEAP/MSP hybrid divided into Body/Modal, Harmonic/Macro,
 Noise/Resonator and Air/Shimmer layers. The generated profile host handles vehicle
 mapping, smoothing, level and DSP suspension; do not tune that plumbing JSON.
 
@@ -288,7 +291,13 @@ filter/waveform/high-band pan motion: they do not impose obvious volume pumping
 or large pitch wander. Tune in the labelled order—source, structure/filter,
 dynamics, space, output—and keep the low-frequency Body centred.
 
-The V4 tracked factory files are `presets/{ev,v10,v12,ferrari}_soundscape_v4_factory.json`.
+The V4 tracked factory files are `presets/{ev,v10,v12}_soundscape_v4_factory.json`.
+Ferrari uses the separate `ferrari_soundscape_v5_beap~` graph and
+`presets/ferrari_soundscape_v5_factory.json`. V5 replaces the formerly tonal
+three-oscillator emphasis with one quiet sine reinforcement plus one shared
+`rpm/12` pressure cadence exciting low body and exhaust-cavity resonators.
+Load and throttle open the mechanical-air band; speed only widens the upper
+reflection field. The bass remains centred and no full-mix waveshaper is used.
 V1--V3 factories and local presets remain unchanged for compatibility but are
 never loaded into V4. Firing/order oscillators feed filters and resonators; no
 bare periodic waveform or full-mix waveshaper reaches the output. The profiles
@@ -300,8 +309,9 @@ deliberately use different palettes:
   a compact mechanical low bed.
 - V12: `0 / +7 / +12`, smoother harmonic blend, broad chorus and the longest
   release/reverb for a weightier orchestral pad.
-- Ferrari: cadence-led exterior body, octave cavity projection, load-opened
-  mechanical halo and upper-band roadside reflection; it is not a chord Pad.
+- Ferrari V5: pressure-cadence exterior body, exhaust-cavity projection,
+  load-opened mechanical air and upper-band roadside reflection; it is not a
+  chord Pad and does not receive Sound DNA audio.
 
 The tracked JSON contains the complete V4 state. At load,
 the helper reads slot 99 from that authority, waits for the nested BEAP clients,
@@ -353,11 +363,13 @@ Pitch Follow toward 1 before raising Motion.
 Use `Soundscape Solo`, temporarily bring its mixer level up to about -10 dB,
 and click `Open Designer`. Edits in that window affect the currently audible
 instance immediately. `Save` writes
-`presets/local/{profile}_soundscape_v3.json`; `Reload` restores it and `Factory
-Reset` recalls the shipped state. EV, V10 and V12 share the graph but not saved
-values. `Save Profile Sound` also saves Soundscape, EQ and Mixer together.
+the active versioned local file; Ferrari writes
+`presets/local/ferrari_soundscape_v5.json`, while EV/V10/V12 write their V4
+files. `Reload` restores it and `Factory Reset` recalls the shipped state.
+`Save Profile Sound` also saves Soundscape, EQ and Mixer together.
 After tuning, turn Solo off and return the shipped balance near -18 dB for EV
-or -20 dB for V10/V12 before checking the final limiter.
+or -20 dB for V10/V12; Ferrari ships at -12 dB so its exterior body remains
+audible in the normal mix.
 
 ## Acoustic A/B validation
 
