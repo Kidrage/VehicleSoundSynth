@@ -1,4 +1,4 @@
-# V5 Sound Design Guide
+# V6 Sound Design Guide
 
 This guide separates the files that are safe to tune by ear from the generated
 routing that should normally be left alone.
@@ -14,7 +14,7 @@ audible instance and receive its current state:
   leaving the active procedural powertrain audible.
 - Soundscape `Open Designer` fronts the exact cinematic pad instance feeding
   the active profile; it no longer opens a detached file or `poly~` copy.
-- V10/V12 `Open Pop Designer` opens the active backfire voice in the supported
+- V10/V12/Ferrari `Open Pop Designer` opens the active backfire voice in the supported
   one-runtime-at-a-time workflow, not a detached duplicate patcher. Two copies
   of one profile share its tuning bus and are not a supported tuning setup.
 - IONIQ6N exposes `N Sound Mode`, `N e-Shift`, and a separate N Event Designer.
@@ -24,7 +24,7 @@ audible instance and receive its current state:
 The visible four-node EQ embedded at the bottom of each engine window uses the
 same `patchers/vehicle_bus_eq~.maxpat` design, but its values are stored per
 profile. Save the patcher itself after changing its layout or objects. Use its
-`Save EQ` button to save the active EV/V10/V12/IONIQ6N values for the next launch.
+`Save EQ` button to save the active EV/V10/V12/IONIQ6N/Ferrari values for the next launch.
 
 ## Human-maintained sound-design modules
 
@@ -34,6 +34,7 @@ profile. Save the patcher itself after changing its layout or objects. Use its
 | `patchers/v10_sound_dna~.maxpat` | V10 combustion, intake, exhaust and residual character | Same |
 | `patchers/v12_sound_dna~.maxpat` | V12 bank, air and smooth high-rev character | Same |
 | `patchers/ioniq6n_sound_dna~.maxpat` | IONIQ6N motor order, body/cavity, mechanical texture and ready bed | Same |
+| `patchers/ferrari_sound_dna~.maxpat` | Analysis-derived V10 order, five acoustic bands and lift-off mass | Same |
 | `patchers/vehicle_bus_eq~.maxpat` | Four-band output tone shaping | Patcher is seed-once; `Save EQ` writes ignored per-profile state |
 | `patchers/cinematic_soundscape_beap~.maxpat` | Shared four-layer Soundscape V2 topology | Seed-once; the live host writes ignored per-profile V2 state |
 | `patchers/{ev,v10,v12}_engine_start_beap~.maxpat` | Independent cinematic starts | Seed-once; each profile has its own controls and ignored state |
@@ -41,6 +42,9 @@ profile. Save the patcher itself after changing its layout or objects. Use its
 | `patchers/ioniq6n_soundscape_{ignition,evolution,lightspeed}_beap~.maxpat` | Three independent N Sound instruments | Seed-once; shared mode host writes ignored local state |
 | `patchers/ioniq6n_activation_beap~.maxpat` | Ready activation/chime | Seed-once |
 | `patchers/ioniq6n_n_event_beap~.maxpat` | N e-Shift impact, release bubble and afterburner pop | Seed-once; own ignored local state |
+| `patchers/ferrari_soundscape_v4_beap~.maxpat` | Exterior body, cavity projection, mechanical halo and air/reflection | Seed-once; own ignored V4 state |
+| `patchers/ferrari_engine_start_v3_beap~.maxpat` | Procedural-only V10 crank and catch | Seed-once; own ignored start state |
+| `patchers/ferrari_backfire_v2_beap~.maxpat` | Procedural pressure release | Seed-once; own ignored backfire state |
 
 `patchers/module_mixer.maxpat` is generated routing/UI, not a synthesis patch.
 Use its seven main-page faders to balance Sound DNA, Start, Pop/Event,
@@ -54,8 +58,8 @@ interfaces must change; do not tune their generated JSON directly.
 
 ## Backfire voice
 
-The editable sound is in `patchers/v10_backfire_beap~.maxpat` and
-`patchers/v12_backfire_beap~.maxpat`. The matching generated
+The editable sound is in the V10, V12 and Ferrari `*_backfire_v2_beap~.maxpat`
+patchers. The matching generated
 `*_backfire_host~.maxpat` files are plumbing: they require ignition, a running
 engine and Backfire Enable, scale event strength/intensity, consume the Pop
 Designer controls, soft-saturate the combined voice, and route it into the
@@ -142,6 +146,8 @@ Reload and Factory Reset persist under
 V12 a quicker smoother twelve-cylinder catch, and EV a ready chime/harmonic
 activation. `Realistic Sample` is the mutually exclusive ICE alternate and uses
 the tracked CC0 fallback, or optional local-only V10 Ferrari startup.
+Ferrari has its own `ferrari_engine_start_v3_beap~` and exposes no realistic
+sample choice.
 
 ## Sound DNA controls
 
@@ -185,6 +191,15 @@ before deciding that a control is inactive.
 
 EV adds `Torque Ripple`, `Gear Mesh`, and `Electrical Detail`. V10/V12 add
 `Combustion Pulse`, `Intake Detail`, `Exhaust Detail`, and `Residual Detail`.
+
+Ferrari instead exposes `Order Core`, `Body Band`, `Cavity Band`, `Mechanical
+Band`, `Presence Band`, `Edge Band`, `Band Load Depth`, and `Lift Mass`, plus
+intake/exhaust, irregularity, width, saturation and idle controls. Tune in that
+order: establish 120--600 Hz mass first, add 600 Hz--2 kHz structure next, and
+raise 2--6 kHz Edge last. Load opens all five bands by different bounded
+amounts; Lift Mass deliberately releases body/cavity more slowly while dropping
+the edge quickly. Soundscape is a separate stem and never receives these DNA
+parameters.
 
 ## IONIQ6N independent profile
 
@@ -233,7 +248,7 @@ throttle-to-level range, shared left/right resonances, and saturation plus final
 compression masking small dynamics. V5 keeps the stable firing cadence but adds
 different left/right non-integer orders, independent bank/intake/exhaust paths,
 bounded air layers and adjustable irregularity. Continuous V10/V12 audio still
-does not read Ferrari samples.
+does not read Ferrari samples; the Ferrari interpretation is procedural too.
 
 ## Vehicle bus EQ
 
@@ -254,7 +269,7 @@ first-run migration fallback.
 
 ## Cinematic Soundscape
 
-Soundscape V3 is a BEAP/MSP hybrid divided into Body/Modal, Harmonic/Macro,
+Soundscape V4 is a BEAP/MSP hybrid divided into Body/Modal, Harmonic/Macro,
 Noise/Resonator and Air/Shimmer layers. The generated profile host handles vehicle
 mapping, smoothing, level and DSP suspension; do not tune that plumbing JSON.
 
@@ -273,14 +288,11 @@ filter/waveform/high-band pan motion: they do not impose obvious volume pumping
 or large pitch wander. Tune in the labelled order—source, structure/filter,
 dynamics, space, output—and keep the low-frequency Body centred.
 
-The V3 tracked factory files are `presets/ev_soundscape_v3_factory.json`,
-`presets/v10_soundscape_v3_factory.json`, and
-`presets/v12_soundscape_v3_factory.json`. V1/V2 factories and local presets
-remain unchanged for compatibility but are never loaded into V3. V3 factory
-oscillators use only sine/triangle families; a normalized structure branch and
-the absence of a full-mix waveshaper prevent the previous square-like flat top.
-The profiles deliberately use different palettes:
-deliberately different palettes:
+The V4 tracked factory files are `presets/{ev,v10,v12,ferrari}_soundscape_v4_factory.json`.
+V1--V3 factories and local presets remain unchanged for compatibility but are
+never loaded into V4. Firing/order oscillators feed filters and resonators; no
+bare periodic waveform or full-mix waveshaper reaches the output. The profiles
+deliberately use different palettes:
 
 - EV: `0 / +7 / +12` voicing, brightest filters, wider chorus, restrained long
   space for a clean futuristic layer.
@@ -288,11 +300,13 @@ deliberately different palettes:
   a compact mechanical low bed.
 - V12: `0 / +7 / +12`, smoother harmonic blend, broad chorus and the longest
   release/reverb for a weightier orchestral pad.
+- Ferrari: cadence-led exterior body, octave cavity projection, load-opened
+  mechanical halo and upper-band roadside reflection; it is not a chord Pad.
 
-The tracked JSON contains the complete V3 state. At load,
+The tracked JSON contains the complete V4 state. At load,
 the helper reads slot 99 from that authority, waits for the nested BEAP clients,
 recalls it, and then
-applies the ignored `presets/local/{profile}_soundscape_v3.json` slot 1 when it
+applies the ignored `presets/local/{profile}_soundscape_v4.json` slot 1 when it
 exists. After every local read it re-reads slot 99 from tracked JSON, so a legacy
 local slot 99 cannot shadow a newer shipped voicing. `Factory Reset` recalls the
 reloaded slot 99 and saves that complete result as the new local slot 1. Saving
@@ -307,7 +321,7 @@ Use the Main macros first:
   lower this before touching oscillator pitch.
 - `Pitch Follow` `1.0`: exactly restores the former large RPM travel. The root
   laws are EV `55 + 0.032*rpm`, V10 `36.7 + 0.014*rpm`, and V12
-  `32.7 + 0.012*rpm`. Values below 1 blend logarithmically toward the profile's
+  `32.7 + 0.012*rpm`; Ferrari follows the V10 travel law. Values below 1 blend logarithmically toward the profile's
   stationary root; they do not alter the visible interval relationship.
 - `Transpose` ±12 semitones: move the whole voicing without retuning modules.
 - `Brightness` 0.25–0.70: mapped filter colour. Lower it at the first sign of
@@ -316,13 +330,13 @@ Use the Main macros first:
   throttle response; it is not an LFO speed.
 
 `Enable` defaults on in a fresh/factory profile but remains ignition-gated.
-For V10/V12, the cadence-excited idle Body additionally requires a successful
+For V10/V12/Ferrari, the cadence-excited idle Body additionally requires a successful
 `start 1`; `ignition 0` clears that latch. Thus opening the patch, enabling
 Soundscape, or receiving RPM alone cannot passively start a combustion roar.
 Changes from either Main or the runtime view are sent directly to the current
 engine; feedback updates both views without reopening the patch. `Save` writes
 only the selected profile, while `Reload` immediately recalls its saved state.
-The Main link uses separate EV/V10/V12 buses, so even the brief overlap while an
+The Main link uses separate EV/V10/V12/Ferrari buses, so even the brief overlap while an
 old runtime closes cannot receive the new profile's tuning or overwrite its
 saved Soundscape.
 

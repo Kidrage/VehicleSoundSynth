@@ -41,6 +41,12 @@ PROFILE_SETTINGS = {
         "rumble": (0.0, 0.0, 0.0),
         "ir_mix": 0.08,
     },
+    "ferrari": {
+        "rpm": 740.0,
+        "weights": (0.0, 0.0, 1.0),
+        "rumble": (0.92, 0.74, 0.72),
+        "ir_mix": 0.18,
+    },
 }
 
 DSP_SETTLE_MS = 6000
@@ -270,6 +276,28 @@ SCENARIOS = {
         "profile": "v12", "rpm": 780.0, "throttle": 0.04, "load": 0.12,
         "lock_rpm": True, "direct_soundscape_state": True, "soundscape_enable": 1,
         "soundscape_level_db": -7.0, "soundscape_solo": 1,
+    },
+    "ferrari-soundscape-solo-low-load": {
+        "profile": "ferrari", "rpm": 1800.0, "throttle": 0.10, "load": 0.10,
+        "lock_rpm": True, "direct_soundscape_state": True, "soundscape_enable": 1,
+        "soundscape_level_db": -6.0, "soundscape_solo": 1,
+    },
+    "ferrari-soundscape-solo-high-load": {
+        "profile": "ferrari", "rpm": 1800.0, "throttle": 0.90, "load": 0.85,
+        "lock_rpm": True, "direct_soundscape_state": True, "soundscape_enable": 1,
+        "soundscape_level_db": -6.0, "soundscape_solo": 1,
+    },
+    "ferrari-soundscape-solo-idle": {
+        "profile": "ferrari", "rpm": 740.0, "throttle": 0.04, "load": 0.12,
+        "lock_rpm": True, "direct_soundscape_state": True, "soundscape_enable": 1,
+        "soundscape_level_db": -6.0, "soundscape_solo": 1,
+    },
+    "ferrari-start-cinematic": start_scenario("ferrari", "cinematic"),
+    "ferrari-start-controller-cinematic": controller_start_scenario("ferrari", "cinematic"),
+    "ferrari-backfire-solo": backfire_solo_scenario("ferrari", 0.65),
+    "ferrari-idle": {
+        "profile": "ferrari", "rpm": 740.0, "throttle": 0.04, "load": 0.12,
+        "lock_rpm": True, "extra_messages": ("accel 0",),
     },
     "shift-up": {"profile": "v12", "rpm": 3200.0, "event": "shift_dir 1, shift 1"},
     "shift-down": {"profile": "v10", "rpm": 2800.0, "event": "shift_dir -1, shift 1"},
@@ -1040,6 +1068,10 @@ def main() -> None:
         ):
             factory_name = f"{profile_name}_{suffix}.json"
             shutil.copy2(root / "presets" / factory_name, presets / factory_name)
+    shutil.copy2(
+        root / "presets" / "ferrari_soundscape_v4_factory.json",
+        presets / "ferrari_soundscape_v4_factory.json",
+    )
     for factory_name in (
         "ioniq6n_soundscape_modes_factory.json", "ioniq6n_n_event_factory.json",
     ):

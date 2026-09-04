@@ -21,7 +21,7 @@
             650.0,
             22.0
           ],
-          "text": "VehicleSoundSynth V6 \u2014 one shared console, four profile adapters"
+          "text": "VehicleSoundSynth V6 \u2014 one shared console, five profile adapters"
         }
       },
       {
@@ -74,8 +74,9 @@
           "id": "obj-5",
           "maxclass": "newobj",
           "numinlets": 1,
-          "numoutlets": 6,
+          "numoutlets": 7,
           "outlettype": [
+            "",
             "",
             "",
             "",
@@ -84,12 +85,12 @@
             ""
           ],
           "patching_rect": [
-            860.0,
-            130.0,
-            200.0,
+            835.0,
+            165.0,
+            250.0,
             22.0
           ],
-          "text": "sel ev v10 v12 ioniq6n none"
+          "text": "sel ev v10 v12 ioniq6n ferrari none"
         }
       },
       {
@@ -101,7 +102,7 @@
           "patching_rect": [
             30.0,
             92.0,
-            225.0,
+            280.0,
             22.0
           ],
           "text": "Future EV"
@@ -119,14 +120,14 @@
           "patching_rect": [
             30.0,
             118.0,
-            220.0,
+            280.0,
             22.0
           ],
           "presentation": 1,
           "presentation_rect": [
             30.0,
             66.0,
-            220.0,
+            280.0,
             24.0
           ],
           "text": "Open Future EV"
@@ -144,7 +145,7 @@
           ],
           "patching_rect": [
             30.0,
-            150.0,
+            146.0,
             50.0,
             22.0
           ],
@@ -162,7 +163,7 @@
           ],
           "patching_rect": [
             90.0,
-            150.0,
+            146.0,
             65.0,
             22.0
           ],
@@ -180,7 +181,7 @@
           ],
           "patching_rect": [
             160.0,
-            150.0,
+            146.0,
             65.0,
             22.0
           ],
@@ -198,8 +199,8 @@
           ],
           "patching_rect": [
             30.0,
-            180.0,
-            230.0,
+            174.0,
+            260.0,
             22.0
           ],
           "text": "loadunique VehicleSoundSynth-EV.maxpat"
@@ -212,9 +213,9 @@
           "numinlets": 1,
           "numoutlets": 0,
           "patching_rect": [
-            275.0,
+            330.0,
             92.0,
-            225.0,
+            280.0,
             22.0
           ],
           "text": "Ferrari-referenced V10"
@@ -230,16 +231,16 @@
             ""
           ],
           "patching_rect": [
-            275.0,
+            330.0,
             118.0,
-            220.0,
+            280.0,
             22.0
           ],
           "presentation": 1,
           "presentation_rect": [
-            275.0,
+            330.0,
             66.0,
-            220.0,
+            280.0,
             24.0
           ],
           "text": "Open Ferrari-referenced V10"
@@ -256,8 +257,8 @@
             ""
           ],
           "patching_rect": [
-            275.0,
-            150.0,
+            330.0,
+            146.0,
             50.0,
             22.0
           ],
@@ -274,8 +275,8 @@
             ""
           ],
           "patching_rect": [
-            335.0,
-            150.0,
+            390.0,
+            146.0,
             65.0,
             22.0
           ],
@@ -292,8 +293,8 @@
             ""
           ],
           "patching_rect": [
-            405.0,
-            150.0,
+            460.0,
+            146.0,
             65.0,
             22.0
           ],
@@ -310,9 +311,9 @@
             ""
           ],
           "patching_rect": [
-            275.0,
-            180.0,
-            230.0,
+            330.0,
+            174.0,
+            260.0,
             22.0
           ],
           "text": "loadunique VehicleSoundSynth-V10.maxpat"
@@ -325,9 +326,9 @@
           "numinlets": 1,
           "numoutlets": 0,
           "patching_rect": [
-            520.0,
+            630.0,
             92.0,
-            225.0,
+            280.0,
             22.0
           ],
           "text": "Independent V12"
@@ -343,16 +344,16 @@
             ""
           ],
           "patching_rect": [
-            520.0,
+            630.0,
             118.0,
-            220.0,
+            280.0,
             22.0
           ],
           "presentation": 1,
           "presentation_rect": [
-            520.0,
+            630.0,
             66.0,
-            220.0,
+            280.0,
             24.0
           ],
           "text": "Open Independent V12"
@@ -369,8 +370,8 @@
             ""
           ],
           "patching_rect": [
-            520.0,
-            150.0,
+            630.0,
+            146.0,
             50.0,
             22.0
           ],
@@ -387,8 +388,8 @@
             ""
           ],
           "patching_rect": [
-            580.0,
-            150.0,
+            690.0,
+            146.0,
             65.0,
             22.0
           ],
@@ -405,8 +406,8 @@
             ""
           ],
           "patching_rect": [
-            650.0,
-            150.0,
+            760.0,
+            146.0,
             65.0,
             22.0
           ],
@@ -423,9 +424,9 @@
             ""
           ],
           "patching_rect": [
-            520.0,
-            180.0,
-            230.0,
+            630.0,
+            174.0,
+            260.0,
             22.0
           ],
           "text": "loadunique VehicleSoundSynth-V12.maxpat"
@@ -438,9 +439,9 @@
           "numinlets": 1,
           "numoutlets": 0,
           "patching_rect": [
-            765.0,
-            92.0,
-            225.0,
+            30.0,
+            150.0,
+            280.0,
             22.0
           ],
           "text": "IONIQ 6 N"
@@ -456,16 +457,16 @@
             ""
           ],
           "patching_rect": [
-            765.0,
-            118.0,
-            220.0,
+            30.0,
+            176.0,
+            280.0,
             22.0
           ],
           "presentation": 1,
           "presentation_rect": [
-            765.0,
-            66.0,
-            220.0,
+            30.0,
+            100.0,
+            280.0,
             24.0
           ],
           "text": "Open IONIQ 6 N"
@@ -482,8 +483,8 @@
             ""
           ],
           "patching_rect": [
-            765.0,
-            150.0,
+            30.0,
+            204.0,
             50.0,
             22.0
           ],
@@ -500,8 +501,8 @@
             ""
           ],
           "patching_rect": [
-            825.0,
-            150.0,
+            90.0,
+            204.0,
             65.0,
             22.0
           ],
@@ -518,8 +519,8 @@
             ""
           ],
           "patching_rect": [
-            895.0,
-            150.0,
+            160.0,
+            204.0,
             65.0,
             22.0
           ],
@@ -536,9 +537,9 @@
             ""
           ],
           "patching_rect": [
-            765.0,
-            180.0,
-            230.0,
+            30.0,
+            232.0,
+            260.0,
             22.0
           ],
           "text": "loadunique VehicleSoundSynth-IONIQ6N.maxpat"
@@ -547,26 +548,16 @@
       {
         "box": {
           "id": "obj-30",
-          "maxclass": "message",
-          "numinlets": 2,
-          "numoutlets": 1,
-          "outlettype": [
-            ""
-          ],
+          "maxclass": "comment",
+          "numinlets": 1,
+          "numoutlets": 0,
           "patching_rect": [
-            1010.0,
-            118.0,
-            200.0,
+            330.0,
+            150.0,
+            280.0,
             22.0
           ],
-          "presentation": 1,
-          "presentation_rect": [
-            1010.0,
-            66.0,
-            200.0,
-            24.0
-          ],
-          "text": "Close Active / \u5173\u95ed\u5f53\u524d\u8f66\u578b"
+          "text": "Ferrari SF90 \u2014 V10 Acoustic Interpretation"
         }
       },
       {
@@ -579,38 +570,38 @@
             ""
           ],
           "patching_rect": [
-            1090.0,
-            150.0,
-            55.0,
+            330.0,
+            176.0,
+            280.0,
             22.0
           ],
-          "text": "none"
+          "presentation": 1,
+          "presentation_rect": [
+            330.0,
+            100.0,
+            280.0,
+            24.0
+          ],
+          "text": "Open Ferrari SF90 \u2014 V10 Acoustic Interpretation"
         }
       },
       {
         "box": {
           "id": "obj-32",
-          "maxclass": "bpatcher",
-          "name": "Patcher:/patchers/runtime_console.maxpat",
+          "maxclass": "newobj",
           "numinlets": 1,
-          "numoutlets": 1,
+          "numoutlets": 2,
           "outlettype": [
+            "",
             ""
           ],
           "patching_rect": [
-            30.0,
-            220.0,
-            1180.0,
-            600.0
+            330.0,
+            204.0,
+            50.0,
+            22.0
           ],
-          "presentation": 1,
-          "presentation_rect": [
-            30.0,
-            115.0,
-            1180.0,
-            600.0
-          ],
-          "varname": "runtime_console"
+          "text": "t b b"
         }
       },
       {
@@ -623,30 +614,30 @@
             ""
           ],
           "patching_rect": [
-            898.0,
-            190.0,
-            30.0,
+            390.0,
+            204.0,
+            65.0,
             22.0
           ],
-          "text": "1"
+          "text": "ferrari"
         }
       },
       {
         "box": {
           "id": "obj-34",
-          "maxclass": "message",
+          "maxclass": "newobj",
           "numinlets": 2,
           "numoutlets": 1,
           "outlettype": [
             ""
           ],
           "patching_rect": [
-            936.0,
-            190.0,
-            30.0,
+            460.0,
+            204.0,
+            65.0,
             22.0
           ],
-          "text": "2"
+          "text": "delay 40"
         }
       },
       {
@@ -659,12 +650,12 @@
             ""
           ],
           "patching_rect": [
-            974.0,
-            190.0,
-            30.0,
+            330.0,
+            232.0,
+            260.0,
             22.0
           ],
-          "text": "3"
+          "text": "loadunique VehicleSoundSynth-Ferrari.maxpat"
         }
       },
       {
@@ -677,12 +668,19 @@
             ""
           ],
           "patching_rect": [
-            1012.0,
-            190.0,
-            30.0,
+            930.0,
+            176.0,
+            280.0,
             22.0
           ],
-          "text": "4"
+          "presentation": 1,
+          "presentation_rect": [
+            930.0,
+            100.0,
+            280.0,
+            24.0
+          ],
+          "text": "Close Active / \u5173\u95ed\u5f53\u524d\u8f66\u578b"
         }
       },
       {
@@ -695,8 +693,142 @@
             ""
           ],
           "patching_rect": [
-            860.0,
-            190.0,
+            1090.0,
+            205.0,
+            55.0,
+            22.0
+          ],
+          "text": "none"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-38",
+          "maxclass": "bpatcher",
+          "name": "Patcher:/patchers/runtime_console.maxpat",
+          "numinlets": 1,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ],
+          "patching_rect": [
+            30.0,
+            270.0,
+            1180.0,
+            600.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            30.0,
+            145.0,
+            1180.0,
+            600.0
+          ],
+          "varname": "runtime_console"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-39",
+          "maxclass": "message",
+          "numinlets": 2,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ],
+          "patching_rect": [
+            873.0,
+            235.0,
+            30.0,
+            22.0
+          ],
+          "text": "1"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-40",
+          "maxclass": "message",
+          "numinlets": 2,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ],
+          "patching_rect": [
+            911.0,
+            235.0,
+            30.0,
+            22.0
+          ],
+          "text": "2"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-41",
+          "maxclass": "message",
+          "numinlets": 2,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ],
+          "patching_rect": [
+            949.0,
+            235.0,
+            30.0,
+            22.0
+          ],
+          "text": "3"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-42",
+          "maxclass": "message",
+          "numinlets": 2,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ],
+          "patching_rect": [
+            987.0,
+            235.0,
+            30.0,
+            22.0
+          ],
+          "text": "4"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-43",
+          "maxclass": "message",
+          "numinlets": 2,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ],
+          "patching_rect": [
+            1025.0,
+            235.0,
+            30.0,
+            22.0
+          ],
+          "text": "5"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-44",
+          "maxclass": "message",
+          "numinlets": 2,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ],
+          "patching_rect": [
+            835.0,
+            235.0,
             30.0,
             22.0
           ],
@@ -705,7 +837,7 @@
       },
       {
         "box": {
-          "id": "obj-38",
+          "id": "obj-45",
           "maxclass": "newobj",
           "numinlets": 1,
           "numoutlets": 1,
@@ -713,8 +845,8 @@
             ""
           ],
           "patching_rect": [
-            860.0,
-            220.0,
+            835.0,
+            265.0,
             80.0,
             22.0
           ],
@@ -723,11 +855,12 @@
       },
       {
         "box": {
-          "id": "obj-39",
+          "id": "obj-46",
           "maxclass": "newobj",
           "numinlets": 2,
-          "numoutlets": 4,
+          "numoutlets": 5,
           "outlettype": [
+            "",
             "",
             "",
             "",
@@ -735,34 +868,34 @@
           ],
           "patching_rect": [
             1030.0,
-            700.0,
+            750.0,
             65.0,
             22.0
           ],
-          "text": "gate 4"
+          "text": "gate 5"
         }
       },
       {
         "box": {
-          "id": "obj-40",
+          "id": "obj-47",
           "maxclass": "newobj",
-          "numinlets": 5,
+          "numinlets": 6,
           "numoutlets": 1,
           "outlettype": [
             ""
           ],
           "patching_rect": [
             1030.0,
-            750.0,
+            800.0,
             75.0,
             22.0
           ],
-          "text": "switch 4"
+          "text": "switch 5"
         }
       },
       {
         "box": {
-          "id": "obj-41",
+          "id": "obj-48",
           "maxclass": "newobj",
           "numinlets": 1,
           "numoutlets": 0,
@@ -777,7 +910,7 @@
       },
       {
         "box": {
-          "id": "obj-42",
+          "id": "obj-49",
           "maxclass": "newobj",
           "numinlets": 0,
           "numoutlets": 1,
@@ -795,7 +928,7 @@
       },
       {
         "box": {
-          "id": "obj-43",
+          "id": "obj-50",
           "maxclass": "newobj",
           "numinlets": 1,
           "numoutlets": 0,
@@ -810,7 +943,7 @@
       },
       {
         "box": {
-          "id": "obj-44",
+          "id": "obj-51",
           "maxclass": "newobj",
           "numinlets": 0,
           "numoutlets": 1,
@@ -828,7 +961,7 @@
       },
       {
         "box": {
-          "id": "obj-45",
+          "id": "obj-52",
           "maxclass": "newobj",
           "numinlets": 1,
           "numoutlets": 0,
@@ -843,7 +976,7 @@
       },
       {
         "box": {
-          "id": "obj-46",
+          "id": "obj-53",
           "maxclass": "newobj",
           "numinlets": 0,
           "numoutlets": 1,
@@ -861,7 +994,7 @@
       },
       {
         "box": {
-          "id": "obj-47",
+          "id": "obj-54",
           "maxclass": "newobj",
           "numinlets": 1,
           "numoutlets": 0,
@@ -876,7 +1009,7 @@
       },
       {
         "box": {
-          "id": "obj-48",
+          "id": "obj-55",
           "maxclass": "newobj",
           "numinlets": 0,
           "numoutlets": 1,
@@ -894,13 +1027,46 @@
       },
       {
         "box": {
-          "id": "obj-49",
+          "id": "obj-56",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            1020.0,
+            630.0,
+            190.0,
+            22.0
+          ],
+          "text": "s vss.runtime.control.ferrari"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-57",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ],
+          "patching_rect": [
+            780.0,
+            630.0,
+            220.0,
+            22.0
+          ],
+          "text": "r vss.runtime.feedback.ferrari"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-58",
           "maxclass": "comment",
           "numinlets": 1,
           "numoutlets": 0,
           "patching_rect": [
             30.0,
-            825.0,
+            875.0,
             900.0,
             22.0
           ],
@@ -1261,11 +1427,95 @@
       {
         "patchline": {
           "destination": [
-            "obj-31",
+            "obj-32",
             0
           ],
           "source": [
-            "obj-30",
+            "obj-31",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-33",
+            0
+          ],
+          "source": [
+            "obj-32",
+            1
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-4",
+            0
+          ],
+          "source": [
+            "obj-33",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-5",
+            0
+          ],
+          "source": [
+            "obj-33",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-34",
+            0
+          ],
+          "source": [
+            "obj-32",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-35",
+            0
+          ],
+          "source": [
+            "obj-34",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-3",
+            0
+          ],
+          "source": [
+            "obj-35",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-37",
+            0
+          ],
+          "source": [
+            "obj-36",
             0
           ]
         }
@@ -1277,7 +1527,7 @@
             0
           ],
           "source": [
-            "obj-31",
+            "obj-37",
             0
           ]
         }
@@ -1289,19 +1539,7 @@
             0
           ],
           "source": [
-            "obj-31",
-            0
-          ]
-        }
-      },
-      {
-        "patchline": {
-          "destination": [
-            "obj-33",
-            0
-          ],
-          "source": [
-            "obj-5",
+            "obj-37",
             0
           ]
         }
@@ -1313,7 +1551,31 @@
             0
           ],
           "source": [
-            "obj-33",
+            "obj-5",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-46",
+            0
+          ],
+          "source": [
+            "obj-39",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-47",
+            0
+          ],
+          "source": [
+            "obj-39",
             0
           ]
         }
@@ -1322,18 +1584,6 @@
         "patchline": {
           "destination": [
             "obj-40",
-            0
-          ],
-          "source": [
-            "obj-33",
-            0
-          ]
-        }
-      },
-      {
-        "patchline": {
-          "destination": [
-            "obj-34",
             0
           ],
           "source": [
@@ -1345,167 +1595,23 @@
       {
         "patchline": {
           "destination": [
-            "obj-39",
+            "obj-46",
             0
           ],
           "source": [
-            "obj-34",
-            0
-          ]
-        }
-      },
-      {
-        "patchline": {
-          "destination": [
             "obj-40",
             0
-          ],
-          "source": [
-            "obj-34",
-            0
           ]
         }
       },
       {
         "patchline": {
           "destination": [
-            "obj-35",
+            "obj-47",
             0
           ],
           "source": [
-            "obj-5",
-            2
-          ]
-        }
-      },
-      {
-        "patchline": {
-          "destination": [
-            "obj-39",
-            0
-          ],
-          "source": [
-            "obj-35",
-            0
-          ]
-        }
-      },
-      {
-        "patchline": {
-          "destination": [
             "obj-40",
-            0
-          ],
-          "source": [
-            "obj-35",
-            0
-          ]
-        }
-      },
-      {
-        "patchline": {
-          "destination": [
-            "obj-36",
-            0
-          ],
-          "source": [
-            "obj-5",
-            3
-          ]
-        }
-      },
-      {
-        "patchline": {
-          "destination": [
-            "obj-39",
-            0
-          ],
-          "source": [
-            "obj-36",
-            0
-          ]
-        }
-      },
-      {
-        "patchline": {
-          "destination": [
-            "obj-40",
-            0
-          ],
-          "source": [
-            "obj-36",
-            0
-          ]
-        }
-      },
-      {
-        "patchline": {
-          "destination": [
-            "obj-37",
-            0
-          ],
-          "source": [
-            "obj-5",
-            4
-          ]
-        }
-      },
-      {
-        "patchline": {
-          "destination": [
-            "obj-39",
-            0
-          ],
-          "source": [
-            "obj-37",
-            0
-          ]
-        }
-      },
-      {
-        "patchline": {
-          "destination": [
-            "obj-40",
-            0
-          ],
-          "source": [
-            "obj-37",
-            0
-          ]
-        }
-      },
-      {
-        "patchline": {
-          "destination": [
-            "obj-39",
-            0
-          ],
-          "source": [
-            "obj-38",
-            0
-          ]
-        }
-      },
-      {
-        "patchline": {
-          "destination": [
-            "obj-40",
-            0
-          ],
-          "source": [
-            "obj-38",
-            0
-          ]
-        }
-      },
-      {
-        "patchline": {
-          "destination": [
-            "obj-39",
-            1
-          ],
-          "source": [
-            "obj-32",
             0
           ]
         }
@@ -1517,7 +1623,19 @@
             0
           ],
           "source": [
-            "obj-39",
+            "obj-5",
+            2
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-46",
+            0
+          ],
+          "source": [
+            "obj-41",
             0
           ]
         }
@@ -1525,8 +1643,44 @@
       {
         "patchline": {
           "destination": [
-            "obj-40",
-            1
+            "obj-47",
+            0
+          ],
+          "source": [
+            "obj-41",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-42",
+            0
+          ],
+          "source": [
+            "obj-5",
+            3
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-46",
+            0
+          ],
+          "source": [
+            "obj-42",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-47",
+            0
           ],
           "source": [
             "obj-42",
@@ -1541,43 +1695,19 @@
             0
           ],
           "source": [
-            "obj-39",
-            1
+            "obj-5",
+            4
           ]
         }
       },
       {
         "patchline": {
           "destination": [
-            "obj-40",
-            2
-          ],
-          "source": [
-            "obj-44",
-            0
-          ]
-        }
-      },
-      {
-        "patchline": {
-          "destination": [
-            "obj-45",
-            0
-          ],
-          "source": [
-            "obj-39",
-            2
-          ]
-        }
-      },
-      {
-        "patchline": {
-          "destination": [
-            "obj-40",
-            3
-          ],
-          "source": [
             "obj-46",
+            0
+          ],
+          "source": [
+            "obj-43",
             0
           ]
         }
@@ -1589,7 +1719,163 @@
             0
           ],
           "source": [
-            "obj-39",
+            "obj-43",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-44",
+            0
+          ],
+          "source": [
+            "obj-5",
+            5
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-46",
+            0
+          ],
+          "source": [
+            "obj-44",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-47",
+            0
+          ],
+          "source": [
+            "obj-44",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-46",
+            0
+          ],
+          "source": [
+            "obj-45",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-47",
+            0
+          ],
+          "source": [
+            "obj-45",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-46",
+            1
+          ],
+          "source": [
+            "obj-38",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-48",
+            0
+          ],
+          "source": [
+            "obj-46",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-47",
+            1
+          ],
+          "source": [
+            "obj-49",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-50",
+            0
+          ],
+          "source": [
+            "obj-46",
+            1
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-47",
+            2
+          ],
+          "source": [
+            "obj-51",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-52",
+            0
+          ],
+          "source": [
+            "obj-46",
+            2
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-47",
+            3
+          ],
+          "source": [
+            "obj-53",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-54",
+            0
+          ],
+          "source": [
+            "obj-46",
             3
           ]
         }
@@ -1597,11 +1883,11 @@
       {
         "patchline": {
           "destination": [
-            "obj-40",
+            "obj-47",
             4
           ],
           "source": [
-            "obj-48",
+            "obj-55",
             0
           ]
         }
@@ -1609,11 +1895,35 @@
       {
         "patchline": {
           "destination": [
-            "obj-32",
+            "obj-56",
             0
           ],
           "source": [
-            "obj-40",
+            "obj-46",
+            4
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-47",
+            5
+          ],
+          "source": [
+            "obj-57",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-38",
+            0
+          ],
+          "source": [
+            "obj-47",
             0
           ]
         }
@@ -1625,7 +1935,7 @@
       50.0,
       50.0,
       1240,
-      850
+      900
     ],
     "toolbarvisible": 1
   }

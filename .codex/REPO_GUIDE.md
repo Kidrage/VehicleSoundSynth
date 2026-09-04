@@ -2,12 +2,15 @@
 
 ## Purpose
 
-Max 8.6.5 vehicle-sound V6, forked from stable V4 tag `v4.0.0`, with four independent fixed-profile runtimes. V10
+Max 8.6.5 vehicle-sound V6, forked from stable V4 tag `v4.0.0`, with five independent fixed-profile runtimes. V10
 and V12 continuous audio are procedural; Ferrari.wav is a V10 lifecycle-analysis
 target and may supply only the optional ignored realistic-start one-shot. EV,
 V10 and V12 retain their independent Soundscape V4 instruments. IONIQ6N is a
 separate fourth electric profile with one Sound DNA, three crossfaded N Sound
 BEAP instruments, a ready activation voice and a mode-aware N-event bus.
+Ferrari is a fifth, analysis-envelope-derived V10 acoustic interpretation with
+independent Sound DNA, Soundscape V4, procedural start and backfire; it has no
+runtime reference-audio dependency and is not a physical SF90 engine claim.
 The project also contains a
 start-relative single-speed/seven-speed drivetrain, cabin rumble, licensed
 events, short cabin IR, adjustable stereo compression, EQ, and peak protection.
@@ -26,7 +29,7 @@ events, short cabin IR, adjustable stereo compression, EQ, and peak protection.
 - `tools/prepare_engine_texture.py` — CC0 stereo residual filtering, envelope stabilization, Side decorrelation, cyclic seam closure, normalization, and hashing.
 - `tools/prepare_local_reference.py` — builds the ignored Ferrari startup one-shot plus analysis-only legacy derivatives and hash manifests.
 - `tools/analyze_reference_lifecycle.py` / `tools/validate_v10_lifecycle.py` — build the tracked 14-node target table and gate five synthesized roles plus the throttle-only full-drive render.
-- `code/drive_model.js` — exact deterministic 20 ms EV/V10/V12/IONIQ6N drivetrain used by Max and Node regression traces.
+- `code/drive_model.js` — exact deterministic 20 ms EV/V10/V12/IONIQ6N/Ferrari drivetrain used by Max and Node regression traces.
 - `code/manual_input.js` — ES5/Node-testable fixed LT-throttle/RT-brake
   normalization, smoothing, source exclusivity, and safe pedal-release state.
 - `assets/asset_manifest.json` / `ASSET_LICENSES.md` — runtime-audio provenance authority.
@@ -36,9 +39,9 @@ events, short cabin IR, adjustable stereo compression, EQ, and peak protection.
 - `patchers/runtime_console.maxpat`, `drive_console.maxpat`,
   `mix_eq_console.maxpat`, and `sound_design_console.maxpat` — the four tabbed
   Main pages. Their messages are scoped to the selected profile.
-- `VehicleSoundSynth-{EV,V10,V12,IONIQ6N}.maxpat` — thin profile adapters that
+- `VehicleSoundSynth-{EV,V10,V12,IONIQ6N,Ferrari}.maxpat` — thin profile adapters that
   expose only profile-specific modes and embed one shared runtime host.
-- `patchers/profile_runtime_host_<profile>.maxpat` — four Max-safe literal
+- `patchers/profile_runtime_host_<profile>.maxpat` — five Max-safe literal
   bindings materialized from one common engine, drivetrain, input, mixer, EQ,
   output and feedback topology. They accept profile-scoped Main commands and
   retain the public `vss.<profile>.input` seam.
@@ -48,10 +51,10 @@ events, short cabin IR, adjustable stereo compression, EQ, and peak protection.
 - `patchers/manual_input.maxpat` — generated deep module that selects the
   keyboard adapter or Max's built-in macOS `gamepad` adapter and exposes only
   normalized throttle/brake to the existing drivetrain.
-- `patchers/vehicle_engine_{ev,v10,v12,ioniq6n}~.maxpat` — fixed public seams.
-- `patchers/{ev,v10,v12,ioniq6n}_sound_dna~.maxpat` — seed-once, user-editable profile
+- `patchers/vehicle_engine_{ev,v10,v12,ioniq6n,ferrari}~.maxpat` — fixed public seams.
+- `patchers/{ev,v10,v12,ioniq6n,ferrari}_sound_dna~.maxpat` — seed-once, user-editable profile
   sound-design panels that own synthesis macros and wrap one generated powertrain.
-- `patchers/{ev,v10,v12}_powertrain~.maxpat` — exactly one Gen per profile.
+- `patchers/{ev,v10,v12,ioniq6n,ferrari}_powertrain~.maxpat` — exactly one Gen per profile.
 - `patchers/vehicle_bus_eq~.maxpat` — seed-once, user-editable four-band EQ
   topology with per-profile ignored state; `patchers/mix_master~.maxpat`
   contains generated safety dynamics only. `code/eq_feedback_reader.js` reads
@@ -61,7 +64,7 @@ events, short cabin IR, adjustable stereo compression, EQ, and peak protection.
   per-profile ignored state is resolved by `code/module_mixer_state_path.js`.
   Its Sound DNA fader is the only profile output-gain authority, including for
   IONIQ6N.
-- `patchers/{ev,v10,v12}_cinematic_soundscape_host~.maxpat` — generated profile
+- `patchers/{ev,v10,v12,ferrari}_cinematic_soundscape_host~.maxpat` — generated profile
   mapping, persistence and cancellable DSP suspension around a direct embedded
   instance of the shared runtime Soundscape; there is no detached voice wrapper.
 - `presets/{ev,v10,v12}_soundscape_v3_factory.json` — tracked profile-specific
@@ -71,6 +74,11 @@ events, short cabin IR, adjustable stereo compression, EQ, and peak protection.
 - `patchers/ioniq6n_cinematic_soundscape_host~.maxpat` — fourth-profile host;
   crossfades Ignition/Evolution/Lightspeed over 150 ms and never accepts Sound
   DNA audio or DNA parameter messages.
+- `assets/ferrari_sf90_v10_interpretation_targets.json` — sanitized numeric
+  cadence/band/envelope target; contains no source path, audio, or derivative.
+- `patchers/ferrari_{soundscape_v4,engine_start_v3,backfire_v2}_beap~.maxpat` —
+  independent Ferrari seed-once designers; the start and backfire paths are
+  procedural-only.
 - `patchers/ioniq6n_soundscape_{ignition,evolution,lightspeed}_beap~.maxpat` —
   seed-once N Sound instruments. `presets/ioniq6n_soundscape_modes_factory.json`
   is their tracked state authority; local state is ignored.

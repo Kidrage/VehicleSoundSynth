@@ -63,6 +63,105 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
         self.assertTrue((ROOT / ".codex" / "MAINLINE.md").is_file())
         self.assertIn("v4.0.0", (ROOT / ".codex" / "MAINLINE.md").read_text())
 
+    def test_ferrari_is_a_fifth_complete_independent_runtime(self):
+        project = self.load_json("VehicleSoundSynth-V6.maxproj")["contents"]
+        required_patchers = {
+            "VehicleSoundSynth-Ferrari.maxpat",
+            "patchers/profile_runtime_host_ferrari.maxpat",
+            "patchers/vehicle_engine_ferrari~.maxpat",
+            "patchers/engine_controller_ferrari.maxpat",
+            "patchers/drive_simulator_ferrari.maxpat",
+            "patchers/ferrari_sound_dna~.maxpat",
+            "patchers/ferrari_powertrain~.maxpat",
+            "patchers/ferrari_soundscape_v4_beap~.maxpat",
+            "patchers/ferrari_cinematic_soundscape_host~.maxpat",
+            "patchers/ferrari_engine_start_v3_beap~.maxpat",
+            "patchers/ferrari_backfire_v2_beap~.maxpat",
+            "patchers/ferrari_backfire_host~.maxpat",
+            "patchers/transient_ferrari~.maxpat",
+        }
+        self.assertTrue(required_patchers.issubset(project["patchers"]))
+        self.assertIn("gen/ferrari_powertrain.gendsp", project["code"])
+        self.assertIn("presets/ferrari_soundscape_v4_factory.json", project["data"])
+
+        launcher = json.dumps(self.load_json("main.maxpat"))
+        self.assertIn("sel ev v10 v12 ioniq6n ferrari none", launcher)
+        self.assertIn("Open Ferrari SF90", launcher)
+
+        runtime = json.dumps(self.load_json("VehicleSoundSynth-Ferrari.maxpat"))
+        self.assertIn(
+            "Patcher:/patchers/profile_runtime_host_ferrari.maxpat", runtime
+        )
+        host = json.dumps(
+            self.load_json("patchers/profile_runtime_host_ferrari.maxpat")
+        )
+        for token in (
+            "drive_simulator_ferrari",
+            "vehicle_engine_ferrari~",
+            "module_mixer ferrari",
+            "r vss.ferrari.input",
+            "r vss.runtime.control.ferrari",
+            "s vss.runtime.feedback.ferrari",
+        ):
+            self.assertIn(token, host)
+
+    def test_ferrari_acoustic_interpretation_is_procedural_and_band_owned(self):
+        gen = self.load_json("gen/ferrari_powertrain.gendsp")["patcher"]
+        gen_text = "\n".join(
+            item["box"].get("code", item["box"].get("text", ""))
+            for item in gen["boxes"]
+        )
+        for token in (
+            "Param order_core", "Param body_band", "Param cavity_band",
+            "Param mechanical_band", "Param presence_band", "Param edge_band",
+            "Param band_load_depth", "fire = bank_fire*2",
+            "pow(10,(4*l_body)/20)", "pow(10,(5*l_fast)/20)",
+            "hf_lift_cut = 1-0.405", "5760, 13200",
+        ):
+            self.assertIn(token, gen_text)
+
+        wrapper = json.dumps(self.load_json("patchers/ferrari_powertrain~.maxpat"))
+        for name, _label, _low, _high in DNA_PARAMETER_SPECS["ferrari"]:
+            self.assertIn(f"prepend {name}", wrapper)
+
+        target = self.load_json("assets/ferrari_sf90_v10_interpretation_targets.json")
+        self.assertEqual("rpm / 12", target["cadence"]["formula_hz"])
+        self.assertFalse(target["source_policy"]["runtime_audio_dependency"])
+        self.assertFalse(target["source_policy"]["committed_audio_or_derivatives"])
+
+    def test_ferrari_soundscape_start_and_backfire_are_independent_sample_free_instruments(self):
+        soundscape = json.dumps(
+            self.load_json("patchers/ferrari_soundscape_v4_beap~.maxpat")
+        )
+        host = json.dumps(
+            self.load_json("patchers/ferrari_cinematic_soundscape_host~.maxpat")
+        )
+        dna = json.dumps(self.load_json("patchers/ferrari_sound_dna~.maxpat"))
+        start = json.dumps(self.load_json("patchers/transient_ferrari~.maxpat"))
+        backfire = json.dumps(self.load_json("patchers/ferrari_backfire_host~.maxpat"))
+
+        for module in (
+            "Exterior_Body", "Cavity_Projection", "Mechanical_Halo",
+            "Air_Reflection", "SF90_V10_Layers", "Roadside_Projection",
+        ):
+            self.assertIn(module, soundscape)
+        self.assertIn('"in3": [-17.0]', soundscape)
+        self.assertIn('"in4": [-2.0]', soundscape)
+        self.assertIn("*~ 0.38", soundscape)
+        self.assertIn("*~ 0.14", soundscape)
+        self.assertIn("expr $i2*min(850.,max(58.,$f1/12.))", host)
+        self.assertNotIn("ferrari_sound_dna~", host)
+        self.assertIn("ferrari_powertrain~", dna)
+        self.assertIn("ferrari_engine_start_v3_beap~", start)
+        for forbidden in ("buffer~", "play~", "media/local", "starter_ferrari"):
+            self.assertNotIn(forbidden, start)
+            self.assertNotIn(forbidden, backfire)
+        self.assertIn("ferrari_backfire_v2_beap~", backfire)
+
+        main = json.dumps(self.load_json("VehicleSoundSynth-Ferrari.maxpat"))
+        self.assertIn("procedural only", main)
+        self.assertNotIn("Realistic Sample", main)
+
     def test_v5_runtime_events_are_procedural_and_never_play_shift_pop_samples(self):
         project = self.load_json("VehicleSoundSynth-V6.maxproj")
         declared_media = set(project["contents"]["media"])
@@ -911,29 +1010,29 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
         )
         selection_map = next(
             box_id for box_id, box in boxes.items()
-            if box.get("text") == "sel ev v10 v12 ioniq6n none"
+            if box.get("text") == "sel ev v10 v12 ioniq6n ferrari none"
         )
         command_gate = next(
             box_id for box_id, box in boxes.items()
-            if box.get("text") == "gate 4"
+            if box.get("text") == "gate 5"
         )
         feedback_selector = next(
             box_id for box_id, box in boxes.items()
-            if box.get("text") == "switch 4"
+            if box.get("text") == "switch 5"
         )
         command_buses = {
             profile: next(
                 box_id for box_id, box in boxes.items()
                 if box.get("text") == f"s vss.runtime.control.{profile}"
             )
-            for profile in ("ev", "v10", "v12", "ioniq6n")
+            for profile in ("ev", "v10", "v12", "ioniq6n", "ferrari")
         }
         feedback_buses = {
             profile: next(
                 box_id for box_id, box in boxes.items()
                 if box.get("text") == f"r vss.runtime.feedback.{profile}"
             )
-            for profile in ("ev", "v10", "v12", "ioniq6n")
+            for profile in ("ev", "v10", "v12", "ioniq6n", "ferrari")
         }
         texts = {box.get("text") for box in boxes.values()}
         self.assertNotIn("s vss.runtime.control", texts)
@@ -949,7 +1048,7 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
         cords = {
             (tuple(line["source"]), tuple(line["destination"])) for line in lines
         }
-        for index, profile in enumerate(("ev", "v10", "v12", "ioniq6n"), start=1):
+        for index, profile in enumerate(("ev", "v10", "v12", "ioniq6n", "ferrari"), start=1):
             index_message = next(
                 box_id for box_id, box in boxes.items()
                 if box.get("maxclass") == "message" and box.get("text") == str(index)
@@ -963,7 +1062,7 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
             box_id for box_id, box in boxes.items()
             if box.get("maxclass") == "message" and box.get("text") == "0"
         )
-        self.assertIn(((selection_map, 4), (selection_off, 0)), cords)
+        self.assertIn(((selection_map, 5), (selection_off, 0)), cords)
         self.assertIn(((selection_off, 0), (command_gate, 0)), cords)
         self.assertIn(((selection_off, 0), (feedback_selector, 0)), cords)
         self.assertTrue(
@@ -971,7 +1070,7 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
             "Profile selection must also drive the Main control/feedback selector",
         )
 
-        for profile in ("ev", "v10", "v12", "ioniq6n"):
+        for profile in ("ev", "v10", "v12", "ioniq6n", "ferrari"):
             runtime_host = json.dumps(self.load_json(
                 f"patchers/profile_runtime_host_{profile}.maxpat"
             ))
@@ -2011,9 +2110,9 @@ process.stdout.write(JSON.stringify({immediate: snapshotAfter(0), delayed: snaps
 
         launcher_text = json.dumps(self.load_json("main.maxpat"))
         self.assertIn(f"loadunique {runtime}", launcher_text)
-        self.assertIn("sel ev v10 v12 ioniq6n none", launcher_text)
-        self.assertIn("gate 4", launcher_text)
-        self.assertIn("switch 4", launcher_text)
+        self.assertIn("sel ev v10 v12 ioniq6n ferrari none", launcher_text)
+        self.assertIn("gate 5", launcher_text)
+        self.assertIn("switch 5", launcher_text)
 
     def test_v6_sporty_drive_profile_traces_remain_byte_stable(self):
         expected = {
@@ -3678,7 +3777,7 @@ process.stdout.write(JSON.stringify({defaultState: defaultModel.snapshot(), on: 
 
     def test_gen_patchers_expose_bounded_required_parameters(self):
         gen_paths = sorted((ROOT / "gen").glob("*.gendsp"))
-        self.assertEqual(4, len(gen_paths))
+        self.assertEqual(5, len(gen_paths))
         for path in gen_paths:
             patcher = self.load_json(path.relative_to(ROOT))["patcher"]
             code = "\n".join(
@@ -3689,6 +3788,11 @@ process.stdout.write(JSON.stringify({defaultState: defaultModel.snapshot(), on: 
                 required = {
                     "rpm", "throttle", "load", "motor_order", "body_pressure",
                     "engine_running", "shift_cut",
+                }
+            elif path.name == "ferrari_powertrain.gendsp":
+                required = {
+                    "rpm", "throttle", "load", "order_core", "body_band",
+                    "cavity_band", "mechanical_band", "presence_band", "edge_band",
                 }
             else:
                 required = {"rpm", "throttle", "load", "aggression", "body"}
@@ -5494,7 +5598,7 @@ process.stdout.write(JSON.stringify({defaultState: defaultModel.snapshot(), on: 
                 or box.get("text", "").startswith("Close Active")
             )
         ]
-        self.assertEqual(5, len(main_actions))
+        self.assertEqual(6, len(main_actions))
         assert_controls_are_connected("main.maxpat", main_actions)
 
         drive = presentation_boxes("patchers/drive_console.maxpat")

@@ -171,9 +171,16 @@ PROFILE_CONFIG = {
         "drive": "drive_simulator_ioniq6n",
         "idle_rpm": 650.0,
     },
+    "ferrari": {
+        "title": "Ferrari SF90 — V10 Acoustic Interpretation",
+        "runtime": "VehicleSoundSynth-Ferrari.maxpat",
+        "engine": "vehicle_engine_ferrari~",
+        "drive": "drive_simulator_ferrari",
+        "idle_rpm": 740.0,
+    },
 }
 
-PROFILE_ORDER = ("ev", "v10", "v12", "ioniq6n")
+PROFILE_ORDER = ("ev", "v10", "v12", "ioniq6n", "ferrari")
 
 # Editable Pop Designer defaults.  Keep these in one authority because the
 # seed-once BEAP panel and its generated audible host both need the same values
@@ -200,6 +207,17 @@ POP_TUNING_DEFAULTS = {
         "low_pressure_level": 1.0,
         "body_level": 1.35,
         "crack_level": 0.006,
+    },
+    "ferrari": {
+        "global_pitch_semitones": -5.0,
+        "impact_drop_octaves": 0.85,
+        "core_presence": 1.05,
+        "body_tune": 1.0,
+        "crack_tune": 0.92,
+        "decay_scale": 0.82,
+        "low_pressure_level": 1.0,
+        "body_level": 1.25,
+        "crack_level": 0.004,
     },
 }
 
@@ -236,6 +254,14 @@ START_DESIGN_DEFAULTS = {
         "tail": 0.74,
         "level": 0.66,
     },
+    "ferrari": {
+        "activation_body": 0.90,
+        "catch_bloom": 0.88,
+        "metal": 0.42,
+        "air": 0.18,
+        "tail": 0.72,
+        "level": 0.72,
+    },
 }
 
 MODULE_MIX_DEFAULTS = {
@@ -243,6 +269,7 @@ MODULE_MIX_DEFAULTS = {
     "v10": (-3.0, -5.0, -7.0, -20.0, -16.0, -4.0, -8.0),
     "v12": (-3.0, -5.0, -8.0, -20.0, -16.0, -5.0, -8.0),
     "ioniq6n": (-4.0, -7.0, -8.0, -22.0, -18.0, -60.0, -8.0),
+    "ferrari": (-3.0, -5.0, -8.0, -19.0, -16.0, -4.0, -8.0),
 }
 
 # V6 control-registry seam.  These selectors already exist in the audio
@@ -567,6 +594,13 @@ SOUNDSCAPE_V4_MODULES = {
         "mmf": "Whine_Sculpt", "adsr": "Luxury_Envelope",
         "vca": "Luxury_VCA", "chorus": "Wide_Banks", "reverb": "Grand_Tourer_Space",
     },
+    "ferrari": {
+        "osc_a": "Exterior_Body", "osc_b": "Cavity_Projection",
+        "osc_c": "Mechanical_Halo", "noise": "Air_Reflection",
+        "mixer": "SF90_V10_Layers", "ladder": "Body_Cavity_Valve",
+        "mmf": "Mechanical_Edge_Sculpt", "adsr": "Ferrari_Envelope",
+        "vca": "Ferrari_VCA", "chorus": "Exterior_Bank_Space", "reverb": "Roadside_Projection",
+    },
 }
 
 SOUNDSCAPE_V4_FACTORY = {
@@ -598,6 +632,17 @@ SOUNDSCAPE_V4_FACTORY = {
         "filter": (1320.0, 0.9), "mmf": (4200.0, 0.75),
         "env": (120.0, 1400.0, 96.0, 3200.0),
         "chorus": (610.0, 0.006, 8.0), "reverb": (4600.0, 38.0, 72.0),
+    },
+    "ferrari": {
+        "macros": (1.0, 0.14, 0.36, 1.0, 0.0, 0.32),
+        "osc": ((0, 0), (1, 12), (0, 12)),
+        # Keep the cadence-excited exterior body in front, but retain enough
+        # octave cavity and mechanical-order energy to avoid a single-sine
+        # presentation at steady load.
+        "mix": (-4.0, -9.0, -17.0, -2.0),
+        "filter": (1120.0, 0.92), "mmf": (2800.0, 0.72),
+        "env": (90.0, 1000.0, 96.0, 2600.0),
+        "chorus": (480.0, 0.004, 5.0), "reverb": (3400.0, 30.0, 58.0),
     },
 }
 
@@ -868,6 +913,27 @@ DNA_PARAMETER_SPECS = {
         ("stereo_width", "Stereo Width", 0.0, 1.0),
         ("saturation", "Saturation", 0.0, 1.0),
     ),
+    "ferrari": (
+        ("order_core", "Order Core", 0.0, 1.0),
+        ("body_band", "Body 120–250 Hz", 0.0, 1.0),
+        ("cavity_band", "Cavity 250–600 Hz", 0.0, 1.0),
+        ("mechanical_band", "Mechanical 600–1200 Hz", 0.0, 1.0),
+        ("presence_band", "Presence 1.2–2 kHz", 0.0, 1.0),
+        ("edge_band", "HF Edge 2–6 kHz", 0.0, 1.0),
+        ("band_load_depth", "Load Depth", 0.0, 1.0),
+        ("lift_mass", "Lift Mass", 0.0, 1.0),
+        ("intake_detail", "Intake Detail", 0.0, 1.0),
+        ("exhaust_detail", "Exhaust Detail", 0.0, 1.0),
+        ("cycle_irregularity", "Cycle Irregularity", 0.0, 1.0),
+        ("stereo_width", "Stereo Width", 0.0, 1.0),
+        ("throttle_loudness_depth", "Throttle Loudness Depth dB", 0.0, 8.0),
+        ("saturation", "Saturation", 0.0, 1.0),
+        ("idle_level", "Idle Level", 0.0, 1.0),
+        ("idle_body", "Idle Body", 0.0, 1.0),
+        ("idle_metal", "Idle Metal", 0.0, 1.0),
+        ("idle_irregularity", "Idle Irregularity", 0.0, 1.0),
+        ("idle_air", "Idle Air", 0.0, 1.0),
+    ),
 }
 
 # UI-only metadata.  The audible defaults/ranges remain owned by
@@ -903,6 +969,14 @@ DNA_CONTROL_METADATA = {
     "load_depth": ("Response / 响应", "负载深度", "0..1", "Load / 加速", "控制油门和负载对层次的推动"),
     "release_mass": ("Response / 响应", "收油质量感", "0..1", "Lift / 收油", "控制收油时的低频惯性"),
     "ready_bed": ("Ready / 待机", "待机底床", "0..1", "Idle / Ready", "控制点火后的低声电磁底床"),
+    "order_core": ("Combustion / 燃烧", "V10 阶次核心", "0..1", "All running / 运转", "控制 RPM/12 发火骨架，不改变驾驶模型"),
+    "body_band": ("Body / 主体", "120–250 Hz 主体", "0..1", "Idle + Load / 怠速负载", "控制低中频质量感及其慢包络"),
+    "cavity_band": ("Structure / 结构", "250–600 Hz 腔体", "0..1", "Load / 负载", "控制进排气腔体开度与主要负载增长"),
+    "mechanical_band": ("Structure / 结构", "600–1200 Hz 机械", "0..1", "Load / 负载", "控制有界机械纹理，不承担主要力量"),
+    "presence_band": ("Tone / 音色", "1.2–2 kHz 存在感", "0..1", "Load / 负载", "控制中频可读性并限制塑料感"),
+    "edge_band": ("Tone / 音色", "2–6 kHz 高频边缘", "0..1", "High RPM / 高转", "控制软拐点高频攻击，严格弱于 Body/Cavity"),
+    "band_load_depth": ("Response / 响应", "负载深度", "0..1", "Load / 加速", "控制各频带按不同时间常数展开"),
+    "lift_mass": ("Response / 响应", "收油质量感", "0..1", "Lift / 收油", "控制高频先退、低中频后释放的惯性"),
     "powertrain_level_db": ("Output / 输出", "DNA 输出电平", "dB", "All / 全场景", "仅调整 Sound DNA 模块输出电平"),
 }
 
@@ -917,6 +991,28 @@ IONIQ6N_DNA_DEFAULTS = {
     "ready_bed": 0.42,
     "stereo_width": 0.62,
     "saturation": 0.24,
+}
+
+FERRARI_DNA_DEFAULTS = {
+    "order_core": 0.82,
+    "body_band": 0.90,
+    "cavity_band": 0.88,
+    "mechanical_band": 0.62,
+    "presence_band": 0.42,
+    "edge_band": 0.24,
+    "band_load_depth": 0.84,
+    "lift_mass": 0.76,
+    "intake_detail": 0.80,
+    "exhaust_detail": 0.84,
+    "cycle_irregularity": 0.42,
+    "stereo_width": 0.46,
+    "throttle_loudness_depth": 4.5,
+    "saturation": 0.32,
+    "idle_level": 0.88,
+    "idle_body": 0.92,
+    "idle_metal": 0.45,
+    "idle_irregularity": 0.32,
+    "idle_air": 0.18,
 }
 
 MEDIA_FRAMES = {
@@ -1509,6 +1605,8 @@ def make_sound_dna(profile: str) -> dict[str, Any]:
     defaults = (
         IONIQ6N_DNA_DEFAULTS
         if profile == "ioniq6n"
+        else FERRARI_DNA_DEFAULTS
+        if profile == "ferrari"
         else PRESETS[{"ev": "Future EV", "v10": "Aggressive V10", "v12": "High-Rev V12"}[profile]]
     )
     reset_button = p.add(
@@ -2091,11 +2189,13 @@ def make_soundscape_v4_beap(profile: str) -> dict[str, Any]:
     """Build one editable V4 instrument with a profile-owned signal graph."""
     modules = SOUNDSCAPE_V4_MODULES[profile]
     spec = SOUNDSCAPE_V4_FACTORY[profile]
+    v10_shape = profile in ("v10", "ferrari")
     p = Patcher(3240, 1120)
     title = {
         "ev": "EV SOUNDSCAPE V4 — EVOLUTION SCORE / DRAMATIC TRANSIENT / transparent ready energy",
         "v10": "V10 SOUNDSCAPE V4 — IGNITION CLIMB / FIRING CADENCE rpm/12 / induction structure",
         "v12": "V12 SOUNDSCAPE V4 — LUXURY BODY / FIRING CADENCE rpm/10 / restrained turbine whine",
+        "ferrari": "FERRARI SF90 V10 INTERPRETATION — EXTERIOR BODY / FIRING CADENCE rpm/12 / roadside projection",
     }[profile]
     p.comment(title, 25, 15, 1240)
     p.comment(
@@ -2171,7 +2271,7 @@ def make_soundscape_v4_beap(profile: str) -> dict[str, Any]:
     vca = add_beap_module(p, "Level/bp.VCA.maxpat", 2375, 165, modules["vca"])
     lfo = add_beap_module(
         p, "LFO/bp.LFO.maxpat", 2650, 165, f"{profile.upper()}_Colour_Motion",
-        initial={"Frequency": {"ev": 0.032, "v10": 0.009, "v12": 0.012}[profile], "Mute": 0},
+        initial={"Frequency": {"ev": 0.032, "v10": 0.009, "v12": 0.012, "ferrari": 0.006}[profile], "Mute": 0},
     )
 
     colour_lfo = p.new("*~ 0.015", 2660, 325, 70, numinlets=2, numoutlets=1)
@@ -2226,7 +2326,7 @@ def make_soundscape_v4_beap(profile: str) -> dict[str, Any]:
         p.connect(transient_sum, transient_trim)
         p.connect(transient_trim, mixer, 0, 3)
     else:
-        cadence_label = "rpm/12" if profile == "v10" else "rpm/10"
+        cadence_label = "rpm/12" if v10_shape else "rpm/10"
         p.comment(f"FIRING CADENCE {cadence_label} — one exact shared clock; pulse only excites filtered modes", 25, 415, 820)
         cadence_abs = p.new("abs~", 25, 450, 45, numinlets=1, numoutlets=1)
         phase = p.new("phasor~", 80, 450, 60, numinlets=2, numoutlets=1)
@@ -2241,7 +2341,7 @@ def make_soundscape_v4_beap(profile: str) -> dict[str, Any]:
         p.connect(idle_cv, pulse_load, 0, 1)
         mode_spec = (
             ((1.0, 0.44), (2.0, 0.34), (3.0, 0.24), (3.47, 0.18))
-            if profile == "v10" else
+            if v10_shape else
             ((0.62, 0.50), (1.0, 0.38), (1.55, 0.28))
         )
         modes = []
@@ -2268,14 +2368,14 @@ def make_soundscape_v4_beap(profile: str) -> dict[str, Any]:
         p.connect(pitch_cv, osc_a)
         p.connect(pitch_cv, osc_b)
         high_order_pitch = p.new(
-            "+~ 2." if profile == "v10" else "+~ 3.",
+            "+~ 2." if v10_shape else "+~ 3.",
             690, 450, 55, numinlets=2, numoutlets=1,
         )
         p.connect(pitch_cv, high_order_pitch)
         p.connect(high_order_pitch, osc_c)
         harmonic_load = p.new("*~", 690, 500, 40, numinlets=2, numoutlets=1)
         harmonic_trim = p.new(
-            "*~ 0.24" if profile == "v10" else "*~ 0.20",
+            ("*~ 0.38" if profile == "ferrari" else "*~ 0.24") if v10_shape else "*~ 0.20",
             740, 500, 65, numinlets=2, numoutlets=1,
         )
         p.connect(osc_c, harmonic_load, 0, 0)
@@ -2287,16 +2387,19 @@ def make_soundscape_v4_beap(profile: str) -> dict[str, Any]:
         if profile == "v10":
             p.comment("IGNITION CLIMB — continuous order lift with a short shift reset; never a stepped note table", 820, 415, 830)
             p.comment("Induction_Mechanical — load-gated intake and body metal; V10 Sound DNA remains separate", 820, 445, 850)
+        elif profile == "ferrari":
+            p.comment("EXTERIOR BODY — cadence-excited mass and cavity projection; no chord-pad voicing", 820, 415, 830)
+            p.comment("MECHANICAL HALO — bounded high-order reflection; Ferrari Sound DNA remains separate", 820, 445, 850)
         else:
             p.comment("LUXURY BODY — 35–120 Hz mass plus 120–450 Hz exhaust cavity; body remains under load", 820, 415, 850)
             p.comment("Turbine_Whine — restrained 600–2500 Hz mechanical lift, opened only by load", 820, 445, 780)
         event_noise = p.new("*~", 1015, 535, 40, numinlets=2, numoutlets=1)
         event_mode = p.new(
-            "reson~ 1.6 185 4.8" if profile == "v10" else "reson~ 1.8 110 5.5",
+            "reson~ 1.6 185 4.8" if v10_shape else "reson~ 1.8 110 5.5",
             1065, 535, 135, numinlets=4, numoutlets=1,
         )
         event_trim = p.new(
-            "*~ 0.16" if profile == "v10" else "*~ 0.09",
+            ("*~ 0.12" if profile == "ferrari" else "*~ 0.16") if v10_shape else "*~ 0.09",
             1210, 535, 65, numinlets=2, numoutlets=1,
         )
         p.connect(noise, event_noise, 0, 0)
@@ -2321,19 +2424,19 @@ def make_soundscape_v4_beap(profile: str) -> dict[str, Any]:
     texture_amount = p.new("+~", 1528, 540, 40, numinlets=2, numoutlets=1)
     texture_limit = p.new("clip~ 0. 1.", 1578, 540, 82, numinlets=3, numoutlets=1)
     texture_noise = p.new("*~", 1670, 540, 40, numinlets=2, numoutlets=1)
-    texture_frequency = {"ev": 720, "v10": 980, "v12": 1320}[profile]
-    texture_q = {"ev": 0.82, "v10": 0.82, "v12": 0.74}[profile]
+    texture_frequency = {"ev": 720, "v10": 980, "v12": 1320, "ferrari": 860}[profile]
+    texture_q = {"ev": 0.82, "v10": 0.82, "v12": 0.74, "ferrari": 0.78}[profile]
     texture_band = p.new(
         f"svf~ {texture_frequency} {texture_q:g}",
         1720, 540, 115, numinlets=3, numoutlets=4,
     )
-    texture_resonance = {"ev": 520, "v10": 760, "v12": 1680}[profile]
+    texture_resonance = {"ev": 520, "v10": 760, "v12": 1680, "ferrari": 620}[profile]
     texture_resonator = p.new(
         f"reson~ 0.9 {texture_resonance} 7.",
         1845, 540, 135, numinlets=4, numoutlets=1,
     )
     texture_sum = p.new("+~", 1990, 540, 40, numinlets=2, numoutlets=1)
-    texture_gain = {"ev": 0.020, "v10": 0.11, "v12": 0.075}[profile]
+    texture_gain = {"ev": 0.020, "v10": 0.11, "v12": 0.075, "ferrari": 0.14}[profile]
     texture_trim = p.new(
         f"*~ {texture_gain:g}", 2040, 540, 68,
         numinlets=2, numoutlets=1,
@@ -2383,7 +2486,9 @@ def make_soundscape_v4_beap(profile: str) -> dict[str, Any]:
         full = p.new("+~", x + 256, 850, 40, numinlets=2, numoutlets=1)
         infra = p.new("svf~ 28 0.7", x + 306, 850, 95, numinlets=3, numoutlets=4)
         trim = p.new(
-            "*~ 0.82" if profile == "ev" else ("*~ 0.64" if profile == "v10" else "*~ 0.52"),
+            "*~ 0.82" if profile == "ev" else (
+                "*~ 0.64" if profile == "v10" else ("*~ 0.58" if profile == "ferrari" else "*~ 0.52")
+            ),
             x + 411, 850, 68, numinlets=2, numoutlets=1,
         )
         output = outlet(p, x + 489, 850, signal=True)
@@ -3094,6 +3199,7 @@ def make_cinematic_soundscape_host(profile: str) -> dict[str, Any]:
         "ev": ("55.", "0.032"),
         "v10": ("36.7", "0.014"),
         "v12": ("32.7", "0.012"),
+        "ferrari": ("36.7", "0.014"),
     }[profile]
     pitch_follow_default_value = 1.0
     rpm = p.new("clip 0. 10000.", 35, 170, 105, numinlets=3, numoutlets=1)
@@ -3159,6 +3265,7 @@ def make_cinematic_soundscape_host(profile: str) -> dict[str, Any]:
         "ev": "expr min(1.35,max(0.,0.22+0.72*$f1+0.16*max(0.,$f2)+0.08*abs($f3)+0.38*$f4))",
         "v10": "expr min(0.85,max(0.,0.12+0.36*$f1+0.14*max(0.,$f2)+0.05*abs($f3)+0.28*$f4))",
         "v12": "expr min(1.,max(0.,0.16+0.48*$f1+0.16*max(0.,$f2)+0.06*abs($f3)+0.32*$f4))",
+        "ferrari": "expr min(0.78,max(0.,0.10+0.32*$f1+0.18*max(0.,$f2)+0.04*abs($f3)+0.22*$f4))",
     }[profile]
     tone = p.new(tone_formula, 450, 210, 610, numinlets=4, numoutlets=1)
     tone_pack = p.new("pack 0. 150", 450, 250, 95, numinlets=2, numoutlets=1)
@@ -3275,6 +3382,7 @@ def make_cinematic_soundscape_host(profile: str) -> dict[str, Any]:
         "ev": "expr -45.*$i2",
         "v10": "expr $i2*min(850.,max(58.,$f1/12.))",
         "v12": "expr $i2*min(1000.,max(72.,$f1/10.))",
+        "ferrari": "expr $i2*min(850.,max(58.,$f1/12.))",
     }[profile]
     cadence_state = p.new("pak 650. 0", 275, 500, 100, numinlets=2, numoutlets=1)
     cadence = p.new(cadence_formula, 385, 500, 275, numinlets=2, numoutlets=1)
@@ -3290,6 +3398,7 @@ def make_cinematic_soundscape_host(profile: str) -> dict[str, Any]:
         "ev": "expr $i3*max(0.,min(1.,(1800.-$f1)/1150.))*(1.-0.85*$f2)",
         "v10": "expr $i3*max(0.,min(1.,(2200.-$f1)/1300.))*(1.-0.75*$f2)",
         "v12": "expr $i3*max(0.,min(1.,(2300.-$f1)/1350.))*(1.-0.75*$f2)",
+        "ferrari": "expr $i3*max(0.,min(1.,(2150.-$f1)/1250.))*(1.-0.72*$f2)",
     }[profile]
     idle_state = p.new("pak 650. 0. 0", 275, 540, 115, numinlets=3, numoutlets=1)
     idle_blend = p.new(idle_formula, 400, 540, 430, numinlets=3, numoutlets=1)
@@ -3462,7 +3571,7 @@ def make_cinematic_soundscape_host(profile: str) -> dict[str, Any]:
     p.connect(start_edge, start_shape, 0)
     p.connect(start_shape, start_line)
 
-    profile_output_calibration = {"ev": 1.15, "v10": 0.85, "v12": 1.8}[profile]
+    profile_output_calibration = {"ev": 1.15, "v10": 0.85, "v12": 1.8, "ferrari": 0.82}[profile]
     for channel, x in ((0, 270), (1, 570)):
         level_gain = p.new("*~", x, 665, 40, numinlets=2, numoutlets=1)
         shift_gain = p.new("*~", x, 705, 40, numinlets=2, numoutlets=1)
@@ -3488,6 +3597,7 @@ def make_cinematic_soundscape_host(profile: str) -> dict[str, Any]:
 
 def make_ice_backfire_beap(profile: str, *, version: int = 1) -> dict[str, Any]:
     """Seed one editable, layered pressure/crack backfire voice."""
+    v10_shape = profile in ("v10", "ferrari")
     p = Patcher(2580, 980)
     p.comment(
         (
@@ -3623,14 +3733,14 @@ def make_ice_backfire_beap(profile: str, *, version: int = 1) -> dict[str, Any]:
     mixer = add_beap_module(
         p, "Mixers/bp.Audio Mixer.maxpat", 625, 145, "Pressure_Mixer",
         initial={
-            "in1": -20 if profile == "v10" else -22,
-            "in2": -4 if profile == "v10" else -5,
+            "in1": -20 if v10_shape else -22,
+            "in2": -4 if v10_shape else -5,
         },
     )
     body_filter = add_beap_module(
         p, "Filter/bp.MMF.maxpat", 845, 145, "Pressure_Body",
         initial={
-            "Freq": 180 if profile == "v10" else 150,
+            "Freq": 180 if v10_shape else 150,
             "Res": 6,
             "FilterType": 0,
             "power[1]": 1,
@@ -3639,8 +3749,8 @@ def make_ice_backfire_beap(profile: str, *, version: int = 1) -> dict[str, Any]:
     body_envelope = add_beap_module(
         p, "Envelope/bp.AD.maxpat", 1120, 145, "Pressure_AD",
         initial={
-            "Attack": 2 if profile == "v10" else 5,
-            "Decay": 80 if profile == "v10" else 90,
+            "Attack": 2 if v10_shape else 5,
+            "Decay": 80 if v10_shape else 90,
         },
     )
     body_vca = add_beap_module(p, "Level/bp.VCA.maxpat", 1320, 145, "Pressure_VCA")
@@ -3654,15 +3764,15 @@ def make_ice_backfire_beap(profile: str, *, version: int = 1) -> dict[str, Any]:
         1210, 400, 65, numinlets=2, numoutlets=1,
     )
     body_compat_filter = p.new(
-        f"lores~ {180 if profile == 'v10' else 150} {0.74 if profile == 'v10' else 0.76:g}",
+        f"lores~ {180 if v10_shape else 150} {0.74 if v10_shape else 0.76:g}",
         985, 400, 110, numinlets=3, numoutlets=1,
     )
     body_mode_a = p.new(
-        f"reson~ {5.6 if profile == 'v10' else 6.0:g} {54 if profile == 'v10' else 48} {2.5 if profile == 'v10' else 2.8:g}",
+        f"reson~ {5.6 if v10_shape else 6.0:g} {54 if v10_shape else 48} {2.5 if v10_shape else 2.8:g}",
         985, 435, 130, numinlets=4, numoutlets=1,
     )
     body_mode_b = p.new(
-        f"reson~ {2.8 if profile == 'v10' else 3.0:g} {120 if profile == 'v10' else 105} {1.6 if profile == 'v10' else 1.8:g}",
+        f"reson~ {2.8 if v10_shape else 3.0:g} {120 if v10_shape else 105} {1.6 if v10_shape else 1.8:g}",
         1125, 435, 130, numinlets=4, numoutlets=1,
     )
     body_modes = p.new("+~", 1265, 435, 40, numinlets=2, numoutlets=1)
@@ -3674,7 +3784,7 @@ def make_ice_backfire_beap(profile: str, *, version: int = 1) -> dict[str, Any]:
     crack_filter = add_beap_module(
         p, "Filter/bp.MMF.maxpat", 300, 495, "Exhaust_Crack",
         initial={
-            "Freq": 420 if profile == "v10" else 360,
+            "Freq": 420 if v10_shape else 360,
             "Res": 2,
             "FilterType": 0,
             "power[1]": 1,
@@ -3683,21 +3793,21 @@ def make_ice_backfire_beap(profile: str, *, version: int = 1) -> dict[str, Any]:
     crack_envelope = add_beap_module(
         p, "Envelope/bp.AD.maxpat", 575, 495, "Crack_AD",
         initial={
-            "Attack": 1 if profile == "v10" else 2,
-            "Decay": 8 if profile == "v10" else 10,
+            "Attack": 1 if v10_shape else 2,
+            "Decay": 8 if v10_shape else 10,
         },
     )
     crack_vca = add_beap_module(p, "Level/bp.VCA.maxpat", 775, 495, "Crack_VCA")
     crack_env_amount = p.new(
-        f"*~ {0.05 if profile == 'v10' else 0.04:g}",
+        f"*~ {0.05 if v10_shape else 0.04:g}",
         595, 710, 65, numinlets=2, numoutlets=1,
     )
     crack_gate_trim = p.new(
-        f"*~ {0.012 if profile == 'v10' else 0.01:g}",
+        f"*~ {0.012 if v10_shape else 0.01:g}",
         675, 750, 72, numinlets=2, numoutlets=1,
     )
     crack_compat_filter = p.new(
-        f"svf~ {420 if profile == 'v10' else 360} {0.66 if profile == 'v10' else 0.68:g}",
+        f"svf~ {420 if v10_shape else 360} {0.66 if v10_shape else 0.68:g}",
         545, 750, 115, numinlets=3, numoutlets=4,
     )
     crack_pressure_vca = p.new("*~", 755, 750, 40, numinlets=2, numoutlets=1)
@@ -3708,15 +3818,15 @@ def make_ice_backfire_beap(profile: str, *, version: int = 1) -> dict[str, Any]:
     drive = p.new("*~ 1.55", 1120, 540, 65, numinlets=2, numoutlets=1)
     soft_clip = p.new("tanh~", 1195, 540, 50, numinlets=1, numoutlets=1)
     split = p.new(
-        f"svf~ {140 if profile == 'v10' else 120} 0.72",
+        f"svf~ {140 if v10_shape else 120} 0.72",
         1260, 540, 100, numinlets=3, numoutlets=4,
     )
     left_air = p.new(
-        f"lores~ {650 if profile == 'v10' else 550} 0.62",
+        f"lores~ {650 if v10_shape else 550} 0.62",
         1380, 535, 120, numinlets=3, numoutlets=1,
     )
     right_air = p.new(
-        f"lores~ {750 if profile == 'v10' else 650} 0.60",
+        f"lores~ {750 if v10_shape else 650} 0.60",
         1380, 585, 120, numinlets=3, numoutlets=1,
     )
     left_mix = p.new("+~", 1520, 535, 40, numinlets=2, numoutlets=1)
@@ -3742,22 +3852,22 @@ def make_ice_backfire_beap(profile: str, *, version: int = 1) -> dict[str, Any]:
         return frequency
 
     body_compat_frequency = tuned_frequency(
-        180 if profile == "v10" else 150, "body_tune", 1680, 650,
+        180 if v10_shape else 150, "body_tune", 1680, 650,
     )
     body_mode_a_frequency = tuned_frequency(
-        54 if profile == "v10" else 48, "body_tune", 1840, 650,
+        54 if v10_shape else 48, "body_tune", 1840, 650,
     )
     body_mode_b_frequency = tuned_frequency(
-        120 if profile == "v10" else 105, "body_tune", 2000, 650,
+        120 if v10_shape else 105, "body_tune", 2000, 650,
     )
     crack_compat_frequency = tuned_frequency(
-        420 if profile == "v10" else 360, "crack_tune", 1680, 680,
+        420 if v10_shape else 360, "crack_tune", 1680, 680,
     )
     left_air_frequency = tuned_frequency(
-        650 if profile == "v10" else 550, "crack_tune", 1840, 680,
+        650 if v10_shape else 550, "crack_tune", 1840, 680,
     )
     right_air_frequency = tuned_frequency(
-        750 if profile == "v10" else 650, "crack_tune", 2000, 680,
+        750 if v10_shape else 650, "crack_tune", 2000, 680,
     )
     # Keep the editable abstraction's public signal seam to stereo audio only.
     # Named profile-local buses carry saved tuning to the audible host without
@@ -3864,6 +3974,7 @@ def make_backfire_burst_scheduler() -> dict[str, Any]:
 
 def make_ice_backfire_host(profile: str) -> dict[str, Any]:
     """Trigger backfire from real overrun/shift state and explicit events."""
+    v10_shape = profile in ("v10", "ferrari")
     p = Patcher(1080, 700)
     p.comment(f"{profile.upper()} BACKFIRE HOST — overrun/shift pressure release; no sample playback", 25, 15, 820)
     control = inlet(p, 35, 65)
@@ -3880,7 +3991,7 @@ def make_ice_backfire_host(profile: str) -> dict[str, Any]:
     pitch_map = p.new(
         (
             "expr log(min(66.,max(54.,52.+0.002*$f1))/261.625565)/log(2.)"
-            if profile == "v10"
+            if v10_shape
             else "expr log(min(58.,max(48.,46.5+0.0017*$f1))/261.625565)/log(2.)"
         ),
         35, 205, 455, numinlets=1, numoutlets=1,
@@ -3895,7 +4006,7 @@ def make_ice_backfire_host(profile: str) -> dict[str, Any]:
     pitch_start_store = p.new("f 0.", 300, 275, 45, numinlets=2, numoutlets=1)
     pitch_sweep_pack = p.new("pack 0. 0.", 355, 275, 85, numinlets=2, numoutlets=1)
     pitch_sweep_message = p.message(
-        f"$1 0, $2 {45 if profile == 'v10' else 50}",
+        f"$1 0, $2 {45 if v10_shape else 50}",
         450, 275, 105,
     )
     pitch_line = p.new("line~", 35, 285, 50, numinlets=2, numoutlets=2)
@@ -4031,7 +4142,7 @@ def make_ice_backfire_host(profile: str) -> dict[str, Any]:
     p.connect(overrun_nonzero, overrun_burst, 1, 0)
     p.connect(overrun_burst, burst_event_gate, 0, 1)
 
-    intensity_default_value = 0.82 if profile == "v10" else 0.55
+    intensity_default_value = 0.82 if profile == "v10" else (0.65 if profile == "ferrari" else 0.55)
     intensity = p.new("clip 0. 1.", 35, 345, 75, numinlets=3, numoutlets=1)
     intensity_default = p.new(f"loadmess {intensity_default_value:g}", 120, 345, 105, numinlets=1, numoutlets=1)
     intensity_state = p.new("pak 0.7 0. 1.", 235, 345, 110, numinlets=3, numoutlets=1)
@@ -4051,11 +4162,11 @@ def make_ice_backfire_host(profile: str) -> dict[str, Any]:
     p.connect(intensity_pack, intensity_line)
 
     gate_decay_map = p.new(
-        f"expr {110 if profile == 'v10' else 125}.*$f1",
+        f"expr {110 if v10_shape else 125}.*$f1",
         760, 285, 120, numinlets=1, numoutlets=1,
     )
     gate_decay_store = p.new(
-        f"f {110 if profile == 'v10' else 125}.",
+        f"f {110 if v10_shape else 125}.",
         885, 285, 55, numinlets=2, numoutlets=1,
     )
     gate_message = p.message("5. 0, 0. $1", 945, 285, 95)
@@ -4135,28 +4246,28 @@ def make_ice_backfire_host(profile: str) -> dict[str, Any]:
     p.connect(pressure_noise, beap, 0, 3)
     main_click = p.new("click~", 100, 445, 50, numinlets=1, numoutlets=1)
     body_impulse = p.new(
-        f"*~ {1280 if profile == 'v10' else 1400}", 160, 445, 75,
+        f"*~ {1280 if v10_shape else 1400}", 160, 445, 75,
         numinlets=2, numoutlets=1,
     )
     body_decay = p.new(
-        f"onepole~ {3.8 if profile == 'v10' else 3.4:g}", 245, 445, 90,
+        f"onepole~ {3.8 if v10_shape else 3.4:g}", 245, 445, 90,
         numinlets=2, numoutlets=1,
     )
     body_env = p.new("clip~ 0. 1.", 345, 445, 85, numinlets=3, numoutlets=1)
     crack_impulse = p.new(
-        f"*~ {8 if profile == 'v10' else 6}", 160, 480, 65,
+        f"*~ {8 if v10_shape else 6}", 160, 480, 65,
         numinlets=2, numoutlets=1,
     )
     crack_decay = p.new(
-        f"onepole~ {28 if profile == 'v10' else 24}", 235, 480, 90,
+        f"onepole~ {28 if v10_shape else 24}", 235, 480, 90,
         numinlets=2, numoutlets=1,
     )
     body_decay_map = p.new(
-        f"expr {3.8 if profile == 'v10' else 3.4:g}/max(0.5,$f1)",
+        f"expr {3.8 if v10_shape else 3.4:g}/max(0.5,$f1)",
         245, 520, 185, numinlets=1, numoutlets=1,
     )
     crack_decay_map = p.new(
-        f"expr {28 if profile == 'v10' else 24:g}/max(0.5,$f1)",
+        f"expr {28 if v10_shape else 24:g}/max(0.5,$f1)",
         245, 550, 185, numinlets=1, numoutlets=1,
     )
     p.connect(decay_scale, body_decay_map)
@@ -4167,52 +4278,52 @@ def make_ice_backfire_host(profile: str) -> dict[str, Any]:
     body_burst = p.new("*~", 440, 445, 40, numinlets=2, numoutlets=1)
     crack_burst = p.new("*~", 440, 480, 40, numinlets=2, numoutlets=1)
     pressure_l = p.new(
-        f"lores~ {180 if profile == 'v10' else 150} {0.74 if profile == 'v10' else 0.76:g}",
+        f"lores~ {180 if v10_shape else 150} {0.74 if v10_shape else 0.76:g}",
         490, 435, 115, numinlets=3, numoutlets=1,
     )
     pressure_r = p.new(
-        f"lores~ {240 if profile == 'v10' else 210} {0.70 if profile == 'v10' else 0.72:g}",
+        f"lores~ {240 if v10_shape else 210} {0.70 if v10_shape else 0.72:g}",
         490, 465, 115, numinlets=3, numoutlets=1,
     )
     crack_l_filter = p.new(
-        f"svf~ {420 if profile == 'v10' else 360} {0.66 if profile == 'v10' else 0.68:g}", 615, 435, 110,
+        f"svf~ {420 if v10_shape else 360} {0.66 if v10_shape else 0.68:g}", 615, 435, 110,
         numinlets=3, numoutlets=4,
     )
     crack_r_filter = p.new(
-        f"svf~ {520 if profile == 'v10' else 450} {0.64 if profile == 'v10' else 0.66:g}", 615, 475, 110,
+        f"svf~ {520 if v10_shape else 450} {0.64 if v10_shape else 0.66:g}", 615, 475, 110,
         numinlets=3, numoutlets=4,
     )
     pressure_l_frequency = p.new(
-        f"expr {180 if profile == 'v10' else 150}.*$f1*$f2", 490, 400, 150,
+        f"expr {180 if v10_shape else 150}.*$f1*$f2", 490, 400, 150,
         numinlets=2, numoutlets=1,
     )
     pressure_r_frequency = p.new(
-        f"expr {240 if profile == 'v10' else 210}.*$f1*$f2", 645, 400, 150,
+        f"expr {240 if v10_shape else 210}.*$f1*$f2", 645, 400, 150,
         numinlets=2, numoutlets=1,
     )
     crack_l_frequency = p.new(
-        f"expr {420 if profile == 'v10' else 360}.*$f1*$f2", 800, 400, 160,
+        f"expr {420 if v10_shape else 360}.*$f1*$f2", 800, 400, 160,
         numinlets=2, numoutlets=1,
     )
     crack_r_frequency = p.new(
-        f"expr {520 if profile == 'v10' else 450}.*$f1*$f2", 965, 400, 160,
+        f"expr {520 if v10_shape else 450}.*$f1*$f2", 965, 400, 160,
         numinlets=2, numoutlets=1,
     )
     p.comment("LOW PRESSURE MODES — coherent below 120 Hz", 490, 505, 360)
     low_mode_a = p.new(
-        f"reson~ {5.6 if profile == 'v10' else 6.0:g} {54 if profile == 'v10' else 48} {2.5 if profile == 'v10' else 2.8:g}",
+        f"reson~ {5.6 if v10_shape else 6.0:g} {54 if v10_shape else 48} {2.5 if v10_shape else 2.8:g}",
         615, 505, 130, numinlets=4, numoutlets=1,
     )
     low_mode_b = p.new(
-        f"reson~ {2.8 if profile == 'v10' else 3.0:g} {120 if profile == 'v10' else 105} {1.6 if profile == 'v10' else 1.8:g}",
+        f"reson~ {2.8 if v10_shape else 3.0:g} {120 if v10_shape else 105} {1.6 if v10_shape else 1.8:g}",
         750, 505, 130, numinlets=4, numoutlets=1,
     )
     low_mode_a_frequency = p.new(
-        f"expr {54 if profile == 'v10' else 48}.*$f1*$f2",
+        f"expr {54 if v10_shape else 48}.*$f1*$f2",
         615, 535, 145, numinlets=2, numoutlets=1,
     )
     low_mode_b_frequency = p.new(
-        f"expr {120 if profile == 'v10' else 105}.*$f1*$f2",
+        f"expr {120 if v10_shape else 105}.*$f1*$f2",
         765, 535, 145, numinlets=2, numoutlets=1,
     )
     low_modes = p.new("+~", 885, 505, 40, numinlets=2, numoutlets=1)
@@ -4315,11 +4426,11 @@ def make_ice_backfire_host(profile: str) -> dict[str, Any]:
     p.connect(pressure_crack_gain_r, pressure_crack_r, 0, 1)
     p.connect(event_trigger, main_click)
     tail_delay_1 = p.new(
-        f"delay {28 if profile == 'v10' else 32}", 35, 610, 65,
+        f"delay {28 if v10_shape else 32}", 35, 610, 65,
         numinlets=2, numoutlets=1,
     )
     tail_delay_2 = p.new(
-        f"delay {58 if profile == 'v10' else 66}", 35, 640, 70,
+        f"delay {58 if v10_shape else 66}", 35, 640, 70,
         numinlets=2, numoutlets=1,
     )
     tail_depth = p.new(
@@ -4327,11 +4438,11 @@ def make_ice_backfire_host(profile: str) -> dict[str, Any]:
         110, 640, 245, numinlets=1, numoutlets=1,
     )
     tail_level_1_map = p.new(
-        f"expr {(0.08 if profile == 'v10' else 0.07):g}+0.03*$f1",
+        f"expr {(0.08 if v10_shape else 0.07):g}+0.03*$f1",
         365, 620, 185, numinlets=1, numoutlets=1,
     )
     tail_level_2_map = p.new(
-        f"expr {(0.02 if profile == 'v10' else 0.018):g}*$f1",
+        f"expr {(0.02 if v10_shape else 0.018):g}*$f1",
         365, 650, 145, numinlets=1, numoutlets=1,
     )
     tail_level_1 = p.new("f 0.", 560, 620, 45, numinlets=2, numoutlets=1)
@@ -4362,17 +4473,17 @@ def make_ice_backfire_host(profile: str) -> dict[str, Any]:
     left_filter = p.new("svf~ 28 0.7", 310, 545, 95, numinlets=3, numoutlets=4)
     right_filter = p.new("svf~ 28 0.7", 530, 545, 95, numinlets=3, numoutlets=4)
     left_air_ceiling = p.new(
-        f"lores~ {600 if profile == 'v10' else 520} {0.65 if profile == 'v10' else 0.67:g}",
+        f"lores~ {600 if v10_shape else 520} {0.65 if v10_shape else 0.67:g}",
         310, 575, 110, numinlets=3, numoutlets=1,
     )
     right_air_ceiling = p.new(
-        f"lores~ {600 if profile == 'v10' else 520} {0.65 if profile == 'v10' else 0.67:g}",
+        f"lores~ {600 if v10_shape else 520} {0.65 if v10_shape else 0.67:g}",
         530, 575, 110, numinlets=3, numoutlets=1,
     )
     output_gain_state = p.new("pak 0.7 1.", 780, 430, 90, numinlets=2, numoutlets=1)
     output_gain_expression = (
         "expr 0.68*(0.60+0.85*$f1)*(0.55+0.45*$f2)"
-        if profile == "v10"
+        if v10_shape
         else "expr 0.68*(0.66+0.94*$f1)*(0.55+0.45*$f2)"
     )
     output_gain_map = p.new(
@@ -5576,10 +5687,64 @@ def make_ioniq6n_powertrain() -> dict[str, Any]:
     return p.document()
 
 
+def make_ferrari_powertrain() -> dict[str, Any]:
+    """Adapt shared vehicle state and Ferrari DNA bands to its own V10 Gen core."""
+    p = Patcher(1500, 760)
+    p.comment(
+        "FERRARI SF90 V10 INTERPRETATION — RPM/12 cadence; DNA bands own acoustic colour",
+        25, 15, 1120,
+    )
+    control = inlet(p, 35, 65)
+    state_names = (
+        "rpm", "throttle", "load", "accel", "engine_running",
+        "combustion_gain", "shift_cut",
+    )
+    dna_names = tuple(item[0] for item in DNA_PARAMETER_SPECS["ferrari"])
+    names = state_names + dna_names + ("powertrain_level_db",)
+    router = route(p, names, 35, 105, 1350)
+    gen = p.new(
+        "gen~ @gen ../gen/ferrari_powertrain.gendsp",
+        520, 540, 320, numinlets=1, numoutlets=2,
+    )
+    p.connect(control, router)
+    bounds = {
+        "rpm": (0.0, 10000.0), "throttle": (0.0, 1.0),
+        "load": (-1.0, 1.0), "accel": (-1.0, 1.0),
+        "engine_running": (0.0, 1.0), "combustion_gain": (0.0, 1.0),
+        "shift_cut": (0.0, 1.0),
+        **{name: (low, high) for name, _label, low, high in DNA_PARAMETER_SPECS["ferrari"]},
+    }
+    for index, name in enumerate(state_names + dna_names):
+        low, high = bounds[name]
+        column = index % 7
+        row = index // 7
+        x = 35 + column * 205
+        y = 165 + row * 90
+        bounded = p.new(f"clip {low:g} {high:g}", x, y, 90, numinlets=3, numoutlets=1)
+        named = p.new(f"prepend {name}", x, y + 35, 170, numinlets=1, numoutlets=1)
+        p.connect(router, bounded, index)
+        p.connect(bounded, named)
+        p.connect(named, gen)
+    stem_level = add_db_gain_control(p, router, len(names) - 1, 1180, 525, -3.0)
+    trim_l = p.new("*~", 520, 640, 40, numinlets=2, numoutlets=1)
+    trim_r = p.new("*~", 790, 640, 40, numinlets=2, numoutlets=1)
+    left = outlet(p, 520, 700, signal=True)
+    right = outlet(p, 790, 700, signal=True)
+    p.connect(gen, trim_l, 0, 0)
+    p.connect(gen, trim_r, 1, 0)
+    p.connect(stem_level, trim_l, 0, 1)
+    p.connect(stem_level, trim_r, 0, 1)
+    p.connect(trim_l, left)
+    p.connect(trim_r, right)
+    return p.document()
+
+
 def make_profile_powertrain(profile: str) -> dict[str, Any]:
     """Render one profile only; inactive powertrains are absent, not gain-muted."""
     if profile == "ioniq6n":
         return make_ioniq6n_powertrain()
+    if profile == "ferrari":
+        return make_ferrari_powertrain()
     p = Patcher(1080, 660)
     p.comment(f"{profile.upper()} dedicated powertrain — procedural continuous synthesis", 25, 15, 760)
     control = inlet(p, 35, 65)
@@ -6681,15 +6846,15 @@ def make_profile_engine_start_beap(profile: str, *, version: int = 2) -> dict[st
     tone_filter = add_beap_module(
         p, "Filter/bp.MMF.maxpat", 850, 380, "Start_Filter",
         initial={
-            "Freq": {"ev": 2600, "v10": 1050, "v12": 1450, "ioniq6n": 3100}[profile],
-            "Res": {"ev": 1.1, "v10": 2.8, "v12": 2.1, "ioniq6n": 0.9}[profile],
+            "Freq": {"ev": 2600, "v10": 1050, "v12": 1450, "ioniq6n": 3100, "ferrari": 980}[profile],
+            "Res": {"ev": 1.1, "v10": 2.8, "v12": 2.1, "ioniq6n": 0.9, "ferrari": 2.4}[profile],
             "FilterType": 0, "power[1]": 1,
         },
     )
     envelope = add_beap_module(
         p, "Envelope/bp.AD.maxpat", 1125, 380, "Start_AD",
-        initial={"Attack": {"ev": 90, "v10": 5, "v12": 4, "ioniq6n": 70}[profile],
-                 "Decay": {"ev": 1250, "v10": 1150, "v12": 850, "ioniq6n": 1100}[profile]},
+        initial={"Attack": {"ev": 90, "v10": 5, "v12": 4, "ioniq6n": 70, "ferrari": 5}[profile],
+                 "Decay": {"ev": 1250, "v10": 1150, "v12": 850, "ioniq6n": 1100, "ferrari": 1150}[profile]},
     )
     vca = add_beap_module(p, "Level/bp.VCA.maxpat", 1325, 380, "Start_VCA")
     p.connect(noise, mixer, 0, 0)
@@ -6705,6 +6870,7 @@ def make_profile_engine_start_beap(profile: str, *, version: int = 2) -> dict[st
     cadence_limits = {
         "ev": (48.0, 130.0), "v10": (9.0, 62.0),
         "v12": (12.0, 78.0), "ioniq6n": (46.0, 140.0),
+        "ferrari": (9.0, 62.0),
     }[profile]
     cadence = p.new(
         f"scale~ -1.25 0.55 {cadence_limits[0]:g} {cadence_limits[1]:g}",
@@ -6727,12 +6893,12 @@ def make_profile_engine_start_beap(profile: str, *, version: int = 2) -> dict[st
 
     activation_filter = p.new(
         {"ev": "lores~ 420 0.62", "v10": "lores~ 520 0.72", "v12": "lores~ 610 0.68",
-         "ioniq6n": "lores~ 520 0.58"}[profile],
+         "ioniq6n": "lores~ 520 0.58", "ferrari": "lores~ 500 0.72"}[profile],
         25, 680, 120, numinlets=3, numoutlets=1,
     )
     activation_mode = p.new(
         {"ev": "reson~ 2.2 82 5.", "v10": "reson~ 3.4 92 4.2", "v12": "reson~ 3.0 78 4.8",
-         "ioniq6n": "reson~ 2.4 92 5.6"}[profile],
+         "ioniq6n": "reson~ 2.4 92 5.6", "ferrari": "reson~ 3.6 92 4.2"}[profile],
         155, 680, 130, numinlets=4, numoutlets=1,
     )
     activation_sum = p.new("+~", 295, 680, 40, numinlets=2, numoutlets=1)
@@ -6755,13 +6921,13 @@ def make_profile_engine_start_beap(profile: str, *, version: int = 2) -> dict[st
 
     metal_mode = p.new(
         {"ev": "reson~ 1.2 980 12.", "v10": "reson~ 1.8 740 9.", "v12": "reson~ 1.7 1120 11.",
-         "ioniq6n": "reson~ 1.1 1280 13."}[profile],
+         "ioniq6n": "reson~ 1.1 1280 13.", "ferrari": "reson~ 1.6 700 8.5"}[profile],
         590, 680, 140, numinlets=4, numoutlets=1,
     )
     metal_gain = p.new("*~", 740, 680, 40, numinlets=2, numoutlets=1)
     air_filter = p.new(
         {"ev": "svf~ 2100 0.6", "v10": "svf~ 1700 0.7", "v12": "svf~ 2200 0.65",
-         "ioniq6n": "svf~ 2400 0.58"}[profile],
+         "ioniq6n": "svf~ 2400 0.58", "ferrari": "svf~ 1600 0.68"}[profile],
         790, 680, 115, numinlets=3, numoutlets=4,
     )
     air_gate = p.new("*~", 915, 680, 40, numinlets=2, numoutlets=1)
@@ -6782,7 +6948,7 @@ def make_profile_engine_start_beap(profile: str, *, version: int = 2) -> dict[st
     sum_air = p.new("+~", 1245, 680, 40, numinlets=2, numoutlets=1)
     tail_mode = p.new(
         {"ev": "reson~ 1.4 164 8.", "v10": "reson~ 2.0 123 6.", "v12": "reson~ 1.8 156 7.",
-         "ioniq6n": "reson~ 1.3 185 8.5"}[profile],
+         "ioniq6n": "reson~ 1.3 185 8.5", "ferrari": "reson~ 2.2 123 5.8"}[profile],
         1295, 680, 135, numinlets=4, numoutlets=1,
     )
     tail_gain = p.new("*~", 1440, 680, 40, numinlets=2, numoutlets=1)
@@ -7356,7 +7522,16 @@ def make_profile_transient(profile: str) -> dict[str, Any]:
     if profile == "ioniq6n":
         return make_ioniq6n_transient_host()
     p = Patcher(1320, 760)
-    p.comment(f"{profile.upper()} transient host — cinematic BEAP default; realistic starter option for ICE", 25, 15, 820)
+    if profile == "ferrari":
+        p.comment(
+            "FERRARI transient host — procedural-only Ferrari start and independent backfire bus",
+            25, 15, 900,
+        )
+    else:
+        p.comment(
+            f"{profile.upper()} transient host — cinematic BEAP default; realistic starter option for ICE",
+            25, 15, 820,
+        )
     control = inlet(p, 35, 65)
     router = route(
         p,
@@ -7382,7 +7557,7 @@ def make_profile_transient(profile: str) -> dict[str, Any]:
     p.connect(router, style_select, 1)
     p.connect(default_style, style_select)
     p.connect(style_select, cinematic_value, 0)
-    p.connect(style_select, realistic_value, 1)
+    p.connect(style_select, cinematic_value if profile == "ferrari" else realistic_value, 1)
     p.connect(cinematic_value, style_store, 0, 1)
     p.connect(realistic_value, style_store, 0, 1)
     p.connect(starter, style_store, 0)
@@ -7418,16 +7593,19 @@ def make_profile_transient(profile: str) -> dict[str, Any]:
         "ev": "-1.25 0, 0.55 220, -0.15 1050",
         "v10": "-1.25 0, 0.55 320, -0.35 1150",
         "v12": "-1.10 0, 0.55 220, -0.25 900",
+        "ferrari": "-1.25 0, 0.55 300, -0.35 1150",
     }
     pitch_message = p.message(pitch_messages[profile], 390, 295, 230)
     pitch_line = p.new("line~ -1.25", 390, 335, 75, numinlets=2, numoutlets=2)
     gate_message = p.message(
-        {"ev": "5. 0, 0. 1250", "v10": "5. 0, 0. 1200", "v12": "5. 0, 0. 900"}[profile],
+        {"ev": "5. 0, 0. 1250", "v10": "5. 0, 0. 1200", "v12": "5. 0, 0. 900",
+         "ferrari": "5. 0, 0. 1200"}[profile],
         460, 335, 110,
     )
     gate_line = p.new("line~", 460, 375, 50, numinlets=2, numoutlets=2)
     timbre_message = p.message(
-        {"ev": "2.8 0, 1.6 1150", "v10": "4.2 0, 1.1 1050", "v12": "3.8 0, 1.3 820"}[profile],
+        {"ev": "2.8 0, 1.6 1150", "v10": "4.2 0, 1.1 1050", "v12": "3.8 0, 1.3 820",
+         "ferrari": "4.0 0, 1.0 1050"}[profile],
         530, 375, 125,
     )
     timbre_line = p.new("line~ 4.2", 530, 415, 70, numinlets=2, numoutlets=2)
@@ -7468,7 +7646,7 @@ def make_profile_transient(profile: str) -> dict[str, Any]:
 
     sample_l = p.new("sig~ 0.", 670, 465, 55, numinlets=1, numoutlets=1)
     sample_r = p.new("sig~ 0.", 755, 465, 55, numinlets=1, numoutlets=1)
-    if profile != "ev":
+    if profile in ("v10", "v12"):
         fallback_name = f"starter_{profile}"
         p.new(f"buffer~ {fallback_name} ../media/{fallback_name}.wav", 660, 250, 255, numinlets=1, numoutlets=2)
         fallback_start = p.message("start", 660, 290, 45)
@@ -7538,7 +7716,7 @@ def make_profile_transient(profile: str) -> dict[str, Any]:
     p.connect(sample_r, sum_start_r, 0, 1)
     start_level = add_db_gain_control(
         p, router, 2, 1000, 500,
-        {"ev": -8.0, "v10": -5.0, "v12": -5.0}[profile],
+        {"ev": -8.0, "v10": -5.0, "v12": -5.0, "ferrari": -5.0}[profile],
     )
     start_trim_l = p.new("*~", 390, 560, 40, numinlets=2, numoutlets=1)
     start_trim_r = p.new("*~", 540, 560, 40, numinlets=2, numoutlets=1)
@@ -9361,8 +9539,8 @@ def make_profile_runtime_host(profile: str) -> dict[str, Any]:
 
 def make_launcher() -> dict[str, Any]:
     """Build the DSP-free V6 launcher and its one shared control surface."""
-    p = Patcher(1240, 850)
-    p.comment("VehicleSoundSynth V6 — one shared console, four profile adapters", 30, 20, 650)
+    p = Patcher(1240, 900)
+    p.comment("VehicleSoundSynth V6 — one shared console, five profile adapters", 30, 20, 650)
     p.comment(
         "Main owns lifecycle, input, Mix/EQ and sound-design controls. Selecting a profile safely closes the previous runtime.",
         30, 48, 830, 40,
@@ -9370,22 +9548,25 @@ def make_launcher() -> dict[str, Any]:
     controller = p.new("pcontrol", 1030, 100, 70, numinlets=1, numoutlets=0)
     selection = p.new("s vss.runtime.select", 860, 100, 145, numinlets=1, numoutlets=0)
     selection_map = p.new(
-        "sel ev v10 v12 ioniq6n none", 860, 130, 200,
-        numinlets=1, numoutlets=6,
+        "sel ev v10 v12 ioniq6n ferrari none", 835, 165, 250,
+        numinlets=1, numoutlets=7,
     )
     for index, profile in enumerate(PROFILE_ORDER):
         config = PROFILE_CONFIG[profile]
-        x = 30 + index * 245
-        p.comment(config["title"], x, 92, 225)
+        row = index // 3
+        column = index % 3
+        x = 30 + column * 300
+        y = 92 + row * 58
+        p.comment(config["title"], x, y, 280)
         button = p.add(
-            "message", f"Open {config['title']}", x, 118, 220,
+            "message", f"Open {config['title']}", x, y + 26, 280,
             numinlets=2, numoutlets=1, presentation=1,
-            presentation_rect=[float(x), 66.0, 220.0, 24.0],
+            presentation_rect=[float(x), 66.0 + row * 34.0, 280.0, 24.0],
         )
-        order = p.new("t b b", x, 150, 50, numinlets=1, numoutlets=2)
-        select_message = p.message(profile, x + 60, 150, 65)
-        open_delay = p.new("delay 40", x + 130, 150, 65, numinlets=2, numoutlets=1)
-        open_message = p.message(f"loadunique {config['runtime']}", x, 180, 230)
+        order = p.new("t b b", x, y + 54, 50, numinlets=1, numoutlets=2)
+        select_message = p.message(profile, x + 60, y + 54, 65)
+        open_delay = p.new("delay 40", x + 130, y + 54, 65, numinlets=2, numoutlets=1)
+        open_message = p.message(f"loadunique {config['runtime']}", x, y + 82, 260)
         p.connect(button, order)
         p.connect(order, select_message, 1)
         p.connect(select_message, selection)
@@ -9394,36 +9575,36 @@ def make_launcher() -> dict[str, Any]:
         p.connect(open_delay, open_message)
         p.connect(open_message, controller)
     close_all = p.add(
-        "message", "Close Active / 关闭当前车型", 1010, 118, 200,
+        "message", "Close Active / 关闭当前车型", 930, 176, 280,
         numinlets=2, numoutlets=1, presentation=1,
-        presentation_rect=[1010.0, 66.0, 200.0, 24.0],
+        presentation_rect=[930.0, 100.0, 280.0, 24.0],
     )
-    close_symbol = p.message("none", 1090, 150, 55)
+    close_symbol = p.message("none", 1090, 205, 55)
     p.connect(close_all, close_symbol)
     p.connect(close_symbol, selection)
     p.connect(close_symbol, selection_map)
     runtime_console = p.add(
-        "bpatcher", None, 30, 220, 1180, 600,
+        "bpatcher", None, 30, 270, 1180, 600,
         numinlets=1, numoutlets=1,
         name="Patcher:/patchers/runtime_console.maxpat",
         varname="runtime_console", presentation=1,
-        presentation_rect=[30.0, 115.0, 1180.0, 600.0],
+        presentation_rect=[30.0, 145.0, 1180.0, 600.0],
     )
     selected_index = [
-        p.message(str(index), 860 + index * 38, 190, 30)
+        p.message(str(index), 835 + index * 38, 235, 30)
         for index in range(1, len(PROFILE_ORDER) + 1)
     ]
-    selection_off = p.message("0", 860, 190, 30)
+    selection_off = p.message("0", 835, 235, 30)
     selection_default = p.new(
-        "loadmess 0", 860, 220, 80,
+        "loadmess 0", 835, 265, 80,
         numinlets=1, numoutlets=1,
     )
     command_gate = p.new(
-        f"gate {len(PROFILE_ORDER)}", 1030, 700, 65,
+        f"gate {len(PROFILE_ORDER)}", 1030, 750, 65,
         numinlets=2, numoutlets=len(PROFILE_ORDER),
     )
     feedback_selector = p.new(
-        f"switch {len(PROFILE_ORDER)}", 1030, 750, 75,
+        f"switch {len(PROFILE_ORDER)}", 1030, 800, 75,
         numinlets=len(PROFILE_ORDER) + 1, numoutlets=1,
     )
     for index, index_message in enumerate(selected_index):
@@ -9450,7 +9631,7 @@ def make_launcher() -> dict[str, Any]:
     p.connect(feedback_selector, runtime_console)
     p.comment(
         "Main is intentionally DSP-free. Audio starts OFF; command and feedback buses are scoped to the selected profile.",
-        30, 825, 900,
+        30, 875, 900,
     )
     return p.document(presentation=True)
 
@@ -9720,8 +9901,8 @@ def make_module_mixer() -> dict[str, Any]:
 
     profile_load = p.new("loadmess #1", 15, 205, 85, numinlets=1, numoutlets=1)
     profile_select = p.new(
-        "sel ev v10 v12 ioniq6n", 105, 205, 145,
-        numinlets=1, numoutlets=5,
+        "sel " + " ".join(PROFILE_ORDER), 105, 205, 190,
+        numinlets=1, numoutlets=len(PROFILE_ORDER) + 1,
     )
     reset_profile = p.message("#1", 215, 205, 35)
     defaults_messages: list[str] = []
@@ -9933,12 +10114,20 @@ def make_profile_main(profile: str, root: Path | None = None) -> dict[str, Any]:
             p.connect(button, message)
             p.connect(message, host)
     else:
-        add_mode_menu(
-            "Start Style / 启动音色",
-            ["Cinematic BEAP / 程序合成", "Realistic Sample / 真实采样"],
-            ("start_style cinematic", "start_style realistic"),
-            0, 20, 105, 290,
-        )
+        if profile == "ferrari":
+            add_mode_menu(
+                "Start / 启动音色（procedural only）",
+                ["Ferrari V10 Procedural BEAP / 程序合成"],
+                ("start_style cinematic",),
+                0, 20, 105, 330,
+            )
+        else:
+            add_mode_menu(
+                "Start Style / 启动音色",
+                ["Cinematic BEAP / 程序合成", "Realistic Sample / 真实采样"],
+                ("start_style cinematic", "start_style realistic"),
+                0, 20, 105, 290,
+            )
         p.add(
             "comment", "Backfire / 回火：Enable + Intensity [0..1] + Solo", 380, 105, 440, 20,
             numinlets=1, numoutlets=0, presentation=1,
@@ -9957,7 +10146,7 @@ def make_profile_main(profile: str, root: Path | None = None) -> dict[str, Any]:
         )
         intensity_named = p.new("prepend backfire_intensity", 750, 133, 175, numinlets=1, numoutlets=1)
         intensity_default = p.new(
-            f"loadmess {0.82 if profile == 'v10' else 0.55:g}",
+            f"loadmess {0.82 if profile == 'v10' else (0.65 if profile == 'ferrari' else 0.55):g}",
             665, 165, 100, numinlets=1, numoutlets=1,
         )
         solo = p.add(
@@ -10486,6 +10675,91 @@ right_drive = ((shared_low + bank_mid) * body_t - bank_side * bank_spread + (man
 sat_drive = 1 + saturation * 0.95;
 out1 = tanh(left_drive * sat_drive) / sat_drive;
 out2 = tanh(right_drive * sat_drive) / sat_drive;""",
+    "ferrari_powertrain": """// Ferrari SF90 V10 acoustic interpretation: independent RPM/12 cadence with bounded five-band envelopes.
+Param rpm(740, min=0, max=10000);
+Param throttle(0, min=0, max=1);
+Param load(0, min=-1, max=1);
+Param accel(0, min=-1, max=1);
+Param engine_running(0, min=0, max=1);
+Param combustion_gain(0, min=0, max=1);
+Param shift_cut(1, min=0, max=1);
+Param order_core(0.82, min=0, max=1);
+Param body_band(0.90, min=0, max=1);
+Param cavity_band(0.88, min=0, max=1);
+Param mechanical_band(0.62, min=0, max=1);
+Param presence_band(0.42, min=0, max=1);
+Param edge_band(0.24, min=0, max=1);
+Param band_load_depth(0.84, min=0, max=1);
+Param lift_mass(0.76, min=0, max=1);
+Param intake_detail(0.80, min=0, max=1);
+Param exhaust_detail(0.84, min=0, max=1);
+Param cycle_irregularity(0.42, min=0, max=1);
+Param stereo_width(0.46, min=0, max=1);
+Param throttle_loudness_depth(4.5, min=0, max=8);
+Param saturation(0.32, min=0, max=1);
+Param idle_level(0.88, min=0, max=1);
+Param idle_body(0.92, min=0, max=1);
+Param idle_metal(0.45, min=0, max=1);
+Param idle_irregularity(0.32, min=0, max=1);
+Param idle_air(0.18, min=0, max=1);
+r = slide(clamp(rpm, 0, 10000), 620, 980);
+t_fast = slide(clamp(throttle, 0, 1), 85, 210);
+l_fast = slide(max(clamp(load, -1, 1), 0), 110, 290);
+l_body = slide(max(clamp(load, -1, 1), 0), 420, 950);
+acc = slide(clamp(accel, -1, 1), 100, 360);
+drive = max(acc, 0);
+lift_fast = slide(max(-acc, 0), 110, 360);
+lift_body = slide(max(-acc, 0), 5760, 13200);
+run = slide(clamp(engine_running * combustion_gain * shift_cut, 0, 1), 420, 1750);
+crank = clamp(r / 60, 6, 170);
+cadence_motion = cycle(crank*0.5)*(0.004+cycle_irregularity*0.014) + cycle(crank*1.5)*cycle_irregularity*0.005;
+bank_fire = clamp(crank*2.5*(1+cadence_motion), 15, 440);
+fire = bank_fire*2;
+phase_l = phasor(bank_fire);
+phase_r = phase_l + 0.5;
+phase_r = phase_r-floor(phase_r);
+pulse_l = pow(0.5+0.5*cos(phase_l*6.283185307179586),4)-0.2734375;
+pulse_r = pow(0.5+0.5*cos(phase_r*6.283185307179586),4)-0.2734375;
+pulse_mid = (pulse_l+pulse_r)*0.5;
+pulse_side = (pulse_l-pulse_r)*0.5;
+load_shape = clamp(0.16 + band_load_depth*(0.28*t_fast+0.20*l_fast+0.14*l_body+0.08*drive), 0.12, 0.72);
+throttle_gain = pow(10,(t_fast*throttle_loudness_depth)/20);
+body_gain = pow(10,(4*l_body)/20);
+cavity_gain = pow(10,(5*l_fast)/20);
+mechanical_gain = pow(10,(3.5*l_fast)/20);
+presence_gain = pow(10,(2*l_fast)/20);
+edge_gain = pow(10,(1.5*l_fast)/20);
+hf_lift_cut = 1-0.405*lift_fast*lift_mass;
+body_release = 1+0.24*lift_body*lift_mass;
+speed = clamp((r-740)/7560,0,1);
+idle_weight = 1-clamp((r-740)/1500,0,1);
+order = (cycle(fire)*0.19 + cycle(clamp(fire*1.5,45,1900))*0.070 + pulse_mid*0.23) * order_core;
+body = (cycle(clamp(fire*0.5,30,430))*0.105 + cycle(clamp(fire,60,760))*0.075 + cycle(clamp(fire*1.87,112,1420))*0.052) * body_band * body_gain * body_release;
+cavity_l = (cycle(clamp(fire*2.18,130,2200))*0.057 + cycle(clamp(fire*3.42,205,3400))*0.034) * cavity_band * cavity_gain;
+cavity_r = (cycle(clamp(fire*2.24,134,2260))*0.057 + cycle(clamp(fire*3.36,202,3340))*0.034) * cavity_band * cavity_gain;
+intake_l = cycle(clamp(fire*2.72,165,3600))*intake_detail*(0.018+0.048*t_fast+0.026*drive);
+intake_r = cycle(clamp(fire*2.79,168,3680))*intake_detail*(0.018+0.048*t_fast+0.026*drive);
+exhaust = (cycle(clamp(fire*0.72,43,1200))*0.052 + cycle(clamp(fire*1.31,78,2100))*0.030) * exhaust_detail * (0.45+0.55*t_fast+0.28*lift_body);
+mechanical_l = (cycle(clamp(fire*4.75,285,5100))*0.030 + cycle(clamp(fire*6.15,370,6600))*0.014) * mechanical_band * mechanical_gain;
+mechanical_r = (cycle(clamp(fire*4.91,295,5250))*0.030 + cycle(clamp(fire*5.98,360,6450))*0.014) * mechanical_band * mechanical_gain;
+presence_l = (cycle(clamp(fire*7.3,438,7400))*0.021 + cycle(clamp(fire*9.1,546,8800))*0.010) * presence_band * presence_gain * (0.35+0.65*speed);
+presence_r = (cycle(clamp(fire*7.1,426,7200))*0.021 + cycle(clamp(fire*9.35,561,9000))*0.010) * presence_band * presence_gain * (0.35+0.65*speed);
+edge_l = (cycle(clamp(fire*11.3,680,6000))*0.012 + cycle(clamp(fire*14.2,850,6000))*0.005) * edge_band * edge_gain * hf_lift_cut * sqrt(max(0.04,t_fast));
+edge_r = (cycle(clamp(fire*11.7,700,6000))*0.012 + cycle(clamp(fire*13.8,830,6000))*0.005) * edge_band * edge_gain * hf_lift_cut * sqrt(max(0.04,t_fast));
+idle_motion = 1 + cycle(crank*0.37)*idle_irregularity*0.035 + cycle(crank*0.71)*idle_irregularity*0.016;
+idle_modal = (cycle(fire)*0.13 + cycle(fire*2)*0.082 + cycle(fire*3)*0.047 + cycle(fire*3.47)*0.032) * idle_body;
+idle_structure = (cycle(fire*6.83)*0.022 + cycle(fire*8.17)*0.012) * abs(pulse_mid) * idle_metal;
+idle_air_layer = (cycle(clamp(fire*10.3,620,5600))*0.008 + cycle(clamp(fire*13.7,820,6000))*0.003) * abs(pulse_mid) * idle_air;
+idle_gain = idle_level*idle_weight*run*(1-0.38*t_fast);
+idle_center = idle_modal*idle_gain*idle_motion;
+idle_side = (idle_structure+idle_air_layer)*idle_gain*stereo_width;
+center = (order+body+exhaust+pulse_mid*0.10)*load_shape*throttle_gain;
+side_scale = 0.22+0.34*stereo_width;
+side_l = (cavity_l+intake_l+mechanical_l+presence_l+edge_l+pulse_side*0.13)*load_shape*throttle_gain*side_scale;
+side_r = (cavity_r+intake_r+mechanical_r+presence_r+edge_r-pulse_side*0.13)*load_shape*throttle_gain*side_scale;
+sat = 1+saturation*0.82;
+out1 = tanh((center+side_l+idle_center+idle_side)*run*sat)/sat;
+out2 = tanh((center+side_r+idle_center-idle_side)*run*sat)/sat;""",
     "v12_powertrain": """// Procedural V12: smooth independent six-cylinder banks with high-order air.
 Param rpm(780, min=0, max=10000);
 Param throttle(0, min=0, max=1);
@@ -10892,10 +11166,12 @@ def project_file() -> dict[str, Any]:
         "VehicleSoundSynth-V10.maxpat",
         "VehicleSoundSynth-V12.maxpat",
         "VehicleSoundSynth-IONIQ6N.maxpat",
+        "VehicleSoundSynth-Ferrari.maxpat",
         "patchers/ev_powertrain~.maxpat",
         "patchers/v10_powertrain~.maxpat",
         "patchers/v12_powertrain~.maxpat",
         "patchers/ioniq6n_powertrain~.maxpat",
+        "patchers/ferrari_powertrain~.maxpat",
         "patchers/ioniq6n_sound_dna~.maxpat",
         "patchers/ioniq6n_soundscape_ignition_beap~.maxpat",
         "patchers/ioniq6n_soundscape_evolution_beap~.maxpat",
@@ -10915,6 +11191,7 @@ def project_file() -> dict[str, Any]:
         "patchers/transient_ev~.maxpat",
         "patchers/transient_v10~.maxpat",
         "patchers/transient_v12~.maxpat",
+        "patchers/transient_ferrari~.maxpat",
         "patchers/backfire_burst_scheduler.maxpat",
         "patchers/road_air~.maxpat",
         "patchers/cabin_master~.maxpat",
@@ -10932,7 +11209,7 @@ def project_file() -> dict[str, Any]:
         f"patchers/profile_runtime_host_{profile}.maxpat"
         for profile in PROFILE_ORDER
     )
-    for profile in ("ev", "v10", "v12"):
+    for profile in ("ev", "v10", "v12", "ferrari"):
         patchers.extend(
             (
                 f"patchers/{profile}_sound_dna~.maxpat",
@@ -10945,7 +11222,7 @@ def project_file() -> dict[str, Any]:
                 f"patchers/{profile}_cinematic_soundscape_host~.maxpat",
             )
         )
-    for profile in ("v10", "v12"):
+    for profile in ("v10", "v12", "ferrari"):
         patchers.extend(
             (
                 f"patchers/{profile}_backfire_beap~.maxpat",
@@ -10994,8 +11271,13 @@ def project_file() -> dict[str, Any]:
             "kind": "data",
             "local": 1,
         }
+    contents["data"]["presets/ferrari_soundscape_v4_factory.json"] = {
+        "kind": "data",
+        "local": 1,
+    }
     contents["data"]["assets/ferrari_sf90_acoustic_target.json"] = {"kind": "data", "local": 1}
     contents["data"]["assets/ferrari_v10_lifecycle_targets.json"] = {"kind": "data", "local": 1}
+    contents["data"]["assets/ferrari_sf90_v10_interpretation_targets.json"] = {"kind": "data", "local": 1}
     contents["data"]["assets/ioniq6n_acoustic_targets.json"] = {"kind": "data", "local": 1}
     contents["data"]["presets/ioniq6n_soundscape_modes_factory.json"] = {"kind": "data", "local": 1}
     contents["data"]["presets/ioniq6n_n_event_factory.json"] = {"kind": "data", "local": 1}
@@ -11030,6 +11312,7 @@ def build_project(root: Path) -> None:
         "VehicleSoundSynth-V10.maxpat": make_profile_main("v10", root),
         "VehicleSoundSynth-V12.maxpat": make_profile_main("v12", root),
         "VehicleSoundSynth-IONIQ6N.maxpat": make_profile_main("ioniq6n", root),
+        "VehicleSoundSynth-Ferrari.maxpat": make_profile_main("ferrari", root),
         "patchers/vehicle_engine~.maxpat": make_engine(),
         "patchers/engine_controller.maxpat": make_engine_controller(),
         "patchers/powertrain~.maxpat": make_powertrain(),
@@ -11037,6 +11320,7 @@ def build_project(root: Path) -> None:
         "patchers/v10_powertrain~.maxpat": make_profile_powertrain("v10"),
         "patchers/v12_powertrain~.maxpat": make_profile_powertrain("v12"),
         "patchers/ioniq6n_powertrain~.maxpat": make_profile_powertrain("ioniq6n"),
+        "patchers/ferrari_powertrain~.maxpat": make_profile_powertrain("ferrari"),
         "patchers/ioniq6n_cinematic_soundscape_host~.maxpat": make_ioniq6n_soundscape_host(),
         "patchers/ioniq6n_n_event_host~.maxpat": make_ioniq6n_n_event_host(),
         "patchers/transient_ioniq6n~.maxpat": make_profile_transient("ioniq6n"),
@@ -11054,6 +11338,7 @@ def build_project(root: Path) -> None:
         "patchers/transient_ev~.maxpat": make_profile_transient("ev"),
         "patchers/transient_v10~.maxpat": make_profile_transient("v10"),
         "patchers/transient_v12~.maxpat": make_profile_transient("v12"),
+        "patchers/transient_ferrari~.maxpat": make_profile_transient("ferrari"),
         "patchers/backfire_burst_scheduler.maxpat": make_backfire_burst_scheduler(),
         "patchers/road_air~.maxpat": make_road_air(),
         "patchers/cabin_master~.maxpat": make_cabin_master(),
@@ -11090,11 +11375,15 @@ def build_project(root: Path) -> None:
         outputs[f"presets/{profile}_soundscape_v4_factory.json"] = (
             make_soundscape_factory(profile, version=4)
         )
+    outputs["presets/ferrari_soundscape_v4_factory.json"] = (
+        make_soundscape_factory("ferrari", version=4)
+    )
     for profile in ("v10", "v12"):
         outputs[f"patchers/{profile}_pad_voice.maxpat"] = make_ice_pad_voice(profile)
         outputs[f"patchers/{profile}_pad_host~.maxpat"] = make_ice_pad_host(profile)
         outputs[f"patchers/{profile}_backfire_host~.maxpat"] = make_ice_backfire_host(profile)
-    for profile in ("ev", "v10", "v12"):
+    outputs["patchers/ferrari_backfire_host~.maxpat"] = make_ice_backfire_host("ferrari")
+    for profile in ("ev", "v10", "v12", "ferrari"):
         outputs[f"patchers/{profile}_cinematic_soundscape_host~.maxpat"] = make_cinematic_soundscape_host(profile)
         outputs[f"patchers/vehicle_engine_{profile}~.maxpat"] = make_profile_engine(profile)
         outputs[f"patchers/engine_controller_{profile}.maxpat"] = make_profile_controller(profile)
@@ -11121,7 +11410,7 @@ def build_project(root: Path) -> None:
         user_mode = root / "patchers" / f"ev_{mode}_beap~.maxpat"
         if not user_mode.exists():
             write_json(user_mode, make_ev_mode_beap(mode))
-    for profile in ("ev", "v10", "v12"):
+    for profile in ("ev", "v10", "v12", "ferrari"):
         legacy_start = root / "patchers" / f"{profile}_engine_start_beap~.maxpat"
         if not legacy_start.exists():
             write_json(legacy_start, make_profile_engine_start_beap(profile, version=2))
@@ -11137,7 +11426,7 @@ def build_project(root: Path) -> None:
     user_eq = root / "patchers" / "vehicle_bus_eq~.maxpat"
     if not user_eq.exists():
         write_json(user_eq, make_vehicle_bus_eq())
-    for profile in ("ev", "v10", "v12"):
+    for profile in ("ev", "v10", "v12", "ferrari"):
         user_dna = root / "patchers" / f"{profile}_sound_dna~.maxpat"
         if not user_dna.exists():
             write_json(user_dna, make_sound_dna(profile))
@@ -11158,6 +11447,13 @@ def build_project(root: Path) -> None:
         user_pad = root / "patchers" / f"{profile}_pad_beap~.maxpat"
         if not user_pad.exists():
             write_json(user_pad, make_ice_pad_beap(profile))
+        legacy_backfire = root / "patchers" / f"{profile}_backfire_beap~.maxpat"
+        if not legacy_backfire.exists():
+            write_json(legacy_backfire, make_ice_backfire_beap(profile, version=1))
+        user_backfire = root / "patchers" / f"{profile}_backfire_v2_beap~.maxpat"
+        if not user_backfire.exists():
+            write_json(user_backfire, make_ice_backfire_beap(profile, version=2))
+    for profile in ("ferrari",):
         legacy_backfire = root / "patchers" / f"{profile}_backfire_beap~.maxpat"
         if not legacy_backfire.exists():
             write_json(legacy_backfire, make_ice_backfire_beap(profile, version=1))

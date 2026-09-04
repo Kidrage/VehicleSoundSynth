@@ -3,6 +3,46 @@
 > Deterministically generated repository/project memory for cross-agent handoff.
 > Update after every material project change and before final reporting.
 
+## Independent Ferrari V10 acoustic interpretation (2026-09-04)
+
+Accepted V6 is frozen at annotated tag `v6-accepted-2026-09-04-672ad62`
+(`672ad6204841440462225008e6ea8be643f6483f`). Branch
+`codex/v6-ferrari-v10` adds a fifth runtime,
+`VehicleSoundSynth-Ferrari.maxpat`, without replacing or retuning EV, V10, V12
+or IONIQ6N. The existing four profiles' seed-once sound files remain absent
+from the baseline diff.
+
+Ferrari is explicitly an analysis-envelope-derived V10 acoustic
+interpretation, not a physical SF90 powertrain claim. Its continuous Sound DNA
+uses an independent four-stroke `rpm/12` cadence and tunable body, cavity,
+mechanical, presence and edge bands. Load envelopes add 4/5/3.5/2/1.5 dB by
+band, fast lift-off removes 4.5 dB of edge energy, and slower low/mid release
+retains mass. The separate Soundscape V4 instrument owns exterior body, cavity
+projection, mechanical halo and air/reflection layers; load changes their
+blend and filter colour while RPM remains the only root-pitch authority. The
+final factory balance keeps the 124 Hz order centered but exposes nine measured
+high-load structure peaks instead of the initial single-tone result. Start and
+backfire use independent seed-once BEAP designers and are procedural-only.
+
+`assets/ferrari_sf90_v10_interpretation_targets.json` contains sanitized
+numeric targets only. No source path, reference audio, continuous derivative,
+local preset, recovery file or temporary render is declared by the project or
+tracked by Git. All five profiles share the existing generated runtime-host,
+Main, Mixer/EQ, keyboard/gamepad and persistence topology; Ferrari adds its own
+literal profile gates, state namespace and `vss.ferrari.input` bus.
+
+All 201 Python tests pass. Two clean generator roots are byte-identical with
+combined SHA-256 `1ab8cf78938d72a1c4e915bfccd82a74a98c55d3a21427d525a528be69965297`.
+Max 8.6.5 rendered Ferrari controller start, stable idle, low/high-load
+Soundscape Solo and backfire Solo at 48 kHz. Every render is non-silent and
+unclipped, 2--6 kHz harshness stays below `0.001`, and mono-fold loss stays
+below 3 dB. The final high-load Soundscape reports peak `-3.44 dBFS`, harshness
+`0.000277`, nine spectral peaks and `0.082 dB` mono-fold loss; low/high-load
+WAV hashes differ while their dominant root remains unchanged. The Max log has
+no missing-object, Gen, patchcord/outlet or project-category blocker. Every
+task-owned Max process was exited after rendering; pre-existing user PID
+`38515` was left untouched.
+
 ## V6 system cleanup (2026-09-03)
 
 Branch `codex/v6-system-cleanup` centralizes the four runtimes without changing

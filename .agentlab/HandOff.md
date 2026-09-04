@@ -10,6 +10,37 @@
 
 ## Delivered Change
 
+### Fifth Ferrari V10 acoustic interpretation (2026-09-04)
+
+- Accepted V6 is frozen and pushed as annotated tag
+  `v6-accepted-2026-09-04-672ad62` at
+  `672ad6204841440462225008e6ea8be643f6483f`. Feature work is isolated on
+  `codex/v6-ferrari-v10`; it does not replace or retune the four accepted
+  profiles.
+- `VehicleSoundSynth-Ferrari.maxpat` is a fifth complete runtime on the shared
+  Main/runtime-host/Mixer/EQ/input/persistence topology, with its own
+  controller, drive config, public `vss.ferrari.input`, Sound DNA, Soundscape
+  V4, procedural Start and procedural Backfire.
+- The sound is an analysis-envelope-derived V10 acoustic interpretation, not a
+  physical SF90 engine model. Continuous synthesis uses `rpm/12` cadence and
+  independent 120--250, 250--600, 600--1200, 1200--2000 and 2000--6000 Hz
+  controls. Load opens those bands by different bounded amounts; lift-off
+  drops high edge faster while retaining body/cavity mass.
+- Ferrari Soundscape remains a separate stem and parameter namespace. Its
+  exterior body, cavity projection, mechanical halo and air/reflection layers
+  follow RPM for root pitch and load for colour/density. Final Max renders
+  show nine high-load structure peaks, `0.000277` harshness, zero clipping and
+  `0.082 dB` mono-fold loss. Low/high-load files have distinct hashes while the
+  dominant root remains stable.
+- `assets/ferrari_sf90_v10_interpretation_targets.json` contains numeric targets
+  only. No supplied reference audio/path, continuous derivative, local preset,
+  recovery file or test render is tracked or synchronized.
+- All 201 tests pass. Two clean generator roots are byte-identical with combined
+  digest `1ab8cf78938d72a1c4e915bfccd82a74a98c55d3a21427d525a528be69965297`.
+  Max 8.6.5 rendered controller start, stable idle, Soundscape low/high load and
+  backfire with no project/object/Gen/patchcord blocker. All task-owned Max
+  processes exited; pre-existing user PID `38515` remained untouched.
+
 ### V6 system cleanup (2026-09-03)
 
 - Branch `codex/v6-system-cleanup` keeps the accepted `v6.0.0` timbre intact.

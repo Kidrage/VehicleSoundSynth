@@ -1,17 +1,18 @@
 # VehicleSoundSynth V6
 
-Max/MSP 8.6.5 vehicle-sound project with four independent runtimes:
+Max/MSP 8.6.5 vehicle-sound project with five independent runtimes:
 
 - `VehicleSoundSynth-EV.maxpat`
 - `VehicleSoundSynth-V10.maxpat`
 - `VehicleSoundSynth-V12.maxpat`
 - `VehicleSoundSynth-IONIQ6N.maxpat`
+- `VehicleSoundSynth-Ferrari.maxpat`
 
 `main.maxpat` is the DSP-free launcher and the only common control surface. Its
 three pages own Drive, Mix + EQ, and Sound Design for the selected runtime; it
 does not contain an engine or keep inactive profiles running. Each profile
 window is now a thin adapter containing only its profile-specific modes. All
-four hosts are materialized from one shared runtime topology as
+five hosts are materialized from one shared runtime topology as
 `patchers/profile_runtime_host_<profile>.maxpat`; they differ only in literal
 profile binding required by Max, while drive, persistence, monitoring, output
 and command/feedback structure stays identical.
@@ -23,7 +24,7 @@ Before opening Max, keep the project file inside a folder named
 paths reliably.
 
 1. Open `VehicleSoundSynth-V6.maxproj` and wait for the Project window. Directly
-   opening one of the four runtime `.maxpat` files is also supported: their
+   opening one of the five runtime `.maxpat` files is also supported: their
    root-level abstractions use explicit `patchers/` paths.
 2. Open `main.maxpat`, then click one profile. On Main's `Drive / 驾驶` page,
    choose the input source and use `Ignition On`, `Start`, and `Audio On`.
@@ -38,25 +39,29 @@ paths reliably.
    continuous EV pitch without virtual shifts. Its Sound DNA, three
    Soundscapes, activation and N-event designer are sample-free and independent
    of V10.
-6. On Main's Drive page, use Internal Manual for direct throttle/brake control, Internal Auto for the
+6. In Ferrari, startup, continuous V10 interpretation, Soundscape V4 and
+   backfire are all procedural. This profile is analysis-informed rather than a
+   claim to model the physical SF90 powertrain, and it has no runtime reference-audio dependency.
+7. On Main's Drive page, use Internal Manual for direct throttle/brake control, Internal Auto for the
    guarded drive cycle, or send messages to `vss.ev.input`, `vss.v10.input`, or
-   `vss.v12.input` in External mode. IONIQ6N uses `vss.ioniq6n.input`.
-7. After lowering the monitoring level, enable Main's single `Audio On`
+   `vss.v12.input` in External mode. IONIQ6N uses `vss.ioniq6n.input`; Ferrari
+   uses `vss.ferrari.input`.
+8. After lowering the monitoring level, enable Main's single `Audio On`
    toggle. It opens the output ramp and Max DSP together; ignition/start alone
    intentionally do not enable monitoring.
-8. On Main's Sound Design page use `Open Sound DNA` plus `Solo` to tune the
+9. On Main's Sound Design page use `Open Sound DNA` plus `Solo` to tune the
    procedural engine, or use Soundscape `Enable`, macros, `Open Designer` and
-   `Solo`. In the V10/V12 profile window use `Open Pop Designer`, Backfire
+   `Solo`. In the V10/V12/Ferrari profile window use `Open Pop Designer`, Backfire
    Solo, and `Test Pop` to tune the
    active Pop voice without driving the car. These buttons open the audible
    instances; use the matching `Save` control, or `Save Profile Sound` for the
    Mixer, Soundscape and EQ together, after an edit.
-9. On Main's Mix + EQ page balance the seven audible modules: Sound DNA, Start,
+10. On Main's Mix + EQ page balance the seven audible modules: Sound DNA, Start,
    Pop/Event, Soundscape, Road/Air, Cabin Rumble, and Master. Each profile
    restores its own local mixer and four-band EQ state automatically. The DNA
    output fader lives here as the sole output-gain authority; it is not duplicated
    inside a Sound DNA designer.
-10. Save intentional BEAP subpatcher edits. The launcher saves/closes the active
+11. Save intentional BEAP subpatcher edits. The launcher saves/closes the active
    top-level runtime when switching; when finished, close the runtime and Project
    windows and quit Max.
 
@@ -68,6 +73,7 @@ Each public profile patcher has one message inlet and stereo signal outlets:
 - `patchers/vehicle_engine_v10~.maxpat`
 - `patchers/vehicle_engine_v12~.maxpat`
 - `patchers/vehicle_engine_ioniq6n~.maxpat`
+- `patchers/vehicle_engine_ferrari~.maxpat`
 
 Each profile owns exactly one user-editable Sound DNA wrapper around one Gen powertrain. There are no runtime profile
 weights and no hidden V10/V12/EV generators muted behind gain objects.
@@ -82,13 +88,22 @@ upper shimmer ceiling. RPM alone owns the tonal root; load/throttle reveal
 layers and colour, while speed only increases air and space. Activation and
 N-event buses are separately tunable, persistent and lifecycle-gated.
 
+Ferrari is a fifth, separately persisted V10 acoustic interpretation derived
+from analysis envelopes only. Its Sound DNA uses an exact four-stroke `rpm/12`
+cadence with independently tunable body (120--250 Hz), cavity (250--600 Hz),
+mechanical (600--1200 Hz), presence (1.2--2 kHz) and edge (2--6 kHz) bands.
+Its Soundscape V4 is a separate exterior-projection stem: load reveals cavity,
+mechanical-order and air/reflection layers while RPM alone owns the root. Start
+and backfire each have their own seed-once BEAP designer. No reference recording,
+continuous derivative, or Ferrari sample is loaded by this runtime.
+
 V10 and V12 continuous sound is procedural. No idle, acceleration, deceleration,
 or shift-recovery recording is loaded or looped. Both engines use phase-locked
 four-stroke cylinder banks, low-order body resonances, bounded combustion
 residuals, and soft saturation instead of saw/square oscillators. V10 is tuned
 against offline Ferrari lifecycle targets; V12 remains an independent, smoother
-high-rev model. EV, V10 and V12 all feed one shared, independently editable
-four-layer cinematic BEAP/MSP Soundscape V3 core through profile-specific
+high-rev model. EV, V10, V12 and Ferrari each feed an independently editable
+four-layer cinematic BEAP/MSP Soundscape V4 instrument through profile-specific
 continuous control maps. RPM (and therefore vehicle speed through the existing
 drive model) continuously drives the tonal root. Throttle and load change the
 modal, harmonic, structure and air balance without stepping that root. V10/V12
@@ -120,7 +135,7 @@ Mix + EQ page is its remote control surface. It does not synthesize sound: it
 converts the seven labelled values to the existing public dB messages. The six stem
 faders cover Sound DNA, Start, Pop/Event, Soundscape, Road/Air and Cabin Rumble;
 Master is the final bus trim. Values auto-save per profile under the ignored
-`presets/local/` directory, so all four profiles keep independent balances.
+`presets/local/` directory, so all five profiles keep independent balances.
 Changing profile does not copy or merge saved values.
 
 The signal path per runtime is:
@@ -202,21 +217,24 @@ start_style realistic
 
 `cinematic` is the default. Each profile owns a directly embedded, seed-once
 V3 Start Designer: `ev_engine_start_v3_beap~`, `v10_engine_start_v3_beap~`, or
-`v12_engine_start_v3_beap~`. Their Activation/Crank Body, Catch Bloom, Metal, Air,
+`v12_engine_start_v3_beap~`; Ferrari owns
+`ferrari_engine_start_v3_beap~`. Their Activation/Crank Body, Catch Bloom, Metal, Air,
 Tail and Level controls drive the audible instance and persist independently.
 V10 catches into its 60--67 Hz firing cadence, V12 catches faster and more
 smoothly, and EV uses a ready chime plus harmonic activation instead of a fake
 crank. `realistic` remains the mutually exclusive ICE sample alternative; V10
 selects the optional local processed Ferrari startup when available. The sample
 and procedural starter are never layered.
+Ferrari exposes only its procedural option and never routes to `buffer~` or
+`play~`.
 
 ## User-editable BEAP patchers
 
 These files are seeded only when absent and are not overwritten by project
 regeneration:
 
-- `patchers/{ev,v10,v12}_engine_start_v3_beap~.maxpat` — independent current cinematic starts
-- `patchers/{ev,v10,v12}_soundscape_v4_beap~.maxpat` — three independent current Soundscape V4 instruments
+- `patchers/{ev,v10,v12,ferrari}_engine_start_v3_beap~.maxpat` — independent current cinematic starts
+- `patchers/{ev,v10,v12,ferrari}_soundscape_v4_beap~.maxpat` — four independent current Soundscape V4 instruments
 - `patchers/ioniq6n_soundscape_{ignition,evolution,lightspeed}_beap~.maxpat` — independent IONIQ6N N Sound instruments
 - `patchers/ioniq6n_activation_beap~.maxpat` / `patchers/ioniq6n_n_event_beap~.maxpat` — ready activation and mode-aware N events
 - `patchers/ev_pad_beap~.maxpat` — EV Relax
@@ -224,6 +242,7 @@ regeneration:
 - `patchers/ev_sport_beap~.maxpat` — EV Sport
 - `patchers/v10_pad_beap~.maxpat` / `patchers/v12_pad_beap~.maxpat` — cinematic ICE pads
 - `patchers/v10_backfire_v2_beap~.maxpat` / `patchers/v12_backfire_v2_beap~.maxpat` — current physical backfire voices
+- `patchers/ferrari_backfire_v2_beap~.maxpat` — Ferrari profile's independent procedural pressure-release voice
 
 The current runtime instantiates exactly one profile-owned V4 instrument. EV is
 an Evolution-style cinematic energy bed with fixed-ratio score voices, motor /
@@ -240,7 +259,7 @@ centred and stereo processing is upper-band only. Factory oscillators are
 sine/triangle; firing pulses excite filters/resonators and are never exposed as
 bare square waves. There is no Soundscape full-mix waveshaper.
 
-EV, V10 and V12 load tracked factories from
+EV, V10, V12 and Ferrari load tracked factories from
 `presets/<profile>_soundscape_v4_factory.json` and optionally apply ignored
 `presets/local/<profile>_soundscape_v4.json`. `Factory Reset` reloads the V4
 authority; V1--V3 graphs and presets remain archived and cannot re-voice V4.
@@ -510,7 +529,7 @@ Distributable audio provenance remains governed by `ASSET_LICENSES.md` and
 ## Regeneration and validation
 
 Generated `.maxpat`, `.gendsp`, preset, and fallback media are owned by
-`tools/build_project.py`. The shared bus EQ, four Sound DNA panels, and the
+`tools/build_project.py`. The shared bus EQ, five Sound DNA panels, and the
 seed-once BEAP patchers documented in `SOUND_DESIGN_GUIDE.md` are user-owned and
 preserved by normal regeneration.
 

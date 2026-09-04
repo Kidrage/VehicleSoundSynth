@@ -21,3 +21,7 @@ Base: frozen V4 tag `v4.0.0` (`6aa49d0`).
 10. Recalibrate only drivetrain response: add high-speed throttle reserve,
     distinguish abrupt lift braking from gradual coasting, and shorten service
     braking while preserving the public 0..1 throttle/brake contract.
+11. Freeze the accepted V6 state, then add Ferrari as a fifth isolated,
+    analysis-envelope-derived V10 acoustic interpretation with independent
+    Sound DNA, Soundscape V4, procedural start and procedural backfire. Preserve
+    the four accepted profiles byte-for-byte and keep all reference audio local.

@@ -1,7 +1,7 @@
 # VehicleSoundSynth V6 Repository Instructions
 
 - Target Max 8.6.5 using built-in objects only.
-- Treat `main.maxpat` as the DSP-free launcher and sole common control surface. The runnable adapters are `VehicleSoundSynth-{EV,V10,V12,IONIQ6N}.maxpat`; open only one at a time. Common lifecycle/input/Mix/EQ/Sound Design wiring is materialized from one generator topology into `patchers/profile_runtime_host_{ev,v10,v12,ioniq6n}.maxpat`, while profile patchers contain only profile-specific modes. Their public audio seams are `patchers/vehicle_engine_{ev,v10,v12,ioniq6n}~.maxpat`.
+- Treat `main.maxpat` as the DSP-free launcher and sole common control surface. The runnable adapters are `VehicleSoundSynth-{EV,V10,V12,IONIQ6N,Ferrari}.maxpat`; open only one at a time. Common lifecycle/input/Mix/EQ/Sound Design wiring is materialized from one generator topology into `patchers/profile_runtime_host_{ev,v10,v12,ioniq6n,ferrari}.maxpat`, while profile patchers contain only profile-specific modes. Their public audio seams are `patchers/vehicle_engine_{ev,v10,v12,ioniq6n,ferrari}~.maxpat`.
 - Regenerate patchers/Gen/presets with `python3 tools/build_project.py`; process curated media with `python3 tools/process_assets.py`. Do not hand-edit generated `.maxpat`, `.gendsp`, or `.wav` files. Seed-once user-owned BEAP exceptions are listed in `.codex/REPO_GUIDE.md` and must never be overwritten after creation.
 - Run `python3 -m unittest discover -s tests -v` after changes.
 - After generator or project-schema changes, open `VehicleSoundSynth-V6.maxproj` in Max 8.6.5 and check the Max log for project-category, missing-object, Gen outlet, and patchcord errors; JSON-only tests are not a runtime smoke test.

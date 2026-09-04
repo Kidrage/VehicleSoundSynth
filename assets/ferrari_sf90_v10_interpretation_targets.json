@@ -1,0 +1,46 @@
+{
+  "profile": "ferrari",
+  "display_name": "Ferrari SF90 — V10 Acoustic Interpretation",
+  "scope": "Analysis-derived synthesis targets only; this is not a physical SF90 engine model.",
+  "source_policy": {
+    "reference_audio": "local analysis only",
+    "runtime_audio_dependency": false,
+    "committed_audio_or_derivatives": false
+  },
+  "cadence": {
+    "model": "four-stroke V10 interpretation",
+    "formula_hz": "rpm / 12",
+    "idle_rpm": 740.0,
+    "idle_target_hz": 61.667
+  },
+  "dna_bands": {
+    "body_hz": [120.0, 250.0],
+    "cavity_hz": [250.0, 600.0],
+    "mechanical_hz": [600.0, 1200.0],
+    "presence_hz": [1200.0, 2000.0],
+    "edge_hz": [2000.0, 6000.0]
+  },
+  "load_envelopes_db": {
+    "body": 4.0,
+    "cavity": 5.0,
+    "mechanical": 3.5,
+    "presence": 2.0,
+    "edge": 1.5
+  },
+  "lift_behavior": {
+    "edge_fast_drop_db": -4.5,
+    "body_release_ms": [120.0, 275.0]
+  },
+  "idle_targets": {
+    "dominant_hz": [60.0, 67.0],
+    "principal_modes_hz": [60.0, 123.0, 185.0, 214.0],
+    "low_mid_ratio_40_500_min": 0.8,
+    "stereo_correlation_below_120_hz_min": 0.95
+  },
+  "safety": {
+    "high_frequency_ceiling_hz": 6000.0,
+    "subsonic_protection_hz": 28.0,
+    "mono_fold_loss_db_max": 3.0,
+    "clipping_allowed": false
+  }
+}

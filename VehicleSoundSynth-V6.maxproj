@@ -67,6 +67,10 @@
         "kind": "gendsp",
         "local": 1
       },
+      "gen/ferrari_powertrain.gendsp": {
+        "kind": "gendsp",
+        "local": 1
+      },
       "gen/ioniq6n_powertrain.gendsp": {
         "kind": "gendsp",
         "local": 1
@@ -82,6 +86,10 @@
     },
     "data": {
       "assets/ferrari_sf90_acoustic_target.json": {
+        "kind": "data",
+        "local": 1
+      },
+      "assets/ferrari_sf90_v10_interpretation_targets.json": {
         "kind": "data",
         "local": 1
       },
@@ -106,6 +114,10 @@
         "local": 1
       },
       "presets/ev_soundscape_v4_factory.json": {
+        "kind": "data",
+        "local": 1
+      },
+      "presets/ferrari_soundscape_v4_factory.json": {
         "kind": "data",
         "local": 1
       },
@@ -181,6 +193,10 @@
         "kind": "patcher",
         "local": 1
       },
+      "VehicleSoundSynth-Ferrari.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
       "VehicleSoundSynth-IONIQ6N.maxpat": {
         "kind": "patcher",
         "local": 1
@@ -221,6 +237,10 @@
         "kind": "patcher",
         "local": 1
       },
+      "patchers/drive_simulator_ferrari.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
       "patchers/drive_simulator_ioniq6n.maxpat": {
         "kind": "patcher",
         "local": 1
@@ -234,6 +254,10 @@
         "local": 1
       },
       "patchers/engine_controller_ev.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/engine_controller_ferrari.maxpat": {
         "kind": "patcher",
         "local": 1
       },
@@ -270,6 +294,42 @@
         "local": 1
       },
       "patchers/ev_soundscape_v4_beap~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/ferrari_backfire_beap~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/ferrari_backfire_host~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/ferrari_backfire_v2_beap~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/ferrari_cinematic_soundscape_host~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/ferrari_engine_start_beap~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/ferrari_engine_start_v3_beap~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/ferrari_powertrain~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/ferrari_sound_dna~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/ferrari_soundscape_v4_beap~.maxpat": {
         "kind": "patcher",
         "local": 1
       },
@@ -333,6 +393,10 @@
         "kind": "patcher",
         "local": 1
       },
+      "patchers/profile_runtime_host_ferrari.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
       "patchers/profile_runtime_host_ioniq6n.maxpat": {
         "kind": "patcher",
         "local": 1
@@ -362,6 +426,10 @@
         "local": 1
       },
       "patchers/transient_ev~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/transient_ferrari~.maxpat": {
         "kind": "patcher",
         "local": 1
       },
@@ -458,6 +526,10 @@
         "local": 1
       },
       "patchers/vehicle_engine_ev~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/vehicle_engine_ferrari~.maxpat": {
         "kind": "patcher",
         "local": 1
       },

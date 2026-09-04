@@ -1,8 +1,8 @@
 # Source Index
 
-Repository: /private/tmp/VehicleSoundSynth-V5-ioniq6n
-Tracked filtered files: 176
-High-value indexed files: 69
+Repository: /Users/saintpeter/Downloads/VehicleSoundSynth-V6
+Tracked filtered files: 235
+High-value indexed files: 72
 
 Read this file before broad repository exploration. Prefer focused `rg`
 or `git grep` against the listed areas before opening source files.
@@ -33,6 +33,7 @@ or `git grep` against the listed areas before opening source files.
 - patchers/drive_console.maxpat
 - patchers/mix_eq_console.maxpat
 - patchers/profile_runtime_host_ev.maxpat
+- patchers/profile_runtime_host_ferrari.maxpat
 - patchers/profile_runtime_host_ioniq6n.maxpat
 - patchers/profile_runtime_host_v10.maxpat
 - patchers/profile_runtime_host_v12.maxpat
@@ -63,6 +64,7 @@ or `git grep` against the listed areas before opening source files.
 - assets/asset_manifest.json
 - assets/engine_texture_bank.json
 - assets/ferrari_sf90_acoustic_target.json
+- assets/ferrari_sf90_v10_interpretation_targets.json
 - assets/ferrari_v10_lifecycle_targets.json
 - assets/ioniq6n_acoustic_targets.json
 - presets/ev_soundscape_factory.json
@@ -71,6 +73,7 @@ or `git grep` against the listed areas before opening source files.
 - presets/ev_soundscape_v4_factory.json
 - presets/ioniq6n_n_event_factory.json
 - presets/ioniq6n_soundscape_modes_factory.json
+- presets/ferrari_soundscape_v4_factory.json
 - presets/sound_dna.json
 - presets/v10_soundscape_factory.json
 - presets/v10_soundscape_v2_factory.json
