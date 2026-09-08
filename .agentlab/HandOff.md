@@ -10,6 +10,30 @@
 
 ## Delivered Change
 
+### Soundscape control repair without retuning (2026-09-08)
+
+- Active repair branch: `codex/v6-soundscape-control-repair`, based on
+  `adca388`. The accepted Ferrari realism branch remains recoverable.
+- Main's Soundscape and DNA Solo commands previously passed through the
+  Internal/External drive switch and held-context gate. One shared-host router
+  now delivers those commands directly to each existing engine; no synthesis,
+  factory/local preset or pedal/lifecycle behavior is retuned.
+- Actual Main/Ferrari Max recordings reproduce the prior held-Load Enable
+  failure and verify the repair, independent Solo behavior and Save/Reload.
+  Three valid 44.1 kHz recordings have zero clipped samples. 207 tests pass;
+  two fresh 158-file generations match. 182 non-host runtime resources and
+  all original local presets match the frozen baseline.
+- Max loaded all five adapters and both live Ferrari designers, with no new
+  missing-object, Gen, patchcord/outlet or project-category error. Task windows
+  were saved/closed and task Max exited; pre-existing user PID 38515 is preserved.
+- Main's local-only console path was repaired from generator authority while
+  preserving the user's other saved properties. That user-owned Main diff
+  is not part of the commit; its committed counterpart was already portable.
+- V10/V12 acceleration texture is diagnosis-only: idle-body fade, reduced
+  relative low-mid support and increasing fixed-ratio upper tones are candidates
+  for future level-matched investigation. See
+  `SOUNDSCAPE_CONTROL_AUDIT_2026-09-08.md` for the detailed evidence and boundaries.
+
 ### Fifth Ferrari V10 acoustic interpretation (2026-09-04)
 
 - Accepted V6 is frozen and pushed as annotated tag

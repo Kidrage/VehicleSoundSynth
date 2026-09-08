@@ -3,6 +3,32 @@
 > Deterministically generated repository/project memory for cross-agent handoff.
 > Update after every material project change and before final reporting.
 
+## Soundscape held-context control repair (2026-09-08)
+
+Branch `codex/v6-soundscape-control-repair` starts at `adca388` and preserves
+all five accepted sounds. Actual Main/Ferrari recordings reproduced Enable and
+Solo being swallowed by the held audition driving gate. The shared host now
+routes Soundscape design commands and DNA Solo directly to the existing engine;
+pedals/lifecycle retain the original drive path. The fix also makes these
+operator controls independent of Internal/External source selection.
+
+DNA/Soundscape were already additive stems. No acoustic rewiring or retuning was
+needed: 182 non-host patcher/Gen/preset/media/JS files and all original local
+presets match the frozen baseline. The local Main console's unqualified name was
+repaired from generator authority while preserving its other user-saved fields;
+those pre-existing Main changes are excluded from the repair commit.
+
+All 207 tests pass; two fresh 158-file builds match. Max 8.6.5 actual-runtime
+A/B and Solo recordings at 44.1 kHz are unclipped. In held Load, Soundscape Off
+previously remained at -31.73 dBFS; the repaired path reaches digital silence
+after its existing tail. Raw DNA remains stable; Soundscape Solo Off produces
+final-output silence. Save/Reload was exercised on copied local state.
+All five adapters were loaded in Max; both Ferrari live designers and Factory
+Reset were checked. All task windows/processes were closed; pre-existing user
+Max PID 38515 remains untouched.
+See `.agentlab/SOUNDSCAPE_CONTROL_AUDIT_2026-09-08.md` for evidence, backup hashes
+and the V10/V12 analysis. V10/V12 timbres were not changed.
+
 ## Ferrari realism V2 / Soundscape V5 repair (2026-09-04)
 
 Branch `codex/v6-ferrari-realism-v2` starts from Ferrari V1 commit `38bcf10`

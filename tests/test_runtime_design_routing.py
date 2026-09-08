@@ -1,0 +1,67 @@
+"""Operator sound controls must work with the driving stream held or deselected."""
+import json
+import unittest
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def destinations(profile, selector):
+    """Follow control messages to engine/drive, excluding stateful driving gates.
+
+    Model only Max's selector-preserving/stripping routers and prepend objects.
+    In particular, never pretend that a driver output can cross a closed gate
+    or an unselected Internal/External switch. Object IDs are not an API.
+    """
+    patch = json.loads((ROOT / 'patchers' / f'profile_runtime_host_{profile}.maxpat').read_text())['patcher']
+    boxes = {x['box']['id']: x['box'] for x in patch['boxes']}
+    wires = {}
+    for item in patch['lines']:
+        line = item['patchline']
+        wires.setdefault(tuple(line['source']), []).append(tuple(line['destination']))
+    source = next(i for i, b in boxes.items() if b.get('text') == f'r vss.runtime.control.{profile}')
+    pending = [(target, inlet, selector) for target, inlet in wires.get((source, 0), [])]
+    reached = []
+    while pending:
+        ident, inlet, message = pending.pop()
+        tokens = boxes[ident].get('text', '').split()
+        if not tokens:
+            continue
+        kind = tokens[0]
+        if kind in (f'vehicle_engine_{profile}~', f'drive_simulator_{profile}'):
+            reached.append((kind, message))
+            continue
+        if kind in ('route', 'routepass'):
+            choices = tokens[1:]
+            outlet = choices.index(message) if message in choices else len(choices)
+            if kind == 'route' and outlet < len(choices):
+                message = ''  # Remaining numeric arguments have no selector.
+        elif kind == 'prepend':
+            outlet, message = 0, tokens[1]
+        else:
+            continue
+        pending.extend((target, inlet, message) for target, inlet in wires.get((ident, outlet), []))
+    return reached
+
+
+class RuntimeDesignRoutingTests(unittest.TestCase):
+    def test_sound_controls_reach_engine_once_even_when_drive_is_held_or_external(self):
+        for profile in ('ev', 'v10', 'v12', 'ioniq6n', 'ferrari'):
+            for selector in (
+                'soundscape_enable', 'soundscape_solo', 'soundscape_motion',
+                'soundscape_space', 'soundscape_pitch_follow', 'soundscape_transpose',
+                'soundscape_brightness', 'soundscape_open', 'soundscape_save',
+                'soundscape_reload', 'soundscape_reset', 'dna_solo',
+            ):
+                with self.subTest(profile=profile, selector=selector):
+                    self.assertEqual([(f'vehicle_engine_{profile}~', selector)], destinations(profile, selector))
+
+    def test_pedals_and_lifecycle_still_use_the_original_drive_model(self):
+        for profile in ('ev', 'v10', 'v12', 'ioniq6n', 'ferrari'):
+            for selector in ('throttle', 'brake', 'ignition', 'start', 'auto'):
+                with self.subTest(profile=profile, selector=selector):
+                    self.assertEqual([(f'drive_simulator_{profile}', selector)], destinations(profile, selector))
+
+
+if __name__ == '__main__':
+    unittest.main()

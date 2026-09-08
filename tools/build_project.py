@@ -10209,9 +10209,8 @@ def make_profile_runtime_host(profile: str) -> dict[str, Any]:
         p.connect(command_route, rebuild, index)
         p.connect(rebuild, module_mixer)
 
-    # All remaining selectors pass through the deterministic drive model.  It
-    # forwards non-drive design controls unchanged to the active engine.
-    p.connect(command_route, drive, len(command_names))
+    # Sound-design commands are routed below, independently of the held or
+    # deselected driving stream. Pedals/lifecycle keep their original route.
 
     gain_l = p.new("*~", 760, 360, 40, numinlets=2, numoutlets=1)
     gain_r = p.new("*~", 870, 360, 40, numinlets=2, numoutlets=1)
@@ -10242,6 +10241,26 @@ def make_profile_runtime_host(profile: str) -> dict[str, Any]:
     p.connect(safety_match, safety_commands, 1)
     p.connect(close, safety_commands)
     p.connect(safety_commands, command_route)
+
+    design_names = (
+        "soundscape_enable", "soundscape_solo", "soundscape_motion",
+        "soundscape_space", "soundscape_pitch_follow", "soundscape_transpose",
+        "soundscape_brightness", "soundscape_open", "soundscape_save",
+        "soundscape_reload", "soundscape_reset", "dna_solo",
+        "pad_mute", "pad_solo", "pad_level_db",
+    )
+    p.comment(
+        "SOUND DESIGN: stays live during held audition / External input; only driving state crosses the live gate",
+        20, 815, 1000,
+    )
+    design_route = p.new(
+        "routepass " + " ".join(design_names), 20, 845, 1180,
+        numinlets=1, numoutlets=len(design_names) + 1,
+    )
+    p.connect(command_route, design_route, len(command_names))
+    for index in range(len(design_names)):
+        p.connect(design_route, engine, index)
+    p.connect(design_route, drive, len(design_names))
     return p.document()
 
 
