@@ -23,6 +23,14 @@
         "kind": "javascript",
         "local": 1
       },
+      "code/ferrari_pop_control.js": {
+        "kind": "javascript",
+        "local": 1
+      },
+      "code/ferrari_pop_state.js": {
+        "kind": "javascript",
+        "local": 1
+      },
       "code/ioniq6n_event_state_path.js": {
         "kind": "javascript",
         "local": 1
@@ -56,6 +64,10 @@
         "local": 1
       },
       "code/soundscape_v5_state_path.js": {
+        "kind": "javascript",
+        "local": 1
+      },
+      "code/soundscape_v6_state_path.js": {
         "kind": "javascript",
         "local": 1
       },
@@ -133,6 +145,10 @@
         "kind": "data",
         "local": 1
       },
+      "presets/ferrari_soundscape_v6_factory.json": {
+        "kind": "data",
+        "local": 1
+      },
       "presets/ioniq6n_n_event_factory.json": {
         "kind": "data",
         "local": 1
@@ -188,6 +204,10 @@
         "local": 1
       },
       "media/cabin_ir_r.wav": {
+        "kind": "mediafile",
+        "local": 1
+      },
+      "media/ferrari_pop_v3.wav": {
         "kind": "mediafile",
         "local": 1
       },
@@ -333,6 +353,14 @@
         "kind": "patcher",
         "local": 1
       },
+      "patchers/ferrari_pop_sample_voice~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/ferrari_pop_v3~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
       "patchers/ferrari_powertrain~.maxpat": {
         "kind": "patcher",
         "local": 1
@@ -350,6 +378,10 @@
         "local": 1
       },
       "patchers/ferrari_soundscape_v5_beap~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/ferrari_soundscape_v6_beap~.maxpat": {
         "kind": "patcher",
         "local": 1
       },

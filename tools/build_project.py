@@ -673,7 +673,7 @@ FERRARI_SOUNDSCAPE_V5_MODULES = {
 }
 
 
-def make_ferrari_soundscape_v5_factory() -> dict[str, Any]:
+def make_ferrari_soundscape_v5_factory(version: int = 5) -> dict[str, Any]:
     """Return Ferrari V5's independent slot-99 factory state."""
     spec = FERRARI_SOUNDSCAPE_V5_FACTORY
     modules = FERRARI_SOUNDSCAPE_V5_MODULES
@@ -712,13 +712,15 @@ def make_ferrari_soundscape_v5_factory() -> dict[str, Any]:
             "bypass": 0,
         },
     }
-    core_name = "ferrari_soundscape_v5_beap~"
+    core_name = f"ferrari_soundscape_v{version}_beap~"
+    if version == 6:
+        data[f"{core_name}::direct_body_db"] = [-9.0]
     for module, values in module_values.items():
         for name, value in values.items():
             data[f"{core_name}::{module}::{name}"] = [value]
     return {
         "pattrstorage": {
-            "name": "soundscape_ferrari_v5",
+            "name": f"soundscape_ferrari_v{version}",
             "slots": {"99": {"id": 99, "data": data}},
         }
     }
@@ -2849,13 +2851,13 @@ def make_soundscape_v4_beap(profile: str) -> dict[str, Any]:
     return p.document()
 
 
-def make_ferrari_soundscape_v5_beap() -> dict[str, Any]:
+def make_ferrari_soundscape_v5_beap(version: int = 5) -> dict[str, Any]:
     """Seed Ferrari V5's pulse-excited exterior Soundscape instrument."""
     spec = FERRARI_SOUNDSCAPE_V5_FACTORY
     modules = FERRARI_SOUNDSCAPE_V5_MODULES
     p = Patcher(3120, 1180)
     p.comment(
-        "FERRARI SOUNDSCAPE V5 — pressure-excited exterior body / exhaust cavity / mechanical-air / roadside space",
+        f"FERRARI SOUNDSCAPE V{version} — pressure-excited exterior body / exhaust cavity / mechanical-air / roadside space",
         25, 15, 1280,
     )
     p.comment(
@@ -3127,6 +3129,35 @@ def make_ferrari_soundscape_v5_beap() -> dict[str, Any]:
     p.connect(split, reverb, 1, 0)
     space_depth = p.new("*~ 0.30", 430, 690, 65, numinlets=2, numoutlets=1)
     p.connect(space_cv, space_depth)
+    direct_body = None
+    if version == 6:
+        # Ferrari-only addition. Keep the complete V5 synthesis and wet return;
+        # add a narrow, lifecycle-enveloped dry path, never DNA or Cabin Rumble.
+        p.new("autopattr @autorestore 0", 25, 865, 185, numoutlets=4)
+        p.comment("DIRECT BODY / 干声厚度 — 120–650 Hz; -60 dB = off, recommended -15 to -6 dB", 25, 895, 820)
+        direct_level = p.add(
+            "flonum", None, 25, 930, 80, numinlets=1, numoutlets=2,
+            varname="direct_body_db", minimum=-60.0, maximum=0.0,
+        )
+        direct_default = p.new("loadmess -9.", 115, 930, 100)
+        direct_map = p.new("expr ($f1>-60.)*pow(10.,$f1/20.)", 225, 930, 275)
+        direct_pack = p.new("pack 0. 50", 510, 930, 85, numinlets=2)
+        direct_line = p.new("line~", 605, 930, 50, numinlets=2, numoutlets=2)
+        direct_split = p.new("svf~ 120 0.7", 665, 930, 110, numinlets=3, numoutlets=4)
+        direct_filter = p.new("lores~ 650 0.2", 785, 930, 110, numinlets=3)
+        direct_body = p.new("*~", 905, 930, 40, numinlets=2, varname="Direct_Body")
+        # svf~ low/high outputs have opposite polarity around the crossover.
+        # Align this new return with the retained low/body path, not against it.
+        direct_polarity = p.new("*~ -1.", 785, 965, 70, numinlets=2)
+        p.connect(direct_default, direct_level)
+        p.connect(direct_level, direct_map)
+        p.connect(direct_map, direct_pack)
+        p.connect(direct_pack, direct_line)
+        p.connect(vca, direct_split)
+        p.connect(direct_split, direct_filter, 1)
+        p.connect(direct_filter, direct_polarity)
+        p.connect(direct_polarity, direct_body)
+        p.connect(direct_line, direct_body, 0, 1)
     for channel, x in ((0, 850), (1, 1560)):
         chorus_gain = p.new("*~ 0.38", x, 755, 65, numinlets=2, numoutlets=1)
         reverb_gain = p.new("*~", x + 75, 755, 40, numinlets=2, numoutlets=1)
@@ -3144,6 +3175,8 @@ def make_ferrari_soundscape_v5_beap() -> dict[str, Any]:
         p.connect(wet, width)
         p.connect(split, full, 0, 0)
         p.connect(width, full, 0, 1)
+        if direct_body is not None:
+            p.connect(direct_body, full, 0, 1)
         p.connect(full, infra)
         p.connect(infra, trim, 1, 0)
         p.connect(trim, output)
@@ -3842,9 +3875,9 @@ def make_soundscape_control() -> dict[str, Any]:
 
 def make_cinematic_soundscape_host(profile: str) -> dict[str, Any]:
     """Map read-only vehicle state into one profile-owned Soundscape instrument."""
-    soundscape_version = 5 if profile == "ferrari" else 4
+    soundscape_version = 6 if profile == "ferrari" else 4
     voice_name = (
-        "ferrari_soundscape_v5_beap~"
+        "ferrari_soundscape_v6_beap~"
         if profile == "ferrari"
         else f"{profile}_soundscape_v4_beap~"
     )
@@ -3854,7 +3887,7 @@ def make_cinematic_soundscape_host(profile: str) -> dict[str, Any]:
         else SOUNDSCAPE_V4_FACTORY[profile]
     )
     state_helper = (
-        "soundscape_v5_state_path.js"
+        "soundscape_v6_state_path.js"
         if profile == "ferrari"
         else "soundscape_v4_state_path.js"
     )
@@ -4673,6 +4706,184 @@ def make_backfire_burst_scheduler() -> dict[str, Any]:
     output = outlet(p, 405, 105)
     p.connect(control, scheduler)
     p.connect(scheduler, output)
+    return p.document()
+
+
+def make_ferrari_pop_sample_voice() -> dict[str, Any]:
+    """One short one-shot, with click-safe reuse and explicit idle DSP mute."""
+    p = Patcher(920, 650)
+    control = p.new("in 1", 25, 25, 45)
+    commands = route(p, ("play", "stop"), 85, 25, 130)
+    p.connect(control, commands)
+    order = p.new("t b l b", 25, 75, 60, numoutlets=3)
+    stored = p.new("zl reg", 100, 75, 60, numinlets=2, numoutlets=2)
+    start = p.new("delay 3", 175, 75, 65, numinlets=2)
+    duration = p.new("delay 240", 250, 75, 80, numinlets=2)
+    finish = p.new("delay 4", 345, 75, 65, numinlets=2)
+    cancel = p.message("stop", 425, 75, 45)
+    p.connect(commands, order)
+    p.connect(order, cancel, 2)
+    for timer in (start, duration, finish):
+        p.connect(cancel, timer)
+    p.connect(order, stored, 1, 1)
+    p.connect(order, start, 0)
+    p.connect(start, stored)
+    values = p.new("unpack 0. 0.", 25, 145, 105, numoutlets=2)
+    p.connect(stored, values)
+    poly_state = p.new("thispoly~", 660, 145, 70, numoutlets=3)
+    unmute = p.message("mute 0", 500, 75, 60)
+    initial_mute = p.new("loadmess mute 1", 660, 75, 120)
+    p.connect(initial_mute, poly_state)
+    p.connect(order, unmute, 2)
+    p.connect(unmute, poly_state)
+    fade = p.message("0. 3", 500, 145, 45)
+    envelope = p.new("line~ 0.", 500, 250, 65, numinlets=2, numoutlets=2)
+    p.connect(order, fade, 2)
+    p.connect(fade, envelope)
+    attack = p.message("$1 1", 145, 145, 50)
+    p.connect(values, attack, 1)
+    p.connect(attack, envelope)
+    play_command = p.message("start 0 240 $1", 25, 210, 110)
+    player = p.new("play~ #1 1", 25, 250, 100, numinlets=2)
+    p.connect(values, play_command, 0)
+    p.connect(play_command, player)
+    end_order = p.new("t b f", 250, 145, 50, numoutlets=2)
+    p.connect(values, end_order, 0)
+    p.connect(end_order, duration, 1, 1)
+    p.connect(end_order, duration, 0)
+    stop_order = p.new("t b b b", 345, 210, 60, numoutlets=3)
+    p.connect(commands, stop_order, 1)
+    p.connect(duration, stop_order)
+    p.connect(stop_order, cancel, 2)
+    p.connect(stop_order, fade, 1)
+    p.connect(stop_order, finish, 0)
+    stop_player = p.message("stop", 660, 210, 45)
+    mute = p.message("mute 1", 715, 210, 60)
+    p.connect(finish, stop_player)
+    p.connect(stop_player, player)
+    p.connect(finish, mute)
+    p.connect(mute, poly_state)
+    gain = p.new("*~", 145, 300, 40, numinlets=2)
+    output = p.new("out~ 1", 145, 355, 60, numoutlets=0)
+    p.connect(player, gain)
+    p.connect(envelope, gain, 0, 1)
+    p.connect(gain, output)
+    return p.document()
+
+
+def make_ferrari_pop_designer() -> dict[str, Any]:
+    """Seed one tiny live designer: one mono sample, two players, tone, level."""
+    p = Patcher(1050, 670)
+    p.comment("FERRARI POP V3 — real exhaust + offline impact; one sample / two short players", 25, 15, 940)
+    control = inlet(p, 25, 60)
+    adapter = p.new("js Patcher:/code/ferrari_pop_control.js", 80, 60, 290, numoutlets=2)
+    p.connect(control, adapter)
+    scheduler = p.new("backfire_burst_scheduler", 400, 60, 180)
+    hit = p.new("prepend hit", 600, 60, 90)
+    p.connect(adapter, scheduler, 1)
+    p.connect(scheduler, hit)
+    p.connect(hit, adapter)
+    bank = p.new("buffer~ #0-ferrari-pop", 25, 115, 180, numoutlets=2)
+    sample_load = p.new("loadbang", 215, 115, 65)
+    sample_wait = p.new("delay 100", 290, 115, 80, numinlets=2)
+    sample_read = p.message("replace Patcher:/media/ferrari_pop_v3.wav", 25, 175, 355)
+    p.connect(sample_load, sample_wait)
+    p.connect(sample_wait, sample_read)
+    p.connect(sample_read, bank)
+    ready = p.message("loaded 1", 500, 115, 75)
+    p.connect(bank, ready, 1)
+    p.connect(ready, adapter)
+    sample_status = p.message("Sample: not loaded", 700, 115, 220)
+    ready_status = p.message("set Sample: ready (240 ms)", 700, 145, 225)
+    p.connect(ready, ready_status)
+    p.connect(ready_status, sample_status)
+    p.comment("Missing WAV = silent + Max file error. No synthesized fallback or second sound bank.", 25, 145, 850)
+    players = p.new("poly~ ferrari_pop_sample_voice~ 2 @args #0-ferrari-pop", 25, 195, 425)
+    p.connect(adapter, players)
+
+    knobs = {}
+    for index, (label, name, default, low, high) in enumerate((
+        ("Pitch / 下次爆音 (st)", "pitch", 0.0, -6.0, 3.0),
+        ("Tone / 明亮度 (Hz)", "tone", 4200.0, 1200.0, 8000.0),
+        ("Level / 电平 (dB)", "level", 0.0, -24.0, 0.0),
+    )):
+        x = 25 + index * 285
+        p.comment(label, x, 285, 260)
+        value = p.add("flonum", None, x, 315, 100, numinlets=1, numoutlets=2,
+                      varname=f"pop_{name}", minimum=low, maximum=high)
+        default_value = p.new(f"loadmess {default:g}", x + 110, 315, 120)
+        p.connect(default_value, value)
+        knobs[name] = (value, default_value)
+    pitch = p.new("prepend pitch", 25, 355, 110)
+    p.connect(knobs['pitch'][0], pitch)
+    p.connect(pitch, adapter)
+    tone_pack = p.new("pack 4200. 30", 310, 355, 105, numinlets=2)
+    tone_line = p.new("line 4200.", 430, 355, 80, numinlets=2, numoutlets=2)
+    p.connect(knobs['tone'][0], tone_pack)
+    p.connect(tone_pack, tone_line)
+    tone_filter = p.new("lores~ 4200 0.15", 25, 425, 130, numinlets=3)
+    p.connect(players, tone_filter)
+    p.connect(tone_line, tone_filter, 0, 1)
+    level_map = p.new("expr pow(10.,$f1/20.)", 595, 355, 160)
+    level_pack = p.new("pack 1. 30", 765, 355, 85, numinlets=2)
+    level_line = p.new("line~ 1.", 860, 355, 65, numinlets=2, numoutlets=2)
+    p.connect(knobs['level'][0], level_map)
+    p.connect(level_map, level_pack)
+    p.connect(level_pack, level_line)
+    level = p.new("*~", 175, 425, 45, numinlets=2)
+    p.connect(tone_filter, level)
+    p.connect(level_line, level, 0, 1)
+    for x in (25, 225):
+        output = outlet(p, x, 630, signal=True)
+        p.connect(level, output)
+
+    audition = p.message("Audition One Hit", 25, 235, 120)
+    audition_command = p.message("audition", 160, 235, 70)
+    audition_receive = p.new("r ferrari.pop.audition_one_hit", 250, 235, 220)
+    p.connect(audition, audition_command)
+    p.connect(audition_receive, audition_command)
+    p.connect(audition_command, adapter)
+    burst = p.message("Audition Burst", 495, 235, 115)
+    burst_command = p.message("backfire_test 1", 625, 235, 115)
+    p.connect(burst, burst_command)
+    p.connect(burst_command, adapter)
+    open_request = p.new("r open.ferrari.backfire", 745, 60, 165)
+    front = p.message("front", 925, 60, 45)
+    window = p.new("thispatcher", 925, 100, 85, numoutlets=2)
+    p.connect(open_request, front)
+    p.connect(front, window)
+    p.new("autopattr @autorestore 0", 25, 480, 185, numoutlets=4)
+    storage = p.new("pattrstorage ferrari_pop_v3 @autorestore 0 @savemode 3", 25, 520, 395, numoutlets=4)
+    state = p.new("js Patcher:/code/ferrari_pop_state.js", 435, 520, 270)
+    p.connect(state, storage)
+    save = p.message("save", 25, 565, 55)
+    reload = p.message("restore", 95, 565, 65)
+    reset = p.message("Factory Reset", 175, 565, 115)
+    reset_bang = p.new("t b", 175, 600, 40)
+    p.connect(reset, reset_bang)
+    p.connect(save, state)
+    p.connect(reload, state)
+    boot = p.new("loadbang", 315, 565, 75)
+    restore_delay = p.new("delay 250", 405, 565, 80, numinlets=2)
+    p.connect(boot, restore_delay)
+    p.connect(restore_delay, reload)
+    reset_save = p.new("delay 50", 500, 565, 75, numinlets=2)
+    for value, default_value in knobs.values():
+        p.connect(reset_bang, default_value)
+    p.connect(reset_bang, reset_save)
+    p.connect(reset_save, save)
+    return p.document()
+
+
+def make_ferrari_pop_host() -> dict[str, Any]:
+    p = Patcher(630, 250)
+    p.comment("FERRARI POP V3 — unchanged event contract; one live sample/post designer", 25, 15, 590)
+    control = inlet(p, 25, 65)
+    voice = p.new("ferrari_pop_v3~", 100, 65, 150, numoutlets=2)
+    p.connect(control, voice)
+    for index, x in enumerate((100, 300)):
+        output = outlet(p, x, 180, signal=True)
+        p.connect(voice, output, index)
     return p.document()
 
 
@@ -10729,7 +10940,7 @@ def make_profile_main(profile: str, root: Path | None = None) -> dict[str, Any]:
     if profile == "ferrari":
         p.add(
             "comment",
-            "Ferrari Soundscape V5: Main → Sound Design；电平也在该页直接显示和调整。",
+            "Ferrari Soundscape V6 / Pop V3: Main → Sound Design；电平也在该页直接显示和调整。",
             20, 82, 860, 24, numinlets=1, numoutlets=0, presentation=1,
             presentation_rect=[20.0, 82.0, 860.0, 24.0],
         )
@@ -11992,6 +12203,9 @@ def project_file() -> dict[str, Any]:
         "patchers/ferrari_powertrain~.maxpat",
         "patchers/ferrari_sound_dna_v2~.maxpat",
         "patchers/ferrari_soundscape_v5_beap~.maxpat",
+        "patchers/ferrari_soundscape_v6_beap~.maxpat",
+        "patchers/ferrari_pop_v3~.maxpat",
+        "patchers/ferrari_pop_sample_voice~.maxpat",
         "patchers/ioniq6n_sound_dna~.maxpat",
         "patchers/ioniq6n_soundscape_ignition_beap~.maxpat",
         "patchers/ioniq6n_soundscape_evolution_beap~.maxpat",
@@ -12064,6 +12278,9 @@ def project_file() -> dict[str, Any]:
     contents["code"]["code/soundscape_state_path.js"] = {"kind": "javascript", "local": 1}
     contents["code"]["code/soundscape_v4_state_path.js"] = {"kind": "javascript", "local": 1}
     contents["code"]["code/soundscape_v5_state_path.js"] = {"kind": "javascript", "local": 1}
+    contents["code"]["code/soundscape_v6_state_path.js"] = {"kind": "javascript", "local": 1}
+    contents["code"]["code/ferrari_pop_control.js"] = {"kind": "javascript", "local": 1}
+    contents["code"]["code/ferrari_pop_state.js"] = {"kind": "javascript", "local": 1}
     contents["code"]["code/ioniq6n_soundscape_state_path.js"] = {"kind": "javascript", "local": 1}
     contents["code"]["code/ioniq6n_event_state_path.js"] = {"kind": "javascript", "local": 1}
     contents["code"]["code/start_state_path.js"] = {"kind": "javascript", "local": 1}
@@ -12073,6 +12290,7 @@ def project_file() -> dict[str, Any]:
     for name in MEDIA_FRAMES:
         if name.startswith(("cabin_ir_", "starter_")):
             contents["media"][f"media/{name}.wav"] = {"kind": "mediafile", "local": 1}
+    contents["media"]["media/ferrari_pop_v3.wav"] = {"kind": "mediafile", "local": 1}
     contents["data"]["presets/sound_dna.json"] = {"kind": "data", "local": 1}
     contents["data"]["presets/vehicle_bus_eq_default.json"] = {"kind": "data", "local": 1}
     for profile in ("ev", "v10", "v12"):
@@ -12100,6 +12318,7 @@ def project_file() -> dict[str, Any]:
         "kind": "data",
         "local": 1,
     }
+    contents["data"]["presets/ferrari_soundscape_v6_factory.json"] = {"kind": "data", "local": 1}
     contents["data"]["assets/ferrari_sf90_acoustic_target.json"] = {"kind": "data", "local": 1}
     contents["data"]["assets/ferrari_v10_lifecycle_targets.json"] = {"kind": "data", "local": 1}
     contents["data"]["assets/ferrari_sf90_v10_interpretation_targets.json"] = {"kind": "data", "local": 1}
@@ -12206,11 +12425,13 @@ def build_project(root: Path) -> None:
     outputs["presets/ferrari_soundscape_v5_factory.json"] = (
         make_ferrari_soundscape_v5_factory()
     )
+    outputs["presets/ferrari_soundscape_v6_factory.json"] = make_ferrari_soundscape_v5_factory(6)
     for profile in ("v10", "v12"):
         outputs[f"patchers/{profile}_pad_voice.maxpat"] = make_ice_pad_voice(profile)
         outputs[f"patchers/{profile}_pad_host~.maxpat"] = make_ice_pad_host(profile)
         outputs[f"patchers/{profile}_backfire_host~.maxpat"] = make_ice_backfire_host(profile)
-    outputs["patchers/ferrari_backfire_host~.maxpat"] = make_ice_backfire_host("ferrari")
+    outputs["patchers/ferrari_backfire_host~.maxpat"] = make_ferrari_pop_host()
+    outputs["patchers/ferrari_pop_sample_voice~.maxpat"] = make_ferrari_pop_sample_voice()
     for profile in ("ev", "v10", "v12", "ferrari"):
         outputs[f"patchers/{profile}_cinematic_soundscape_host~.maxpat"] = make_cinematic_soundscape_host(profile)
         outputs[f"patchers/vehicle_engine_{profile}~.maxpat"] = make_profile_engine(profile)
@@ -12251,6 +12472,12 @@ def build_project(root: Path) -> None:
     ferrari_soundscape_v5 = root / "patchers" / "ferrari_soundscape_v5_beap~.maxpat"
     if not ferrari_soundscape_v5.exists():
         write_json(ferrari_soundscape_v5, make_ferrari_soundscape_v5_beap())
+    ferrari_soundscape_v6 = root / "patchers" / "ferrari_soundscape_v6_beap~.maxpat"
+    if not ferrari_soundscape_v6.exists():
+        write_json(ferrari_soundscape_v6, make_ferrari_soundscape_v5_beap(6))
+    ferrari_pop_v3 = root / "patchers" / "ferrari_pop_v3~.maxpat"
+    if not ferrari_pop_v3.exists():
+        write_json(ferrari_pop_v3, make_ferrari_pop_designer())
     shared_soundscape = root / "patchers" / "cinematic_soundscape_v3_beap~.maxpat"
     if not shared_soundscape.exists():
         write_json(shared_soundscape, make_cinematic_soundscape_v3_beap())
@@ -12302,6 +12529,12 @@ def build_project(root: Path) -> None:
         # products. Generate deterministic fallback media only when absent.
         if not media_path.exists():
             write_wav(media_path, name, frames)
+    # This one licensed Ferrari event is not a synthesized fallback. A fresh
+    # generated project copies the curated tracked sample, or fails explicitly.
+    pop_sample = root / "media" / "ferrari_pop_v3.wav"
+    if not pop_sample.exists():
+        source = Path(__file__).resolve().parents[1] / "media" / "ferrari_pop_v3.wav"
+        pop_sample.write_bytes(source.read_bytes())
 
 
 def parse_args() -> argparse.Namespace:

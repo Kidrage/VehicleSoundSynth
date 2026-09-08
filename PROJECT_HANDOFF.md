@@ -3,6 +3,30 @@
 > Deterministically generated repository/project memory for cross-agent handoff.
 > Update after every material project change and before final reporting.
 
+## Ferrari body return / lightweight Pop (2026-09-08)
+
+`codex/v6-ferrari-body-pop-sampler` builds on `93accba`, with a hash-verified
+pre-edit backup. Ferrari Soundscape V6 preserves V5 synthesis/spatial processing
+and adds one independent, enveloped 120–650 Hz body return (factory -9 dB).
+Setting Direct Body to -60 disables the addition; V5 resources/state remain.
+Ferrari DNA/start and all four other sounds are unchanged. The reported earlier
+subjective thinning was not conclusively reproduced as a source regression.
+
+Ferrari Pop V3 replaces only its live impact synthesis with one licensed 240 ms
+mono exhaust sample, two idle-muted players and shared Tone/Level processing.
+Pitch/Tone/Level, One/Burst audition and explicit Save/Reload/Reset are the only
+designer controls. Burst timing and all public event/control seams are preserved.
+The old Pop designer is retained for rollback, not layered with the new player.
+
+211 tests pass; two fresh 163-file builds match. Actual 48 kHz Max playback
+verifies body audibility, both designers' persistence, Pop automatic/preview
+events and cancellation. Factory SC harshness is 0.000870, mono loss 0.011 dB;
+final recording has no clipping. 227 protected original resources plus user
+Main remain byte-identical. Task Max exited normally, preserving user PID 36547.
+No GitHub push/main merge; the pre-existing Main diff is excluded from commit.
+Details, measurements, tuning and rollback hashes:
+`.agentlab/FERRARI_BODY_POP_2026-09-08.md`.
+
 ## Soundscape held-context control repair (2026-09-08)
 
 Branch `codex/v6-soundscape-control-repair` starts at `adca388` and preserves

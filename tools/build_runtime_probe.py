@@ -1282,6 +1282,9 @@ def main() -> None:
         })
     if profile == "ferrari":
         required_patchers.add("ferrari_soundscape_v5_beap~.maxpat")
+        required_patchers.update({"ferrari_soundscape_v6_beap~.maxpat", "ferrari_pop_v3~.maxpat", "ferrari_pop_sample_voice~.maxpat"})
+        shutil.copy2(root / "presets/ferrari_soundscape_v6_factory.json", presets / "ferrari_soundscape_v6_factory.json")
+        shutil.copy2(root / "media/ferrari_pop_v3.wav", media / "ferrari_pop_v3.wav")
     if profile not in {"ev", "ioniq6n"}:
         required_patchers.update({
             f"{profile}_backfire_host~.maxpat",

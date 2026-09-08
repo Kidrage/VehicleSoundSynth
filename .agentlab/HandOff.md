@@ -10,6 +10,24 @@
 
 ## Delivered Change
 
+### Ferrari-only body return and sample Pop (2026-09-08)
+
+- Branch `codex/v6-ferrari-body-pop-sampler`, based on `93accba`; local-only
+  delivery, no main merge or GitHub push. User-owned Main changes are excluded.
+- Soundscape V6 adds one -9 dB factory dry-body return to the preserved V5
+  graph, with separate state. DNA/start, other four sounds, all common controls,
+  drivetrain, Mixer/EQ and dynamics are unchanged. 227 protected resources plus
+  Main match the pre-task hash inventory; original local presets are untouched.
+- Pop V3 uses one tracked CC0 240 ms one-shot, two idle-muted players and three
+  controls. Existing burst timing and physical/preview gates remain. Explicit
+  Save/Reload/Factory Reset and the actual live designer Open path work in Max.
+- 211 tests pass; two fresh 163-file generations match. Actual 48 kHz Max
+  recordings verify audible body reinforcement and unclipped Pop/output.
+  The sustained factory SC harshness ratio is 0.000870, mono loss 0.011 dB.
+  Coarse local Max CPU readings favor the new player; see the audit for limits.
+- Test files were saved and task Max exited normally; user PID 36547 remains.
+  Backup hashes, reproduction details and tuning: `FERRARI_BODY_POP_2026-09-08.md`.
+
 ### Soundscape control repair without retuning (2026-09-08)
 
 - Active repair branch: `codex/v6-soundscape-control-repair`, based on

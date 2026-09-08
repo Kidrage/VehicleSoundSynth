@@ -152,6 +152,13 @@ def process_manifest(root: Path, manifest_path: Path) -> None:
             converted = Path(directory) / "converted.wav"
             convert_to_pcm16_48k(raw, converted)
             for output in outputs:
+                if output.get("processor") == "tools/prepare_ferrari_pop.py":
+                    if __package__:
+                        from .prepare_ferrari_pop import render
+                    else:
+                        from prepare_ferrari_pop import render
+                    output.update(render(root, root / output["path"]))
+                    continue
                 result = process_pcm16_wav(
                     converted,
                     root / output["path"],

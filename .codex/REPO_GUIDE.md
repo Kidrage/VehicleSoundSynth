@@ -9,7 +9,8 @@ V10 and V12 retain their independent Soundscape V4 instruments. IONIQ6N is a
 separate fourth electric profile with one Sound DNA, three crossfaded N Sound
 BEAP instruments, a ready activation voice and a mode-aware N-event bus.
 Ferrari is a fifth, analysis-envelope-derived V10 acoustic interpretation with
-independent realism-V2 Sound DNA, Soundscape V5, procedural start and backfire;
+independent realism-V2 Sound DNA, Soundscape V6, unchanged procedural start and
+one licensed 240 ms sample Pop (two idle-muted players);
 its live graphs use fresh local-state namespaces and it has no
 runtime reference-audio dependency and is not a physical SF90 engine claim.
 The project also contains a
@@ -83,13 +84,25 @@ events, short cabin IR, adjustable stereo compression, EQ, and peak protection.
   DNA audio or DNA parameter messages.
 - `assets/ferrari_sf90_v10_interpretation_targets.json` — sanitized numeric
   cadence/band/envelope target; contains no source path, audio, or derivative.
-- `patchers/ferrari_soundscape_v5_beap~.maxpat` — current independent Ferrari
-  seed-once Soundscape designer with its own V5 state and factory authority.
+- `patchers/ferrari_soundscape_v5_beap~.maxpat` — preserved Ferrari rollback
+  Soundscape designer with its own V5 state and factory authority.
+- `patchers/ferrari_soundscape_v6_beap~.maxpat` — current seed-once Ferrari
+  designer: V5 synthesis/wet path plus a polarity-aligned, enveloped dry body
+  return. `direct_body_db` is -60..0 dB (-60 = off), factory -9 dB; all other
+  synthesis constants are unchanged. V6 state/factory names never overwrite V5.
+- `patchers/ferrari_pop_v3~.maxpat` — current seed-once Ferrari Pop Designer,
+  opened by the existing `open.ferrari.backfire` bus. Pitch (-6..3 st, next hit),
+  Tone (1200..8000 Hz) and Level (-24..0 dB) are the only tone controls.
+  One buffer and two `ferrari_pop_sample_voice~` instances play a 240 ms CC0 WAV;
+  short fade-before-reuse and `thispoly~` mute bound voice cost. The unchanged
+  burst scheduler still owns 1..5-hit counts/spacing. The Ferrari-only adapter
+  retains physical event gates and explicit ignition-independent preview.
+  Missing media fails silent with a Max file error; there is no synth fallback.
 - `patchers/ferrari_sound_dna~.maxpat`,
   `patchers/ferrari_soundscape_v4_beap~.maxpat`, and
   `patchers/ferrari_{engine_start_v3,backfire_v2}_beap~.maxpat` — preserved
-  seed-once rollback/start/event designers; the start and backfire paths are
-  procedural-only.
+  seed-once rollback/start/event designers; the start stays procedural and the
+  old Ferrari backfire is retained but no longer instantiated by the live host.
 - `patchers/ioniq6n_soundscape_{ignition,evolution,lightspeed}_beap~.maxpat` —
   seed-once N Sound instruments. `presets/ioniq6n_soundscape_modes_factory.json`
   is their tracked state authority; local state is ignored.

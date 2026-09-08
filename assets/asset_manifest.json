@@ -133,7 +133,7 @@
     {
       "id": "sports_car_revs_pops",
       "purpose": "intake backfire, exhaust pop, and crackle families",
-      "runtime_usage": "archived processed comparison material; V5 runtime uses BEAP synthesis",
+      "runtime_usage": "Ferrari Pop V3 uses only ferrari_pop_v3.wav; other outputs stay archived and other profiles remain procedural",
       "status": "processed",
       "raw_path": "assets/raw/richwise_478756_sports_car_revs_pops.wav",
       "raw_sha256": "2b67aed7ec0dc3fe74b3d110865574ca591455a5300417281a29dfd7f4483cd1",
@@ -145,6 +145,19 @@
         "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
       },
       "outputs": [
+        {
+          "path": "media/ferrari_pop_v3.wav",
+          "start_seconds": 6.537,
+          "duration_seconds": 0.24,
+          "channel": "mix",
+          "peak_dbfs": -6.0,
+          "processed_sha256": "cf63aab2c16eee3efcf3e94c07baf3a3a1a5c04a5509009174c46559bb49133a",
+          "frames": 11520,
+          "sample_rate": 48000,
+          "channels": 1,
+          "processor": "tools/prepare_ferrari_pop.py",
+          "processing": "75 Hz high-pass; 650 Hz body x1.2 / 800-6500 Hz recorded crack x6; 26/55 ms decay; 17/31 ms short reflections; 1.5/20 ms fades; DC removal; -6 dBFS peak"
+        },
         {
           "path": "media/intake_backfire_01.wav",
           "start_seconds": 6.05,

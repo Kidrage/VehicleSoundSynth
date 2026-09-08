@@ -29,3 +29,7 @@ Base: frozen V4 tag `v4.0.0` (`6aa49d0`).
     DNA and Soundscape V5: soften square-like high-load energy, restore idle
     low-mid mass, expose the active Soundscape location/level in Main, and prove
     normal-mix audibility without changing the other four profile sounds.
+13. Ferrari-only Soundscape V6 adds a polarity-aligned, gated 120–650 Hz dry
+    body return. Pop V3 replaces only Ferrari's backfire renderer with one
+    240 ms CC0 one-shot and two idle-muted players; existing event timing,
+    Ferrari DNA/start, all other profile sounds and shared controls stay fixed.

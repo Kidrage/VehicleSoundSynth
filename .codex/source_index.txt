@@ -1,8 +1,8 @@
 # Source Index
 
 Repository: /Users/saintpeter/Downloads/VehicleSoundSynth-V6
-Tracked filtered files: 240
-High-value indexed files: 77
+Tracked filtered files: 253
+High-value indexed files: 89
 
 Read this file before broad repository exploration. Prefer focused `rg`
 or `git grep` against the listed areas before opening source files.
@@ -20,6 +20,8 @@ or `git grep` against the listed areas before opening source files.
 - code/drive_model.js
 - code/eq_feedback_reader.js
 - code/eq_state_path.js
+- code/ferrari_pop_control.js
+- code/ferrari_pop_state.js
 - code/ioniq6n_event_state_path.js
 - code/ioniq6n_soundscape_state_path.js
 - code/manual_input.js
@@ -29,11 +31,15 @@ or `git grep` against the listed areas before opening source files.
 - code/soundscape_state_path.js
 - code/soundscape_v4_state_path.js
 - code/soundscape_v5_state_path.js
+- code/soundscape_v6_state_path.js
 - code/start_state_path.js
 - code/start_v3_state_path.js
 - gen/ferrari_exciter_v2.gendsp
 - patchers/ferrari_sound_dna_v2~.maxpat
 - patchers/ferrari_soundscape_v5_beap~.maxpat
+- patchers/ferrari_soundscape_v6_beap~.maxpat
+- patchers/ferrari_pop_v3~.maxpat
+- patchers/ferrari_pop_sample_voice~.maxpat
 - patchers/drive_console.maxpat
 - patchers/mix_eq_console.maxpat
 - patchers/profile_runtime_host_ev.maxpat
@@ -52,6 +58,7 @@ or `git grep` against the listed areas before opening source files.
 - tools/build_runtime_probe.py
 - tools/build_user_manual.py
 - tools/prepare_engine_texture.py
+- tools/prepare_ferrari_pop.py
 - tools/prepare_local_reference.py
 - tools/process_assets.py
 - tools/render_rtpc_spec_pdf.py
@@ -62,6 +69,8 @@ or `git grep` against the listed areas before opening source files.
 - tests/test_backfire_burst.py
 - tests/test_manual_input.py
 - tests/test_project.py
+- tests/test_ferrari_body_pop.py
+- tests/test_runtime_design_routing.py
 
 ## config
 
@@ -79,6 +88,7 @@ or `git grep` against the listed areas before opening source files.
 - presets/ioniq6n_soundscape_modes_factory.json
 - presets/ferrari_soundscape_v4_factory.json
 - presets/ferrari_soundscape_v5_factory.json
+- presets/ferrari_soundscape_v6_factory.json
 - presets/sound_dna.json
 - presets/v10_soundscape_factory.json
 - presets/v10_soundscape_v2_factory.json
@@ -93,6 +103,8 @@ or `git grep` against the listed areas before opening source files.
 ## docs
 
 - .agentlab/HandOff.md
+- .agentlab/FERRARI_BODY_POP_2026-09-08.md
+- .agentlab/SOUNDSCAPE_CONTROL_AUDIT_2026-09-08.md
 - .codex/MAINLINE.md
 - .codex/REPO_GUIDE.md
 - ASSET_LICENSES.md

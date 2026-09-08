@@ -126,9 +126,9 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
         )
         self.assertIn("ferrari_sound_dna_v2~", engine)
         self.assertNotIn('"text": "ferrari_sound_dna~"', engine)
-        self.assertIn("ferrari_soundscape_v5_beap~", host)
-        self.assertIn("pattrstorage soundscape_ferrari_v5", host)
-        self.assertIn("soundscape_v5_state_path.js ferrari", host)
+        self.assertIn("ferrari_soundscape_v6_beap~", host)
+        self.assertIn("pattrstorage soundscape_ferrari_v6", host)
+        self.assertIn("soundscape_v6_state_path.js ferrari", host)
 
         dna = json.dumps(
             self.load_json("patchers/ferrari_sound_dna_v2~.maxpat")
@@ -182,14 +182,14 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
             self.assertIn(token, control)
 
         ferrari = json.dumps(self.load_json("VehicleSoundSynth-Ferrari.maxpat"))
-        self.assertIn("Ferrari Soundscape V5: Main", ferrari)
+        self.assertIn("Ferrari Soundscape V6 / Pop V3: Main", ferrari)
         self.assertIn("Sound Design", ferrari)
 
         mixer = json.dumps(self.load_json("patchers/module_mixer.maxpat"))
         self.assertIn('"text": "-3 -5 -8 -12 -16 -4 -8"', mixer)
         self.assertNotIn('"text": "-3 -5 -8 -19 -16 -4 -8"', mixer)
 
-    def test_ferrari_v5_soundscape_live_path_and_factory_are_complete(self):
+    def test_ferrari_v6_soundscape_live_path_and_factory_are_complete(self):
         host = self.load_json(
             "patchers/ferrari_cinematic_soundscape_host~.maxpat"
         )["patcher"]
@@ -200,7 +200,7 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
         }
         voice_id = next(
             box_id for box_id, box in boxes.items()
-            if box.get("text") == "ferrari_soundscape_v5_beap~"
+            if box.get("text") == "ferrari_soundscape_v6_beap~"
         )
         route_id = next(
             box_id for box_id, box in boxes.items()
@@ -208,12 +208,12 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
         )
         storage_id = next(
             box_id for box_id, box in boxes.items()
-            if box.get("text", "").startswith("pattrstorage soundscape_ferrari_v5 ")
+            if box.get("text", "").startswith("pattrstorage soundscape_ferrari_v6 ")
         )
         state_id = next(
             box_id for box_id, box in boxes.items()
             if box.get("text")
-            == "js Patcher:/code/soundscape_v5_state_path.js ferrari"
+            == "js Patcher:/code/soundscape_v6_state_path.js ferrari"
         )
         for route_outlet in range(19, 23):
             command_id = next(
@@ -251,13 +251,13 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
             destination == (outlet_id, 0) for _, destination in cords
         ) for outlet_id in output_ids))
 
-        factory = self.load_json("presets/ferrari_soundscape_v5_factory.json")
-        self.assertEqual("soundscape_ferrari_v5", factory["pattrstorage"]["name"])
+        factory = self.load_json("presets/ferrari_soundscape_v6_factory.json")
+        self.assertEqual("soundscape_ferrari_v6", factory["pattrstorage"]["name"])
         data = factory["pattrstorage"]["slots"]["99"]["data"]
         self.assertEqual([1.0], data["soundscape_enable_state"])
         self.assertEqual(
             [0],
-            data["ferrari_soundscape_v5_beap~::Pressure_Reinforcement::Waveform"],
+            data["ferrari_soundscape_v6_beap~::Pressure_Reinforcement::Waveform"],
         )
         self.assertNotIn("buffer~", json.dumps(host))
         self.assertNotIn("play~", json.dumps(host))
@@ -334,7 +334,7 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
         self.assertFalse(target["source_policy"]["runtime_audio_dependency"])
         self.assertFalse(target["source_policy"]["committed_audio_or_derivatives"])
 
-    def test_ferrari_soundscape_start_and_backfire_are_independent_sample_free_instruments(self):
+    def test_ferrari_continuous_and_start_stay_procedural_with_dedicated_sample_pop(self):
         soundscape = json.dumps(
             self.load_json("patchers/ferrari_soundscape_v4_beap~.maxpat")
         )
@@ -361,7 +361,8 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
         for forbidden in ("buffer~", "play~", "media/local", "starter_ferrari"):
             self.assertNotIn(forbidden, start)
             self.assertNotIn(forbidden, backfire)
-        self.assertIn("ferrari_backfire_v2_beap~", backfire)
+        self.assertIn("ferrari_pop_v3~", backfire)
+        self.assertNotIn("ferrari_backfire_v2_beap~", backfire)
 
         main = json.dumps(self.load_json("VehicleSoundSynth-Ferrari.maxpat"))
         self.assertIn("procedural only", main)
@@ -376,6 +377,7 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
                 "media/cabin_ir_r.wav",
                 "media/starter_v10.wav",
                 "media/starter_v12.wav",
+                "media/ferrari_pop_v3.wav",
             },
             declared_media,
         )

@@ -1,4 +1,6 @@
+.agentlab/FERRARI_BODY_POP_2026-09-08.md
 .agentlab/HandOff.md
+.agentlab/SOUNDSCAPE_CONTROL_AUDIT_2026-09-08.md
 .codex/MAINLINE.md
 .codex/REPO_GUIDE.md
 .codex/repo_files.txt
@@ -38,6 +40,8 @@ code/backfire_burst.js
 code/dna_state_path.js
 code/drive_model.js
 code/eq_feedback_reader.js
+code/ferrari_pop_control.js
+code/ferrari_pop_state.js
 code/eq_state_path.js
 code/ioniq6n_event_state_path.js
 code/ioniq6n_soundscape_state_path.js
@@ -48,6 +52,7 @@ code/pop_v2_state_path.js
 code/soundscape_state_path.js
 code/soundscape_v4_state_path.js
 code/soundscape_v5_state_path.js
+code/soundscape_v6_state_path.js
 code/start_state_path.js
 code/start_v3_state_path.js
 gen/ev_powertrain.gendsp
@@ -79,6 +84,7 @@ media/exhaust_pop_01.wav
 media/exhaust_pop_02.wav
 media/exhaust_pop_03.wav
 media/exhaust_pop_04.wav
+media/ferrari_pop_v3.wav
 media/intake_backfire_01.wav
 media/intake_backfire_02.wav
 media/intake_backfire_03.wav
@@ -133,11 +139,14 @@ patchers/ferrari_backfire_v2_beap~.maxpat
 patchers/ferrari_cinematic_soundscape_host~.maxpat
 patchers/ferrari_engine_start_beap~.maxpat
 patchers/ferrari_engine_start_v3_beap~.maxpat
+patchers/ferrari_pop_sample_voice~.maxpat
+patchers/ferrari_pop_v3~.maxpat
 patchers/ferrari_powertrain~.maxpat
 patchers/ferrari_sound_dna~.maxpat
 patchers/ferrari_sound_dna_v2~.maxpat
 patchers/ferrari_soundscape_v4_beap~.maxpat
 patchers/ferrari_soundscape_v5_beap~.maxpat
+patchers/ferrari_soundscape_v6_beap~.maxpat
 patchers/ioniq6n_activation_beap~.maxpat
 patchers/ioniq6n_cinematic_soundscape_host~.maxpat
 patchers/ioniq6n_n_event_beap~.maxpat
@@ -209,6 +218,7 @@ presets/ev_soundscape_v3_factory.json
 presets/ev_soundscape_v4_factory.json
 presets/ferrari_soundscape_v4_factory.json
 presets/ferrari_soundscape_v5_factory.json
+presets/ferrari_soundscape_v6_factory.json
 presets/ioniq6n_n_event_factory.json
 presets/ioniq6n_soundscape_modes_factory.json
 presets/local/.gitkeep
@@ -225,6 +235,8 @@ presets/vehicle_bus_eq_default.json
 tests/test_backfire_burst.py
 tests/test_manual_input.py
 tests/test_project.py
+tests/test_ferrari_body_pop.py
+tests/test_runtime_design_routing.py
 tools/analyze_reference_lifecycle.py
 tools/audio_metrics.py
 tools/bind_drive_render.py
@@ -234,6 +246,7 @@ tools/build_rtpc_dsp_spec.py
 tools/build_runtime_probe.py
 tools/build_user_manual.py
 tools/prepare_engine_texture.py
+tools/prepare_ferrari_pop.py
 tools/prepare_local_reference.py
 tools/process_assets.py
 tools/render_rtpc_spec_pdf.py

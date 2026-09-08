@@ -21,7 +21,7 @@
             1180.0,
             22.0
           ],
-          "text": "FERRARI CINEMATIC SOUNDSCAPE V5 HOST \u2014 state-only coupling; no Sound DNA audio or parameters"
+          "text": "FERRARI CINEMATIC SOUNDSCAPE V6 HOST \u2014 state-only coupling; no Sound DNA audio or parameters"
         }
       },
       {
@@ -1546,7 +1546,7 @@
             250.0,
             22.0
           ],
-          "text": "ferrari_soundscape_v5_beap~"
+          "text": "ferrari_soundscape_v6_beap~"
         }
       },
       {
@@ -1697,7 +1697,7 @@
             455.0,
             22.0
           ],
-          "text": "pattrstorage soundscape_ferrari_v5 @greedy 1 @savemode 3 @changemode 1 @outputmode 6 @backupmode 1 @autorestore 0"
+          "text": "pattrstorage soundscape_ferrari_v6 @greedy 1 @savemode 3 @changemode 1 @outputmode 6 @backupmode 1 @autorestore 0"
         }
       },
       {
@@ -1716,7 +1716,7 @@
             285.0,
             22.0
           ],
-          "text": "js Patcher:/code/soundscape_v5_state_path.js ferrari"
+          "text": "js Patcher:/code/soundscape_v6_state_path.js ferrari"
         }
       },
       {

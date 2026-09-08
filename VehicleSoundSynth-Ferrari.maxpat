@@ -72,7 +72,7 @@
             860.0,
             24.0
           ],
-          "text": "Ferrari Soundscape V5: Main \u2192 Sound Design\uff1b\u7535\u5e73\u4e5f\u5728\u8be5\u9875\u76f4\u63a5\u663e\u793a\u548c\u8c03\u6574\u3002"
+          "text": "Ferrari Soundscape V6 / Pop V3: Main \u2192 Sound Design\uff1b\u7535\u5e73\u4e5f\u5728\u8be5\u9875\u76f4\u63a5\u663e\u793a\u548c\u8c03\u6574\u3002"
         }
       },
       {
