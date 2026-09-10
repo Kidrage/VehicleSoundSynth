@@ -15,6 +15,15 @@ import wave
 from pathlib import Path
 from typing import Any
 
+try:
+    from .ice_dna_v2 import RUNNING_DEFAULTS, RUNNING_METADATA, RUNNING_SPECS, make_running_gen
+    from .soundscape_bed import bed_code, make_soundscape_bed, make_bed_factory
+    from .noise_layer import make_vehicle_noise, make_vehicle_noise_factory
+except ImportError:
+    from ice_dna_v2 import RUNNING_DEFAULTS, RUNNING_METADATA, RUNNING_SPECS, make_running_gen
+    from soundscape_bed import bed_code, make_soundscape_bed, make_bed_factory
+    from noise_layer import make_vehicle_noise, make_vehicle_noise_factory
+
 
 APP_VERSION = {
     "major": 8,
@@ -265,11 +274,11 @@ START_DESIGN_DEFAULTS = {
 }
 
 MODULE_MIX_DEFAULTS = {
-    "ev": (-2.0, -8.0, -9.0, -18.0, -14.0, -60.0, -8.0),
-    "v10": (-3.0, -5.0, -7.0, -20.0, -16.0, -4.0, -8.0),
-    "v12": (-3.0, -5.0, -8.0, -20.0, -16.0, -5.0, -8.0),
-    "ioniq6n": (-4.0, -7.0, -8.0, -22.0, -18.0, -60.0, -8.0),
-    "ferrari": (-3.0, -5.0, -8.0, -12.0, -16.0, -4.0, -8.0),
+    "ev": (-2.0, -8.0, -9.0, -18.0, -60.0, -60.0, -8.0),
+    "v10": (-3.0, -5.0, -7.0, -20.0, -60.0, -4.0, -8.0),
+    "v12": (-3.0, -5.0, -8.0, -20.0, -60.0, -5.0, -8.0),
+    "ioniq6n": (-4.0, -7.0, -8.0, -22.0, -60.0, -60.0, -8.0),
+    "ferrari": (-3.0, -5.0, -8.0, -12.0, -60.0, -4.0, -8.0),
 }
 
 # V6 control-registry seam.  These selectors already exist in the audio
@@ -280,7 +289,7 @@ MODULE_MIX_SPECS = (
     ("Start / 启动", "start_level_db", -60.0, 6.0, "dB"),
     ("Pop / Event / 事件", "transient_level_db", -60.0, 6.0, "dB"),
     ("Soundscape / 氛围", "soundscape_level_db", -60.0, 6.0, "dB"),
-    ("Road / Air / 路噪", "road_level_db", -60.0, 6.0, "dB"),
+    ("Noise / 机械·路噪", "road_level_db", -60.0, 6.0, "dB"),
     ("Cabin Rumble / 座舱", "rumble_level_db", -60.0, 6.0, "dB"),
     ("Master / 总输出", "master_trim_db", -24.0, 0.0, "dB"),
 )
@@ -713,7 +722,7 @@ def make_ferrari_soundscape_v5_factory(version: int = 5) -> dict[str, Any]:
         },
     }
     core_name = f"ferrari_soundscape_v{version}_beap~"
-    if version == 6:
+    if version >= 6:
         data[f"{core_name}::direct_body_db"] = [-9.0]
     for module, values in module_values.items():
         for name, value in values.items():
@@ -846,7 +855,7 @@ def make_soundscape_factory(profile: str, *, version: int = 1) -> dict[str, Any]
     }
 
 
-def make_ioniq6n_soundscape_factory() -> dict[str, Any]:
+def make_ioniq6n_soundscape_factory(version: int = 1) -> dict[str, Any]:
     """Return slot-99 defaults for all three live IONIQ mode instruments."""
     data: dict[str, list[Any]] = {
         "n_sound_mode_state": ["evolution"],
@@ -859,7 +868,7 @@ def make_ioniq6n_soundscape_factory() -> dict[str, Any]:
     }
     for mode, spec in IONIQ6N_SOUNDSCAPE_MODES.items():
         modules = spec["modules"]
-        core = f"ioniq6n_soundscape_{mode}_beap~"
+        core = f"ioniq6n_soundscape_{mode}{'_bed_v2' if version == 2 else ''}_beap~"
         module_values = {
             modules["osc_a"]: {"Waveform": spec["waves"][0], "Offset": 0, "Mute": 0},
             modules["osc_b"]: {"Waveform": spec["waves"][1], "Offset": 0, "Mute": 0},
@@ -887,7 +896,7 @@ def make_ioniq6n_soundscape_factory() -> dict[str, Any]:
                 data[f"{core}::{module}::{name}"] = [value]
     return {
         "pattrstorage": {
-            "name": "soundscape_ioniq6n_modes",
+            "name": "soundscape_ioniq6n_modes_v2" if version == 2 else "soundscape_ioniq6n_modes",
             "slots": {"99": {"id": 99, "data": data}},
         }
     }
@@ -1649,20 +1658,22 @@ def make_ice_pad_host(profile: str) -> dict[str, Any]:
     return p.document()
 
 
-def make_sound_dna(profile: str) -> dict[str, Any]:
+def make_sound_dna(profile: str, version: int = 1) -> dict[str, Any]:
     """Seed one editable profile DNA panel around the generated DSP adapter."""
-    p = Patcher(2400, 1380) if profile == "ioniq6n" else Patcher(1280, 760)
+    upgraded = version == 2 and profile in ("v10", "v12")
+    suffix = "_v2" if upgraded else ""
+    p = Patcher(2400, 1380) if profile == "ioniq6n" else Patcher(1280, 1060 if upgraded else 760)
     p.comment(
         f"{profile.upper()} USER-TUNABLE SOUND DNA — synthesis controls only; state/RPM remain drivetrain-owned",
         25, 15, 1050,
     )
     control = inlet(p, 35, 60)
-    specs = DNA_PARAMETER_SPECS[profile]
+    specs = DNA_PARAMETER_SPECS[profile] + (RUNNING_SPECS if upgraded else ())
     names = tuple(item[0] for item in specs)
     router = route(p, names, 35, 100, 1160)
-    powertrain = p.new(f"{profile}_powertrain~", 475, 610, 150, numinlets=1, numoutlets=2)
-    left = outlet(p, 475, 700, signal=True)
-    right = outlet(p, 675, 700, signal=True)
+    powertrain = p.new(f"{profile}_powertrain{suffix}~", 475, 850 if upgraded else 610, 175 if upgraded else 150, numinlets=1, numoutlets=2)
+    left = outlet(p, 475, 1030 if upgraded else 700, signal=True)
+    right = outlet(p, 675, 1030 if upgraded else 700, signal=True)
     p.connect(control, router)
     # The unmatched outlet is the read-only vehicle state seam: rpm, throttle,
     # load, accel, lifecycle and level controls pass through unchanged.
@@ -1677,11 +1688,11 @@ def make_sound_dna(profile: str) -> dict[str, Any]:
     p.connect(open_request, front)
     p.connect(front, patcher_window)
     storage = p.new(
-        f"pattrstorage {profile}_sound_dna @savemode 3 @changemode 1 @autorestore 0",
+        f"pattrstorage {profile}_sound_dna{suffix} @savemode {0 if upgraded else 3} @changemode 1 @autorestore 0",
         930, 50, 300, numinlets=1, numoutlets=4,
     )
     state_path = p.new(
-        f"js Patcher:/code/dna_state_path.js {profile}",
+        f"js Patcher:/code/dna{suffix}_state_path.js {profile}",
         930, 85, 260, numinlets=1, numoutlets=1,
     )
     load = p.new("loadbang", 930, 120, 60, numinlets=1, numoutlets=1)
@@ -1710,27 +1721,37 @@ def make_sound_dna(profile: str) -> dict[str, Any]:
         if profile == "ferrari"
         else PRESETS[{"ev": "Future EV", "v10": "Aggressive V10", "v12": "High-Rev V12"}[profile]]
     )
+    if upgraded:
+        defaults = {**defaults, **RUNNING_DEFAULTS[profile]}
+    action_y = 990.0 if upgraded else 690.0
     reset_button = p.add(
         "message", "Reset DNA", 1080, 210, 75, numinlets=2, numoutlets=1,
-        presentation=1, presentation_rect=[1090.0, 690.0, 80.0, 22.0],
+        presentation=1, presentation_rect=[1090.0, action_y, 80.0, 22.0],
     )
     save_button = p.add(
         "message", "Save DNA", 930, 210, 70, numinlets=2, numoutlets=1,
-        presentation=1, presentation_rect=[910.0, 690.0, 75.0, 22.0],
+        presentation=1, presentation_rect=[910.0, action_y, 75.0, 22.0],
     )
     reload_button = p.add(
         "message", "Reload DNA", 1005, 210, 80, numinlets=2, numoutlets=1,
-        presentation=1, presentation_rect=[995.0, 690.0, 85.0, 22.0],
+        presentation=1, presentation_rect=[995.0, action_y, 85.0, 22.0],
     )
     p.connect(save_button, save)
     p.connect(reload_button, restore_order)
+    if upgraded:
+        reset_save = p.new("delay 50", 1090, 945, 65, numinlets=2, numoutlets=1)
+        p.connect(reset_button, reset_save)
+        p.connect(reset_save, save)
+        p.add("comment", "V2 调参顺序：Running Body → Running Cavity → HF Softness → Release Mass。≤1200 RPM 保留原声；1200–3000 RPM 平滑进入新结构。", 35, 925, 1100, 40,
+              numinlets=1, numoutlets=0, presentation=1, presentation_rect=[35.0, 925.0, 1100.0, 40.0])
 
     for index, (name, label, low, high) in enumerate(specs):
         column = index % 4
         row = index // 4
         x = 35 + column * 300
         y = 135 + row * 110
-        group, chinese, unit, context, description = DNA_CONTROL_METADATA[name]
+        metadata = {**DNA_CONTROL_METADATA, **RUNNING_METADATA} if upgraded else DNA_CONTROL_METADATA
+        group, chinese, unit, context, description = metadata[name]
         p.add(
             "comment", f"{group} · {label} / {chinese} [{unit}]",
             x, y, 285, 20, numinlets=1, numoutlets=0,
@@ -2857,7 +2878,7 @@ def make_ferrari_soundscape_v5_beap(version: int = 5) -> dict[str, Any]:
     modules = FERRARI_SOUNDSCAPE_V5_MODULES
     p = Patcher(3120, 1180)
     p.comment(
-        f"FERRARI SOUNDSCAPE V{version} — pressure-excited exterior body / exhaust cavity / mechanical-air / roadside space",
+        f"FERRARI SOUNDSCAPE V{version} — pressure-excited exterior body / exhaust cavity / " + ("separate Noise / roadside space" if version >= 7 else "mechanical-air / roadside space"),
         25, 15, 1280,
     )
     p.comment(
@@ -3050,7 +3071,7 @@ def make_ferrari_soundscape_v5_beap(version: int = 5) -> dict[str, Any]:
     p.connect(cavity_gain, cavity_dynamic, 0, 1)
 
     p.comment(
-        "2 MECHANICAL / AIR HALO — filtered combustion texture; load opens density, speed opens air only",
+        ("2 NOISE SEPARATED — Mechanical/Air returns disconnected; Exterior Layers input 3 unused. Use Main Noise." if version >= 7 else "2 MECHANICAL / AIR HALO — filtered combustion texture; load opens density, speed opens air only"),
         900, 395, 960,
     )
     mechanical_load = p.new("*~ 0.30", 900, 430, 65, numinlets=2, numoutlets=1)
@@ -3080,7 +3101,8 @@ def make_ferrari_soundscape_v5_beap(version: int = 5) -> dict[str, Any]:
     p.connect(reinforcement_load, reinforcement_trim)
     p.connect(body_dynamic, mixer, 0, 0)
     p.connect(cavity_dynamic, mixer, 0, 1)
-    p.connect(mechanical_sum, mixer, 0, 2)
+    if version < 7:
+        p.connect(mechanical_sum, mixer, 0, 2)
     p.connect(reinforcement_trim, mixer, 0, 3)
 
     colour_lfo = p.new("*~ 0.010", 1995, 355, 70, numinlets=2, numoutlets=1)
@@ -3117,7 +3139,8 @@ def make_ferrari_soundscape_v5_beap(version: int = 5) -> dict[str, Any]:
     p.connect(air_noise, air_high)
     p.connect(air_high, air_trim, 1, 0)
     p.connect(vca, spatial_source, 0, 0)
-    p.connect(air_trim, spatial_source, 0, 1)
+    if version < 7:
+        p.connect(air_trim, spatial_source, 0, 1)
 
     p.comment(
         "3 ROADSIDE SPACE — below 120 Hz centered; only high structure enters Bank Reflection/Roadside Space",
@@ -3130,7 +3153,7 @@ def make_ferrari_soundscape_v5_beap(version: int = 5) -> dict[str, Any]:
     space_depth = p.new("*~ 0.30", 430, 690, 65, numinlets=2, numoutlets=1)
     p.connect(space_cv, space_depth)
     direct_body = None
-    if version == 6:
+    if version >= 6:
         # Ferrari-only addition. Keep the complete V5 synthesis and wet return;
         # add a narrow, lifecycle-enveloped dry path, never DNA or Cabin Rumble.
         p.new("autopattr @autorestore 0", 25, 865, 185, numoutlets=4)
@@ -3183,7 +3206,7 @@ def make_ferrari_soundscape_v5_beap(version: int = 5) -> dict[str, Any]:
     return p.document()
 
 
-def make_ioniq6n_soundscape_beap(mode: str) -> dict[str, Any]:
+def make_ioniq6n_soundscape_beap(mode: str, version: int = 1) -> dict[str, Any]:
     """Build one user-owned IONIQ mode instrument with BEAP sources and structure."""
     spec = IONIQ6N_SOUNDSCAPE_MODES[mode]
     modules = spec["modules"]
@@ -3342,7 +3365,8 @@ def make_ioniq6n_soundscape_beap(mode: str) -> dict[str, Any]:
     p.connect(transient_noise, transient_mode)
     p.connect(transient_mode, transient_trim)
     for index, source in enumerate((body_dynamic, harmonic, upper, transient_trim)):
-        p.connect(source, mixer, 0, index)
+        if version != 2 or index != 3:
+            p.connect(source, mixer, 0, index)
     colour_drive = p.new("*~ 4.", 1530, 455, 55, numinlets=2, numoutlets=1)
     p.connect(colour_cv, colour_drive)
     p.connect(mixer, ladder, 0, 0)
@@ -3415,6 +3439,12 @@ def make_ioniq6n_soundscape_beap(mode: str) -> dict[str, Any]:
         p.connect(full, infra)
         p.connect(infra, trim, 1, 0)
         p.connect(trim, output)
+    if version == 2:
+        p.comment(
+            "BED V2: standalone speed/transient hiss is disconnected; Mixer input 4 / BEAP Noise are retained only for rollback. "
+            "Use the Noise Designer for independent noise. Accepted RPM-shaped native structure, modes and effects are unchanged.",
+            25, 910, 2400, 48,
+        )
     return p.document()
 
 
@@ -3591,7 +3621,7 @@ def make_ioniq6n_soundscape_host() -> dict[str, Any]:
     voices = []
     for index, mode in enumerate(modes):
         voice = p.new(
-            f"ioniq6n_soundscape_{mode}_beap~", 35 + index * 760, 700, 300,
+            f"ioniq6n_soundscape_{mode}_bed_v2_beap~", 35 + index * 760, 700, 340,
             numinlets=9, numoutlets=3,
         )
         for source, inlet_index in (
@@ -3666,11 +3696,8 @@ def make_ioniq6n_soundscape_host() -> dict[str, Any]:
     p.connect(mode_state, open_gate, 0, 0)
     for index, voice in enumerate(voices):
         p.connect(open_gate, voice, index, 8)
-    for route_index, command in ((19, "save"), (20, "reload"), (21, "reset")):
-        request = p.message(command, 1390 + (route_index - 19) * 70, 705, 60)
-        p.connect(router, request, route_index)
-        for voice in voices:
-            p.connect(request, voice, 0, 8)
+    # Main save/reload/reset already address the one host storage below. Do not
+    # broadcast them back through all three designers and issue four writes.
 
     mode_feedback = p.new("prepend soundscape_state mode", 35, 1130, 210, numinlets=1, numoutlets=1)
     enable_feedback = p.new("prepend soundscape_state enable", 255, 1130, 220, numinlets=1, numoutlets=1)
@@ -3681,16 +3708,24 @@ def make_ioniq6n_soundscape_host() -> dict[str, Any]:
 
     p.new("autopattr @autorestore 0", 1510, 785, 155, numinlets=1, numoutlets=4)
     storage = p.new(
-        "pattrstorage soundscape_ioniq6n_modes @greedy 1 @savemode 3 @changemode 1 @outputmode 6 @backupmode 1 @autorestore 0",
+        "pattrstorage soundscape_ioniq6n_modes_v2 @greedy 1 @savemode 0 @changemode 1 @outputmode 6 @backupmode 1 @autorestore 0",
         1510, 820, 600, numinlets=1, numoutlets=1,
     )
     state_path = p.new(
-        "js Patcher:/code/ioniq6n_soundscape_state_path.js",
+        "js Patcher:/code/ioniq6n_bed_state.js",
         1510, 855, 310, numinlets=1, numoutlets=2,
     )
-    for route_index, action_name in ((19, "save"), (20, "restore"), (21, "reset")):
+    designer_action = route(p, ("soundscape_action",), 1510, 950, 175)
+    discard_mode = p.new("zl slice 1", 1695, 950, 85, numinlets=2, numoutlets=2)
+    actions = route(p, ("save", "reload", "reset"), 1790, 950, 180)
+    for voice in voices:
+        p.connect(voice, designer_action, 2)
+    p.connect(designer_action, discard_mode, 0)
+    p.connect(discard_mode, actions, 1)
+    for index, (route_index, action_name) in enumerate(((19, "save"), (20, "restore"), (21, "reset"))):
         action_request = p.message(action_name, 1840 + (route_index - 19) * 70, 855, 60)
         p.connect(router, action_request, route_index)
+        p.connect(actions, action_request, index)
         p.connect(action_request, state_path)
     p.connect(state_path, storage, 0, 0)
     p.connect(state_path, status, 1, 0)
@@ -3718,7 +3753,7 @@ def make_soundscape_control() -> dict[str, Any]:
     p = Patcher(1080, 275)
     p.comment("SOUNDSCAPE CONTROL — Main > Sound Design; live profile-owned instrument state", 15, 8, 800)
     p.add(
-        "comment", "Soundscape V4 / Ferrari V5", 735, 8, 190, 18,
+        "comment", "Running Bed / 独立铺底", 735, 8, 190, 18,
         numinlets=1, numoutlets=0, presentation=1,
         presentation_rect=[820.0, 8.0, 200.0, 18.0],
     )
@@ -3736,7 +3771,7 @@ def make_soundscape_control() -> dict[str, Any]:
     )
     status_set = p.new("prepend set", 805, 240, 85, numinlets=1, numoutlets=1)
     status = p.add(
-        "message", "Factory V4 / Ferrari V5", 895, 205, 145, 22,
+        "message", "Factory / 独立铺底", 895, 205, 145, 22,
         numinlets=2, numoutlets=1, presentation=1,
         presentation_rect=[820.0, 70.0, 200.0, 22.0],
     )
@@ -3875,11 +3910,11 @@ def make_soundscape_control() -> dict[str, Any]:
 
 def make_cinematic_soundscape_host(profile: str) -> dict[str, Any]:
     """Map read-only vehicle state into one profile-owned Soundscape instrument."""
-    soundscape_version = 6 if profile == "ferrari" else 4
+    soundscape_version = 7 if profile == "ferrari" else 5
     voice_name = (
-        "ferrari_soundscape_v6_beap~"
+        "ferrari_soundscape_v7_beap~"
         if profile == "ferrari"
-        else f"{profile}_soundscape_v4_beap~"
+        else f"{profile}_soundscape_v5_beap~"
     )
     factory_spec = (
         FERRARI_SOUNDSCAPE_V5_FACTORY
@@ -3887,9 +3922,9 @@ def make_cinematic_soundscape_host(profile: str) -> dict[str, Any]:
         else SOUNDSCAPE_V4_FACTORY[profile]
     )
     state_helper = (
-        "soundscape_v6_state_path.js"
+        "ferrari_bed_state.js"
         if profile == "ferrari"
-        else "soundscape_v4_state_path.js"
+        else "soundscape_bed_state.js"
     )
     p = Patcher(1900, 1050)
     p.comment(
@@ -4193,7 +4228,7 @@ def make_cinematic_soundscape_host(profile: str) -> dict[str, Any]:
 
     p.new("autopattr @autorestore 0", 1180, 695, 155, numinlets=1, numoutlets=4)
     storage = p.new(
-        f"pattrstorage soundscape_{profile}_v{soundscape_version} @greedy 1 @savemode 3 @changemode 1 "
+        f"pattrstorage soundscape_{profile}_v{soundscape_version} @greedy 1 @savemode 0 @changemode 1 "
         "@outputmode 6 @backupmode 1 @autorestore 0",
         1180, 725, 455, numinlets=1, numoutlets=1,
     )
@@ -4771,12 +4806,20 @@ def make_ferrari_pop_sample_voice() -> dict[str, Any]:
     return p.document()
 
 
-def make_ferrari_pop_designer() -> dict[str, Any]:
+def make_shared_pop_designer(profile: str = "ferrari") -> dict[str, Any]:
     """Seed one tiny live designer: one mono sample, two players, tone, level."""
-    p = Patcher(1050, 670)
-    p.comment("FERRARI POP V3 — real exhaust + offline impact; one sample / two short players", 25, 15, 940)
+    pitch_default, tone_default, level_default = {
+        "ferrari": (0., 4200., 0.), "v10": (-1., 3800., -3.),
+        "v12": (-2., 3200., -3.), "ev": (1., 5000., -3.),
+        "ioniq6n": (0., 4200., -3.),
+    }[profile]
+    version = 3 if profile == "ferrari" else 4
+    argument = "" if profile == "ferrari" else " " + profile
+    p = Patcher(1050, 670 if profile == "ferrari" else 755)
+    description = "real" if profile == "ferrari" else "shared"
+    p.comment(f"{profile.upper()} POP V{version} — {description} exhaust + offline impact; one sample / two short players", 25, 15, 940)
     control = inlet(p, 25, 60)
-    adapter = p.new("js Patcher:/code/ferrari_pop_control.js", 80, 60, 290, numoutlets=2)
+    adapter = p.new("js Patcher:/code/ferrari_pop_control.js" + argument, 80, 60, 290, numoutlets=2)
     p.connect(control, adapter)
     scheduler = p.new("backfire_burst_scheduler", 400, 60, 180)
     hit = p.new("prepend hit", 600, 60, 90)
@@ -4803,9 +4846,9 @@ def make_ferrari_pop_designer() -> dict[str, Any]:
 
     knobs = {}
     for index, (label, name, default, low, high) in enumerate((
-        ("Pitch / 下次爆音 (st)", "pitch", 0.0, -6.0, 3.0),
-        ("Tone / 明亮度 (Hz)", "tone", 4200.0, 1200.0, 8000.0),
-        ("Level / 电平 (dB)", "level", 0.0, -24.0, 0.0),
+        ("Pitch / 下次爆音 (st)", "pitch", pitch_default, -6.0, 3.0),
+        ("Tone / 明亮度 (Hz)", "tone", tone_default, 1200.0, 8000.0),
+        ("Level / 电平 (dB)", "level", level_default, -24.0, 0.0),
     )):
         x = 25 + index * 285
         p.comment(label, x, 285, 260)
@@ -4839,7 +4882,7 @@ def make_ferrari_pop_designer() -> dict[str, Any]:
 
     audition = p.message("Audition One Hit", 25, 235, 120)
     audition_command = p.message("audition", 160, 235, 70)
-    audition_receive = p.new("r ferrari.pop.audition_one_hit", 250, 235, 220)
+    audition_receive = p.new(f"r {profile}.pop.audition_one_hit", 250, 235, 220)
     p.connect(audition, audition_command)
     p.connect(audition_receive, audition_command)
     p.connect(audition_command, adapter)
@@ -4847,14 +4890,14 @@ def make_ferrari_pop_designer() -> dict[str, Any]:
     burst_command = p.message("backfire_test 1", 625, 235, 115)
     p.connect(burst, burst_command)
     p.connect(burst_command, adapter)
-    open_request = p.new("r open.ferrari.backfire", 745, 60, 165)
+    open_request = p.new(f"r open.{profile}.backfire", 745, 60, 165)
     front = p.message("front", 925, 60, 45)
     window = p.new("thispatcher", 925, 100, 85, numoutlets=2)
     p.connect(open_request, front)
     p.connect(front, window)
     p.new("autopattr @autorestore 0", 25, 480, 185, numoutlets=4)
-    storage = p.new("pattrstorage ferrari_pop_v3 @autorestore 0 @savemode 3", 25, 520, 395, numoutlets=4)
-    state = p.new("js Patcher:/code/ferrari_pop_state.js", 435, 520, 270)
+    storage = p.new(f"pattrstorage {profile}_pop_v{version} @autorestore 0 @savemode {3 if profile == 'ferrari' else 0}", 25, 520, 395, numoutlets=4)
+    state = p.new("js Patcher:/code/ferrari_pop_state.js" + argument, 435, 520, 270)
     p.connect(state, storage)
     save = p.message("save", 25, 565, 55)
     reload = p.message("restore", 95, 565, 65)
@@ -4872,6 +4915,40 @@ def make_ferrari_pop_designer() -> dict[str, Any]:
         p.connect(reset_bang, default_value)
     p.connect(reset_bang, reset_save)
     p.connect(reset_save, save)
+    # Commands operate on this sounding instance, never a detached designer.
+    # Keep the legacy Ferrari seed byte-shape;
+    # its existing UI already owns Save/Reload/Reset and open.<profile>.backfire.
+    if profile != "ferrari":
+        aliases = ("event_open", "event_save", "event_reload", "event_reset", "event_audition",
+                   "backfire_open", "backfire_save", "backfire_reload", "backfire_reset",
+                   "open", "save", "reload", "reset")
+        actions = route(p, aliases, 25, 655, 950)
+        p.connect(control, actions)
+        for index, target in enumerate((front, save, reload, reset_bang, audition_command,
+                                       front, save, reload, reset_bang, front, save, reload, reset_bang)):
+            bang = p.new("t b", 25 + index * 70, 690, 35)
+            p.connect(actions, bang, index)
+            p.connect(bang, target)
+    return p.document()
+
+
+def make_ferrari_pop_designer() -> dict[str, Any]:
+    """Compatibility seed: retain Ferrari V3's exact controls/defaults/state."""
+    return make_shared_pop_designer("ferrari")
+
+
+def make_shared_pop_host(profile: str) -> dict[str, Any]:
+    """One event renderer; start routing remains in the existing transient host."""
+    if profile == "ferrari":
+        return make_ferrari_pop_host()
+    p = Patcher(680, 250)
+    p.comment(f"{profile.upper()} POP V4 — shared sample/post, profile-local event authority", 25, 15, 630)
+    control = inlet(p, 25, 65)
+    voice = p.new(f"{profile}_pop_v4~", 100, 65, 150, numoutlets=2)
+    p.connect(control, voice)
+    for index, x in enumerate((100, 300)):
+        output = outlet(p, x, 180, signal=True)
+        p.connect(voice, output, index)
     return p.document()
 
 
@@ -5858,7 +5935,7 @@ def make_profile_engine(profile: str) -> dict[str, Any]:
     else:
         contract_names.append("start_style")
     contract = route(p, tuple(contract_names), 190, 150, 990)
-    dna_voice = "ferrari_sound_dna_v2~" if profile == "ferrari" else f"{profile}_sound_dna~"
+    dna_voice = f"{profile}_sound_dna_v2~" if profile in ("ferrari", "v10", "v12") else f"{profile}_sound_dna~"
     power = p.new(
         dna_voice, 95, 260, 175 if profile == "ferrari" else 145,
         numinlets=1, numoutlets=2,
@@ -5868,7 +5945,7 @@ def make_profile_engine(profile: str) -> dict[str, Any]:
         numinlets=1, numoutlets=3,
     )
     transient = p.new(f"transient_{profile}~", 285, 260, 120, numinlets=1, numoutlets=2)
-    road = p.new("road_air~", 465, 260, 85, numinlets=1, numoutlets=2)
+    road = p.new(f"vehicle_noise_{profile}~", 465, 260, 155, numinlets=1, numoutlets=2)
     rumble = p.new("cabin_rumble~", 625, 260, 110, numinlets=3, numoutlets=2)
     cabin = p.new("cabin_master~", 800, 450, 110, numinlets=3, numoutlets=2)
     eq = p.add(
@@ -5923,30 +6000,32 @@ def make_profile_engine(profile: str) -> dict[str, Any]:
         p, (
             "soundscape_solo", "pad_solo",
             "event_solo" if profile == "ioniq6n" else "backfire_solo",
-            "dna_solo",
+            "dna_solo", "noise_solo",
         ),
         980, 210, 410,
     )
     soundscape_solo_clip = p.new("clip 0 1", 1010, 250, 65, numinlets=3, numoutlets=1)
     backfire_solo_clip = p.new("clip 0 1", 1085, 250, 65, numinlets=3, numoutlets=1)
     dna_solo_clip = p.new("clip 0 1", 1160, 250, 65, numinlets=3, numoutlets=1)
-    solo_state = p.new("pak 0 0 0", 1235, 250, 90, numinlets=3, numoutlets=1)
+    noise_solo_clip = p.new("clip 0 1", 1160, 285, 65, numinlets=3, numoutlets=1)
+    solo_state = p.new("pak 0 0 0 0", 1235, 250, 105, numinlets=4, numoutlets=1)
     core_solo_gain = p.new(
-        "expr $i3+(1-$i3)*(1-max($i1,$i2))", 1180, 220, 245,
-        numinlets=3, numoutlets=1,
+        "expr (1-$i4)*($i3+(1-$i3)*(1-max($i1,$i2)))", 1180, 220, 300,
+        numinlets=4, numoutlets=1,
     )
     aux_solo_gain = p.new(
-        "expr (1-$i3)*(1-max($i1,$i2))", 1180, 280, 215,
-        numinlets=3, numoutlets=1,
+        "expr (1-$i4)*(1-$i3)*(1-max($i1,$i2))", 1180, 280, 280,
+        numinlets=4, numoutlets=1,
     )
     transient_solo_gain = p.new(
-        "expr (1-$i3)*(1-$i1*(1-$i2))", 1180, 310, 225,
-        numinlets=3, numoutlets=1,
+        "expr (1-$i4)*(1-$i3)*(1-$i1*(1-$i2))", 1180, 310, 280,
+        numinlets=4, numoutlets=1,
     )
     pad_solo_gain = p.new(
-        "expr (1-$i3)*(1-$i2)", 1180, 340, 155,
-        numinlets=3, numoutlets=1,
+        "expr (1-$i4)*(1-$i3)*(1-$i2)", 1180, 340, 240,
+        numinlets=4, numoutlets=1,
     )
+    noise_solo_gain = p.new("expr $i4+(1-$i4)*(1-$i3)*(1-max($i1,$i2))", 980, 435, 400, numinlets=4)
 
     def solo_line(source: str, x: float, y: float) -> str:
         packed = p.new("pack 0. 35", x, y, 85, numinlets=2, numoutlets=1)
@@ -5959,6 +6038,7 @@ def make_profile_engine(profile: str) -> dict[str, Any]:
     aux_solo_line = solo_line(aux_solo_gain, 1115, 370)
     transient_solo_line = solo_line(transient_solo_gain, 1260, 370)
     pad_solo_line = solo_line(pad_solo_gain, 1260, 400)
+    noise_solo_line = solo_line(noise_solo_gain, 970, 465)
     solo_default = p.new("loadmess 0", 1090, 285, 80, numinlets=1, numoutlets=1)
     core_l = p.new("*~", 95, 300, 40, numinlets=2, numoutlets=1)
     core_r = p.new("*~", 390, 300, 40, numinlets=2, numoutlets=1)
@@ -5975,9 +6055,11 @@ def make_profile_engine(profile: str) -> dict[str, Any]:
     p.connect(solo_router, soundscape_solo_clip, 1)
     p.connect(solo_router, backfire_solo_clip, 2)
     p.connect(solo_router, dna_solo_clip, 3)
+    p.connect(solo_router, noise_solo_clip, 4)
     p.connect(solo_default, soundscape_solo_clip)
     p.connect(solo_default, backfire_solo_clip)
     p.connect(solo_default, dna_solo_clip)
+    p.connect(solo_default, noise_solo_clip)
     p.connect(soundscape_solo_clip, solo_state, 0, 0)
     soundscape_solo_feedback = p.new(
         "prepend soundscape_state solo", 1010, 320, 205,
@@ -5987,6 +6069,8 @@ def make_profile_engine(profile: str) -> dict[str, Any]:
     p.connect(soundscape_solo_feedback, state_out)
     p.connect(backfire_solo_clip, solo_state, 0, 1)
     p.connect(dna_solo_clip, solo_state, 0, 2)
+    p.connect(noise_solo_clip, solo_state, 0, 3)
+    p.connect(solo_state, noise_solo_gain)
     p.connect(solo_state, core_solo_gain)
     p.connect(solo_state, aux_solo_gain)
     p.connect(solo_state, transient_solo_gain)
@@ -6001,8 +6085,10 @@ def make_profile_engine(profile: str) -> dict[str, Any]:
     p.connect(rumble, rumble_r, 1, 0)
     for stem_gain in (core_l, core_r):
         p.connect(core_solo_line, stem_gain, 0, 1)
-    for stem_gain in (road_l, road_r, rumble_l, rumble_r):
+    for stem_gain in (rumble_l, rumble_r):
         p.connect(aux_solo_line, stem_gain, 0, 1)
+    for stem_gain in (road_l, road_r):
+        p.connect(noise_solo_line, stem_gain, 0, 1)
     for stem_gain in (transient_l, transient_r):
         p.connect(transient_solo_line, stem_gain, 0, 1)
     p.connect(pad, pad_l, 0, 0)
@@ -6658,13 +6744,15 @@ def make_ferrari_powertrain() -> dict[str, Any]:
     return p.document()
 
 
-def make_profile_powertrain(profile: str) -> dict[str, Any]:
+def make_profile_powertrain(profile: str, version: int = 1) -> dict[str, Any]:
     """Render one profile only; inactive powertrains are absent, not gain-muted."""
     if profile == "ioniq6n":
         return make_ioniq6n_powertrain()
     if profile == "ferrari":
         return make_ferrari_powertrain()
-    p = Patcher(1080, 660)
+    upgraded = version == 2 and profile in ("v10", "v12")
+    suffix = "_v2" if upgraded else ""
+    p = Patcher(1440, 940) if upgraded else Patcher(1080, 660)
     p.comment(f"{profile.upper()} dedicated powertrain — procedural continuous synthesis", 25, 15, 760)
     control = inlet(p, 35, 65)
     tonal_names = (
@@ -6682,13 +6770,16 @@ def make_profile_powertrain(profile: str) -> dict[str, Any]:
         if profile == "ev"
         else ("combustion_pulse", "intake_detail", "exhaust_detail", "residual_detail")
     )
+    if upgraded:
+        profile_names += tuple(name for name, _label, _low, _high in DNA_PARAMETER_SPECS[profile] if name.startswith("idle_"))
+        profile_names += tuple(item[0] for item in RUNNING_SPECS)
     names = tonal_names + fuel_names + common_realism_names + profile_names + ("powertrain_level_db",)
     router = route(p, names, 35, 105, 860)
     p.connect(control, router)
     gen = p.new(
-        f"gen~ @gen ../gen/{profile}_powertrain.gendsp",
+        f"gen~ @gen ../gen/{profile}_powertrain{suffix}.gendsp",
         300,
-        330,
+        740 if upgraded else 330,
         270,
         numinlets=1,
         numoutlets=2,
@@ -6743,11 +6834,11 @@ def make_profile_powertrain(profile: str) -> dict[str, Any]:
     mixed_r = gen
     mixed_l_out = 0
     mixed_r_out = 1
-    stem_level = add_db_gain_control(p, router, len(names) - 1, 790, 375, -3.0)
-    trim_l = p.new("*~", 360, 535, 40, numinlets=2, numoutlets=1)
-    trim_r = p.new("*~", 580, 535, 40, numinlets=2, numoutlets=1)
-    left = outlet(p, 360, 585, signal=True)
-    right = outlet(p, 580, 585, signal=True)
+    stem_level = add_db_gain_control(p, router, len(names) - 1, 1120 if upgraded else 790, 660 if upgraded else 375, -3.0)
+    trim_l = p.new("*~", 360, 835 if upgraded else 535, 40, numinlets=2, numoutlets=1)
+    trim_r = p.new("*~", 580, 835 if upgraded else 535, 40, numinlets=2, numoutlets=1)
+    left = outlet(p, 360, 900 if upgraded else 585, signal=True)
+    right = outlet(p, 580, 900 if upgraded else 585, signal=True)
     p.connect(mixed_l, trim_l, mixed_l_out, 0)
     p.connect(mixed_r, trim_r, mixed_r_out, 0)
     p.connect(stem_level, trim_l, 0, 1)
@@ -8159,7 +8250,7 @@ def make_ioniq6n_n_event_beap() -> dict[str, Any]:
 
 
 def make_ioniq6n_n_event_host() -> dict[str, Any]:
-    """Translate lifecycle and N-state events into three event envelopes."""
+    """Keep N-state event authority; one shared sample/post replaces event DSP."""
     p = Patcher(1500, 820)
     p.comment("IONIQ 6 N N-EVENT HOST — mode-aware events, gated by lifecycle / eShift / enable", 25, 15, 1050)
     control = inlet(p, 35, 65)
@@ -8184,22 +8275,29 @@ def make_ioniq6n_n_event_host() -> dict[str, Any]:
     p.connect(running, active_state, 0, 1)
     p.connect(enable, active_state, 0, 2)
     p.connect(active_state, active)
+    event = p.new("ioniq6n_pop_v4~", 430, 500, 220, numinlets=1, numoutlets=2)
+    # All lifecycle, stem gain and designer commands reach the same live voice.
+    # It ignores raw IONIQ events: only the validated host hits below can play.
+    p.connect(control, event)
 
     eshift = p.new("clip 0 1", 500, 165, 65, numinlets=3, numoutlets=1)
-    shift_state = p.new("pak 0 1 0", 575, 165, 90, numinlets=3, numoutlets=1)
+    shift_state = p.new("pak 1 1 0", 575, 165, 90, numinlets=3, numoutlets=1)
     shift_valid = p.new("expr $i1*$i2*$i3", 675, 165, 125, numinlets=3, numoutlets=1)
+    shift_change = p.new("change", 810, 130, 55)
     shift_edge = p.new("sel 1", 810, 165, 45, numinlets=1, numoutlets=2)
-    upshift_shape = p.message("5. 0, 0. 80", 865, 165, 105)
-    upshift_line = p.new("line~", 980, 165, 50, numinlets=2, numoutlets=2)
-    p.connect(router, shift_state, 0, 0)
+    shift_gate = p.new("gate 1", 865, 165, 55, numinlets=2, varname="n_shift_gate")
+    upshift_hit = p.message("event_hit 0.75", 935, 165, 105)
+    p.connect(router, shift_change, 0)
+    p.connect(shift_change, shift_edge)
     p.connect(router, eshift, 8)
     p.connect(p.new("loadmess 1", 500, 200, 80, numinlets=1, numoutlets=1), eshift)
     p.connect(eshift, shift_state, 0, 1)
     p.connect(active, shift_state, 0, 2)
     p.connect(shift_state, shift_valid)
-    p.connect(shift_valid, shift_edge)
-    p.connect(shift_edge, upshift_shape, 0)
-    p.connect(upshift_shape, upshift_line)
+    p.connect(shift_valid, shift_gate, 0, 0)
+    p.connect(shift_edge, shift_gate, 0, 1)
+    p.connect(shift_gate, upshift_hit)
+    p.connect(upshift_hit, event)
 
     mode_select = p.new("sel ignition evolution lightspeed", 35, 275, 230, numinlets=1, numoutlets=4)
     mode_default = p.new("loadmess evolution", 275, 275, 125, numinlets=1, numoutlets=1)
@@ -8217,36 +8315,34 @@ def make_ioniq6n_n_event_host() -> dict[str, Any]:
     p.connect(mode_select, both_off, 1)
     p.connect(mode_select, afterburner_on, 2)
     p.connect(mode_select, lightspeed_bubble_off, 2)
-    p.connect(bubble_on, bubble_arm, 0, 1)
-    p.connect(ignition_afterburner_off, afterburner_arm, 0, 1)
-    p.connect(both_off, bubble_arm, 0, 1)
-    p.connect(both_off, afterburner_arm, 0, 1)
-    p.connect(afterburner_on, afterburner_arm, 0, 1)
-    p.connect(lightspeed_bubble_off, bubble_arm, 0, 1)
+    p.connect(bubble_on, bubble_arm)
+    p.connect(ignition_afterburner_off, afterburner_arm)
+    p.connect(both_off, bubble_arm)
+    p.connect(both_off, afterburner_arm)
+    p.connect(afterburner_on, afterburner_arm)
+    p.connect(lightspeed_bubble_off, bubble_arm)
 
     release_sum = p.new("pak 0. 0. 0. 0.", 35, 345, 145, numinlets=4, numoutlets=1)
     release_peak = p.new("expr max($f1,max($f2,max($f3,$f4)))", 190, 345, 250, numinlets=4, numoutlets=1)
     release_edge = p.new("> 0.05", 450, 345, 55, numinlets=2, numoutlets=1)
     release_change = p.new("change", 515, 345, 55, numinlets=1, numoutlets=1)
-    release_trigger = p.new("sel 1", 580, 345, 45, numinlets=1, numoutlets=2)
-    bubble_valid = p.new("pak 0 0 0", 635, 330, 90, numinlets=3, numoutlets=1)
-    afterburner_valid = p.new("pak 0 0 0", 635, 370, 90, numinlets=3, numoutlets=1)
+    release_trigger = p.new("sel 1", 580, 345, 45, numinlets=1, numoutlets=2, varname="n_release_edge")
+    bubble_valid = p.new("pak 1 0 0", 635, 330, 90, numinlets=3, numoutlets=1)
+    afterburner_valid = p.new("pak 1 0 0", 635, 370, 90, numinlets=3, numoutlets=1)
     valid_expr_b = p.new("expr $i1*$i2*$i3", 735, 330, 125, numinlets=3, numoutlets=1)
     valid_expr_a = p.new("expr $i1*$i2*$i3", 735, 370, 125, numinlets=3, numoutlets=1)
-    bubble_edge = p.new("sel 1", 870, 330, 45, numinlets=1, numoutlets=2)
-    afterburner_edge = p.new("sel 1", 870, 370, 45, numinlets=1, numoutlets=2)
-    bubble_shape = p.message("5. 0, 0. 260", 925, 330, 115)
-    afterburner_shape = p.message("5. 0, 0. 190", 925, 370, 115)
-    bubble_line = p.new("line~", 1050, 330, 50, numinlets=2, numoutlets=2)
-    afterburner_line = p.new("line~", 1050, 370, 50, numinlets=2, numoutlets=2)
+    bubble_edge = p.new("gate 1", 870, 330, 55, numinlets=2, varname="n_bubble_gate")
+    afterburner_edge = p.new("gate 1", 870, 370, 55, numinlets=2, varname="n_afterburner_gate")
+    bubble_hit = p.message("event_hit 0.85", 940, 330, 115)
+    afterburner_hit = p.message("event_hit 1.", 940, 370, 115)
     for outlet_index, inlet_index in zip((2, 3, 4, 5), range(4)):
         p.connect(router, release_sum, outlet_index, inlet_index)
     p.connect(release_sum, release_peak)
     p.connect(release_peak, release_edge)
     p.connect(release_edge, release_change)
     p.connect(release_change, release_trigger)
-    p.connect(release_trigger, bubble_valid, 0, 0)
-    p.connect(release_trigger, afterburner_valid, 0, 0)
+    p.connect(release_trigger, bubble_edge, 0, 1)
+    p.connect(release_trigger, afterburner_edge, 0, 1)
     p.connect(bubble_arm, bubble_valid, 0, 1)
     p.connect(afterburner_arm, afterburner_valid, 0, 1)
     p.connect(active, bubble_valid, 0, 2)
@@ -8255,31 +8351,10 @@ def make_ioniq6n_n_event_host() -> dict[str, Any]:
     p.connect(afterburner_valid, valid_expr_a)
     p.connect(valid_expr_b, bubble_edge)
     p.connect(valid_expr_a, afterburner_edge)
-    p.connect(bubble_edge, bubble_shape, 0)
-    p.connect(afterburner_edge, afterburner_shape, 0)
-    p.connect(bubble_shape, bubble_line)
-    p.connect(afterburner_shape, afterburner_line)
-
-    intensity = p.new("clip 0. 1.", 35, 455, 75, numinlets=3, numoutlets=1)
-    intensity_pack = p.new("pack 0. 60", 120, 455, 90, numinlets=2, numoutlets=1)
-    intensity_line = p.new("line~", 220, 455, 50, numinlets=2, numoutlets=2)
-    p.connect(router, intensity, 11)
-    p.connect(p.new("loadmess 0.72", 35, 490, 95, numinlets=1, numoutlets=1), intensity)
-    p.connect(intensity, intensity_pack)
-    p.connect(intensity_pack, intensity_line)
-
-    event = p.new("ioniq6n_n_event_beap~", 430, 500, 220, numinlets=5, numoutlets=3)
-    p.connect(upshift_line, event, 0, 0)
-    p.connect(bubble_line, event, 0, 1)
-    p.connect(afterburner_line, event, 0, 2)
-    p.connect(intensity_line, event, 0, 3)
-    for route_index, command in enumerate(("open", "save", "reload", "reset", "audition"), start=12):
-        request = p.message(command, 680 + (route_index - 12) * 70, 500, 60)
-        p.connect(router, request, route_index)
-        p.connect(request, event, 0, 4)
-    audition_trigger = p.message("5. 0, 0. 190", 1030, 500, 115)
-    p.connect(router, audition_trigger, 16)
-    p.connect(audition_trigger, afterburner_line)
+    p.connect(bubble_edge, bubble_hit)
+    p.connect(afterburner_edge, afterburner_hit)
+    p.connect(bubble_hit, event)
+    p.connect(afterburner_hit, event)
     left = outlet(p, 520, 680, signal=True)
     right = outlet(p, 700, 680, signal=True)
     p.connect(event, left, 0, 0)
@@ -8437,7 +8512,7 @@ def make_ioniq6n_transient_host() -> dict[str, Any]:
 
 
 def make_profile_transient(profile: str) -> dict[str, Any]:
-    """Choose cinematic/realistic start and procedural profile event synthesis."""
+    """Keep cinematic/realistic start separate from shared sample profile events."""
     if profile == "ioniq6n":
         return make_ioniq6n_transient_host()
     p = Patcher(1320, 760)
@@ -8459,8 +8534,8 @@ def make_profile_transient(profile: str) -> dict[str, Any]:
         35, 105, 760,
     )
     event_renderer = p.new(
-        "transient~" if profile == "ev" else f"{profile}_backfire_host~",
-        35, 555, 180 if profile != "ev" else 90, numinlets=1, numoutlets=2,
+        f"{profile}_backfire_host~",
+        35, 555, 180, numinlets=1, numoutlets=2,
     )
     p.connect(control, router)
     p.connect(router, event_renderer, 8)
@@ -10193,10 +10268,75 @@ def make_sound_design_console() -> dict[str, Any]:
     p.connect(feedback, soundscape)
     p.connect(soundscape, output)
     p.add(
+        "comment", "Pop / 短采样事件", 20, 420, 425, 20,
+        numinlets=1, numoutlets=0, presentation=1,
+        presentation_rect=[20.0, 350.0, 425.0, 20.0],
+    )
+    p.add(
+        "comment", "Noise / 独立机械·路噪", 490, 420, 540, 20,
+        numinlets=1, numoutlets=0, presentation=1,
+        presentation_rect=[490.0, 350.0, 540.0, 20.0],
+    )
+    pop_profile = p.new("sel ioniq6n", 780, 425, 100, numoutlets=2)
+    conventional = p.message("1", 890, 425, 30)
+    n_event = p.message("2", 930, 425, 30)
+    p.connect(profile_route, pop_profile, 0)
+    p.connect(pop_profile, n_event, 0)
+    p.connect(pop_profile, conventional, 1)
+    for index, (name, label, commands) in enumerate((
+        ("pop_open", "Open Pop / 打开回火", ("backfire_open", "event_open")),
+        ("pop_audition", "Audition Pop / 试听回火", ("backfire_test 1", "event_audition")),
+    )):
+        x = 20 + index * 225
+        button = p.add(
+            "message", label, x, 455, 205, numinlets=2, numoutlets=1,
+            varname=name, presentation=1,
+            presentation_rect=[float(x), 380.0, 205.0, 24.0],
+        )
+        bang = p.new("t b", x, 490, 40)
+        select = p.new("gate 2", x + 50, 490, 55, numinlets=2, numoutlets=2)
+        p.connect(button, bang)
+        p.connect(bang, select, 0, 1)
+        p.connect(conventional, select, 0, 0)
+        p.connect(n_event, select, 0, 0)
+        for port, command in enumerate(commands):
+            named = p.message(command, x, 525 + port * 28, 145)
+            p.connect(select, named, port)
+            p.connect(named, output)
+    noise_open = p.add(
+        "message", "Open Noise / 打开噪声", 490, 455, 205, numinlets=2, numoutlets=1,
+        varname="noise_open", presentation=1,
+        presentation_rect=[490.0, 380.0, 205.0, 24.0],
+    )
+    noise_open_named = p.message("noise_open", 490, 490, 100)
+    noise_solo = p.add(
+        "toggle", None, 720, 455, 24, 24, numinlets=1, numoutlets=1,
+        varname="noise_solo", presentation=1,
+        presentation_rect=[720.0, 380.0, 24.0, 24.0],
+    )
+    noise_solo_named = p.new("prepend noise_solo", 755, 455, 135)
+    noise_solo_clear = p.message("set 0", 900, 455, 50)
+    p.connect(noise_open, noise_open_named)
+    p.connect(noise_open_named, output)
+    p.connect(noise_solo, noise_solo_named)
+    p.connect(noise_solo_named, output)
+    p.connect(profile_route, noise_solo_clear, 0)
+    p.connect(noise_solo_clear, noise_solo)
+    p.add(
+        "comment", "Noise Solo / 噪声独听", 760, 485, 240, 20,
+        numinlets=1, numoutlets=0, presentation=1,
+        presentation_rect=[755.0, 382.0, 240.0, 20.0],
+    )
+    p.add(
+        "comment", "Noise 默认关闭：先在 Mix + EQ 调高 Noise 推子。EV Pop 仅手动试听，不新增自动燃烧回火。",
+        490, 530, 555, 40, numinlets=1, numoutlets=0, presentation=1,
+        presentation_rect=[20.0, 420.0, 1040.0, 22.0],
+    )
+    p.add(
         "comment",
         "参数提示：控件仅在其标注场景可听；Sound DNA 与 Soundscape 保持独立路由。",
         20, 425, 820, 20, numinlets=1, numoutlets=0,
-        presentation=1, presentation_rect=[20.0, 340.0, 820.0, 20.0],
+        presentation=1, presentation_rect=[20.0, 460.0, 1000.0, 20.0],
     )
     return p.document(presentation=True)
 
@@ -10452,6 +10592,15 @@ def make_profile_runtime_host(profile: str) -> dict[str, Any]:
     p.connect(safety_match, safety_commands, 1)
     p.connect(close, safety_commands)
     p.connect(safety_commands, command_route)
+    event_cancel = p.message("profile_active 0", 1120, 122, 120)
+    p.connect(safety_match, event_cancel, 1)
+    p.connect(close, event_cancel)
+    p.connect(event_cancel, engine)
+    pop_open = route(p, ("backfire_open",), 1120, 780, 130)
+    pop_front = p.new(f"s open.{profile}.backfire", 1260, 780, 155, numoutlets=0)
+    p.connect(local_control, pop_open)
+    p.connect(shared_control, pop_open)
+    p.connect(pop_open, pop_front, 0)
 
     design_names = (
         "soundscape_enable", "soundscape_solo", "soundscape_motion",
@@ -10459,6 +10608,12 @@ def make_profile_runtime_host(profile: str) -> dict[str, Any]:
         "soundscape_brightness", "soundscape_open", "soundscape_save",
         "soundscape_reload", "soundscape_reset", "dna_solo",
         "pad_mute", "pad_solo", "pad_level_db",
+        "noise_open", "noise_save", "noise_reload", "noise_reset", "noise_solo",
+        "noise_mechanical_db", "noise_intake_db", "noise_tire_db", "noise_air_db", "noise_color",
+        "backfire_open", "backfire_test", "backfire_enable", "backfire_solo",
+        "backfire_save", "backfire_reload", "backfire_reset", "backfire_intensity",
+        "event_open", "event_audition", "event_enable", "event_solo",
+        "event_save", "event_reload", "event_reset", "event_intensity",
     )
     p.comment(
         "SOUND DESIGN: stays live during held audition / External input; only driving state crosses the live gate",
@@ -10940,7 +11095,7 @@ def make_profile_main(profile: str, root: Path | None = None) -> dict[str, Any]:
     if profile == "ferrari":
         p.add(
             "comment",
-            "Ferrari Soundscape V6 / Pop V3: Main → Sound Design；电平也在该页直接显示和调整。",
+            "Ferrari Body V7 / Pop V3: Main → Sound Design；Noise 默认关闭，机械·路噪独立控制。",
             20, 82, 860, 24, numinlets=1, numoutlets=0, presentation=1,
             presentation_rect=[20.0, 82.0, 860.0, 24.0],
         )
@@ -11880,7 +12035,12 @@ out2 = tanh(right_drive * sat_drive) / sat_drive;""",
 GEN_CODE.pop("cabin_rumble", None)
 
 
-def make_gen(code: str) -> dict[str, Any]:
+GEN_CODE.update({f"{profile}_powertrain_v2": make_running_gen(profile, GEN_CODE[f"{profile}_powertrain"])
+                 for profile in ("v10", "v12")})
+GEN_CODE.update({f"{profile}_soundscape_bed": bed_code(profile) for profile in ("ev", "v10", "v12")})
+
+
+def make_gen(code: str, *, input_count: int = 0) -> dict[str, Any]:
     """Build a Gen patcher and expose every codebox Param at patcher scope."""
     matches = re.findall(
         r"^Param\s+(\w+)\(([-+0-9.]+),\s*min=([-+0-9.]+),\s*max=([-+0-9.]+)\);",
@@ -11894,7 +12054,7 @@ def make_gen(code: str) -> dict[str, Any]:
             "code": code,
             "id": "obj-1",
             "maxclass": "codebox",
-            "numinlets": 1,
+            "numinlets": max(1, input_count),
             "numoutlets": output_count,
             "outlettype": [""] * output_count,
             "patching_rect": [40.0, 40.0, 760.0, 580.0],
@@ -11920,6 +12080,12 @@ def make_gen(code: str) -> dict[str, Any]:
                 "text": f"param {name} {default} @min {minimum} @max {maximum}",
             }
         })
+    input_lines = []
+    for index in range(input_count):
+        box_id = f"signal-in-{index+1}"
+        boxes.append({"box": {"id": box_id, "maxclass": "newobj", "numinlets": 0, "numoutlets": 1,
+                              "text": f"in {index+1}", "patching_rect": [40.+index*80., 10., 50., 22.]}})
+        input_lines.append({"patchline": {"source": [box_id, 0], "destination": ["obj-1", index]}})
     return {
         "patcher": {
             "appversion": APP_VERSION,
@@ -11934,7 +12100,7 @@ def make_gen(code: str) -> dict[str, Any]:
                     }
                 }
                 for output_index in range(output_count)
-            ],
+            ] + input_lines,
             "rect": [50.0, 50.0, 850.0, 680.0],
         }
     }
@@ -12264,6 +12430,14 @@ def project_file() -> dict[str, Any]:
                 f"patchers/{profile}_backfire_host~.maxpat",
             )
         )
+    patchers.extend(f"patchers/vehicle_noise_{profile}~.maxpat" for profile in PROFILE_ORDER)
+    patchers.extend(f"patchers/{profile}_soundscape_v5_beap~.maxpat" for profile in ("ev", "v10", "v12"))
+    patchers.extend(f"patchers/{profile}_pop_v4~.maxpat" for profile in ("ev", "v10", "v12", "ioniq6n"))
+    patchers.append("patchers/ev_backfire_host~.maxpat")
+    patchers.append("patchers/ferrari_soundscape_v7_beap~.maxpat")
+    patchers.extend(f"patchers/ioniq6n_soundscape_{mode}_bed_v2_beap~.maxpat" for mode in IONIQ6N_SOUNDSCAPE_MODES)
+    for profile in ("v10", "v12"):
+        patchers.extend((f"patchers/{profile}_sound_dna_v2~.maxpat", f"patchers/{profile}_powertrain_v2~.maxpat"))
     for name in patchers:
         contents["patchers"][name] = {"kind": "patcher", "local": 1}
     for name in GEN_CODE:
@@ -12273,6 +12447,8 @@ def project_file() -> dict[str, Any]:
     contents["code"]["code/eq_state_path.js"] = {"kind": "javascript", "local": 1}
     contents["code"]["code/eq_feedback_reader.js"] = {"kind": "javascript", "local": 1}
     contents["code"]["code/dna_state_path.js"] = {"kind": "javascript", "local": 1}
+    for name in ("dna_v2_state_path.js", "noise_control.js", "noise_state.js", "soundscape_bed_state.js", "ioniq6n_bed_state.js", "ferrari_bed_state.js"):
+        contents["code"][f"code/{name}"] = {"kind": "javascript", "local": 1}
     contents["code"]["code/pop_state_path.js"] = {"kind": "javascript", "local": 1}
     contents["code"]["code/module_mixer_state_path.js"] = {"kind": "javascript", "local": 1}
     contents["code"]["code/soundscape_state_path.js"] = {"kind": "javascript", "local": 1}
@@ -12319,12 +12495,18 @@ def project_file() -> dict[str, Any]:
         "local": 1,
     }
     contents["data"]["presets/ferrari_soundscape_v6_factory.json"] = {"kind": "data", "local": 1}
+    contents["data"]["presets/ferrari_soundscape_v7_factory.json"] = {"kind": "data", "local": 1}
     contents["data"]["assets/ferrari_sf90_acoustic_target.json"] = {"kind": "data", "local": 1}
     contents["data"]["assets/ferrari_v10_lifecycle_targets.json"] = {"kind": "data", "local": 1}
     contents["data"]["assets/ferrari_sf90_v10_interpretation_targets.json"] = {"kind": "data", "local": 1}
     contents["data"]["assets/ioniq6n_acoustic_targets.json"] = {"kind": "data", "local": 1}
     contents["data"]["presets/ioniq6n_soundscape_modes_factory.json"] = {"kind": "data", "local": 1}
     contents["data"]["presets/ioniq6n_n_event_factory.json"] = {"kind": "data", "local": 1}
+    contents["data"]["presets/ioniq6n_soundscape_modes_v2_factory.json"] = {"kind": "data", "local": 1}
+    for profile in PROFILE_ORDER:
+        contents["data"][f"presets/{profile}_noise_v1_factory.json"] = {"kind": "data", "local": 1}
+    for profile in ("ev", "v10", "v12"):
+        contents["data"][f"presets/{profile}_soundscape_v5_factory.json"] = {"kind": "data", "local": 1}
     return {
         "autolocalize": 0,
         "autoorganize": 0,
@@ -12399,6 +12581,7 @@ def build_project(root: Path) -> None:
         "presets/sound_dna.json": PRESETS,
         "presets/vehicle_bus_eq_default.json": VEHICLE_BUS_EQ_DEFAULT,
         "presets/ioniq6n_soundscape_modes_factory.json": make_ioniq6n_soundscape_factory(),
+        "presets/ioniq6n_soundscape_modes_v2_factory.json": make_ioniq6n_soundscape_factory(version=2),
         "presets/ioniq6n_n_event_factory.json": make_ioniq6n_event_factory(),
         PROJECT_FILENAME: project_file(),
     }
@@ -12426,10 +12609,17 @@ def build_project(root: Path) -> None:
         make_ferrari_soundscape_v5_factory()
     )
     outputs["presets/ferrari_soundscape_v6_factory.json"] = make_ferrari_soundscape_v5_factory(6)
+    outputs["presets/ferrari_soundscape_v7_factory.json"] = make_ferrari_soundscape_v5_factory(7)
     for profile in ("v10", "v12"):
         outputs[f"patchers/{profile}_pad_voice.maxpat"] = make_ice_pad_voice(profile)
         outputs[f"patchers/{profile}_pad_host~.maxpat"] = make_ice_pad_host(profile)
-        outputs[f"patchers/{profile}_backfire_host~.maxpat"] = make_ice_backfire_host(profile)
+        outputs[f"patchers/{profile}_backfire_host~.maxpat"] = make_shared_pop_host(profile)
+        outputs[f"patchers/{profile}_powertrain_v2~.maxpat"] = make_profile_powertrain(profile, version=2)
+    outputs["patchers/ev_backfire_host~.maxpat"] = make_shared_pop_host("ev")
+    for profile in PROFILE_ORDER:
+        outputs[f"presets/{profile}_noise_v1_factory.json"] = make_vehicle_noise_factory(profile)
+    for profile in ("ev", "v10", "v12"):
+        outputs[f"presets/{profile}_soundscape_v5_factory.json"] = make_bed_factory(profile)
     outputs["patchers/ferrari_backfire_host~.maxpat"] = make_ferrari_pop_host()
     outputs["patchers/ferrari_pop_sample_voice~.maxpat"] = make_ferrari_pop_sample_voice()
     for profile in ("ev", "v10", "v12", "ferrari"):
@@ -12453,6 +12643,22 @@ def build_project(root: Path) -> None:
                     item["box"]["text"] = text
         write_json(root / relative_path, value)
     user_pad = root / "patchers" / "ev_pad_beap~.maxpat"
+    for profile in PROFILE_ORDER:
+        noise_voice = root / "patchers" / f"vehicle_noise_{profile}~.maxpat"
+        if not noise_voice.exists():
+            write_json(noise_voice, make_vehicle_noise(profile))
+    for profile in ("ev", "v10", "v12"):
+        bed_voice = root / "patchers" / f"{profile}_soundscape_v5_beap~.maxpat"
+        if not bed_voice.exists():
+            write_json(bed_voice, make_soundscape_bed(profile))
+    for profile in ("ev", "v10", "v12", "ioniq6n"):
+        pop_voice = root / "patchers" / f"{profile}_pop_v4~.maxpat"
+        if not pop_voice.exists():
+            write_json(pop_voice, make_shared_pop_designer(profile))
+    for profile in ("v10", "v12"):
+        dna_voice = root / "patchers" / f"{profile}_sound_dna_v2~.maxpat"
+        if not dna_voice.exists():
+            write_json(dna_voice, make_sound_dna(profile, version=2))
     if not user_pad.exists():
         write_json(user_pad, make_ev_pad_beap())
     for mode in ("expressive", "sport"):
@@ -12475,6 +12681,9 @@ def build_project(root: Path) -> None:
     ferrari_soundscape_v6 = root / "patchers" / "ferrari_soundscape_v6_beap~.maxpat"
     if not ferrari_soundscape_v6.exists():
         write_json(ferrari_soundscape_v6, make_ferrari_soundscape_v5_beap(6))
+    ferrari_bed = root / "patchers" / "ferrari_soundscape_v7_beap~.maxpat"
+    if not ferrari_bed.exists():
+        write_json(ferrari_bed, make_ferrari_soundscape_v5_beap(7))
     ferrari_pop_v3 = root / "patchers" / "ferrari_pop_v3~.maxpat"
     if not ferrari_pop_v3.exists():
         write_json(ferrari_pop_v3, make_ferrari_pop_designer())
@@ -12495,6 +12704,9 @@ def build_project(root: Path) -> None:
     if not ioniq_dna.exists():
         write_json(ioniq_dna, make_sound_dna("ioniq6n"))
     for mode in IONIQ6N_SOUNDSCAPE_MODES:
+        bed_mode_voice = root / "patchers" / f"ioniq6n_soundscape_{mode}_bed_v2_beap~.maxpat"
+        if not bed_mode_voice.exists():
+            write_json(bed_mode_voice, make_ioniq6n_soundscape_beap(mode, version=2))
         mode_voice = root / "patchers" / f"ioniq6n_soundscape_{mode}_beap~.maxpat"
         if not mode_voice.exists():
             write_json(mode_voice, make_ioniq6n_soundscape_beap(mode))
@@ -12522,7 +12734,7 @@ def build_project(root: Path) -> None:
         if not user_backfire.exists():
             write_json(user_backfire, make_ice_backfire_beap(profile, version=2))
     for name, code in GEN_CODE.items():
-        write_json(root / "gen" / f"{name}.gendsp", make_gen(code))
+        write_json(root / "gen" / f"{name}.gendsp", make_gen(code, input_count=8 if name.endswith("_soundscape_bed") else 0))
     for name, frames in MEDIA_FRAMES.items():
         media_path = root / "media" / f"{name}.wav"
         # Curated recordings and IRs are source assets, never disposable build

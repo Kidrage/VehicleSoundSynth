@@ -33,3 +33,16 @@ Base: frozen V4 tag `v4.0.0` (`6aa49d0`).
     body return. Pop V3 replaces only Ferrari's backfire renderer with one
     240 ms CC0 one-shot and two idle-muted players; existing event timing,
     Ferrari DNA/start, all other profile sounds and shared controls stay fixed.
+14. Current implementation, user accepted 2026-09-10: on
+    `codex/v6-layering-dna-pad-pop` from frozen `b609e8b`, separate an optional
+    five-profile Noise stem (-60 dB exact off) from low-mid Soundscape beds;
+    add EV/V10/V12 Soundscape V5, Ferrari V7's independent-hiss split and
+    IONIQ mode-bed V2's one-return split. Upgrade V10/V12 DNA above 1200 RPM
+    without changing the accepted idle. Share the existing 240 ms CC0 Pop
+    player across five profiles while preserving event conditions. Preserve
+    Ferrari/IONIQ DNA, starts, driving/input, FX, EQ and dynamics. Keep old
+    versioned files/state, migrate only compatible settings, and validate
+    actual Max playback/persistence when native QA resumes. The user authorized
+    publishing this feature branch on 2026-09-10 without further retuning;
+    no main merge. Unfinished automated native QA remains explicitly documented
+    in `V6_RELEASE_HANDOFF.md` and is separate from user listening acceptance.

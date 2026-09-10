@@ -3,6 +3,84 @@
 > Deterministically generated repository/project memory for cross-agent handoff.
 > Update after every material project change and before final reporting.
 
+## Accepted snapshot / publication authorization (2026-09-10)
+
+The user explicitly accepted the current patcher and authorized remote publication
+of `codex/v6-layering-dna-pad-pop`. This supersedes the local-only / pending-user-
+acceptance status in the historical 2026-09-09 entry below. No retuning or routing
+edits are authorized by this release task; main remains untouched. Current release
+scope, rollback and separate user/native-QA evidence: `V6_RELEASE_HANDOFF.md`.
+Chinese operation and persistence instructions: `V6_USER_GUIDE.md`.
+Historical incomplete native Max checks remain incomplete, not retroactively passed.
+
+## Running beds / Noise separation / shared Pop — implementation (2026-09-09)
+
+Current branch: `codex/v6-layering-dna-pad-pop`, based on
+`b609e8b729d0986a9c47920bf3c23a325c45b2e5`. Before editing, the current state was
+frozen under
+`/Users/saintpeter/Downloads/.VehicleSoundSynth-Backups/layering-dna-pad-pop-20260909.XxpeKuAh`.
+The user's existing `main.maxpat` diff and documentation moves into `docx/`
+are unrelated, preserved, and excluded from task staging. At implementation time
+this task was approved for a local commit only; the 2026-09-10 authorization above
+now allows feature-branch publication, still no main merge. Older entries below are
+historical acceptance records, not evidence that this implementation has passed
+its final verification.
+
+Implementation boundaries:
+
+- All five engines replace Road Air with `vehicle_noise_<profile>~` while
+  retaining `road_level_db`. The new default -60 dB is exact silence.
+  Mechanical/Intake depend on RPM/load/lifecycle; Tire/Air depend on speed.
+  Noise remains independent of Soundscape Enable. Component levels, Color,
+  live BEAP ceiling, Solo/meters and Save/Reload/Reset are exposed. Designer
+  Solo uses the shared design-control bus, not the External-only input bus.
+- EV/V10/V12 use `*_soundscape_v5_beap~` and three `*_soundscape_bed.gendsp`
+  exciters. Body/Cavity/Contour/Load Response/Release Mass tune independent
+  running beds. Existing BEAP colour/space modules and cabin FX are retained;
+  no DNA audio is fed into Soundscape.
+- Ferrari uses `ferrari_soundscape_v7_beap~`: only the independent mechanical
+  halo and air returns are disconnected. The accepted V6 pressure exciter,
+  internal combustion texture, body/cavity, dry-body return and FX are retained.
+- IONIQ uses three `ioniq6n_soundscape_<mode>_bed_v2_beap~` instruments. Exactly
+  one independent speed/transient-hiss return is disconnected in each. The
+  already RPM-shaped native texture, accepted tones and mode/FX structure stay.
+  Designer Save/Reload/Reset now reaches the same host storage as Main.
+- V10/V12 DNA V2 wraps `*_powertrain_v2.gendsp`; the original output is selected
+  through 1200 RPM and the running extension fades in over 1200–3000 RPM.
+  Running Body, Running Cavity, HF Softness and Release Mass expose the new
+  pressure/body shaping. Ferrari/IONIQ DNA and all starts are protected.
+- Five Pop/Event paths share unchanged `media/ferrari_pop_v3.wav` (240 ms CC0,
+  SHA-256 `cf63aab2c16eee3efcf3e94c07baf3a3a1a5c04a5509009174c46559bb49133a`)
+  and at most two idle-muted players. Ferrari retains Pop V3; the other four
+  use Pop V4 with profile Pitch/Tone/Level. ICE burst conditions remain; EV is
+  preview-only, and IONIQ retains mode/eShift gates. No legacy Pop layering.
+
+State migration is versioned and never overwrites the old file: V10/V12 DNA
+imports formerly audible controls only (old disconnected idle values must not
+alter the accepted idle); new EV/V10/V12 beds import compatible spatial/pitch
+controls; Ferrari/IONIQ import accepted settings with voice-prefix changes.
+Mixer migration preserves all balances except resetting Noise to off. Noise
+and new Pop designers have their own profile-local files. Use each designer's
+Save after tuning; Main's Save Profile Sound still targets Mixer/SC/EQ.
+New state stores disable implicit free-time saving so a last-read factory file
+cannot become an autosave target. The inherited Soundscape Reset completes
+after about 0.86 seconds; wait one second before subsequent edits/Save/Reload.
+
+`tools/ice_dna_v2.py`, `tools/soundscape_bed.py` and `tools/noise_layer.py` extend
+the generator at scoped seams. `tools/build_runtime_probe.py` now packages live
+versions, nested JS/Gen/sample references and transitive poly/abstraction
+dependencies in a monitor-muted temporary bundle; direct ICE probes initialize
+their factory idle/run controls. No reference audio or continuous sample bank
+is added.
+
+Final full-suite results, equal-level acoustic comparisons, real Max project /
+persistence checks, task-owned Max shutdown, deterministic-generation hashes
+and final commit are to be recorded by the implementation owner after completion.
+This section records implemented structure only and makes no final QA claim.
+Current verification evidence, the user-authorized forced test Max shutdown,
+and the unresolved native compile/acceptance work
+are recorded in `.agentlab/V6_LAYERING_2026-09-09.md`.
+
 ## Ferrari body return / lightweight Pop (2026-09-08)
 
 `codex/v6-ferrari-body-pop-sampler` builds on `93accba`, with a hash-verified

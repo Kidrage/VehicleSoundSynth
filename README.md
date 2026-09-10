@@ -1,5 +1,9 @@
 # VehicleSoundSynth V6
 
+使用入口：[V6 中文使用说明](V6_USER_GUIDE.md)。
+维护交接：[V6 发布交接](V6_RELEASE_HANDOFF.md)。
+2026-09-10 用户认可当前声音，发布目标是 `codex/v6-layering-dna-pad-pop`，不是 `main`；本次发布不再调整音色。
+
 Max/MSP 8.6.5 vehicle-sound project with five independent runtimes:
 
 - `VehicleSoundSynth-EV.maxpat`
@@ -37,10 +41,10 @@ paths reliably.
 5. In IONIQ6N, select Ignition, Evolution, or Lightspeed. Evolution is the
    default. N e-Shift starts enabled with eight virtual ratios; disable it for
    continuous EV pitch without virtual shifts. Its Sound DNA, three
-   Soundscapes, activation and N-event designer are sample-free and independent
-   of V10.
-6. In Ferrari, startup, continuous V10 interpretation, Soundscape V4 and
-   backfire are all procedural. This profile is analysis-informed rather than a
+   Soundscapes and activation remain procedural and independent of V10;
+   N events now use the shared short Pop sample with the original mode gates.
+6. In Ferrari, startup, continuous V10 interpretation and Soundscape V7
+   remain procedural; Pop uses one licensed 240 ms sample. This profile is analysis-informed rather than a
    claim to model the physical SF90 powertrain, and it has no runtime reference-audio dependency.
 7. On Main's Drive page, use Internal Manual for direct throttle/brake control, Internal Auto for the
    guarded drive cycle, or send messages to `vss.ev.input`, `vss.v10.input`, or
@@ -55,9 +59,12 @@ paths reliably.
    Solo, and `Test Pop` to tune the
    active Pop voice without driving the car. These buttons open the audible
    instances; use the matching `Save` control, or `Save Profile Sound` for the
-   Mixer, Soundscape and EQ together, after an edit.
+   Mixer, Soundscape and EQ together, after an edit. Main also exposes the shared
+   Pop Open/Audition and Noise Open/Solo controls for all five profiles.
 10. On Main's Mix + EQ page balance the seven audible modules: Sound DNA, Start,
-   Pop/Event, Soundscape, Road/Air, Cabin Rumble, and Master. Each profile
+   Pop/Event, Soundscape, Noise (机械·路噪), Cabin Rumble, and Master. Noise
+   starts at -60 dB (exactly off): raise its fader before using its Solo or
+   component controls. Each profile
    restores its own local mixer and four-band EQ state automatically. The DNA
    output fader lives here as the sole output-gain authority; it is not duplicated
    inside a Sound DNA designer.
@@ -95,25 +102,30 @@ cadence with independently tunable body (120--250 Hz), cavity (250--600 Hz),
 mechanical (600--1200 Hz), presence (1.2--2 kHz) and edge (2--6 kHz) bands.
 Its output uses a dedicated 1.35 kHz presence ceiling after band summing, so
 high load keeps combustion texture without exposing a broad square-like edge.
-Its Soundscape V5 is a separate exterior-projection stem: cadence impulses
-excite body/cavity resonators, load reveals mechanical air and roadside
-reflection, and RPM alone owns the reinforcement pitch. Start and backfire each
-have their own seed-once BEAP designer. No reference recording, continuous
-derivative, or Ferrari sample is loaded by this runtime.
+Its Soundscape V7 keeps the accepted V6 pressure/body/cavity and dry-body return,
+but disconnects the independent mechanical-halo and air returns. Noise used
+inside the combustion-pressure exciter is deliberately retained. No reference
+recording or continuous derivative is loaded. The short Pop sample is a licensed
+CC0 exhaust event, not a Ferrari reference-recording derivative.
 
 V10 and V12 continuous sound is procedural. No idle, acceleration, deceleration,
 or shift-recovery recording is loaded or looped. Both engines use phase-locked
 four-stroke cylinder banks, low-order body resonances, bounded combustion
 residuals, and soft saturation instead of saw/square oscillators. V10 is tuned
 against offline Ferrari lifecycle targets; V12 remains an independent, smoother
-high-rev model. EV, V10, V12 and Ferrari each feed an independently editable
-four-layer cinematic BEAP/MSP Soundscape V4 instrument through profile-specific
-continuous control maps. RPM (and therefore vehicle speed through the existing
-drive model) continuously drives the tonal root. Throttle and load change the
-modal, harmonic, structure and air balance without stepping that root. V10/V12
-also receive a Start-latched combustion cadence at idle; ignition alone cannot
-self-start that pulse layer. EV uses a restrained ready-state bed instead of a
-fake combustion idle.
+high-rev model. Their new DNA V2 keeps the original output at or below 1200 RPM
+and smoothly introduces the running body/cavity/HF-softness path from 1200 to
+3000 RPM. Running Body, Running Cavity, HF Softness and Release Mass expose the
+new design without retuning the accepted idle.
+
+EV/V10/V12 Soundscape V5 supplies an independent running low-mid bed: excitation
+feeds body/cavity resonators, load changes contour and density, and fast edge /
+slow mass envelopes separate pedal release from a simple volume fade. EV uses
+rounded electromagnetic excitation; ICE beds use RPM-coherent pressure. The
+existing BEAP colour filters, Chorus/Reverb and cabin processing remain in place.
+Ferrari retains its accepted body design; IONIQ's V2 mode beds remove only the
+standalone speed/transient hiss. IONIQ's already RPM-shaped native texture is
+retained as part of its accepted high-load identity, not treated as constant hiss.
 
 V6 adds visible per-profile `Open Sound DNA` panels, low-order crankcase/manifold motion to the ICE models and torque-ripple/
 gear-mesh motion to the EV model. These remain phase-continuous and are driven by
@@ -122,22 +134,17 @@ is used. The stronger idle signature is deliberately concentrated in the body
 and rumble bands, while the existing RPM-adaptive low-pass still restrains the
 plastic high-frequency edge.
 
-Shift, deceleration, exhaust-pop and crackle recordings are no longer runtime
-inputs. DCT pitch/torque motion remains in the continuous drivetrain and Gen
-powertrain. V10/V12 pressure-release events are generated by editable BEAP
-backfire voices from actual overrun and shift state. A generated burst scheduler
-turns a fast lift-off into 1--5 pressure releases spaced by a random 140--200 ms;
-successive hits fall in pitch with a small jitter and decay in level. Shift and
-explicit physical events remain single hits. The low exhaust body, separately
-filtered crack and softer wall reflections replace the former naked resonant
-click, while the BEAP graph remains the editable colour layer. No backfire sample
-is used, and slowing to zero cannot trigger the former low-resolution event
-sample.
+All five Pop/Event renderers now share one 240 ms CC0 exhaust sample and at most
+two idle-muted players, followed by Tone and Level. Only voicing differs by
+profile. The existing ICE burst scheduler and physical conditions remain;
+IONIQ keeps its mode/eShift event gates and EV does not gain automatic combustion
+events. Legacy Pop synthesizers are retained for rollback, never layered with
+the current player. Starts and DCT pitch/torque motion are unchanged.
 
 Every runtime host owns one generated `patchers/module_mixer.maxpat`; Main's
 Mix + EQ page is its remote control surface. It does not synthesize sound: it
 converts the seven labelled values to the existing public dB messages. The six stem
-faders cover Sound DNA, Start, Pop/Event, Soundscape, Road/Air and Cabin Rumble;
+faders cover Sound DNA, Start, Pop/Event, Soundscape, Noise and Cabin Rumble;
 Master is the final bus trim. Values auto-save per profile under the ignored
 `presets/local/` directory, so all five profiles keep independent balances.
 Changing profile does not copy or merge saved values.
@@ -147,7 +154,7 @@ The signal path per runtime is:
 ```text
 fixed drive/controller -> one editable profile Sound DNA -> one Gen powertrain
                        + optional shared Soundscape
-                       + transient + road
+                       + sample Pop/Event + independent mechanical/road Noise
                        -> powertrain-excited cabin/body
                        -> editable four-band stereo EQ
                        -> generated compressor -> limiter/clip -> output
@@ -229,8 +236,8 @@ smoothly, and EV uses a ready chime plus harmonic activation instead of a fake
 crank. `realistic` remains the mutually exclusive ICE sample alternative; V10
 selects the optional local processed Ferrari startup when available. The sample
 and procedural starter are never layered.
-Ferrari exposes only its procedural option and never routes to `buffer~` or
-`play~`.
+Ferrari's start path exposes only its procedural option and never routes to
+`buffer~` or `play~`; the short Pop renderer is the separate sample exception.
 
 ## User-editable BEAP patchers
 
@@ -238,51 +245,53 @@ These files are seeded only when absent and are not overwritten by project
 regeneration:
 
 - `patchers/{ev,v10,v12,ferrari}_engine_start_v3_beap~.maxpat` — independent current cinematic starts
-- `patchers/{ev,v10,v12}_soundscape_v4_beap~.maxpat` — three independent current Soundscape V4 instruments
-- `patchers/ferrari_soundscape_v5_beap~.maxpat` — Ferrari's current cadence-excited exterior Soundscape
-- `patchers/ioniq6n_soundscape_{ignition,evolution,lightspeed}_beap~.maxpat` — independent IONIQ6N N Sound instruments
-- `patchers/ioniq6n_activation_beap~.maxpat` / `patchers/ioniq6n_n_event_beap~.maxpat` — ready activation and mode-aware N events
+- `patchers/{ev,v10,v12}_soundscape_v5_beap~.maxpat` — current independent running beds
+- `patchers/ferrari_soundscape_v7_beap~.maxpat` — accepted body with separate hiss returns removed
+- `patchers/ioniq6n_soundscape_{ignition,evolution,lightspeed}_bed_v2_beap~.maxpat` — accepted N modes with the standalone hiss return removed
+- `patchers/ioniq6n_activation_beap~.maxpat` — unchanged procedural ready activation
+- `patchers/{v10,v12}_sound_dna_v2~.maxpat` — current running-only DNA upgrades
+- `patchers/vehicle_noise_{ev,v10,v12,ioniq6n,ferrari}~.maxpat` — independent Noise designers
+- `patchers/{ev,v10,v12,ioniq6n}_pop_v4~.maxpat` / `patchers/ferrari_pop_v3~.maxpat` — current short-sample Pop designers
 - `patchers/ev_pad_beap~.maxpat` — EV Relax
 - `patchers/ev_expressive_beap~.maxpat` — EV Expressive
 - `patchers/ev_sport_beap~.maxpat` — EV Sport
 - `patchers/v10_pad_beap~.maxpat` / `patchers/v12_pad_beap~.maxpat` — cinematic ICE pads
-- `patchers/v10_backfire_v2_beap~.maxpat` / `patchers/v12_backfire_v2_beap~.maxpat` — current physical backfire voices
-- `patchers/ferrari_backfire_v2_beap~.maxpat` — Ferrari profile's independent procedural pressure-release voice
+- Older Soundscape, DNA and backfire files remain available for rollback; do not
+  open them as though they were the active designer.
 
-The current runtime instantiates exactly one profile-owned instrument. EV is
-an Evolution-style cinematic energy bed with fixed-ratio score voices, motor /
-inverter texture, and short spectral transients. V10 uses an exact `rpm/12`
-firing clock to excite body modes, then adds a continuous Ignition-style order
-climb, induction structure and shift reset. V12 uses `rpm/10`, a heavier
-35--450 Hz body/cavity structure, and a restrained load-opened mechanical whine.
-No Sound DNA audio or named parameter enters these graphs: Sound DNA and
-Soundscape meet only at the existing engine stem sum.
+Sound DNA and Soundscape meet only at the engine stem sum; no DNA audio enters
+the Soundscape. For V5 beds, tune Body → Cavity → Contour → Load Response /
+Release Mass, then the BEAP filters. RPM owns periodic excitation; pedal/load
+changes body and edge envelopes. ICE cadence stays tied to RPM: Pitch Follow
+and Transpose move modal placement, not the physical engine clock. Bass below
+120 Hz remains centred; existing spatial processing is upper-band only.
 
-RPM owns continuous root pitch, speed owns upper-band air and space, and
-load/throttle own layer balance and filter colour. Bass below 120 Hz stays
-centred and stereo processing is upper-band only. Factory oscillators are
-sine/triangle; firing pulses excite filters/resonators and are never exposed as
-bare square waves. There is no Soundscape full-mix waveshaper.
-
-EV, V10 and V12 load tracked V4 factories and optionally apply their ignored
-V4 local state. Ferrari uses `presets/ferrari_soundscape_v5_factory.json` and
-ignored `presets/local/ferrari_soundscape_v5.json`. `Factory Reset` reloads the
-matching versioned authority; older graphs and presets remain archived and
-cannot re-voice the live instance.
+EV/V10/V12 use `<profile>_soundscape_v5_factory.json` and local
+`<profile>_soundscape_v5.json`. Only compatible spatial/pitch controls migrate
+from V4; old source settings cannot overwrite the new bed. Ferrari uses V7
+files and migrates the accepted V6 state with only namespace changes.
+`Factory Reset` targets the matching versioned authority; old files remain.
 `Soundscape Enable`, dB, `Motion`, `Space`,
 `Pitch Follow`, `Transpose`, `Brightness`, and `Solo` are exposed on every
 runtime. `Open Designer` fronts the exact embedded instance feeding that
 runtime—there is no detached editor or `poly~` copy. For EV, V10 and V12,
-`Save` writes the active profile to ignored
-`presets/local/<profile>_soundscape_v4.json`; Ferrari instead writes the V5
-path named above. All four have independent graph topologies, factory states
+`Save` writes the active profile to its ignored versioned file under
+`presets/local/`. All four have independent graph topologies, factory states
 and local user states.
 
 IONIQ6N instead persists all three mode graphs through
-`presets/ioniq6n_soundscape_modes_factory.json` and the ignored local
-`presets/local/ioniq6n_soundscape_modes.json`. Switching `n_sound_mode` uses a
+`presets/ioniq6n_soundscape_modes_v2_factory.json` and the ignored local
+`presets/local/ioniq6n_soundscape_modes_v2.json`. All old mode/tone/FX settings
+migrate by namespace only. Switching `n_sound_mode` uses a
 150 ms crossfade; it never copies parameters between instruments. The separate
-N-event factory is `presets/ioniq6n_n_event_factory.json`.
+N-event renderer now uses the shared Pop V4 designer while retaining the host's gates.
+
+Noise is independent of Soundscape Enable and starts off. Raise Main's Noise
+fader, then use Noise Solo while running. Mechanical and Intake follow RPM /
+load; Tire and Air follow road speed and are silent while parked. Component
+levels are -60..0 dB, Color is 0..1; the visible BEAP ceiling is in the live path.
+Use the Noise Designer's own Save/Reload/Factory Reset. Noise does not audition
+with ignition off. `road_level_db` remains the compatible stem message.
 
 ## Public control messages
 
@@ -314,6 +323,16 @@ powertrain_level_db -60..6
 start_level_db -60..6
 transient_level_db -60..6
 road_level_db -60..6
+noise_open
+noise_solo 0|1
+noise_save
+noise_reload
+noise_reset
+noise_mechanical_db -60..0
+noise_intake_db -60..0
+noise_tire_db -60..0
+noise_air_db -60..0
+noise_color 0..1
 rumble_level_db -60..6
 soundscape_enable 0|1
 soundscape_level_db -60..6
@@ -389,8 +408,8 @@ The V10 defaults are more active and sharper; V12 defaults are rarer and
 rounder. A physical lift-off event is armed only after at least 0.12 seconds of
 loaded running above roughly 1600 RPM and throttle 0.35. Releasing at least 0.35
 of pedal to 0.18 or below within 0.18 seconds produces a randomized 1--5 hit
-pressure-release burst. Adjacent hits are 140--200 ms apart and descend in pitch
-with small jitter; slow release, low RPM, brake-only motion, EV, ignition-off,
+pressure-release burst. Adjacent hits are 140--200 ms apart with small per-hit
+pitch variation; slow release, low RPM, brake-only motion, EV, ignition-off,
 and engine-off states do not trigger it. The internal `overrun 0..1` message
 carries that event strength from the drivetrain to the backfire host.
 
@@ -400,41 +419,27 @@ and click Test Pop; it plays the same randomized burst and deliberately bypasses
 ignition and running-state gates. Automatic lift-off/shift events still require
 Backfire Enable, ignition and a running engine. Gear-shift events remain one hit.
 Turn Solo off before normal driving.
-`Backfire Intensity` is now a timbre control as well as a level
-control: low values keep one compact pressure release, the default adds a
-filtered exhaust crack, and high values progressively open the upper colour
-and a second tail. V10 is shorter, sharper and more active; V12 is lower,
-rounder and slightly longer.
+`Backfire Intensity` scales event strength; Pitch and Tone now own the sample's
+colour. It no longer opens layers of the legacy pressure synthesizer.
 
 Use `Open Pop Designer` so edits target the active audible instance in the
 supported one-runtime-at-a-time workflow. Opening two copies of the same profile
 is a diagnostic-only case; their profile-local control buses intentionally move
-both copies together. The button opens the active
-`v10_backfire_beap~` or `v12_backfire_beap~` instance. The labelled
-`PRESSURE BODY`, `EXHAUST CRACK`, and `TAIL COLOR / OUTPUT` panels tune the BEAP
-colour layer. The adjacent `HOST CORE CONTROLS` tune the dominant pressure core:
-Global Pitch changes all layers in semitones; Core Presence scales the guaranteed
-pressure core from 0.25 to 1.5 with unity at 1; Body/Crack Tune, Decay, Low
-Pressure, Body Level and Crack Level expose the remaining core tone balance.
-The top number controls are authoritative. `Pressure_Mixer` adds dependable
-BEAP colour, while native MMF/AD/VCA icons may be subtle under Max 8.6.5's short
-external gates and should not be used as a chain-health test. The shipped
-V10/V12 defaults use Global Pitch `-5` / `-6`, Low Pressure `1.0` / `1.0`,
-Body Level `1.30` / `1.35`, Crack Level `0.008` / `0.006`, and Decay Scale
-`0.75` / `0.62`, so the result reads as a short exhaust-pressure explosion
-rather than a snare. For an even lower Pop, make Global Pitch more negative,
-then reduce Crack Tune or Crack Level. Burst count,
-spacing and per-hit pitch contour remain physical logic in
-`code/backfire_burst.js`; reflection timing remains generated plumbing. Do not
-edit generated `*_backfire_host~.maxpat` JSON. Click `Save Pop` in the active
-Pop Designer after tuning; its top controls and BEAP state go to the ignored
-`presets/local/v10_pop.json` or `v12_pop.json` and restore on the next runtime
-load. Then set runtime Intensity and use transient dB only for whole-stem
-balance. On the runtime page, `Pop / Event` is the final gain for the entire Pop
-voice; use it only after the tone is finished. The Soundscape,
-start and backfire BEAP `.maxpat` files are
-seed-once user-owned files: edit and save them directly in Max, and project
-regeneration will preserve your tuning.
+both copies together. Current designers expose Pitch (-6..3 semitones, next
+hit), Tone (1200..8000 Hz) and Level (-24..0 dB), plus audition and persistence.
+Factory voicings are Ferrari 0 st / 4200 Hz / 0 dB; V10 -1 / 3800 / -3;
+V12 -2 / 3200 / -3; EV +1 / 5000 / -3; IONIQ 0 / 4200 / -3.
+Only two short players are available; inactive players mute, and shutdown or
+profile deactivation cancels pending events/tails. Do not edit generated
+`*_backfire_host~.maxpat` JSON.
+
+Click `Save Pop` after tuning. Ferrari keeps
+`presets/local/ferrari_pop_v3.json`; the other four write
+`presets/local/<profile>_pop_v4.json`. Old Pop presets are not imported into
+the new sample design. `Pop / Event` in Main remains the final whole-stem
+balance; the designer Level is not a second replacement for that fader.
+EV audition is explicit only; IONIQ keeps N-mode/eShift conditions. Old BEAP
+Pop controls describe rollback files, not the current audible sample renderer.
 
 Keyboard Manual uses binary pedals: W sends full `throttle 1` while held and S
 sends the fixed service-brake command. The `keyboard_drive_ws` adapter owns the
@@ -443,9 +448,11 @@ normalized pedals into the existing 20 ms drive integration.
 
 ## Persistent module mixer
 
-The `MODULE MIXER` on each runtime is the single balance surface for every
-audible module. Move a fader in dB; its value is sent immediately and written
-after a short debounce to `presets/local/<profile>_module_mixer.json`. The state
+Main's `MODULE MIXER` is the single common balance surface. Move a fader in dB;
+its value is sent immediately and written after a short debounce to
+`presets/local/<profile>_module_mixer_noise_v1.json` (Ferrari uses prefix
+`ferrari_realism_v2`). On first migration, the old mixer file is preserved and
+all other faders retain their values; only Noise starts at -60 dB. The state
 is profile-specific and ignored by Git. `Reload` restores the last saved values,
 `Reset` returns to the shipped profile balance, and closing/switching a runtime
 saves once more synchronously. Edit `tools/build_project.py` rather than the
@@ -455,8 +462,8 @@ generated `patchers/module_mixer.maxpat` if the mixer interface itself changes.
 
 `Save Profile Sound` commits the active profile's Module Mixer, Soundscape and
 four-band vehicle-bus EQ. Their ignored state files are respectively
-`presets/local/<profile>_module_mixer.json`,
-`<profile>_soundscape_v3.json`, and `<profile>_vehicle_bus_eq.json`.
+the versioned mixer path above, the current versioned Soundscape path, and
+`<profile>_vehicle_bus_eq.json` under `presets/local/`.
 `Reload Profile Sound` recalls all three. Each panel also retains its own Save,
 Reload and Reset controls. A legacy `presets/local/vehicle_bus_eq.json` is read
 once as a migration fallback when a profile EQ file does not yet exist; the

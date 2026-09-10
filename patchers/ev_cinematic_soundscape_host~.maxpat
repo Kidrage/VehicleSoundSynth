@@ -21,7 +21,7 @@
             1120.0,
             22.0
           ],
-          "text": "EV CINEMATIC SOUNDSCAPE V4 HOST \u2014 state-only coupling; no Sound DNA audio or parameters"
+          "text": "EV CINEMATIC SOUNDSCAPE V5 HOST \u2014 state-only coupling; no Sound DNA audio or parameters"
         }
       },
       {
@@ -1621,7 +1621,7 @@
             250.0,
             22.0
           ],
-          "text": "ev_soundscape_v4_beap~"
+          "text": "ev_soundscape_v5_beap~"
         }
       },
       {
@@ -1772,7 +1772,7 @@
             455.0,
             22.0
           ],
-          "text": "pattrstorage soundscape_ev_v4 @greedy 1 @savemode 3 @changemode 1 @outputmode 6 @backupmode 1 @autorestore 0"
+          "text": "pattrstorage soundscape_ev_v5 @greedy 1 @savemode 0 @changemode 1 @outputmode 6 @backupmode 1 @autorestore 0"
         }
       },
       {
@@ -1791,7 +1791,7 @@
             285.0,
             22.0
           ],
-          "text": "js Patcher:/code/soundscape_v4_state_path.js ev"
+          "text": "js Patcher:/code/soundscape_bed_state.js ev"
         }
       },
       {

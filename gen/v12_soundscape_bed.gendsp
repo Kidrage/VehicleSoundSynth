@@ -1,0 +1,443 @@
+{
+  "patcher": {
+    "appversion": {
+      "architecture": "x64",
+      "major": 8,
+      "minor": 6,
+      "modernui": 1,
+      "revision": 5
+    },
+    "boxes": [
+      {
+        "box": {
+          "code": "Param body(.78, min=0, max=1);\nParam cavity(.70, min=0, max=1);\nParam contour(.42, min=0, max=1);\nParam load_response(.72, min=0, max=1);\nParam release_mass(.65, min=0, max=1);\nHistory slowload(0); History fastload(0); History life(0);\nHistory m1a(0); History m1b(0); History m2a(0); History m2b(0); History m3a(0); History m3b(0);\nHistory subdc(0); History top(0); History top2(0);\nHistory previousPhase(0); History cycleIndex(0); History cycleWeight(1);\n// Inputs: pitch octaves / run gate / colour / motion / cadence / idle / load / event.\nhz = clamp(261.625565*pow(2,in1),28,520);\nloadval = clamp(in7,0,1);\nfastcoef = exp(-1/(samplerate*.045));\nslowcoef = exp(-1/(samplerate*(loadval > slowload ? .09 : .18+.72*release_mass)));\nfastload = loadval+(fastload-loadval)*fastcoef;\nslowload = loadval+(slowload-loadval)*slowcoef;\nlifecoef = exp(-1/(samplerate*.05));\nlife = clamp(in2/5,0,1)+(life-clamp(in2/5,0,1))*lifecoef;\nrelease = max(0,slowload-fastload)*release_mass;\ncolour = clamp(in3,0,1);\nmotion = clamp(in4,0,1);\nidle = clamp(in6,0,1);\nevent = clamp(in8,0,1);\n// Both banks share one RPM clock; rounded pressure, never an audible comparator.\nfund = max(18,abs(in5)*0.2);\nphase = phasor(fund);\ncycleIndex = lt(phase, previousPhase) ? cycleIndex+1 : cycleIndex;\ncycleWeight = lt(phase, previousPhase) ? 1+sin(cycleIndex*2.399963)*.025 : cycleWeight;\npreviousPhase = phase;\n// Noninteger pulse shape + tiny cycle-energy variation creates pressure texture,\n// never a separate white/mechanical noise source or left/right detuning.\npulse = pow(.5+.5*cos(phase*twopi),3.15+1.65*contour+.25*fastload);\nbank = pow(.5+.5*cos((phase+.47)*twopi),2.35+.70*contour);\nrawpressure = pulse*.74+bank*.52;\nsubdc = rawpressure+(subdc-rawpressure)*exp(-twopi*20/samplerate);\nexciter = (rawpressure-subdc)*cycleWeight;\nmass = .34+.04*idle+.30*slowload*load_response+.16*release;\n// Contour changes pulse shape and filter opening, not cadence or mean amplitude.\nexciter = exciter*(1+.12*contour*fastload);\nsub = sin(phase*twopi)*.18 + sin(phase*twopi*2)*.07;\nf1 = clamp(108+hz*0.19+colour*20,70,850);\nw1 = twopi*f1/samplerate;\nr1 = exp(-pi*f1/(2.35*samplerate));\nm1 = 2*(1-r1)*sin(w1)*exciter + 2*r1*cos(w1)*m1a-r1*r1*m1b;\nm1b=m1a; m1a=m1;\nf2 = clamp(205+hz*0.28+colour*28,70,850);\nw2 = twopi*f2/samplerate;\nr2 = exp(-pi*f2/(2.7*samplerate));\nm2 = 2*(1-r2)*sin(w2)*exciter + 2*r2*cos(w2)*m2a-r2*r2*m2b;\nm2b=m2a; m2a=m2;\nf3 = clamp(360+hz*0.37+colour*36,70,850);\nw3 = twopi*f3/samplerate;\nr3 = exp(-pi*f3/(3.05*samplerate));\nm3 = 2*(1-r3)*sin(w3)*exciter + 2*r3*cos(w3)*m3a-r3*r3*m3b;\nm3b=m3a; m3a=m3;\n// Independent fast edge / slow mass: lift sheds brightness first.\nceilfreq = 580+colour*220+fastload*120+contour*160;\nlpcoef = exp(-twopi*ceilfreq/samplerate);\ntop = exciter+(top-exciter)*lpcoef;\ntop2 = top+(top2-top)*lpcoef;\nout1 = (m1*.90+sub*.36)*mass*body*life;\nout2 = (m2*.65+m3*.42)*(.25+.38*slowload*load_response)*cavity*life;\nout3 = top2*(.035+.11*fastload*load_response)*contour*life;\nout4 = m1*(release*.32+event*.065)*body*life;\n",
+          "id": "obj-1",
+          "maxclass": "codebox",
+          "numinlets": 8,
+          "numoutlets": 4,
+          "outlettype": [
+            "",
+            "",
+            "",
+            ""
+          ],
+          "patching_rect": [
+            40.0,
+            40.0,
+            760.0,
+            580.0
+          ]
+        }
+      },
+      {
+        "box": {
+          "id": "obj-2",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            40.0,
+            640.0,
+            45.0,
+            22.0
+          ],
+          "text": "out 1"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-3",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            120.0,
+            640.0,
+            45.0,
+            22.0
+          ],
+          "text": "out 2"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-4",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            200.0,
+            640.0,
+            45.0,
+            22.0
+          ],
+          "text": "out 3"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-5",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            280.0,
+            640.0,
+            45.0,
+            22.0
+          ],
+          "text": "out 4"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-6",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            840.0,
+            104.0,
+            220.0,
+            22.0
+          ],
+          "text": "param body .78 @min 0 @max 1"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-7",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            840.0,
+            136.0,
+            220.0,
+            22.0
+          ],
+          "text": "param cavity .70 @min 0 @max 1"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-8",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            840.0,
+            168.0,
+            220.0,
+            22.0
+          ],
+          "text": "param contour .42 @min 0 @max 1"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-9",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            840.0,
+            200.0,
+            220.0,
+            22.0
+          ],
+          "text": "param load_response .72 @min 0 @max 1"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-10",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            840.0,
+            232.0,
+            220.0,
+            22.0
+          ],
+          "text": "param release_mass .65 @min 0 @max 1"
+        }
+      },
+      {
+        "box": {
+          "id": "signal-in-1",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            40.0,
+            10.0,
+            50.0,
+            22.0
+          ],
+          "text": "in 1"
+        }
+      },
+      {
+        "box": {
+          "id": "signal-in-2",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            120.0,
+            10.0,
+            50.0,
+            22.0
+          ],
+          "text": "in 2"
+        }
+      },
+      {
+        "box": {
+          "id": "signal-in-3",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            200.0,
+            10.0,
+            50.0,
+            22.0
+          ],
+          "text": "in 3"
+        }
+      },
+      {
+        "box": {
+          "id": "signal-in-4",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            280.0,
+            10.0,
+            50.0,
+            22.0
+          ],
+          "text": "in 4"
+        }
+      },
+      {
+        "box": {
+          "id": "signal-in-5",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            360.0,
+            10.0,
+            50.0,
+            22.0
+          ],
+          "text": "in 5"
+        }
+      },
+      {
+        "box": {
+          "id": "signal-in-6",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            440.0,
+            10.0,
+            50.0,
+            22.0
+          ],
+          "text": "in 6"
+        }
+      },
+      {
+        "box": {
+          "id": "signal-in-7",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            520.0,
+            10.0,
+            50.0,
+            22.0
+          ],
+          "text": "in 7"
+        }
+      },
+      {
+        "box": {
+          "id": "signal-in-8",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            600.0,
+            10.0,
+            50.0,
+            22.0
+          ],
+          "text": "in 8"
+        }
+      }
+    ],
+    "classnamespace": "dsp.gen",
+    "fileversion": 1,
+    "lines": [
+      {
+        "patchline": {
+          "destination": [
+            "obj-2",
+            0
+          ],
+          "source": [
+            "obj-1",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-3",
+            0
+          ],
+          "source": [
+            "obj-1",
+            1
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-4",
+            0
+          ],
+          "source": [
+            "obj-1",
+            2
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-5",
+            0
+          ],
+          "source": [
+            "obj-1",
+            3
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-1",
+            0
+          ],
+          "source": [
+            "signal-in-1",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-1",
+            1
+          ],
+          "source": [
+            "signal-in-2",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-1",
+            2
+          ],
+          "source": [
+            "signal-in-3",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-1",
+            3
+          ],
+          "source": [
+            "signal-in-4",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-1",
+            4
+          ],
+          "source": [
+            "signal-in-5",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-1",
+            5
+          ],
+          "source": [
+            "signal-in-6",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-1",
+            6
+          ],
+          "source": [
+            "signal-in-7",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-1",
+            7
+          ],
+          "source": [
+            "signal-in-8",
+            0
+          ]
+        }
+      }
+    ],
+    "rect": [
+      50.0,
+      50.0,
+      850.0,
+      680.0
+    ]
+  }
+}

@@ -6,14 +6,15 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import shutil
 import subprocess
 from pathlib import Path
 
 try:
-    from .build_project import DNA_PARAMETER_SPECS, Patcher, write_json
+    from .build_project import DNA_PARAMETER_SPECS, PRESETS, RUNNING_DEFAULTS, RUNNING_SPECS, Patcher, write_json
 except ImportError:  # Direct script execution from tools/.
-    from build_project import DNA_PARAMETER_SPECS, Patcher, write_json
+    from build_project import DNA_PARAMETER_SPECS, PRESETS, RUNNING_DEFAULTS, RUNNING_SPECS, Patcher, write_json
 
 
 PROFILE_SETTINGS = {
@@ -541,6 +542,8 @@ def dna_parameter_scenario(profile: str, parameter: str, value: float) -> dict:
 # generated from the same authority as the editable panels, so adding a knob
 # without an acoustic A/B scenario is a test failure rather than a silent UI bug.
 for _profile, _specs in DNA_PARAMETER_SPECS.items():
+    if _profile in ('v10', 'v12'):
+        _specs = _specs + RUNNING_SPECS
     for _parameter, _label, _low, _high in _specs:
         SCENARIOS[f"dna-{_profile}-{_parameter}-low"] = dna_parameter_scenario(
             _profile, _parameter, _low
@@ -599,6 +602,12 @@ process.stdout.write(JSON.stringify({profile, render_ms: renderMs, step_ms: 20, 
     return trace
 
 
+def probe_powertrain_name(profile: str) -> str:
+    if profile == 'ferrari':
+        return 'ferrari_sound_dna_v2~'
+    return f"{profile}_powertrain{'_v2' if profile in ('v10', 'v12') else ''}~"
+
+
 def make_probe(
     wav_output: Path,
     profile: str = "v12",
@@ -637,17 +646,14 @@ def make_probe(
     rpm_select = p.new("switch 2", 190, 290, 70, numinlets=3, numoutlets=1)
     rpm_select_default = p.new("loadmess 1", 190, 260, 80, numinlets=1, numoutlets=1)
     rpm_named = p.new("prepend rpm", 190, 320, 90, numinlets=1, numoutlets=1)
-    powertrain_name = (
-        "ferrari_sound_dna_v2~" if profile == "ferrari"
-        else f"{profile}_powertrain~"
-    )
+    powertrain_name = probe_powertrain_name(profile)
     powertrain = p.new(powertrain_name, 300, 330, 185, numinlets=1, numoutlets=2)
     soundscape = p.new(
         f"{profile}_cinematic_soundscape_host~", 445, 330, 205,
         numinlets=1, numoutlets=2,
     )
     transient = p.new(f"transient_{profile}~", 160, 330, 125, numinlets=1, numoutlets=2)
-    road = p.new("road_air~", 70, 330, 85, numinlets=1, numoutlets=2)
+    road = p.new(f"vehicle_noise_{profile}~", 70, 330, 175, numinlets=1, numoutlets=2)
     rumble = p.new("cabin_rumble~", 430, 330, 110, numinlets=3, numoutlets=2)
     add_l = p.new("+~", 300, 375, 40, numinlets=2, numoutlets=1)
     add_r = p.new("+~", 430, 375, 40, numinlets=2, numoutlets=1)
@@ -774,7 +780,16 @@ def make_probe(
             "eq_high 9000. -4.",
         "master_trim_db -8.",
     )
-    default_messages += ("soundscape_enable 0",)
+    default_messages += ("soundscape_enable 0", "road_level_db -60")
+    if direct_powertrain and profile in ('v10', 'v12'):
+        # Direct DSP diagnostics do not instantiate the editable DNA panel.
+        # Seed its real factory knobs, including the newly connected idle/run
+        # controls, while extra_messages below still override exactly one knob.
+        defaults = {**PRESETS['Aggressive V10' if profile == 'v10' else 'High-Rev V12'], **RUNNING_DEFAULTS[profile]}
+        default_messages += tuple(
+            f'{name} {defaults[name]:g}'
+            for name, _label, _low, _high in DNA_PARAMETER_SPECS[profile] + RUNNING_SPECS
+        )
     if direct_soundscape_state:
         # The V4 host consumes lifecycle truth; direct probes bypass the
         # controller and therefore must provide its authoritative run state.
@@ -849,7 +864,7 @@ def make_probe(
         p.connect(sweep_line, rpm_select, 0, 2)
 
     recorder = p.new("sfrecord~ 2", 300, 515, 90, numinlets=3, numoutlets=1)
-    open_file = p.message(f"open {wav_output}", 500, 250, 380)
+    open_file = p.message(f'open "{wav_output}"', 500, 250, 380)
     p.connect(open_file, recorder)
     p.connect(record_stop, recorder)
     p.connect(record_start, recorder)
@@ -1037,12 +1052,69 @@ def make_probe(
     return p.document()
 
 
+def rewrite_probe_resources(document: dict, root: Path, bundle: Path) -> None:
+    """Resolve project tokens even inside embedded live designers.
+
+    Code/Gen remain beside the probe; samples stay in media/. Absolute quoted
+    paths work both standalone and after opening the generated probe project.
+    No reference to the user's production project is needed at runtime.
+    """
+    prefixes = []
+    for namespace, destination in (('media/local', 'media/local'), ('media', 'media'), ('gen', ''), ('code', '')):
+        for prefix in (f'{root}/{namespace}/', f'Patcher:/{namespace}/', f'../{namespace}/', f'{namespace}/'):
+            prefixes.append((prefix, bundle / destination))
+    prefix_map = dict(prefixes)
+    token = re.compile(r'(?<![\w/])"?(' + '|'.join(re.escape(prefix) for prefix in prefix_map) + r')([^"\s,;]+)"?')
+
+    def visit(value):
+        if isinstance(value, dict):
+            if value.get('maxclass') in ('newobj', 'message') and isinstance(value.get('text'), str):
+                value['text'] = token.sub(lambda match: '"' + str(prefix_map[match[1]] / match[2]) + '"', value['text'])
+            for child in value.values():
+                visit(child)
+        elif isinstance(value, list):
+            for child in value:
+                visit(child)
+    visit(document)
+
+
+def probe_patcher_dependencies(bundle: Path, roots: set[str]) -> set[str]:
+    """Use actual abstraction/poly references, not a second stale version list."""
+    available = {path.name: path for path in bundle.glob('*.maxpat')}
+    pending, included = list(roots), set()
+
+    def references(value):
+        if isinstance(value, dict):
+            if value.get('maxclass') == 'newobj':
+                words = value.get('text', '').split()
+                if words:
+                    name = words[1] if words[0] == 'poly~' and len(words) > 1 else words[0]
+                    candidate = name.strip('"') + '.maxpat'
+                    if candidate in available:
+                        yield candidate
+            for child in value.values():
+                yield from references(child)
+        elif isinstance(value, list):
+            for child in value:
+                yield from references(child)
+
+    while pending:
+        name = pending.pop()
+        if name in included:
+            continue
+        if name not in available:
+            raise FileNotFoundError(f'Missing probe dependency: {name}')
+        included.add(name)
+        pending.extend(references(json.loads(available[name].read_text(encoding='utf-8'))))
+    return included
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--bundle-root",
         type=Path,
-        default=Path("/private/tmp/VehicleSoundSynthV4_probe_bundle"),
+        default=Path("/private/tmp/VehicleSoundSynthV6_probe_bundle"),
         help="Dedicated temporary bundle directory populated with runtime dependencies",
     )
     parser.add_argument(
@@ -1093,56 +1165,19 @@ def main() -> None:
         extra_messages.append(f"master_trim_db {args.master_trim_db:g}")
     root = Path(__file__).resolve().parents[1]
     bundle = args.bundle_root.resolve()
+    if bundle == root or bundle in root.parents:
+        raise ValueError('Use a dedicated probe directory, never the project or a parent directory')
     media = bundle / "media"
     presets = bundle / "presets"
     media.mkdir(parents=True, exist_ok=True)
     (presets / "local").mkdir(parents=True, exist_ok=True)
-    shutil.copy2(
-        root / "presets" / "vehicle_bus_eq_default.json",
-        presets / "vehicle_bus_eq_default.json",
-    )
-    for profile_name in ("ev", "v10", "v12"):
-        for suffix in (
-            "soundscape_factory", "soundscape_v2_factory", "soundscape_v3_factory",
-            "soundscape_v4_factory",
-        ):
-            factory_name = f"{profile_name}_{suffix}.json"
-            shutil.copy2(root / "presets" / factory_name, presets / factory_name)
-    shutil.copy2(
-        root / "presets" / "ferrari_soundscape_v4_factory.json",
-        presets / "ferrari_soundscape_v4_factory.json",
-    )
-    shutil.copy2(
-        root / "presets" / "ferrari_soundscape_v5_factory.json",
-        presets / "ferrari_soundscape_v5_factory.json",
-    )
-    for factory_name in (
-        "ioniq6n_soundscape_modes_factory.json", "ioniq6n_n_event_factory.json",
-    ):
-        shutil.copy2(root / "presets" / factory_name, presets / factory_name)
+    # Top-level tracked factories only; never copy presets/local or saved user
+    # state. This includes current Noise, running beds and mode/Pop versions.
+    for source in sorted((root / 'presets').glob('*.json')):
+        shutil.copy2(source, presets / source.name)
     for source in (root / "patchers").glob("*.maxpat"):
         document = json.loads(source.read_text(encoding="utf-8"))
-        for item in document["patcher"]["boxes"]:
-            text = item["box"].get("text")
-            if text:
-                item["box"]["text"] = (
-                    text.replace((root / "media" / "local").as_posix() + "/", "")
-                    .replace((root / "media").as_posix() + "/", "")
-                    .replace((root / "gen").as_posix() + "/", "")
-                    .replace((root / "code").as_posix() + "/", "")
-                    .replace("Patcher:/media/local/", "")
-                    .replace("Patcher:/media/", "")
-                    .replace("Patcher:/gen/", "")
-                    .replace("Patcher:/code/", "")
-                    .replace("../gen/", "")
-                    .replace("../code/", "")
-                    .replace("../media/local/", "")
-                    .replace("../media/", "")
-                    .replace("gen/", "")
-                    .replace("code/", "")
-                    .replace("media/local/", "")
-                    .replace("media/", "")
-                )
+        rewrite_probe_resources(document, root, bundle)
         write_json(bundle / source.name, document)
     for source in (root / "gen").glob("*.gendsp"):
         shutil.copy2(source, bundle / source.name)
@@ -1150,6 +1185,7 @@ def main() -> None:
         shutil.copy2(source, bundle / source.name)
     runtime_media_names = {
         "cabin_ir_l.wav", "cabin_ir_r.wav", "starter_v10.wav", "starter_v12.wav",
+        "ferrari_pop_v3.wav",
     }
     for source in (root / "media").glob("*.wav"):
         if source.name not in runtime_media_names:
@@ -1246,50 +1282,7 @@ def main() -> None:
             trace,
         )
     project_name = bundle.name
-    powertrain_name = (
-        "ferrari_sound_dna_v2~.maxpat" if profile == "ferrari"
-        else f"{profile}_powertrain~.maxpat"
-    )
-    required_patchers = {
-        patch.name,
-        f"drive_simulator_{profile}.maxpat",
-        f"engine_controller_{profile}.maxpat",
-        powertrain_name,
-        f"transient_{profile}~.maxpat",
-        "transient~.maxpat",
-        "road_air~.maxpat",
-        "cabin_rumble~.maxpat",
-        "cabin_master~.maxpat",
-        "mix_master~.maxpat",
-        "backfire_burst_scheduler.maxpat",
-    }
-    required_patchers.update({
-        f"{profile}_cinematic_soundscape_host~.maxpat",
-    })
-    if profile == "ioniq6n":
-        required_patchers.update({
-            "ioniq6n_activation_beap~.maxpat",
-            "ioniq6n_n_event_beap~.maxpat",
-            "ioniq6n_n_event_host~.maxpat",
-            "ioniq6n_soundscape_ignition_beap~.maxpat",
-            "ioniq6n_soundscape_evolution_beap~.maxpat",
-            "ioniq6n_soundscape_lightspeed_beap~.maxpat",
-        })
-    else:
-        required_patchers.update({
-            f"{profile}_engine_start_beap~.maxpat",
-            "cinematic_soundscape_v3_beap~.maxpat",
-        })
-    if profile == "ferrari":
-        required_patchers.add("ferrari_soundscape_v5_beap~.maxpat")
-        required_patchers.update({"ferrari_soundscape_v6_beap~.maxpat", "ferrari_pop_v3~.maxpat", "ferrari_pop_sample_voice~.maxpat"})
-        shutil.copy2(root / "presets/ferrari_soundscape_v6_factory.json", presets / "ferrari_soundscape_v6_factory.json")
-        shutil.copy2(root / "media/ferrari_pop_v3.wav", media / "ferrari_pop_v3.wav")
-    if profile not in {"ev", "ioniq6n"}:
-        required_patchers.update({
-            f"{profile}_backfire_host~.maxpat",
-            f"{profile}_backfire_beap~.maxpat",
-        })
+    required_patchers = probe_patcher_dependencies(bundle, {patch.name})
     patcher_contents = {
         path.name: {"kind": "patcher", "local": 1}
         for path in sorted(bundle.glob("*.maxpat"))

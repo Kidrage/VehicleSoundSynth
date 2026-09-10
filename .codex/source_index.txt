@@ -1,54 +1,46 @@
 # Source Index
 
 Repository: /Users/saintpeter/Downloads/VehicleSoundSynth-V6
-Tracked filtered files: 253
-High-value indexed files: 89
+Read this before broad discovery. Paths include the user-accepted 2026-09-10
+feature release; repo_files.txt is the filtered publication inventory.
+Generated patchers/Gen are navigated through the explicit seams below, not scans.
 
-Read this file before broad repository exploration. Prefer focused `rg`
-or `git grep` against the listed areas before opening source files.
-
-## first-read
+## First reads
 
 - AGENTS.md
 - README.md
-- assets/raw/README.md
+- PROJECT_HANDOFF.md
+- V6_RELEASE_HANDOFF.md
+- V6_USER_GUIDE.md
+- .codex/REPO_GUIDE.md
 
-## source
+## Source
 
 - code/backfire_burst.js
 - code/dna_state_path.js
+- code/dna_v2_state_path.js
 - code/drive_model.js
 - code/eq_feedback_reader.js
 - code/eq_state_path.js
+- code/ferrari_bed_state.js
 - code/ferrari_pop_control.js
 - code/ferrari_pop_state.js
+- code/ioniq6n_bed_state.js
 - code/ioniq6n_event_state_path.js
 - code/ioniq6n_soundscape_state_path.js
 - code/manual_input.js
 - code/module_mixer_state_path.js
+- code/noise_control.js
+- code/noise_state.js
 - code/pop_state_path.js
 - code/pop_v2_state_path.js
+- code/soundscape_bed_state.js
 - code/soundscape_state_path.js
 - code/soundscape_v4_state_path.js
 - code/soundscape_v5_state_path.js
 - code/soundscape_v6_state_path.js
 - code/start_state_path.js
 - code/start_v3_state_path.js
-- gen/ferrari_exciter_v2.gendsp
-- patchers/ferrari_sound_dna_v2~.maxpat
-- patchers/ferrari_soundscape_v5_beap~.maxpat
-- patchers/ferrari_soundscape_v6_beap~.maxpat
-- patchers/ferrari_pop_v3~.maxpat
-- patchers/ferrari_pop_sample_voice~.maxpat
-- patchers/drive_console.maxpat
-- patchers/mix_eq_console.maxpat
-- patchers/profile_runtime_host_ev.maxpat
-- patchers/profile_runtime_host_ferrari.maxpat
-- patchers/profile_runtime_host_ioniq6n.maxpat
-- patchers/profile_runtime_host_v10.maxpat
-- patchers/profile_runtime_host_v12.maxpat
-- patchers/runtime_console.maxpat
-- patchers/sound_design_console.maxpat
 - tools/analyze_reference_lifecycle.py
 - tools/audio_metrics.py
 - tools/bind_drive_render.py
@@ -57,22 +49,66 @@ or `git grep` against the listed areas before opening source files.
 - tools/build_rtpc_dsp_spec.py
 - tools/build_runtime_probe.py
 - tools/build_user_manual.py
+- tools/ice_dna_v2.py
+- tools/noise_layer.py
 - tools/prepare_engine_texture.py
 - tools/prepare_ferrari_pop.py
 - tools/prepare_local_reference.py
 - tools/process_assets.py
 - tools/render_rtpc_spec_pdf.py
+- tools/soundscape_bed.py
 - tools/validate_v10_lifecycle.py
 
-## tests
+## Current and protected sound-design seams
+
+- gen/ev_soundscape_bed.gendsp
+- gen/ferrari_exciter_v2.gendsp
+- gen/v10_powertrain_v2.gendsp
+- gen/v10_soundscape_bed.gendsp
+- gen/v12_powertrain_v2.gendsp
+- gen/v12_soundscape_bed.gendsp
+- patchers/ev_pop_v4~.maxpat
+- patchers/ev_sound_dna~.maxpat
+- patchers/ev_soundscape_v5_beap~.maxpat
+- patchers/ferrari_pop_sample_voice~.maxpat
+- patchers/ferrari_pop_v3~.maxpat
+- patchers/ferrari_sound_dna_v2~.maxpat
+- patchers/ferrari_soundscape_v5_beap~.maxpat
+- patchers/ferrari_soundscape_v6_beap~.maxpat
+- patchers/ferrari_soundscape_v7_beap~.maxpat
+- patchers/ioniq6n_pop_v4~.maxpat
+- patchers/ioniq6n_sound_dna~.maxpat
+- patchers/ioniq6n_soundscape_evolution_bed_v2_beap~.maxpat
+- patchers/ioniq6n_soundscape_ignition_bed_v2_beap~.maxpat
+- patchers/ioniq6n_soundscape_lightspeed_bed_v2_beap~.maxpat
+- patchers/v10_pop_v4~.maxpat
+- patchers/v10_sound_dna_v2~.maxpat
+- patchers/v10_soundscape_v5_beap~.maxpat
+- patchers/v12_pop_v4~.maxpat
+- patchers/v12_sound_dna_v2~.maxpat
+- patchers/v12_soundscape_v5_beap~.maxpat
+- patchers/vehicle_noise_ev~.maxpat
+- patchers/vehicle_noise_ferrari~.maxpat
+- patchers/vehicle_noise_ioniq6n~.maxpat
+- patchers/vehicle_noise_v10~.maxpat
+- patchers/vehicle_noise_v12~.maxpat
+
+## Tests
 
 - tests/test_backfire_burst.py
-- tests/test_manual_input.py
-- tests/test_project.py
+- tests/test_dna_v2.py
 - tests/test_ferrari_body_pop.py
+- tests/test_ferrari_noise_split.py
+- tests/test_ioniq_bed_split.py
+- tests/test_layer_state_migration.py
+- tests/test_manual_input.py
+- tests/test_noise_layer.py
+- tests/test_project.py
 - tests/test_runtime_design_routing.py
+- tests/test_shared_pop.py
+- tests/test_soundscape_bed.py
 
-## config
+## Factory and analysis authorities
 
 - assets/asset_manifest.json
 - assets/engine_texture_bank.json
@@ -80,33 +116,46 @@ or `git grep` against the listed areas before opening source files.
 - assets/ferrari_sf90_v10_interpretation_targets.json
 - assets/ferrari_v10_lifecycle_targets.json
 - assets/ioniq6n_acoustic_targets.json
+- presets/ev_noise_v1_factory.json
 - presets/ev_soundscape_factory.json
 - presets/ev_soundscape_v2_factory.json
 - presets/ev_soundscape_v3_factory.json
 - presets/ev_soundscape_v4_factory.json
-- presets/ioniq6n_n_event_factory.json
-- presets/ioniq6n_soundscape_modes_factory.json
+- presets/ev_soundscape_v5_factory.json
+- presets/ferrari_noise_v1_factory.json
 - presets/ferrari_soundscape_v4_factory.json
 - presets/ferrari_soundscape_v5_factory.json
 - presets/ferrari_soundscape_v6_factory.json
+- presets/ferrari_soundscape_v7_factory.json
+- presets/ioniq6n_n_event_factory.json
+- presets/ioniq6n_noise_v1_factory.json
+- presets/ioniq6n_soundscape_modes_factory.json
+- presets/ioniq6n_soundscape_modes_v2_factory.json
 - presets/sound_dna.json
+- presets/v10_noise_v1_factory.json
 - presets/v10_soundscape_factory.json
 - presets/v10_soundscape_v2_factory.json
 - presets/v10_soundscape_v3_factory.json
 - presets/v10_soundscape_v4_factory.json
+- presets/v10_soundscape_v5_factory.json
+- presets/v12_noise_v1_factory.json
 - presets/v12_soundscape_factory.json
 - presets/v12_soundscape_v2_factory.json
 - presets/v12_soundscape_v3_factory.json
 - presets/v12_soundscape_v4_factory.json
+- presets/v12_soundscape_v5_factory.json
 - presets/vehicle_bus_eq_default.json
 
-## docs
+## Documentation
 
-- .agentlab/HandOff.md
 - .agentlab/FERRARI_BODY_POP_2026-09-08.md
+- .agentlab/HandOff.md
 - .agentlab/SOUNDSCAPE_CONTROL_AUDIT_2026-09-08.md
 - .codex/MAINLINE.md
-- .codex/REPO_GUIDE.md
 - ASSET_LICENSES.md
-- PROJECT_HANDOFF.md
 - SOUND_DESIGN_GUIDE.md
+
+## Avoid
+
+- media/, assets/raw/, presets/local/, docx/, recovery files, caches and temporary renders.
+- Sibling V1–V4 repositories and hidden backup directories.

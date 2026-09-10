@@ -1,0 +1,126 @@
+{
+  "pattrstorage": {
+    "name": "soundscape_ev_v5",
+    "slots": {
+      "99": {
+        "data": {
+          "ev_soundscape_v5_beap~::Evolution_Layers::in1": [
+            -3.0
+          ],
+          "ev_soundscape_v5_beap~::Evolution_Layers::in2": [
+            -5.0
+          ],
+          "ev_soundscape_v5_beap~::Evolution_Layers::in3": [
+            -10.0
+          ],
+          "ev_soundscape_v5_beap~::Evolution_Layers::in4": [
+            -9.0
+          ],
+          "ev_soundscape_v5_beap~::Orbital_Motion::Center": [
+            780.0
+          ],
+          "ev_soundscape_v5_beap~::Orbital_Motion::Rate": [
+            0.011
+          ],
+          "ev_soundscape_v5_beap~::Orbital_Motion::Regen": [
+            0.006
+          ],
+          "ev_soundscape_v5_beap~::Orbital_Motion::Width": [
+            14.0
+          ],
+          "ev_soundscape_v5_beap~::Orbital_Motion::bypass": [
+            0
+          ],
+          "ev_soundscape_v5_beap~::Ready_Envelope::Attack": [
+            180.0
+          ],
+          "ev_soundscape_v5_beap~::Ready_Envelope::Decay": [
+            1600.0
+          ],
+          "ev_soundscape_v5_beap~::Ready_Envelope::Release": [
+            3600.0
+          ],
+          "ev_soundscape_v5_beap~::Ready_Envelope::Sustain": [
+            91.0
+          ],
+          "ev_soundscape_v5_beap~::Ready_VCA::Response": [
+            0.0
+          ],
+          "ev_soundscape_v5_beap~::Spectral_Morph::CV1": [
+            18.0
+          ],
+          "ev_soundscape_v5_beap~::Spectral_Morph::Freq": [
+            850.0
+          ],
+          "ev_soundscape_v5_beap~::Spectral_Morph::Res": [
+            0.75
+          ],
+          "ev_soundscape_v5_beap~::Sphere_Space::Damping": [
+            6100.0
+          ],
+          "ev_soundscape_v5_beap~::Sphere_Space::Decay": [
+            48.0
+          ],
+          "ev_soundscape_v5_beap~::Sphere_Space::Diffusion": [
+            0.84
+          ],
+          "ev_soundscape_v5_beap~::Sphere_Space::Mix": [
+            100
+          ],
+          "ev_soundscape_v5_beap~::Sphere_Space::Size": [
+            84.0
+          ],
+          "ev_soundscape_v5_beap~::Sphere_Space::bypass": [
+            0
+          ],
+          "ev_soundscape_v5_beap~::Transient_Resonator::FilterType": [
+            0
+          ],
+          "ev_soundscape_v5_beap~::Transient_Resonator::Freq": [
+            1050.0
+          ],
+          "ev_soundscape_v5_beap~::Transient_Resonator::Res": [
+            0.8
+          ],
+          "ev_soundscape_v5_beap~::Transient_Resonator::power[1]": [
+            1
+          ],
+          "ev_soundscape_v5_beap~::bed_body": [
+            0.78
+          ],
+          "ev_soundscape_v5_beap~::bed_cavity": [
+            0.7
+          ],
+          "ev_soundscape_v5_beap~::bed_contour": [
+            0.42
+          ],
+          "ev_soundscape_v5_beap~::bed_load_response": [
+            0.72
+          ],
+          "ev_soundscape_v5_beap~::bed_release_mass": [
+            0.65
+          ],
+          "soundscape_brightness_state": [
+            0.64
+          ],
+          "soundscape_enable_state": [
+            1.0
+          ],
+          "soundscape_motion_state": [
+            0.34
+          ],
+          "soundscape_pitch_follow_state": [
+            1.0
+          ],
+          "soundscape_space_state": [
+            0.66
+          ],
+          "soundscape_transpose_state": [
+            0.0
+          ]
+        },
+        "id": 99
+      }
+    }
+  }
+}

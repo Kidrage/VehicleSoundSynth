@@ -11,6 +11,10 @@
         "kind": "javascript",
         "local": 1
       },
+      "code/dna_v2_state_path.js": {
+        "kind": "javascript",
+        "local": 1
+      },
       "code/drive_model.js": {
         "kind": "javascript",
         "local": 1
@@ -23,11 +27,19 @@
         "kind": "javascript",
         "local": 1
       },
+      "code/ferrari_bed_state.js": {
+        "kind": "javascript",
+        "local": 1
+      },
       "code/ferrari_pop_control.js": {
         "kind": "javascript",
         "local": 1
       },
       "code/ferrari_pop_state.js": {
+        "kind": "javascript",
+        "local": 1
+      },
+      "code/ioniq6n_bed_state.js": {
         "kind": "javascript",
         "local": 1
       },
@@ -47,11 +59,23 @@
         "kind": "javascript",
         "local": 1
       },
+      "code/noise_control.js": {
+        "kind": "javascript",
+        "local": 1
+      },
+      "code/noise_state.js": {
+        "kind": "javascript",
+        "local": 1
+      },
       "code/pop_state_path.js": {
         "kind": "javascript",
         "local": 1
       },
       "code/pop_v2_state_path.js": {
+        "kind": "javascript",
+        "local": 1
+      },
+      "code/soundscape_bed_state.js": {
         "kind": "javascript",
         "local": 1
       },
@@ -83,6 +107,10 @@
         "kind": "gendsp",
         "local": 1
       },
+      "gen/ev_soundscape_bed.gendsp": {
+        "kind": "gendsp",
+        "local": 1
+      },
       "gen/ferrari_exciter_v2.gendsp": {
         "kind": "gendsp",
         "local": 1
@@ -99,7 +127,23 @@
         "kind": "gendsp",
         "local": 1
       },
+      "gen/v10_powertrain_v2.gendsp": {
+        "kind": "gendsp",
+        "local": 1
+      },
+      "gen/v10_soundscape_bed.gendsp": {
+        "kind": "gendsp",
+        "local": 1
+      },
       "gen/v12_powertrain.gendsp": {
+        "kind": "gendsp",
+        "local": 1
+      },
+      "gen/v12_powertrain_v2.gendsp": {
+        "kind": "gendsp",
+        "local": 1
+      },
+      "gen/v12_soundscape_bed.gendsp": {
         "kind": "gendsp",
         "local": 1
       }
@@ -121,6 +165,10 @@
         "kind": "data",
         "local": 1
       },
+      "presets/ev_noise_v1_factory.json": {
+        "kind": "data",
+        "local": 1
+      },
       "presets/ev_soundscape_factory.json": {
         "kind": "data",
         "local": 1
@@ -137,6 +185,14 @@
         "kind": "data",
         "local": 1
       },
+      "presets/ev_soundscape_v5_factory.json": {
+        "kind": "data",
+        "local": 1
+      },
+      "presets/ferrari_noise_v1_factory.json": {
+        "kind": "data",
+        "local": 1
+      },
       "presets/ferrari_soundscape_v4_factory.json": {
         "kind": "data",
         "local": 1
@@ -149,7 +205,15 @@
         "kind": "data",
         "local": 1
       },
+      "presets/ferrari_soundscape_v7_factory.json": {
+        "kind": "data",
+        "local": 1
+      },
       "presets/ioniq6n_n_event_factory.json": {
+        "kind": "data",
+        "local": 1
+      },
+      "presets/ioniq6n_noise_v1_factory.json": {
         "kind": "data",
         "local": 1
       },
@@ -157,7 +221,15 @@
         "kind": "data",
         "local": 1
       },
+      "presets/ioniq6n_soundscape_modes_v2_factory.json": {
+        "kind": "data",
+        "local": 1
+      },
       "presets/sound_dna.json": {
+        "kind": "data",
+        "local": 1
+      },
+      "presets/v10_noise_v1_factory.json": {
         "kind": "data",
         "local": 1
       },
@@ -177,6 +249,14 @@
         "kind": "data",
         "local": 1
       },
+      "presets/v10_soundscape_v5_factory.json": {
+        "kind": "data",
+        "local": 1
+      },
+      "presets/v12_noise_v1_factory.json": {
+        "kind": "data",
+        "local": 1
+      },
       "presets/v12_soundscape_factory.json": {
         "kind": "data",
         "local": 1
@@ -190,6 +270,10 @@
         "local": 1
       },
       "presets/v12_soundscape_v4_factory.json": {
+        "kind": "data",
+        "local": 1
+      },
+      "presets/v12_soundscape_v5_factory.json": {
         "kind": "data",
         "local": 1
       },
@@ -305,6 +389,10 @@
         "kind": "patcher",
         "local": 1
       },
+      "patchers/ev_backfire_host~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
       "patchers/ev_cinematic_soundscape_host~.maxpat": {
         "kind": "patcher",
         "local": 1
@@ -317,6 +405,10 @@
         "kind": "patcher",
         "local": 1
       },
+      "patchers/ev_pop_v4~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
       "patchers/ev_powertrain~.maxpat": {
         "kind": "patcher",
         "local": 1
@@ -326,6 +418,10 @@
         "local": 1
       },
       "patchers/ev_soundscape_v4_beap~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/ev_soundscape_v5_beap~.maxpat": {
         "kind": "patcher",
         "local": 1
       },
@@ -385,6 +481,10 @@
         "kind": "patcher",
         "local": 1
       },
+      "patchers/ferrari_soundscape_v7_beap~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
       "patchers/ioniq6n_activation_beap~.maxpat": {
         "kind": "patcher",
         "local": 1
@@ -401,6 +501,10 @@
         "kind": "patcher",
         "local": 1
       },
+      "patchers/ioniq6n_pop_v4~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
       "patchers/ioniq6n_powertrain~.maxpat": {
         "kind": "patcher",
         "local": 1
@@ -413,11 +517,23 @@
         "kind": "patcher",
         "local": 1
       },
+      "patchers/ioniq6n_soundscape_evolution_bed_v2_beap~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
       "patchers/ioniq6n_soundscape_ignition_beap~.maxpat": {
         "kind": "patcher",
         "local": 1
       },
+      "patchers/ioniq6n_soundscape_ignition_bed_v2_beap~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
       "patchers/ioniq6n_soundscape_lightspeed_beap~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/ioniq6n_soundscape_lightspeed_bed_v2_beap~.maxpat": {
         "kind": "patcher",
         "local": 1
       },
@@ -525,7 +641,19 @@
         "kind": "patcher",
         "local": 1
       },
+      "patchers/v10_pop_v4~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/v10_powertrain_v2~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
       "patchers/v10_powertrain~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/v10_sound_dna_v2~.maxpat": {
         "kind": "patcher",
         "local": 1
       },
@@ -534,6 +662,10 @@
         "local": 1
       },
       "patchers/v10_soundscape_v4_beap~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/v10_soundscape_v5_beap~.maxpat": {
         "kind": "patcher",
         "local": 1
       },
@@ -561,7 +693,19 @@
         "kind": "patcher",
         "local": 1
       },
+      "patchers/v12_pop_v4~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/v12_powertrain_v2~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
       "patchers/v12_powertrain~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/v12_sound_dna_v2~.maxpat": {
         "kind": "patcher",
         "local": 1
       },
@@ -570,6 +714,10 @@
         "local": 1
       },
       "patchers/v12_soundscape_v4_beap~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/v12_soundscape_v5_beap~.maxpat": {
         "kind": "patcher",
         "local": 1
       },
@@ -594,6 +742,26 @@
         "local": 1
       },
       "patchers/vehicle_engine_v12~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/vehicle_noise_ev~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/vehicle_noise_ferrari~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/vehicle_noise_ioniq6n~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/vehicle_noise_v10~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/vehicle_noise_v12~.maxpat": {
         "kind": "patcher",
         "local": 1
       }

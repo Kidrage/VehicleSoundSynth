@@ -21,7 +21,7 @@
             1120.0,
             22.0
           ],
-          "text": "V10 CINEMATIC SOUNDSCAPE V4 HOST \u2014 state-only coupling; no Sound DNA audio or parameters"
+          "text": "V10 CINEMATIC SOUNDSCAPE V5 HOST \u2014 state-only coupling; no Sound DNA audio or parameters"
         }
       },
       {
@@ -1546,7 +1546,7 @@
             250.0,
             22.0
           ],
-          "text": "v10_soundscape_v4_beap~"
+          "text": "v10_soundscape_v5_beap~"
         }
       },
       {
@@ -1697,7 +1697,7 @@
             455.0,
             22.0
           ],
-          "text": "pattrstorage soundscape_v10_v4 @greedy 1 @savemode 3 @changemode 1 @outputmode 6 @backupmode 1 @autorestore 0"
+          "text": "pattrstorage soundscape_v10_v5 @greedy 1 @savemode 0 @changemode 1 @outputmode 6 @backupmode 1 @autorestore 0"
         }
       },
       {
@@ -1716,7 +1716,7 @@
             285.0,
             22.0
           ],
-          "text": "js Patcher:/code/soundscape_v4_state_path.js v10"
+          "text": "js Patcher:/code/soundscape_bed_state.js v10"
         }
       },
       {

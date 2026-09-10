@@ -43,7 +43,7 @@
             200.0,
             18.0
           ],
-          "text": "Soundscape V4 / Ferrari V5"
+          "text": "Running Bed / \u72ec\u7acb\u94fa\u5e95"
         }
       },
       {
@@ -165,7 +165,7 @@
             200.0,
             22.0
           ],
-          "text": "Factory V4 / Ferrari V5"
+          "text": "Factory / \u72ec\u7acb\u94fa\u5e95"
         }
       },
       {

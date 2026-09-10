@@ -10,6 +10,26 @@
 
 ## Delivered Change
 
+### Accepted snapshot / release handoff (2026-09-10)
+
+The user accepted the current sound and authorized pushing the feature branch
+`codex/v6-layering-dna-pad-pop`, not main. No audio, factory, drive or routing
+changes are made in this release task. `V6_RELEASE_HANDOFF.md` is the current
+release/rollback/QA authority; `V6_USER_GUIDE.md` is the Chinese operator guide.
+The following 2026-09-09 record remains a historical test record: user acceptance
+does not turn unfinished automated native Max checks into passes.
+
+### Running beds / Noise / shared Pop (2026-09-09 historical implementation)
+
+Implementation is on `codex/v6-layering-dna-pad-pop`, based on `b609e8b`.
+At the time of that record, no new commit or push existed. Source/structure and protection checks pass, but
+native Max acceptance remains incomplete. The stuck task Max was subsequently
+force-exited with explicit user authorization and a recovery backup; the user's
+original Max was preserved and no new test instance started. See
+`V6_LAYERING_2026-09-09.md` for the exact pending compile/save-dialog issue,
+protected user files, test evidence and resumption steps. Do not treat the
+historical completed-task records below as acceptance of this implementation.
+
 ### Ferrari-only body return and sample Pop (2026-09-08)
 
 - Branch `codex/v6-ferrari-body-pop-sampler`, based on `93accba`; local-only

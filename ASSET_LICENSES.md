@@ -25,7 +25,7 @@ archive/offline-analysis artifacts and are not declared or loaded by a V5 runtim
 Every residual loop is 48 kHz stereo and normalized to -18 dBFS RMS; hashes are
 recorded in `assets/engine_texture_bank.json`.
 
-## V6 Ferrari Pop V3 exception
+## V6 shared Pop sample exception
 
 `media/ferrari_pop_v3.wav` is a 240 ms mono event made only from richwise's
 CC0 **Supercar rev** recording above (source SHA verified). The author did not
@@ -35,6 +35,9 @@ claim. `tools/prepare_ferrari_pop.py` deterministically isolates the event at
 removes DC, fades its edges and normalizes to -6 dBFS peak. The exact recipe and
 output hash are in the manifest. It is the sole new runtime sample; the other
 archived event files remain unused and no user-supplied reference is involved.
+Ferrari Pop V3 and the other four profiles' Pop V4 share this same file with
+profile-specific post-processing and at most two idle-muted players. EV only
+exposes manual preview; IONIQ keeps its mode/eShift event conditions.
 
 ## User-supplied local-only reference (unchanged)
 

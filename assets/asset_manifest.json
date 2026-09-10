@@ -133,7 +133,7 @@
     {
       "id": "sports_car_revs_pops",
       "purpose": "intake backfire, exhaust pop, and crackle families",
-      "runtime_usage": "Ferrari Pop V3 uses only ferrari_pop_v3.wav; other outputs stay archived and other profiles remain procedural",
+      "runtime_usage": "Five-profile Pop/Event uses only ferrari_pop_v3.wav through at most two idle-muted players; EV is preview-only and IONIQ retains mode/eShift gates. Other outputs stay archived; continuous engine audio stays procedural.",
       "status": "processed",
       "raw_path": "assets/raw/richwise_478756_sports_car_revs_pops.wav",
       "raw_sha256": "2b67aed7ec0dc3fe74b3d110865574ca591455a5300417281a29dfd7f4483cd1",
