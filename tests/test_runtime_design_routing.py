@@ -47,6 +47,18 @@ def destinations(profile, selector, patch=None):
 
 
 class RuntimeDesignRoutingTests(unittest.TestCase):
+    def test_eq_dynamics_and_designer_actions_bypass_driving_gates(self):
+        for profile in ('ev', 'v10', 'v12', 'ioniq6n', 'ferrari'):
+            names = ['eq_low', 'eq_lowmid', 'eq_highmid', 'eq_high', 'eq_bypass',
+                     'compressor_threshold_db', 'compressor_ratio', 'compressor_attack_rate',
+                     'compressor_release_rate', 'compressor_makeup_db', 'compressor_bypass',
+                     'start_open', 'start_audition', 'start_save', 'start_reload', 'start_reset']
+            names += ['n_sound_mode'] if profile == 'ioniq6n' else ['ev_mode'] if profile == 'ev' else []
+            for name in names:
+                with self.subTest(profile=profile, selector=name):
+                    self.assertEqual([(f'vehicle_engine_{profile}~', name)],
+                                     destinations(profile, name, builder.make_profile_runtime_host(profile)['patcher']))
+
     def test_shared_page_exposes_pop_and_noise_actions_for_every_profile(self):
         patch = builder.make_sound_design_console()['patcher']
         boxes = {x['box']['id']: x['box'] for x in patch['boxes']}

@@ -304,6 +304,17 @@ COMPRESSOR_CONTROL_SPECS = (
 
 TUNING_CONTEXTS = ("live", "idle", "cruise", "load", "lift", "high_rpm")
 
+
+def design_registry() -> dict[str, Any]:
+    """The literal registry is also consumed by the ES5 applied-state adapter."""
+    source = (Path(__file__).resolve().parents[1] / "code/design_control.js").read_text()
+    return json.loads(source.split("var DESIGN_REGISTRY = ", 1)[1].split(";\n/* REGISTRY_JSON_END */", 1)[0])
+
+
+def normalized_design_names(profile: str) -> tuple[str, ...]:
+    registry = design_registry()
+    return (*registry["normalized"], *registry["modes"].get(profile, {}))
+
 # Complete, explicit defaults for every nested BEAP parameter client managed by
 # the profile host.  Factory Reset must restore the whole instrument, not just
 # the small subset that differs between the three factory voicings.
@@ -5964,7 +5975,17 @@ def make_profile_engine(profile: str) -> dict[str, Any]:
     left = outlet(p, 1030, 815, signal=True)
     right = outlet(p, 1120, 815, signal=True)
     state_out = outlet(p, 1210, 815)
-    p.connect(control, controller)
+    applied_names = normalized_design_names(profile)
+    applied_route = p.new("routepass " + " ".join(applied_names), 25, 45, 1180,
+                          numinlets=1, numoutlets=len(applied_names) + 1)
+    applied = p.new(f"js Patcher:/code/design_control.js {profile}", 25, 195, 330,
+                    numinlets=1, numoutlets=2)
+    p.connect(control, applied_route)
+    for index in range(len(applied_names)):
+        p.connect(applied_route, applied, index)
+    p.connect(applied_route, controller, len(applied_names))
+    p.connect(applied, controller, 0)
+    p.connect(applied, state_out, 1)
     p.connect(controller, fan)
     p.connect(fan, contract, 6)
     p.connect(fan, power, 5)
@@ -10417,21 +10438,8 @@ def make_profile_runtime_host(profile: str) -> dict[str, Any]:
     p.connect(profile_load, profile_named)
     p.connect(profile_named, runtime_feedback)
 
-    # Echo shared tone/dynamics commands so Main always displays the active
-    # runtime state instead of stale values from the previously open profile.
-    feedback_names = (
-        "eq_low", "eq_lowmid", "eq_highmid", "eq_high", "eq_bypass",
-        *(spec[1] for spec in COMPRESSOR_CONTROL_SPECS),
-        "compressor_bypass",
-    )
-    feedback_route = route(p, feedback_names, 20, 205, 980)
-    p.connect(local_control, feedback_route)
-    p.connect(shared_control, feedback_route)
-    for index, name in enumerate(feedback_names):
-        rebuild = p.new(f"prepend {name}", 1015, 205 + index * 24, 180,
-                        numinlets=1, numoutlets=1)
-        p.connect(feedback_route, rebuild, index)
-        p.connect(rebuild, runtime_feedback)
+    # Tone/dynamics feedback is emitted by the applied engine adapter, not
+    # echoed from requests that may never have crossed the driving gate.
 
     eq_reader = p.new(
         f"js Patcher:/code/eq_feedback_reader.js {profile}",
@@ -10450,7 +10458,6 @@ def make_profile_runtime_host(profile: str) -> dict[str, Any]:
         1015, 575, 405,
     )
     p.connect(eq_load, compressor_defaults)
-    p.connect(compressor_defaults, runtime_feedback)
 
     drive = p.new(f"drive_simulator_{profile}", 20, 250, 145, numinlets=1, numoutlets=1)
     external = p.new(f"r vss.{profile}.input", 180, 250, 120, numinlets=0, numoutlets=1)
@@ -10461,7 +10468,15 @@ def make_profile_runtime_host(profile: str) -> dict[str, Any]:
     engine = p.new(f"vehicle_engine_{profile}~", 660, 250, 160, numinlets=1, numoutlets=3)
     module_mixer = p.new(f"module_mixer {profile}", 20, 430, 135, numinlets=1, numoutlets=1)
     p.connect(source_default, source, 0, 0)
-    p.connect(drive, source, 0, 1)
+    if profile == "ioniq6n":
+        mode_notice = p.new("routepass eshift_enable", 180, 285, 180,
+                            numinlets=1, numoutlets=2)
+        p.connect(drive, mode_notice)
+        p.connect(mode_notice, engine, 0)
+        p.connect(mode_notice, runtime_feedback, 0)
+        p.connect(mode_notice, source, 1, 1)
+    else:
+        p.connect(drive, source, 0, 1)
     p.connect(external, source, 0, 2)
     p.connect(live_default, live_gate, 0, 0)
     p.connect(source, live_gate, 0, 1)
@@ -10602,19 +10617,7 @@ def make_profile_runtime_host(profile: str) -> dict[str, Any]:
     p.connect(shared_control, pop_open)
     p.connect(pop_open, pop_front, 0)
 
-    design_names = (
-        "soundscape_enable", "soundscape_solo", "soundscape_motion",
-        "soundscape_space", "soundscape_pitch_follow", "soundscape_transpose",
-        "soundscape_brightness", "soundscape_open", "soundscape_save",
-        "soundscape_reload", "soundscape_reset", "dna_solo",
-        "pad_mute", "pad_solo", "pad_level_db",
-        "noise_open", "noise_save", "noise_reload", "noise_reset", "noise_solo",
-        "noise_mechanical_db", "noise_intake_db", "noise_tire_db", "noise_air_db", "noise_color",
-        "backfire_open", "backfire_test", "backfire_enable", "backfire_solo",
-        "backfire_save", "backfire_reload", "backfire_reset", "backfire_intensity",
-        "event_open", "event_audition", "event_enable", "event_solo",
-        "event_save", "event_reload", "event_reset", "event_intensity",
-    )
+    design_names = (*design_registry()["direct"], *normalized_design_names(profile))
     p.comment(
         "SOUND DESIGN: stays live during held audition / External input; only driving state crosses the live gate",
         20, 815, 1000,
@@ -12447,7 +12450,7 @@ def project_file() -> dict[str, Any]:
     contents["code"]["code/eq_state_path.js"] = {"kind": "javascript", "local": 1}
     contents["code"]["code/eq_feedback_reader.js"] = {"kind": "javascript", "local": 1}
     contents["code"]["code/dna_state_path.js"] = {"kind": "javascript", "local": 1}
-    for name in ("dna_v2_state_path.js", "noise_control.js", "noise_state.js", "soundscape_bed_state.js", "ioniq6n_bed_state.js", "ferrari_bed_state.js"):
+    for name in ("design_control.js", "dna_v2_state_path.js", "noise_control.js", "noise_state.js", "soundscape_bed_state.js", "ioniq6n_bed_state.js", "ferrari_bed_state.js"):
         contents["code"][f"code/{name}"] = {"kind": "javascript", "local": 1}
     contents["code"]["code/pop_state_path.js"] = {"kind": "javascript", "local": 1}
     contents["code"]["code/module_mixer_state_path.js"] = {"kind": "javascript", "local": 1}

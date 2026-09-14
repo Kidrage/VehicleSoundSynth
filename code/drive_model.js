@@ -89,10 +89,15 @@ var DRIVE_CONFIG = {
         singleSpeedRatio: 31.0,
         eShiftDefault: 1,
         maxGear: 8,
-        launchRpm: 5200.0,
-        ratios: [75.0, 58.0, 47.0, 39.0, 33.0, 28.0, 24.0, 21.0],
-        upBase: 4500.0,
-        upThrottle: 1000.0,
+        launchRpm: 2600.0,
+        virtualRedline: 8000.0,
+        absoluteRpmLimit: 10000.0,
+        modeTransitionSeconds: 0.30,
+        ratios: [75 * 8000 / 6300, 58 * 8000 / 6300, 47 * 8000 / 6300,
+            39 * 8000 / 6300, 33 * 8000 / 6300, 28 * 8000 / 6300,
+            24 * 8000 / 6300, 21 * 8000 / 6300],
+        upBase: 5000.0,
+        upThrottle: 2600.0,
         downBase: 1750.0,
         downThrottle: 850.0,
         shiftCutSeconds: 0.04,
@@ -147,6 +152,8 @@ DriveModel.prototype.reset = function () {
     this.shift = null;
     this.shiftCut = 1.0;
     this.eShiftEnabled = this.config.eShiftDefault ? 1 : 0;
+    this.modeTransition = null;
+    this.launchCoupled = false;
     this.lastShiftEnd = -999.0;
     this.overrunArmElapsed = 0.0;
     this.overrunArmed = 0;
@@ -168,6 +175,11 @@ DriveModel.prototype.clearOverrun = function () {
 DriveModel.prototype.handle = function (name, args) {
     var value = args.length ? Number(args[0]) : 0.0;
     var events = [];
+    if (this.profile === "ioniq6n" &&
+            /^(throttle|brake|auto|eshift_enable|gear|rpm|ignition|start)$/.test(name) &&
+            !isFinite(value)) {
+        return events;
+    }
     if (name === "throttle") {
         this.manualThrottle = clamp(value, 0.0, 1.0);
     } else if (name === "brake") {
@@ -175,18 +187,35 @@ DriveModel.prototype.handle = function (name, args) {
     } else if (name === "auto") {
         this.auto = value ? 1 : 0;
     } else if (name === "eshift_enable" && this.profile === "ioniq6n") {
+        if (this.eShiftEnabled === (value ? 1 : 0)) {
+            return [["eshift_enable", this.eShiftEnabled]];
+        }
         this.eShiftEnabled = value ? 1 : 0;
+        if (this.shift) {
+            events.push(["shift", 0]);
+        }
         this.shift = null;
         this.shiftCut = 1.0;
-        this.gear = 1;
+        this.gear = this.eShiftEnabled ? this.selectIoniqGear() : 1;
+        this.launchCoupled = this.speed * this.config.ratios[this.gear - 1] >=
+            this.config.idle + this.throttle * (this.config.launchRpm - this.config.idle);
+        this.modeTransition = this.running && this.startElapsed >= this.config.catchSeconds ?
+            {elapsed: 0.0, fromRpm: this.rpm} : null;
+        this.lastShiftEnd = this.time;
         events.push(["eshift_enable", this.eShiftEnabled]);
         events.push(["shift_cut", 1.0]);
-        events.push(["gear", 1]);
+        events.push(["gear", this.gear]);
+    } else if (this.profile === "ioniq6n" && (name === "gear" || name === "rpm")) {
+        // External telemetry bypasses this integrator in the runtime host.
+        // An Internal write is not a manual shift and must not publish a lie.
+        events.push([name, name === "gear" ? this.gear : this.rpm]);
     } else if (name === "ignition") {
         this.ignition = value ? 1 : 0;
         events.push(["ignition", this.ignition]);
         if (!this.ignition) {
             this.running = 0;
+            this.modeTransition = null;
+            this.launchCoupled = false;
             this.throttle = 0.0;
             this.brake = 0.0;
             this.shift = null;
@@ -206,6 +235,8 @@ DriveModel.prototype.handle = function (name, args) {
         this.rpm = this.config.flare;
         this.gear = 1;
         this.startElapsed = 0.0;
+        this.modeTransition = null;
+        this.launchCoupled = false;
         this.shift = null;
         this.shiftCut = 1.0;
         this.lastShiftEnd = -999.0;
@@ -244,6 +275,9 @@ DriveModel.prototype.effectivePedals = function () {
 };
 
 DriveModel.prototype.normalIceTarget = function () {
+    if (this.profile === "ioniq6n") {
+        return this.ioniqTarget();
+    }
     var coupled = Math.max(
         this.config.idle,
         this.speed * this.config.ratios[this.gear - 1]
@@ -252,6 +286,51 @@ DriveModel.prototype.normalIceTarget = function () {
         this.throttle * (this.config.launchRpm - this.config.idle);
     var clutch = smoothstep((this.speed - 4.0) / 20.0);
     return freeRev * (1.0 - clutch) + coupled * clutch;
+};
+
+DriveModel.prototype.selectIoniqGear = function () {
+    var best = this.config.maxGear;
+    var error = Infinity;
+    var i, predicted, distance;
+    for (i = 0; i < this.config.ratios.length; i += 1) {
+        predicted = Math.max(this.config.idle, this.speed * this.config.ratios[i]);
+        distance = Math.abs(predicted - this.rpm);
+        if (predicted <= this.config.virtualRedline + 0.000001 && distance <= error) {
+            best = i + 1;
+            error = distance;
+        }
+    }
+    return this.speed < 1.0 ? 1 : best;
+};
+
+DriveModel.prototype.ioniqTarget = function () {
+    var coupled = clamp(this.speed * this.config.ratios[this.gear - 1],
+        this.config.idle, this.config.virtualRedline);
+    var free = this.config.idle + this.throttle *
+        (this.config.launchRpm - this.config.idle);
+    if (this.gear === 1 && this.speed < 1.0) {
+        this.launchCoupled = false;
+    }
+    if (!this.launchCoupled && coupled >= free) {
+        this.launchCoupled = true;
+    }
+    // Engagement occurs when wheel speed catches the free target, not via
+    // a speed-only blend that drags a 5200 RPM flare down to 1800 RPM.
+    return this.launchCoupled ? coupled : Math.max(coupled, free);
+};
+
+DriveModel.prototype.updateModeTransition = function (dt) {
+    var transition = this.modeTransition;
+    var target = this.eShiftEnabled ? this.ioniqTarget() :
+        this.config.idle + this.speed * this.config.singleSpeedRatio;
+    transition.elapsed += dt;
+    this.rpm = clamp(transition.fromRpm + (target - transition.fromRpm) *
+        smoothstep(transition.elapsed / this.config.modeTransitionSeconds),
+        this.config.idle, this.config.absoluteRpmLimit);
+    if (transition.elapsed >= this.config.modeTransitionSeconds) {
+        this.modeTransition = null;
+        this.lastShiftEnd = this.time;
+    }
 };
 
 DriveModel.prototype.updateOverrun = function (dt, previousThrottle, events) {
@@ -314,6 +393,10 @@ DriveModel.prototype.beginShift = function (direction, events) {
     if (nextGear === this.gear) {
         return;
     }
+    if (this.profile === "ioniq6n" && (this.modeTransition || !this.launchCoupled ||
+            this.speed * this.config.ratios[nextGear - 1] > this.config.virtualRedline + 0.000001)) {
+        return;
+    }
     this.shift = {
         elapsed: 0.0,
         direction: direction,
@@ -335,6 +418,9 @@ DriveModel.prototype.updateShift = function (dt, events) {
         this.config.idle,
         this.speed * this.config.ratios[this.gear - 1]
     );
+    if (this.profile === "ioniq6n") {
+        target = Math.min(target, this.config.virtualRedline);
+    }
     if (elapsed <= cutEnd) {
         this.shiftCut = 1.0 - (1.0 - this.config.shiftFloor) *
             smoothstep(elapsed / cutEnd);
@@ -358,7 +444,8 @@ DriveModel.prototype.updateShift = function (dt, events) {
 };
 
 DriveModel.prototype.maybeShift = function (events) {
-    if (this.shift || this.time - this.lastShiftEnd < this.config.shiftLockSeconds) {
+    if (this.shift || this.time - this.lastShiftEnd < this.config.shiftLockSeconds ||
+            (this.profile === "ioniq6n" && (this.modeTransition || !this.launchCoupled))) {
         return;
     }
     var up = this.config.upBase + this.config.upThrottle * this.throttle;
@@ -417,6 +504,8 @@ DriveModel.prototype.tick = function (dt) {
         this.rpm = this.config.flare +
             (this.config.idle - this.config.flare) *
             smoothstep(this.startElapsed / this.config.catchSeconds);
+    } else if (this.profile === "ioniq6n" && this.modeTransition) {
+        this.updateModeTransition(dt);
     } else if (this.profile === "ev" ||
             (this.profile === "ioniq6n" && !this.eShiftEnabled)) {
         target = this.config.idle + this.speed * this.config.singleSpeedRatio;
@@ -425,7 +514,7 @@ DriveModel.prototype.tick = function (dt) {
         this.updateShift(dt, events);
     } else {
         target = this.normalIceTarget();
-        if (this.liftBrake > 0.0) {
+        if (this.liftBrake > 0.0 && this.profile !== "ioniq6n") {
             target = Math.max(
                 this.config.idle,
                 target * (1.0 - 0.18 * this.liftBrake)
@@ -435,7 +524,8 @@ DriveModel.prototype.tick = function (dt) {
             -dt / (target >= this.rpm ? 0.12 : (this.liftBrake > 0.0 ? 0.08 : 0.16))
         );
         this.rpm += (target - this.rpm) * alpha;
-        this.rpm = clamp(this.rpm, this.config.idle, 10000.0);
+        this.rpm = clamp(this.rpm, this.config.idle,
+            this.profile === "ioniq6n" ? this.config.virtualRedline : 10000.0);
         this.maybeShift(events);
     }
 

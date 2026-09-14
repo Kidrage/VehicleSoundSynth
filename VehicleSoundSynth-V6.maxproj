@@ -7,6 +7,10 @@
         "kind": "javascript",
         "local": 1
       },
+      "code/design_control.js": {
+        "kind": "javascript",
+        "local": 1
+      },
       "code/dna_state_path.js": {
         "kind": "javascript",
         "local": 1
