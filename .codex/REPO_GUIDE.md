@@ -1,5 +1,15 @@
 # VehicleSoundSynth V6 Repository Guide
 
+## Active IONIQ DNA detail
+
+`codex/v6-ioniq-dna-accel-detail` is local-only from d0df3b9. See
+`.agentlab/V6_IONIQ_DNA_DETAIL.md` for exact sound/persistence/QA boundaries.
+`tools/ioniq_dna_v2.py` owns the two-partial enhancement and complete factory;
+`code/ioniq_dna_v2_state.js` owns V2-only saves and whitelisted V1 migration.
+`patchers/ioniq6n_sound_dna_v2~.maxpat` is a seed-once user Designer. Scoped
+installer: `tools/install_ioniq_detail.py`. Do not rebuild the working tree or
+modify its Soundscape/drive while working on this version.
+
 ## Isolated control / DNA V3 candidate
 
 Branch `codex/v6-control-dna-v3` starts at accepted `cff9d08`; production remains

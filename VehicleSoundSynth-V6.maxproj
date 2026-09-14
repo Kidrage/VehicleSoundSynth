@@ -59,6 +59,10 @@
         "kind": "javascript",
         "local": 1
       },
+      "code/ioniq_dna_v2_state.js": {
+        "kind": "javascript",
+        "local": 1
+      },
       "code/manual_input.js": {
         "kind": "javascript",
         "local": 1
@@ -136,6 +140,10 @@
         "local": 1
       },
       "gen/ioniq6n_powertrain.gendsp": {
+        "kind": "gendsp",
+        "local": 1
+      },
+      "gen/ioniq6n_powertrain_v2.gendsp": {
         "kind": "gendsp",
         "local": 1
       },
@@ -246,6 +254,10 @@
         "local": 1
       },
       "presets/ioniq6n_noise_v1_factory.json": {
+        "kind": "data",
+        "local": 1
+      },
+      "presets/ioniq6n_sound_dna_v2_factory.json": {
         "kind": "data",
         "local": 1
       },
@@ -553,7 +565,15 @@
         "kind": "patcher",
         "local": 1
       },
+      "patchers/ioniq6n_powertrain_v2~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
       "patchers/ioniq6n_powertrain~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/ioniq6n_sound_dna_v2~.maxpat": {
         "kind": "patcher",
         "local": 1
       },

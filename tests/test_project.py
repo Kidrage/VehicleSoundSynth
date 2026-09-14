@@ -2476,7 +2476,7 @@ process.stdout.write(JSON.stringify({defaultState: defaultModel.snapshot(), on: 
             self.assertIn(control, event_host)
 
         engine = json.dumps(self.load_json("patchers/vehicle_engine_ioniq6n~.maxpat"))
-        self.assertIn("ioniq6n_sound_dna~", engine)
+        self.assertIn("ioniq6n_sound_dna_v2~", engine)
         self.assertIn("ioniq6n_cinematic_soundscape_host~", engine)
         self.assertIn("transient_ioniq6n~", engine)
         runtime = json.dumps(self.load_json("VehicleSoundSynth-IONIQ6N.maxpat"))
@@ -4009,7 +4009,7 @@ process.stdout.write(JSON.stringify({defaultState: defaultModel.snapshot(), on: 
     def test_gen_patchers_expose_bounded_required_parameters(self):
         gen_paths = sorted((ROOT / "gen").glob("*.gendsp"))
         self.assertEqual({
-            "ev_powertrain.gendsp", "ioniq6n_powertrain.gendsp",
+            "ev_powertrain.gendsp", "ioniq6n_powertrain.gendsp", "ioniq6n_powertrain_v2.gendsp",
             "ferrari_powertrain.gendsp", "ferrari_exciter_v2.gendsp",
             "v10_powertrain.gendsp", "v12_powertrain.gendsp",
             "v10_powertrain_v2.gendsp", "v12_powertrain_v2.gendsp",
@@ -4030,7 +4030,7 @@ process.stdout.write(JSON.stringify({defaultState: defaultModel.snapshot(), on: 
                 required = {'rpm', 'throttle', 'load', 'v3_body', 'v3_character', 'v3_aggression', 'v3_softness', 'v3_release_mass', 'v3_load_response'}
             elif bed:
                 required = {"body", "cavity", "contour", "load_response", "release_mass"}
-            elif path.name == "ioniq6n_powertrain.gendsp":
+            elif path.name in ("ioniq6n_powertrain.gendsp", "ioniq6n_powertrain_v2.gendsp"):
                 required = {
                     "rpm", "throttle", "load", "motor_order", "body_pressure",
                     "engine_running", "shift_cut",
@@ -4053,7 +4053,7 @@ process.stdout.write(JSON.stringify({defaultState: defaultModel.snapshot(), on: 
             else:
                 required = {"rpm", "throttle", "load", "aggression", "body"}
                 required |= {"brightness", "texture"}
-            if not bed and not v3_output and path.name not in {"ev_powertrain.gendsp", "ioniq6n_powertrain.gendsp"}:
+            if not bed and not v3_output and path.name not in {"ev_powertrain.gendsp", "ioniq6n_powertrain.gendsp", "ioniq6n_powertrain_v2.gendsp"}:
                 required |= {"engine_running", "combustion_gain", "shift_cut"}
             for name in required:
                 self.assertIn(f"Param {name}", code, path.name)

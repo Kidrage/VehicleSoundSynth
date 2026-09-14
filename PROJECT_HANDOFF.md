@@ -1,5 +1,14 @@
 # Project Handoff
 
+## Active: IONIQ DNA detail (2026-09-14)
+
+Local-only `codex/v6-ioniq-dna-accel-detail`, base d0df3b9. Current authority:
+`.agentlab/V6_IONIQ_DNA_DETAIL.md`. Modest gated order enhancement + complete
+versioned DNA persistence only. Candidate Soundscape and all other modules
+remain protected. Native exported-source and targeted BEAP/state checks pass;
+listening/full-project smoke/Max 37846 exit confirmation remain pending.
+Previous remote branch stays unchanged; no new GitHub push or production edits.
+
 > Deterministically generated repository/project memory for cross-agent handoff.
 > Update after every material project change and before final reporting.
 

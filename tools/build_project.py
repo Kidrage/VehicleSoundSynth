@@ -16,12 +16,12 @@ from pathlib import Path
 from typing import Any
 
 try:
-    from . import dna_v3
+    from . import dna_v3, ioniq_dna_v2
     from .ice_dna_v2 import RUNNING_DEFAULTS, RUNNING_METADATA, RUNNING_SPECS, make_running_gen
     from .soundscape_bed import bed_code, make_soundscape_bed, make_bed_factory
     from .noise_layer import make_vehicle_noise, make_vehicle_noise_factory
 except ImportError:
-    import dna_v3
+    import dna_v3, ioniq_dna_v2
     from ice_dna_v2 import RUNNING_DEFAULTS, RUNNING_METADATA, RUNNING_SPECS, make_running_gen
     from soundscape_bed import bed_code, make_soundscape_bed, make_bed_factory
     from noise_layer import make_vehicle_noise, make_vehicle_noise_factory
@@ -1674,14 +1674,15 @@ def make_ice_pad_host(profile: str) -> dict[str, Any]:
 def make_sound_dna(profile: str, version: int = 1) -> dict[str, Any]:
     """Seed one editable profile DNA panel around the generated DSP adapter."""
     upgraded = version == 2 and profile in ("v10", "v12")
-    suffix = "_v2" if upgraded else ""
+    ioniq_detail = version == 2 and profile == "ioniq6n"
+    suffix = "_v2" if upgraded or ioniq_detail else ""
     p = Patcher(2400, 1380) if profile == "ioniq6n" else Patcher(1280, 1060 if upgraded else 760)
     p.comment(
         f"{profile.upper()} USER-TUNABLE SOUND DNA — synthesis controls only; state/RPM remain drivetrain-owned",
         25, 15, 1050,
     )
     control = inlet(p, 35, 60)
-    specs = DNA_PARAMETER_SPECS[profile] + (RUNNING_SPECS if upgraded else ())
+    specs = DNA_PARAMETER_SPECS[profile] + (RUNNING_SPECS if upgraded else ioniq_dna_v2.SPECS if ioniq_detail else ())
     names = tuple(item[0] for item in specs)
     router = route(p, names, 35, 100, 1160)
     powertrain = p.new(f"{profile}_powertrain{suffix}~", 475, 850 if upgraded else 610, 175 if upgraded else 150, numinlets=1, numoutlets=2)
@@ -1736,6 +1737,8 @@ def make_sound_dna(profile: str, version: int = 1) -> dict[str, Any]:
     )
     if upgraded:
         defaults = {**defaults, **RUNNING_DEFAULTS[profile]}
+    if ioniq_detail:
+        defaults = {**defaults, 'accel_orders': .30}
     action_y = 990.0 if upgraded else 690.0
     reset_button = p.add(
         "message", "Reset DNA", 1080, 210, 75, numinlets=2, numoutlets=1,
@@ -1764,6 +1767,8 @@ def make_sound_dna(profile: str, version: int = 1) -> dict[str, Any]:
         x = 35 + column * 300
         y = 135 + row * 110
         metadata = {**DNA_CONTROL_METADATA, **RUNNING_METADATA} if upgraded else DNA_CONTROL_METADATA
+        if ioniq_detail:
+            metadata = {**metadata, **ioniq_dna_v2.METADATA}
         group, chinese, unit, context, description = metadata[name]
         p.add(
             "comment", f"{group} · {label} / {chinese} [{unit}]",
@@ -1857,7 +1862,8 @@ def make_sound_dna(profile: str, version: int = 1) -> dict[str, Any]:
     else:
         p.connect(powertrain, left, 0, 0)
         p.connect(powertrain, right, 1, 0)
-    return p.document(presentation=True)
+    document = p.document(presentation=True)
+    return ioniq_dna_v2.complete_state(document) if ioniq_detail else document
 
 
 def make_ferrari_sound_dna_v2() -> dict[str, Any]:
@@ -5948,7 +5954,7 @@ def make_profile_engine(profile: str) -> dict[str, Any]:
     else:
         contract_names.append("start_style")
     contract = route(p, tuple(contract_names), 190, 150, 990)
-    dna_voice = "ferrari_acoustic_v3~" if profile == "ferrari" else f"{profile}_sound_dna_v3~" if profile in ("v10", "v12") else f"{profile}_sound_dna~"
+    dna_voice = "ferrari_acoustic_v3~" if profile == "ferrari" else f"{profile}_sound_dna_v3~" if profile in ("v10", "v12") else "ioniq6n_sound_dna_v2~" if profile == "ioniq6n" else f"{profile}_sound_dna~"
     power = p.new(
         dna_voice, 95, 260, 175 if profile == "ferrari" else 145,
         numinlets=1, numoutlets=4 if profile == "ferrari" else 2,
@@ -6665,7 +6671,7 @@ def make_mix_master() -> dict[str, Any]:
     return p.document()
 
 
-def make_ioniq6n_powertrain() -> dict[str, Any]:
+def make_ioniq6n_powertrain(version: int = 1) -> dict[str, Any]:
     """Adapt canonical IONIQ state and DNA controls to the exact-order Gen exciter."""
     p = Patcher(1320, 720)
     p.comment(
@@ -6674,11 +6680,12 @@ def make_ioniq6n_powertrain() -> dict[str, Any]:
     )
     control = inlet(p, 35, 65)
     state_names = ("rpm", "throttle", "load", "accel", "engine_running", "shift_cut")
-    dna_names = tuple(item[0] for item in DNA_PARAMETER_SPECS["ioniq6n"])
+    specs = DNA_PARAMETER_SPECS["ioniq6n"] + (ioniq_dna_v2.SPECS if version == 2 else ())
+    dna_names = tuple(item[0] for item in specs)
     names = state_names + dna_names + ("powertrain_level_db",)
     router = route(p, names, 35, 105, 1180)
     gen = p.new(
-        "gen~ @gen ../gen/ioniq6n_powertrain.gendsp",
+        f"gen~ @gen ../gen/ioniq6n_powertrain{'_v2' if version == 2 else ''}.gendsp",
         420, 440, 305, numinlets=1, numoutlets=2,
     )
     p.connect(control, router)
@@ -6686,7 +6693,7 @@ def make_ioniq6n_powertrain() -> dict[str, Any]:
         "rpm": (0.0, 10000.0), "throttle": (0.0, 1.0),
         "load": (-1.0, 1.0), "accel": (-1.0, 1.0),
         "engine_running": (0.0, 1.0), "shift_cut": (0.0, 1.0),
-        **{name: (low, high) for name, _label, low, high in DNA_PARAMETER_SPECS["ioniq6n"]},
+        **{name: (low, high) for name, _label, low, high in specs},
     }
     for index, name in enumerate(state_names + dna_names):
         low, high = bounds[name]
@@ -12046,6 +12053,7 @@ GEN_CODE.update({f"{profile}_powertrain_v2": make_running_gen(profile, GEN_CODE[
 GEN_CODE.update({f"{profile}_soundscape_bed": bed_code(profile) for profile in ("ev", "v10", "v12")})
 GEN_CODE.update({f"{profile}_dna_source_v3": dna_v3.source_code(profile, GEN_CODE.get(f"{profile}_powertrain")) for profile in dna_v3.PROFILES})
 GEN_CODE['dna_v3_output'] = dna_v3.MIX_CODE
+GEN_CODE['ioniq6n_powertrain_v2'] = ioniq_dna_v2.source_code(GEN_CODE['ioniq6n_powertrain'])
 
 
 def make_gen(code: str, *, input_count: int = 0) -> dict[str, Any]:
@@ -12456,6 +12464,10 @@ def project_file() -> dict[str, Any]:
     contents['patchers']['patchers/vehicle_noise_ferrari_v2~.maxpat'] = {'kind':'patcher','local':1}
     contents['data']['presets/ferrari_noise_v2_factory.json'] = {'kind':'data','local':1}
     contents['code']['code/dna_v3_state.js'] = {'kind':'javascript','local':1}
+    for name in ('ioniq6n_sound_dna_v2~', 'ioniq6n_powertrain_v2~'):
+        contents['patchers'][f'patchers/{name}.maxpat'] = {'kind':'patcher','local':1}
+    contents['data']['presets/ioniq6n_sound_dna_v2_factory.json'] = {'kind':'data','local':1}
+    contents['code']['code/ioniq_dna_v2_state.js'] = {'kind':'javascript','local':1}
     for name in GEN_CODE:
         contents["code"][f"gen/{name}.gendsp"] = {"kind": "gendsp", "local": 1}
     contents["code"]["code/drive_model.js"] = {"kind": "javascript", "local": 1}
@@ -12756,6 +12768,12 @@ def build_project(root: Path) -> None:
         if not designer.exists():
             write_json(designer, dna_v3.make_designer(profile))
         write_json(root/'presets'/f'{profile}_sound_dna_v3_factory.json', dna_v3.factory(profile))
+    detail = make_sound_dna('ioniq6n', version=2)
+    detail_path = root/'patchers'/'ioniq6n_sound_dna_v2~.maxpat'
+    if not detail_path.exists():
+        write_json(detail_path, detail)
+    write_json(root/'patchers'/'ioniq6n_powertrain_v2~.maxpat', make_ioniq6n_powertrain(version=2))
+    write_json(root/'presets'/'ioniq6n_sound_dna_v2_factory.json', ioniq_dna_v2.factory(detail))
     noise_v2 = root/'patchers'/'vehicle_noise_ferrari_v2~.maxpat'
     if not noise_v2.exists():
         write_json(noise_v2, make_vehicle_noise('ferrari', version=2))
