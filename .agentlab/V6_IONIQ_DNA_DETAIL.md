@@ -57,7 +57,14 @@ Avoid boosting upper-edge gain merely to make the knob conspicuous.
 - Initial inline QA had an invalid factory path; file-backed QA corrected it.
   Console also contains transient QA path lookup/zero-length state-only recorder
   errors. They are not a clean full-project smoke result; do not claim one.
-- Unit suite and final review status are recorded below after completion.
+- Final **268/268 tests passed** after the malformed-preset review fix (242.433 s),
+  including two fresh full deterministic generations. Six focused tests also
+  pass. `git diff --check` passes. Scoped output generation is also equal
+  across two calls (6 outputs, digest
+  `3ec678fa1092a76e4d5c6f8e3c6398802385aeb014a524e3f707684f495915ef`).
+- 217 existing tracked audio/control/state files are byte-identical to d0df3b9,
+  excluding only the intended IONIQ live-engine reference switch. All 32 local
+  preset/state files are byte-identical to the pre-edit snapshot.
 - Task Max PID 37846 stopped recording and DSP. Normal save was issued for the
   front QA patcher; further normal quit/window queries were denied by the tool
   approval service (model capacity), not Max. User has been asked to save/quit.
@@ -77,3 +84,25 @@ Source seams: `tools/ioniq_dna_v2.py`, bounded V2 paths in `build_project.py`,
 `code/ioniq_dna_v2_state.js`. Install only with `tools/install_ioniq_detail.py`.
 QA: `build_ioniq_detail_export.py`, `check_ioniq_detail_native.py`,
 `build_ioniq_detail_runtime.py`, `ioniq_detail_state_probe.js`.
+
+## Review
+
+### Standards
+
+One robustness issue was found and fixed: a malformed saved string could reach
+`value.every()` and abort Reload. `Array.isArray` now guards it; a failing-then-
+passing regression covers strings, non-array objects and invalid array values.
+No seed-once/scope/protected-file violations found. Native state evidence covers
+representative macro/filter/Mixer values, not every BEAP mode/mute/CV client.
+Max exit remains a completion gate, not a claimed pass.
+
+### Spec
+
+No concrete implementation violations or scope creep found. The two reused
+orders, bounded gains, lifecycle-independent read-only RTPC gate, unchanged
+pitch/phase/BEAP factory, versioned live route and isolated state match the
+approved contract. Full-project smoke, application reopen, listening and Max
+exit confirmation remain acceptance gaps.
+
+Review totals: Standards 1 code issue fixed, 2 verification/completion caveats;
+Spec 0 implementation findings, documented acceptance gaps remain.

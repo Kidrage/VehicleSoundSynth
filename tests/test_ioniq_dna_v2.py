@@ -43,6 +43,15 @@ console.log(JSON.stringify({data:s.merge(factory,saved),paths:s.paths('/qa/patch
         self.assertEqual(modules(old),modules(new))
         self.assertIn('ioniq6n_sound_dna_v2~',json.dumps(b.make_profile_engine('ioniq6n')))
 
+    def test_malformed_saved_values_fall_back_without_aborting_reload(self):
+        script = """
+const s=require('./code/ioniq_dna_v2_state.js');
+const factory={'dna_motor_order':[.72]};
+console.log(JSON.stringify(['0',{length:1},[null],['.4'],[NaN]].map(value=>s.merge(factory,{'dna_motor_order':value}))));
+"""
+        result = json.loads(subprocess.check_output(['node','-e',script],text=True))
+        self.assertEqual(result,[{'dna_motor_order':[.72]}]*5)
+
     def test_every_macro_reaches_bounded_gen_input(self):
         patch = b.make_ioniq6n_powertrain(version=2)['patcher']
         boxes = {x['box']['id']:x['box'] for x in patch['boxes']}

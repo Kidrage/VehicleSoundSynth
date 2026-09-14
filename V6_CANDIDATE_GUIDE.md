@@ -1,5 +1,27 @@
 # V6 Control / DNA V3 候选版使用与交接
 
+## 当前本地追加：IONIQ DNA Detail
+
+当前分支是 `codex/v6-ioniq-dna-accel-detail`，从已上传的 d0df3b9 分出，
+尚未推送或替换现用 V6。只增强 IONIQ 加速时的两个既有阶次，Soundscape
+全部保留；N e-Shift 到顶换挡逻辑此次不改。
+
+在 Main 选择 IONIQ6N → DNA Open，找到 **Accel Orders / 加速阶次**：
+默认 0.30；0 为关闭此次增强；1 为最大增强。建议在正加速、3000 RPM
+以上比较 0 与 0.30。怠速、匀速、松油门后应回到原有质感，不是持续加亮。
+十个原有宏仍可用：Ready Bed 在怠速比较，Release Mass 在松油门时比较，
+Width 用立体声比较；HF Edge 与 Mechanical Texture 本来就是轻微细节。
+单独判断 DNA 参数时，先用 Main 的 DNA Solo，避免厚重的 Soundscape
+掩盖细节；调好后退出 Solo，再听两层融合效果。
+
+调完点击 **Save DNA**。Reload 恢复保存值，Factory Reset 恢复并保存整套
+宏／BEAP 工厂值。新状态是 `presets/local/ioniq6n_sound_dna_v2.json`，
+不会覆盖旧 DNA 或任何 Soundscape 预设。关闭窗口不再自动覆盖保存值。
+完整证据与尚未完成的 Max 退出／验收门禁见
+[IONIQ Detail 记录](.agentlab/V6_IONIQ_DNA_DETAIL.md)。
+
+以下是上一轮 Control / DNA V3 的基础使用说明，分支信息为历史记录。
+
 这是独立候选版，不是已验收 V6 的覆盖更新。
 
 - 候选目录：`Downloads/VehicleSoundSynth-V6-Candidate/VehicleSoundSynth-V6`。

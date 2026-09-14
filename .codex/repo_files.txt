@@ -1,6 +1,15 @@
 # Filtered candidate inventory (2026-09-14; baseline list below)
 # Generated patchers/Gen, media, binary documents, archives and caches are omitted.
 # Live sound-design seams: .codex/source_index.txt
+.agentlab/V6_IONIQ_DNA_DETAIL.md
+code/ioniq_dna_v2_state.js
+tools/ioniq_dna_v2.py
+tools/install_ioniq_detail.py
+tools/build_ioniq_detail_export.py
+tools/check_ioniq_detail_native.py
+tools/build_ioniq_detail_runtime.py
+tools/ioniq_detail_state_probe.js
+tests/test_ioniq_dna_v2.py
 .agentlab/V6_CONTROL_DNA_V3.md
 V6_CANDIDATE_GUIDE.md
 code/design_control.js

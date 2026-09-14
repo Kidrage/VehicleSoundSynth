@@ -5,7 +5,23 @@ Read this before broad discovery. Paths include the user-accepted 2026-09-10
 feature release; repo_files.txt is the filtered publication inventory.
 Generated patchers/Gen are navigated through the explicit seams below, not scans.
 
-## Active V3 candidate additions
+## Active IONIQ DNA detail
+
+- .agentlab/V6_IONIQ_DNA_DETAIL.md
+- tools/ioniq_dna_v2.py
+- tools/install_ioniq_detail.py
+- code/ioniq_dna_v2_state.js
+- patchers/ioniq6n_sound_dna_v2~.maxpat (seed-once)
+- patchers/ioniq6n_powertrain_v2~.maxpat
+- gen/ioniq6n_powertrain_v2.gendsp
+- presets/ioniq6n_sound_dna_v2_factory.json
+- tests/test_ioniq_dna_v2.py
+- tools/build_ioniq_detail_export.py
+- tools/check_ioniq_detail_native.py
+- tools/build_ioniq_detail_runtime.py
+- tools/ioniq_detail_state_probe.js
+
+## Prior V3 candidate additions
 
 - .agentlab/V6_CONTROL_DNA_V3.md
 - V6_CANDIDATE_GUIDE.md

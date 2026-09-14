@@ -20,7 +20,7 @@ function merge(factory, saved) {
     var result = {};
     for (var key in factory) if (factory.hasOwnProperty(key)) {
         var value = saved && saved[key];
-        result[key] = value && value.length === factory[key].length && value.every(function(x) {
+        result[key] = Array.isArray(value) && value.length === factory[key].length && value.every(function(x) {
             return typeof x === 'number' && isFinite(x);
         }) ? value : factory[key];
         if (key.indexOf('dna_') === 0) result[key] = [Math.max(0,Math.min(1,result[key][0]))];
