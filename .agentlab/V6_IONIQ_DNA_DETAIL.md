@@ -65,10 +65,12 @@ Avoid boosting upper-edge gain merely to make the knob conspicuous.
 - 217 existing tracked audio/control/state files are byte-identical to d0df3b9,
   excluding only the intended IONIQ live-engine reference switch. All 32 local
   preset/state files are byte-identical to the pre-edit snapshot.
-- Task Max PID 37846 stopped recording and DSP. Normal save was issued for the
-  front QA patcher; further normal quit/window queries were denied by the tool
-  approval service (model capacity), not Max. User has been asked to save/quit.
-  **Exit of all patchers is not yet confirmed. No force-exit authorized or used.**
+- Task Max PID 37846 stopped recording and DSP. Early cleanup requests were
+  blocked by approval-service capacity. User then confirmed all test patchers
+  saved and exited. A read-only check briefly still found PID 37846; a normal
+  quit request returned User canceled, followed by an empty window list and
+  finally `pgrep -x Max` exit 1/no output. **No Max process remains.** No force
+  termination was authorized or used. No new Max session started afterward.
 
 ## Rollback / resources
 
@@ -94,15 +96,16 @@ One robustness issue was found and fixed: a malformed saved string could reach
 passing regression covers strings, non-array objects and invalid array values.
 No seed-once/scope/protected-file violations found. Native state evidence covers
 representative macro/filter/Mixer values, not every BEAP mode/mute/CV client.
-Max exit remains a completion gate, not a claimed pass.
+The Max exit gate subsequently passed after user-confirmed saves and a final
+empty process check; full-project/reopen/listening acceptance remains pending.
 
 ### Spec
 
 No concrete implementation violations or scope creep found. The two reused
 orders, bounded gains, lifecycle-independent read-only RTPC gate, unchanged
 pitch/phase/BEAP factory, versioned live route and isolated state match the
-approved contract. Full-project smoke, application reopen, listening and Max
-exit confirmation remain acceptance gaps.
+approved contract. Full-project smoke, application reopen and listening remain
+acceptance gaps; the task Max save/exit gate has since been completed.
 
 Review totals: Standards 1 code issue fixed, 2 verification/completion caveats;
 Spec 0 implementation findings, documented acceptance gaps remain.

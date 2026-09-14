@@ -3,7 +3,7 @@
 Active narrow follow-up (2026-09-14): local IONIQ DNA V2 acceleration detail
 and full DNA state, from candidate d0df3b9. Preserve accepted Soundscape and
 all driving/eShift behavior. See `.agentlab/V6_IONIQ_DNA_DETAIL.md` for pending
-listening/full-project/reopen/Max-exit gates; no promotion before acceptance.
+listening/full-project/reopen gates; test Max saved/exited, no promotion before acceptance.
 
 Base: frozen V4 tag `v4.0.0` (`6aa49d0`).
 

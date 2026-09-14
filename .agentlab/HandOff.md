@@ -5,8 +5,9 @@
 Local-only `codex/v6-ioniq-dna-accel-detail` from d0df3b9. Read
 `.agentlab/V6_IONIQ_DNA_DETAIL.md` first. V2 adds a reversible acceleration-order
 macro and complete DNA persistence; all Soundscape/other voices/drive untouched.
-Native source and targeted BEAP/state checks pass. User listening, full-project
-smoke and test Max 37846 exit confirmation remain pending. No new push.
+Native source and targeted BEAP/state checks pass; final 268 unit tests pass.
+User confirmed all test patchers saved; final process check finds no Max.
+User listening, full-project smoke and application-reopen tests remain pending. No new push.
 The older task entries below are historical, not current Max-process status.
 
 ## Repository Identity

@@ -17,7 +17,8 @@ Width 用立体声比较；HF Edge 与 Mechanical Texture 本来就是轻微细�
 调完点击 **Save DNA**。Reload 恢复保存值，Factory Reset 恢复并保存整套
 宏／BEAP 工厂值。新状态是 `presets/local/ioniq6n_sound_dna_v2.json`，
 不会覆盖旧 DNA 或任何 Soundscape 预设。关闭窗口不再自动覆盖保存值。
-完整证据与尚未完成的 Max 退出／验收门禁见
+测试 patcher 已由用户确认保存，最终进程检查确认 Max 已完全退出。
+完整证据与尚未完成的整项目重开／听感验收门禁见
 [IONIQ Detail 记录](.agentlab/V6_IONIQ_DNA_DETAIL.md)。
 
 以下是上一轮 Control / DNA V3 的基础使用说明，分支信息为历史记录。

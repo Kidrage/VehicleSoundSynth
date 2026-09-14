@@ -6,7 +6,8 @@ Local-only `codex/v6-ioniq-dna-accel-detail`, base d0df3b9. Current authority:
 `.agentlab/V6_IONIQ_DNA_DETAIL.md`. Modest gated order enhancement + complete
 versioned DNA persistence only. Candidate Soundscape and all other modules
 remain protected. Native exported-source and targeted BEAP/state checks pass;
-listening/full-project smoke/Max 37846 exit confirmation remain pending.
+268 unit tests pass. User-confirmed saves and final empty Max process check
+complete test-session cleanup. Listening/full-project/reopen checks remain pending.
 Previous remote branch stays unchanged; no new GitHub push or production edits.
 
 > Deterministically generated repository/project memory for cross-agent handoff.
