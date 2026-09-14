@@ -73,16 +73,16 @@ are fixed-gain, not normalized. No before/after listening acceptance implied.
 Other matrix files may have incomplete/unfinalized headers: use only explicitly
 verified files. Initial unlocked/44.1k captures are diagnostic-only, not 48k passes.
 
-## Native Max blocker / safe resumption
+## Native Max incident / safe resumption
 
-Task PIDs 6505 and 23732 saved/closed and exited normally. Current task-only
-Max **PID 24644** is still running; no production project was opened. Repeated
-AX queries return -25204. A one-second stack sample shows nested AppKit modal
+Task PIDs 6505 and 23732 saved/closed and exited normally. Task-only Max
+**PID 24644** subsequently stalled; no production project was opened. Repeated
+AX queries returned -25204. A one-second stack sample showed nested AppKit modal
 loops with NonRealTime `sfrecord_dowrite` sleeping on the main thread. This is
-not evidence of a Gen compile failure, but native runtime acceptance is blocked.
+not evidence of a Gen compile failure; native runtime acceptance remains incomplete.
 All opened files are disposable QA copies; candidate source/patchers are saved.
-User approval to force-exit only PID 24644 has been requested, not assumed.
-Do not claim all task Max sessions have exited until it is confirmed.
+The user's first delayed permission covered only PID 6505, already absent; it
+was not applied to PID 24644. The user then explicitly authorized only PID 24644.
 
 Rechecked at 2026-09-14 07:03 UTC: PID 24644 is the sole Max process, started
 at 14:26:38 local time. Its disk-state backup is
@@ -90,8 +90,16 @@ at 14:26:38 local time. Its disk-state backup is
 SHA-256 `53f385ad49ed8a64500ac6ae8c59f42f83f2100c7374658abc102c8661a13753`.
 It contains the disposable V10 probe, unfinished recording, matrix manifest,
 stack sample and save-dialog screenshot. This does **not** save any unsaved
-in-memory Max state. No further close events or new probes should be queued
-while waiting for the exact-instance force-exit permission.
+in-memory Max state.
+
+At 2026-09-14 07:07 UTC, the executable path and original start time were checked
+again and the backup SHA verified. SIGTERM was sent only to PID 24644 under the
+new exact-instance authorization. It exited; SIGKILL was not needed. Process
+checks confirmed PID 24644 absent and no remaining Max processes. No new Max
+session was opened. This was authorized process termination, not a successful
+in-application Save/Close; any unsaved disposable test UI state may be lost.
+Candidate source and generated patchers remain saved in local commit `1b670bb`.
+Exit cleanup is complete, but the native/listening gates below are still open.
 
 V3 probe generation now deliberately has **no automatic wclose**. Save/close
 once after recording, verify the finalized WAV header, and exit task Max before

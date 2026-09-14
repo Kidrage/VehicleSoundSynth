@@ -22,6 +22,12 @@ Current facts, incomplete acceptance and QA paths:
 `V6_CANDIDATE_GUIDE.md`. Do not replace production or publish this branch before
 native checks and two user listening rounds. No main merge/push.
 
+Local implementation/review commit: `1b670bb`. At 2026-09-14 07:07 UTC, exact-PID
+user authorization was used to terminate task Max 24644 with SIGTERM. No Max
+process remains and no new test session was started. Candidate disk edits are
+saved; unsaved disposable test UI state is not claimed saved. This cleanup does
+not complete the remaining native or listening acceptance.
+
 ## Accepted snapshot / publication authorization (2026-09-10)
 
 The user explicitly accepted the current patcher and authorized remote publication
