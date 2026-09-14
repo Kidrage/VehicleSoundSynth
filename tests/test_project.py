@@ -137,7 +137,8 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
         host = json.dumps(
             self.load_json("patchers/ferrari_cinematic_soundscape_host~.maxpat")
         )
-        self.assertIn("ferrari_sound_dna_v2~", engine)
+        self.assertIn("ferrari_acoustic_v3~", engine)
+        self.assertNotIn('"text": "ferrari_sound_dna_v2~"', engine)
         self.assertNotIn('"text": "ferrari_sound_dna~"', engine)
         self.assertIn("ferrari_soundscape_v7_beap~", host)
         self.assertIn("pattrstorage soundscape_ferrari_v7", host)
@@ -984,7 +985,7 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
                 item["box"].get("text", "") + " " + item["box"].get("name", "")
                 for item in engine["boxes"]
             )
-            self.assertIn(f"{profile}_sound_dna{'_v2' if profile in ('v10', 'v12') else ''}~", engine_text)
+            self.assertIn(f"{profile}_sound_dna{'_v3' if profile in ('v10', 'v12') else ''}~", engine_text)
             self.assertNotIn(f"{profile}_powertrain~", engine_text)
             self.assertIn("vehicle_bus_eq~.maxpat", engine_text)
 
@@ -2749,7 +2750,7 @@ process.stdout.write(JSON.stringify({defaultState: defaultModel.snapshot(), on: 
                 and text_by_id[edge["destination"][0]] == "*~"
             }
             self.assertEqual(2, len(noise_gains), profile)
-            dna_name = f"{profile}_sound_dna{'_v2' if profile in ('v10', 'v12') else ''}~"
+            dna_name = f"{profile}_sound_dna{'_v3' if profile in ('v10', 'v12') else ''}~"
             sources = (
                 dna_name,
                 f"transient_{profile}~",
@@ -4013,6 +4014,7 @@ process.stdout.write(JSON.stringify({defaultState: defaultModel.snapshot(), on: 
             "v10_powertrain.gendsp", "v12_powertrain.gendsp",
             "v10_powertrain_v2.gendsp", "v12_powertrain_v2.gendsp",
             "ev_soundscape_bed.gendsp", "v10_soundscape_bed.gendsp", "v12_soundscape_bed.gendsp",
+            "ferrari_dna_source_v3.gendsp", "v10_dna_source_v3.gendsp", "v12_dna_source_v3.gendsp", "dna_v3_output.gendsp",
         }, {path.name for path in gen_paths})
         for path in gen_paths:
             patcher = self.load_json(path.relative_to(ROOT))["patcher"]
@@ -4021,7 +4023,12 @@ process.stdout.write(JSON.stringify({defaultState: defaultModel.snapshot(), on: 
                 for item in patcher["boxes"]
             )
             bed = path.stem.endswith("_soundscape_bed")
-            if bed:
+            v3_output = path.stem == 'dna_v3_output'
+            if v3_output:
+                required = {'v3_width'}
+            elif path.stem.endswith('_dna_source_v3'):
+                required = {'rpm', 'throttle', 'load', 'v3_body', 'v3_character', 'v3_aggression', 'v3_softness', 'v3_release_mass', 'v3_load_response'}
+            elif bed:
                 required = {"body", "cavity", "contour", "load_response", "release_mass"}
             elif path.name == "ioniq6n_powertrain.gendsp":
                 required = {
@@ -4046,7 +4053,7 @@ process.stdout.write(JSON.stringify({defaultState: defaultModel.snapshot(), on: 
             else:
                 required = {"rpm", "throttle", "load", "aggression", "body"}
                 required |= {"brightness", "texture"}
-            if not bed and path.name not in {"ev_powertrain.gendsp", "ioniq6n_powertrain.gendsp"}:
+            if not bed and not v3_output and path.name not in {"ev_powertrain.gendsp", "ioniq6n_powertrain.gendsp"}:
                 required |= {"engine_running", "combustion_gain", "shift_cut"}
             for name in required:
                 self.assertIn(f"Param {name}", code, path.name)
@@ -4054,8 +4061,12 @@ process.stdout.write(JSON.stringify({defaultState: defaultModel.snapshot(), on: 
                     item["box"].get("text", "").startswith(f"param {name} ")
                     for item in patcher["boxes"]
                 ), f"{path.name}: {name} is not exposed by a top-level Gen param")
-            self.assertIn("clamp(", code, path.name)
-            self.assertIn("sin(" if bed else "cycle(", code, path.name)
+            if v3_output:
+                self.assertIn('in4*', code, path.name)
+                self.assertIn('120/samplerate', code, path.name)
+            else:
+                self.assertIn("clamp(", code, path.name)
+                self.assertIn("sin(" if bed else "cycle(", code, path.name)
             if bed:
                 ports = {item["box"].get("text", "") for item in patcher["boxes"]}
                 self.assertTrue({f"in {i}" for i in range(1, 9)}.issubset(ports))
@@ -4211,7 +4222,7 @@ process.stdout.write(JSON.stringify({defaultState: defaultModel.snapshot(), on: 
             engine = self.load_json(f"patchers/vehicle_engine_{profile}~.maxpat")
             engine_text = "\n".join(item["box"].get("text", "") for item in engine["patcher"]["boxes"])
             for abstraction in (
-                f"engine_controller_{profile}", f"{profile}_sound_dna{'_v2' if profile in ('v10', 'v12') else ''}~",
+                f"engine_controller_{profile}", f"{profile}_sound_dna{'_v3' if profile in ('v10', 'v12') else ''}~",
                 f"transient_{profile}~", f"vehicle_noise_{profile}~", "cabin_master~",
             ):
                 self.assertIn(abstraction, engine_text)
@@ -5825,7 +5836,12 @@ process.stdout.write(JSON.stringify({defaultState: defaultModel.snapshot(), on: 
                     )
                     box[key] = value
             normalized_hosts.append(json.dumps(normalized, sort_keys=True))
-        self.assertEqual(1, len(set(normalized_hosts)))
+        # V3 profile-specific mode normalizers and the IONIQ eShift feedback
+        # split are deliberate adapters. ICE hosts retain identical topology.
+        self.assertEqual(normalized_hosts[1], normalized_hosts[2])
+        from tools.build_project import make_profile_runtime_host
+        for profile, path in zip(("ev", "v10", "v12", "ioniq6n"), host_paths):
+            self.assertEqual(self.load_json(path), make_profile_runtime_host(profile))
 
         forbidden_runtime_tokens = (
             "Audio + Output", "Drive source", "Master compressor",
@@ -6047,7 +6063,8 @@ process.stdout.write(JSON.stringify({defaultState: defaultModel.snapshot(), on: 
                 if box.get("text") == f"s vss.runtime.feedback.{profile}"
             )
             self.assertIn((compressor_defaults, engine), lines)
-            self.assertIn((compressor_defaults, feedback), lines)
+            self.assertNotIn((compressor_defaults, feedback), lines)
+            self.assertIn((engine, feedback), lines)  # Feedback follows normalized application, not request echo.
 
         script = r"""
 const reader = require(process.argv[1]);

@@ -1,5 +1,24 @@
 # VehicleSoundSynth V6 Repository Guide
 
+## Isolated control / DNA V3 candidate
+
+Branch `codex/v6-control-dna-v3` starts at accepted `cff9d08`; production remains
+in the separate Downloads V6 folder. See `.agentlab/V6_CONTROL_DNA_V3.md`.
+`tools/dna_v3.py` owns the new four-group source, seed-once BEAP designers and
+small internal acoustic wrappers. Ferrari's wrapper has one source and separate
+DNA L/R + Noise L/R outputs. `noise_layer.py` version 2 accepts three raw residual
+inputs; other profiles keep Noise V1. No SC/Start/Pop/FX changes.
+`code/dna_v3_state.js` stores fresh namespaces and imports only old ICE-idle
+controls with unchanged meanings; `noise_state.js` optionally imports compatible
+V1 values into Ferrari V2, never the Main stem fader. `code/design_control.js` is
+the Main direct-routing/normalized-application registry. IONIQ alone receives
+8000-redline eShift, legal gear selection and 300 ms mode transition.
+Run the scoped installer only in this feature worktree. New Max/BEAP graphs are
+not considered accepted just because structural or exported-source tests pass.
+Native export helper, runner and checks: `tools/build_dna_v3_export.py`,
+`tools/native_gen_runner.cpp`, `tools/check_dna_v3_native.py`. Exported vendor
+code, binaries, PCM and reports stay in a unique temporary QA directory.
+
 ## Purpose
 
 Max 8.6.5 vehicle-sound V6, forked from stable V4 tag `v4.0.0`, with five independent fixed-profile runtimes. V10

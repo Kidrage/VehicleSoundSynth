@@ -192,7 +192,7 @@
             145.0,
             22.0
           ],
-          "text": "v12_sound_dna_v2~"
+          "text": "v12_sound_dna_v3~"
         }
       },
       {

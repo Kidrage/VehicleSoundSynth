@@ -602,7 +602,9 @@ process.stdout.write(JSON.stringify({profile, render_ms: renderMs, step_ms: 20, 
     return trace
 
 
-def probe_powertrain_name(profile: str) -> str:
+def probe_powertrain_name(profile: str, acoustic_version: int = 2) -> str:
+    if acoustic_version == 3 and profile in ('ferrari', 'v10', 'v12'):
+        return 'ferrari_acoustic_v3~' if profile == 'ferrari' else profile+'_sound_dna_v3~'
     if profile == 'ferrari':
         return 'ferrari_sound_dna_v2~'
     return f"{profile}_powertrain{'_v2' if profile in ('v10', 'v12') else ''}~"
@@ -631,6 +633,8 @@ def make_probe(
     drive_lifecycle: bool = False,
     direct_powertrain: bool = False,
     direct_soundscape_state: bool = False,
+    acoustic_version: int = 2,
+    sample_rate: int = 48000,
 ) -> dict:
     settings = PROFILE_SETTINGS[profile]
     rumble_values = settings["rumble"] if rumble_enabled else (0.0, 0.0, 0.0)
@@ -639,21 +643,22 @@ def make_probe(
     p = Patcher(980, 680)
     state = "rumble" if rumble_enabled else "dry"
     p.comment(f"Automated {profile.upper()} idle {state} render; hardware monitor is multiplied by zero", 25, 15, 700)
-    p.comment("Runtime acceptance requires the written WAV to report exactly 48000 Hz; any other rate is a hard failure", 25, 42, 820)
+    p.comment(f"Runtime acceptance requires the written WAV to report exactly {sample_rate} Hz; any other rate is a hard failure", 25, 42, 820)
     drive = p.new(f"drive_simulator_{profile}", 100, 290, 165, numinlets=1, numoutlets=1)
     controller = p.new(f"engine_controller_{profile}", 300, 290, 165, numinlets=1, numoutlets=1)
     drive_router = p.new("route rpm", 100, 320, 75, numinlets=1, numoutlets=2)
     rpm_select = p.new("switch 2", 190, 290, 70, numinlets=3, numoutlets=1)
     rpm_select_default = p.new("loadmess 1", 190, 260, 80, numinlets=1, numoutlets=1)
     rpm_named = p.new("prepend rpm", 190, 320, 90, numinlets=1, numoutlets=1)
-    powertrain_name = probe_powertrain_name(profile)
-    powertrain = p.new(powertrain_name, 300, 330, 185, numinlets=1, numoutlets=2)
+    powertrain_name = probe_powertrain_name(profile, acoustic_version)
+    shared_ferrari = acoustic_version == 3 and profile == 'ferrari'
+    powertrain = p.new(powertrain_name, 300, 330, 185, numinlets=1, numoutlets=4 if shared_ferrari else 2)
     soundscape = p.new(
         f"{profile}_cinematic_soundscape_host~", 445, 330, 205,
         numinlets=1, numoutlets=2,
     )
     transient = p.new(f"transient_{profile}~", 160, 330, 125, numinlets=1, numoutlets=2)
-    road = p.new(f"vehicle_noise_{profile}~", 70, 330, 175, numinlets=1, numoutlets=2)
+    road = powertrain if shared_ferrari else p.new(f"vehicle_noise_{profile}~", 70, 330, 175, numinlets=1, numoutlets=2)
     rumble = p.new("cabin_rumble~", 430, 330, 110, numinlets=3, numoutlets=2)
     add_l = p.new("+~", 300, 375, 40, numinlets=2, numoutlets=1)
     add_r = p.new("+~", 430, 375, 40, numinlets=2, numoutlets=1)
@@ -668,6 +673,8 @@ def make_probe(
     if not direct_powertrain:
         p.connect(controller, powertrain, 0, 0)
     for controlled in (transient, road, rumble, cabin, mix):
+        if controlled == powertrain:
+            continue
         p.connect(controller, controlled, 0, 0)
     if not direct_soundscape_state:
         p.connect(controller, soundscape, 0, 0)
@@ -722,8 +729,8 @@ def make_probe(
     p.connect(powertrain, core_r, 1, 0)
     p.connect(transient, transient_gate_l, 0, 0)
     p.connect(transient, transient_gate_r, 1, 0)
-    p.connect(road, road_gate_l, 0, 0)
-    p.connect(road, road_gate_r, 1, 0)
+    p.connect(road, road_gate_l, 2 if shared_ferrari else 0, 0)
+    p.connect(road, road_gate_r, 3 if shared_ferrari else 1, 0)
     p.connect(rumble, rumble_gate_l, 0, 0)
     p.connect(rumble, rumble_gate_r, 1, 0)
     for stem_gain in (core_l, core_r):
@@ -816,6 +823,14 @@ def make_probe(
             p.connect(initial, soundscape)
 
     load = p.new("loadbang", 500, 110, 65, numinlets=1, numoutlets=1)
+    if acoustic_version == 3:
+        # A stopped NonRealTime driver can suspend Max's delay scheduler.
+        # Return to the real-time scheduler BEFORE arming the probe timers.
+        begin = p.new('t b b',500,75,65,numoutlets=2)
+        realtime_scheduler = p.message(';\rdsp stop;\rdsp setdriver "Core Audio"',25,975,340)
+        p.connect(load,begin)
+        p.connect(begin,realtime_scheduler,1)
+        load = begin
     start_delay = p.new("delay 100", 500, 150, 70, numinlets=2, numoutlets=1)
     record_start = p.message("1", 590, 190, 30)
     record_stop = p.message("0", 680, 190, 30)
@@ -828,7 +843,7 @@ def make_probe(
         event_target = (
             transient if direct_event_to_transient
             else soundscape if direct_soundscape_state
-            else drive
+            else powertrain if direct_powertrain else drive
         )
         p.connect(event, event_target)
     elif global_event_address is not None:
@@ -887,13 +902,20 @@ def make_probe(
     p.connect(mix, mute_r, 1, 0)
     p.connect(mute_l, dac, 0, 0)
     p.connect(mute_r, dac, 0, 1)
+    if acoustic_version == 3:
+        console = p.new('console', 25, 920, 75, numoutlets=3)
+        console_delay = p.new('delay 18000', 25, 880, 105, numinlets=2)
+        console_write = p.message(f'write "{wav_output.with_suffix(".console.txt")}"', 140, 880, 660)
+        p.connect(load, console_delay)
+        p.connect(console_delay, console_write)
+        p.connect(console_write, console)
     if driver_mode == "nonrealtime":
         dsp_stop_at_load = p.message(";\rdsp stop", 500, 535, 85)
         driver_delay = p.new("delay 3000", 595, 535, 75, numinlets=2, numoutlets=1)
         driver_select = p.message(";\rdsp setdriver NonRealTime", 500, 565, 165)
         sample_rate_delay = p.new("delay 1000", 500, 600, 75, numinlets=2, numoutlets=1)
-        sample_rate_value = p.message(";\rdsp sr 48000", 500, 630, 110)
-        sample_rate_number = p.message("48000", 500, 665, 55)
+        sample_rate_value = p.message(f";\rdsp sr {sample_rate}", 500, 630, 110)
+        sample_rate_number = p.message(str(sample_rate), 500, 665, 55)
         sample_rate_status = p.new("adstatus sr", 500, 700, 75, numinlets=2, numoutlets=2)
         sample_rate_override = p.new("loadmess override 1", 500, 735, 125, numinlets=1, numoutlets=1)
         driver_ready = p.new("delay 2000", 630, 565, 75, numinlets=2, numoutlets=1)
@@ -1123,6 +1145,11 @@ def main() -> None:
         help="Optional local-only Ferrari media directory; defaults to media/local",
     )
     parser.add_argument("--profile", choices=sorted(PROFILE_SETTINGS), default="v12")
+    parser.add_argument("--acoustic-version", type=int, choices=(2,3), default=2,
+                        help="Explicit 3 is required for the V3 candidate; 2 retains old baseline probes")
+    parser.add_argument("--sample-rate", type=int, choices=(44100,48000), default=48000)
+    parser.add_argument("--lock-rpm", action="store_true")
+    parser.add_argument("--direct-powertrain", action="store_true")
     parser.add_argument("--scenario", choices=sorted(SCENARIOS))
     parser.add_argument(
         "--tap", choices=("transient", "pre-cabin", "final"), default="final"
@@ -1149,7 +1176,7 @@ def main() -> None:
     rpm = scenario.get("rpm", args.rpm)
     throttle = scenario.get("throttle", args.throttle)
     load_value = scenario.get("load", args.load_value)
-    lock_rpm = bool(scenario.get("lock_rpm", False))
+    lock_rpm = args.lock_rpm or bool(scenario.get("lock_rpm", False))
     extra_messages = list(scenario.get("extra_messages", ())) + list(args.eq_message)
     for name in (
         "soundscape_enable", "soundscape_level_db", "soundscape_motion",
@@ -1243,10 +1270,12 @@ def main() -> None:
                 scenario.get("direct_event_to_transient", False)
             ),
             drive_lifecycle=bool(scenario.get("drive_lifecycle", False)),
-            direct_powertrain=bool(scenario.get("direct_powertrain", False)),
+            direct_powertrain=args.direct_powertrain or bool(scenario.get("direct_powertrain", False)),
             direct_soundscape_state=bool(
                 scenario.get("direct_soundscape_state", False)
             ),
+            acoustic_version=args.acoustic_version,
+            sample_rate=args.sample_rate,
         ),
     )
     if "lifecycle_role" in scenario:

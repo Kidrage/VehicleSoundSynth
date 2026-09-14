@@ -27,6 +27,23 @@ function run(m,seconds) {
 
 
 class IoniqControlV3Tests(unittest.TestCase):
+    def test_shutdown_and_restart_close_an_in_progress_shift(self):
+        data = probe("""
+const rows=[];
+for(const action of ['off','restart']) {
+ const m=make(); for(let i=0;i<2000 && !m.shift;i++) m.tick(.02);
+ const active=!!m.shift;
+ const events=m.handle(action==='off'?'ignition':'start',[action==='off'?0:1]);
+ const later=run(m,2).flatMap(x=>x.events);
+ rows.push({active,events,later});
+}
+console.log(JSON.stringify(rows));
+""")
+        for row in data:
+            self.assertTrue(row['active'])
+            self.assertIn(['shift', 0], row['events'])
+        self.assertNotIn(['shift',1],data[0]['later'])
+
     def test_duplicate_mode_request_preserves_running_state(self):
         data = probe("""
 const m=make(); run(m,60); const before=m.snapshot(); let events=[];

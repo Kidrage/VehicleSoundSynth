@@ -1,5 +1,8 @@
 # VehicleSoundSynth V6 Repository Instructions
 
+- **Active isolated candidate (2026-09-14):** branch `codex/v6-control-dna-v3`, base `cff9d08`, under `Downloads/VehicleSoundSynth-V6-Candidate/VehicleSoundSynth-V6`. User approved IONIQ control repair and Ferrari/V10/V12 DNA V3. This exception supersedes the older release-only/protected-DNA notes below, not other boundaries. Accepted production in `Downloads/VehicleSoundSynth-V6` is untouched. Never replace it before listening acceptance.
+- For this candidate use `tools/install_v3_candidate.py`, not a blanket in-place rebuild. `*_dna_v3_designer~` and `vehicle_noise_ferrari_v2~` are seed-once. Keep old DNA/Noise versions, starts, Pop, SC and private states. `tools/check_dna_v3_native.py` tests Max-exported Gen only; it cannot certify full BEAP runtime/CPU/listening acceptance.
+
 - Target Max 8.6.5 using built-in objects only.
 - Treat `main.maxpat` as the DSP-free launcher and sole common control surface. The runnable adapters are `VehicleSoundSynth-{EV,V10,V12,IONIQ6N,Ferrari}.maxpat`; open only one at a time. Common lifecycle/input/Mix/EQ/Sound Design wiring is materialized from one generator topology into `patchers/profile_runtime_host_{ev,v10,v12,ioniq6n,ferrari}.maxpat`, while profile patchers contain only profile-specific modes. Their public audio seams are `patchers/vehicle_engine_{ev,v10,v12,ioniq6n,ferrari}~.maxpat`.
 - Regenerate patchers/Gen/presets with `python3 tools/build_project.py`; process curated media with `python3 tools/process_assets.py`. Do not hand-edit generated `.maxpat`, `.gendsp`, or `.wav` files. Seed-once user-owned BEAP exceptions are listed in `.codex/REPO_GUIDE.md` and must never be overwritten after creation.

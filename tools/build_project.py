@@ -16,10 +16,12 @@ from pathlib import Path
 from typing import Any
 
 try:
+    from . import dna_v3
     from .ice_dna_v2 import RUNNING_DEFAULTS, RUNNING_METADATA, RUNNING_SPECS, make_running_gen
     from .soundscape_bed import bed_code, make_soundscape_bed, make_bed_factory
     from .noise_layer import make_vehicle_noise, make_vehicle_noise_factory
 except ImportError:
+    import dna_v3
     from ice_dna_v2 import RUNNING_DEFAULTS, RUNNING_METADATA, RUNNING_SPECS, make_running_gen
     from soundscape_bed import bed_code, make_soundscape_bed, make_bed_factory
     from noise_layer import make_vehicle_noise, make_vehicle_noise_factory
@@ -5946,17 +5948,17 @@ def make_profile_engine(profile: str) -> dict[str, Any]:
     else:
         contract_names.append("start_style")
     contract = route(p, tuple(contract_names), 190, 150, 990)
-    dna_voice = f"{profile}_sound_dna_v2~" if profile in ("ferrari", "v10", "v12") else f"{profile}_sound_dna~"
+    dna_voice = "ferrari_acoustic_v3~" if profile == "ferrari" else f"{profile}_sound_dna_v3~" if profile in ("v10", "v12") else f"{profile}_sound_dna~"
     power = p.new(
         dna_voice, 95, 260, 175 if profile == "ferrari" else 145,
-        numinlets=1, numoutlets=2,
+        numinlets=1, numoutlets=4 if profile == "ferrari" else 2,
     )
     pad = p.new(
         f"{profile}_cinematic_soundscape_host~", 95, 305, 220,
         numinlets=1, numoutlets=3,
     )
     transient = p.new(f"transient_{profile}~", 285, 260, 120, numinlets=1, numoutlets=2)
-    road = p.new(f"vehicle_noise_{profile}~", 465, 260, 155, numinlets=1, numoutlets=2)
+    road = power if profile == "ferrari" else p.new(f"vehicle_noise_{profile}~", 465, 260, 155, numinlets=1, numoutlets=2)
     rumble = p.new("cabin_rumble~", 625, 260, 110, numinlets=3, numoutlets=2)
     cabin = p.new("cabin_master~", 800, 450, 110, numinlets=3, numoutlets=2)
     eq = p.add(
@@ -5991,7 +5993,8 @@ def make_profile_engine(profile: str) -> dict[str, Any]:
     p.connect(fan, power, 5)
     p.connect(fan, pad, 5)
     p.connect(fan, transient, 4)
-    p.connect(fan, road, 3)
+    if profile != "ferrari":
+        p.connect(fan, road, 3)
     p.connect(fan, rumble, 2)
     p.connect(fan, cabin, 1, 0)
     p.connect(fan, mix, 0, 0)
@@ -6100,8 +6103,8 @@ def make_profile_engine(profile: str) -> dict[str, Any]:
     p.connect(power, core_r, 1, 0)
     p.connect(transient, transient_l, 0, 0)
     p.connect(transient, transient_r, 1, 0)
-    p.connect(road, road_l, 0, 0)
-    p.connect(road, road_r, 1, 0)
+    p.connect(road, road_l, 2 if profile == "ferrari" else 0, 0)
+    p.connect(road, road_r, 3 if profile == "ferrari" else 1, 0)
     p.connect(rumble, rumble_l, 0, 0)
     p.connect(rumble, rumble_r, 1, 0)
     for stem_gain in (core_l, core_r):
@@ -12041,6 +12044,8 @@ GEN_CODE.pop("cabin_rumble", None)
 GEN_CODE.update({f"{profile}_powertrain_v2": make_running_gen(profile, GEN_CODE[f"{profile}_powertrain"])
                  for profile in ("v10", "v12")})
 GEN_CODE.update({f"{profile}_soundscape_bed": bed_code(profile) for profile in ("ev", "v10", "v12")})
+GEN_CODE.update({f"{profile}_dna_source_v3": dna_v3.source_code(profile, GEN_CODE.get(f"{profile}_powertrain")) for profile in dna_v3.PROFILES})
+GEN_CODE['dna_v3_output'] = dna_v3.MIX_CODE
 
 
 def make_gen(code: str, *, input_count: int = 0) -> dict[str, Any]:
@@ -12443,6 +12448,14 @@ def project_file() -> dict[str, Any]:
         patchers.extend((f"patchers/{profile}_sound_dna_v2~.maxpat", f"patchers/{profile}_powertrain_v2~.maxpat"))
     for name in patchers:
         contents["patchers"][name] = {"kind": "patcher", "local": 1}
+    for profile in dna_v3.PROFILES:
+        voice = 'ferrari_acoustic_v3~' if profile == 'ferrari' else profile+'_sound_dna_v3~'
+        for name in (voice, profile+'_dna_v3_designer~'):
+            contents['patchers'][f'patchers/{name}.maxpat'] = {'kind':'patcher', 'local':1}
+        contents['data'][f'presets/{profile}_sound_dna_v3_factory.json'] = {'kind':'data','local':1}
+    contents['patchers']['patchers/vehicle_noise_ferrari_v2~.maxpat'] = {'kind':'patcher','local':1}
+    contents['data']['presets/ferrari_noise_v2_factory.json'] = {'kind':'data','local':1}
+    contents['code']['code/dna_v3_state.js'] = {'kind':'javascript','local':1}
     for name in GEN_CODE:
         contents["code"][f"gen/{name}.gendsp"] = {"kind": "gendsp", "local": 1}
     contents["code"]["code/drive_model.js"] = {"kind": "javascript", "local": 1}
@@ -12736,8 +12749,19 @@ def build_project(root: Path) -> None:
         user_backfire = root / "patchers" / f"{profile}_backfire_v2_beap~.maxpat"
         if not user_backfire.exists():
             write_json(user_backfire, make_ice_backfire_beap(profile, version=2))
+    for profile in dna_v3.PROFILES:
+        voice = 'ferrari_acoustic_v3~' if profile == 'ferrari' else profile+'_sound_dna_v3~'
+        write_json(root/'patchers'/f'{voice}.maxpat', dna_v3.make_acoustic(profile))
+        designer = root/'patchers'/f'{profile}_dna_v3_designer~.maxpat'
+        if not designer.exists():
+            write_json(designer, dna_v3.make_designer(profile))
+        write_json(root/'presets'/f'{profile}_sound_dna_v3_factory.json', dna_v3.factory(profile))
+    noise_v2 = root/'patchers'/'vehicle_noise_ferrari_v2~.maxpat'
+    if not noise_v2.exists():
+        write_json(noise_v2, make_vehicle_noise('ferrari', version=2))
+    write_json(root/'presets'/'ferrari_noise_v2_factory.json', make_vehicle_noise_factory('ferrari', version=2))
     for name, code in GEN_CODE.items():
-        write_json(root / "gen" / f"{name}.gendsp", make_gen(code, input_count=8 if name.endswith("_soundscape_bed") else 0))
+        write_json(root / "gen" / f"{name}.gendsp", make_gen(code, input_count=8 if name.endswith("_soundscape_bed") else 4 if name == 'dna_v3_output' else 0))
     for name, frames in MEDIA_FRAMES.items():
         media_path = root / "media" / f"{name}.wav"
         # Curated recordings and IRs are source assets, never disposable build

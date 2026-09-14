@@ -9,13 +9,15 @@ function noiseBound(value, low, high) {
 }
 function noiseGain(db) { return db <= -60 ? 0 : Math.pow(10, db / 20); }
 
-function NoiseControl(profile, emit) {
+function NoiseControl(profile, emit, version) {
     this.profile = profile;
+    this.version = version === 2 ? 2 : 1;
     this.emit = emit;
     this.last = {};
     this.state = {ignition: 0, engine_running: 0, rpm: 0, load: 0, throttle: 0, speed_kph: 0};
     this.params = {road_level_db: -60, noise_mechanical_db: -10, noise_intake_db: -15,
         noise_tire_db: -14, noise_air_db: -22, noise_color: 0.35};
+    if (this.version === 2) this.params.noise_combustion_db = -10;
 }
 NoiseControl.prototype.update = function () {
     var s = this.state, p = this.params;
@@ -34,6 +36,7 @@ NoiseControl.prototype.update = function () {
         tire: 0.11 * Math.pow(speed, 0.9) * noiseGain(p.noise_tire_db),
         air: 0.09 * Math.pow(speed, 1.65) * noiseGain(p.noise_air_db)
     };
+    if (this.version === 2) values.combustion = (0.08 + 0.12*r + 0.12*effort)*noiseGain(p.noise_combustion_db);
     for (var key in values) if (Object.prototype.hasOwnProperty.call(values, key) && this.last[key] !== values[key]) {
         this.last[key] = values[key];
         this.emit(key, values[key]);
@@ -54,7 +57,8 @@ NoiseControl.prototype.handle = function (name, args) {
 
 var noiseController = new NoiseControl(
     typeof jsarguments !== 'undefined' && jsarguments.length > 1 ? String(jsarguments[1]) : 'ev',
-    function (name, value) { if (typeof outlet !== 'undefined') outlet(0, name, value); }
+    function (name, value) { if (typeof outlet !== 'undefined') outlet(0, name, value); },
+    typeof jsarguments !== 'undefined' && jsarguments.length > 2 ? Number(jsarguments[2]) : 1
 );
 function anything() { noiseController.handle(messagename, arrayfromargs(arguments)); }
 function bang() { noiseController.update(); }

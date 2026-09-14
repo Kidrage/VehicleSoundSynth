@@ -213,6 +213,7 @@ DriveModel.prototype.handle = function (name, args) {
         this.ignition = value ? 1 : 0;
         events.push(["ignition", this.ignition]);
         if (!this.ignition) {
+            if (this.profile === "ioniq6n" && this.shift) events.push(["shift", 0]);
             this.running = 0;
             this.modeTransition = null;
             this.launchCoupled = false;
@@ -226,6 +227,7 @@ DriveModel.prototype.handle = function (name, args) {
             events.push(["shift_cut", 1.0]);
         }
     } else if (name === "start" && value && this.ignition) {
+        if (this.profile === "ioniq6n" && this.shift) events.push(["shift", 0]);
         // qmetro may already have ticked for an arbitrary time while the
         // patcher was open. Every lifecycle curve must be relative to this
         // start edge, never to patch load time.
@@ -445,7 +447,7 @@ DriveModel.prototype.updateShift = function (dt, events) {
 
 DriveModel.prototype.maybeShift = function (events) {
     if (this.shift || this.time - this.lastShiftEnd < this.config.shiftLockSeconds ||
-            (this.profile === "ioniq6n" && (this.modeTransition || !this.launchCoupled))) {
+            (this.profile === "ioniq6n" && (!this.running || this.modeTransition || !this.launchCoupled))) {
         return;
     }
     var up = this.config.upBase + this.config.upThrottle * this.throttle;
