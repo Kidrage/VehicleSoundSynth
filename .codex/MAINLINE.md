@@ -46,3 +46,10 @@ Base: frozen V4 tag `v4.0.0` (`6aa49d0`).
     publishing this feature branch on 2026-09-10 without further retuning;
     no main merge. Unfinished automated native QA remains explicitly documented
     in `V6_RELEASE_HANDOFF.md` and is separate from user listening acceptance.
+15. Isolated 2026-09-14 candidate on `codex/v6-control-dna-v3`, base `cff9d08`:
+    repair IONIQ eShift without retuning its equal-RTPC audio or other drives;
+    make pure sound commands independent of driving gates; add versioned
+    Ferrari/V10/V12 four-group DNA and independent Ferrari Noise residuals.
+    Preserve accepted SC/Start/Pop/FX, old files and private state. Track actual
+    control semantics and complete factory defaults. Native matrix, CPU,
+    persistence and two user listening rounds precede promotion/publication.

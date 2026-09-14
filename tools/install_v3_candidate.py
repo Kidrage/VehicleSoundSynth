@@ -36,19 +36,31 @@ def control_outputs():
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--root', type=Path, default=Path(__file__).resolve().parents[1])
+    parser.add_argument('--refresh-seeds-from', help='Pre-delivery only: refresh V3 seeds iff byte-equal to this known commit')
     args = parser.parse_args()
     root = args.root.resolve()
     branch = subprocess.check_output(['git','branch','--show-current'],cwd=root,text=True).strip()
     if branch != 'codex/v6-control-dna-v3':
         parser.error('Installer is restricted to the isolated codex/v6-control-dna-v3 worktree')
     outputs = control_outputs()
+    seeds = {}
     for profile in b.dna_v3.PROFILES:
         name = f'patchers/{profile}_dna_v3_designer~.maxpat'
-        if not (root/name).exists():
-            outputs[name] = b.dna_v3.make_designer(profile)
+        seeds[name] = b.dna_v3.make_designer(profile)
     name = 'patchers/vehicle_noise_ferrari_v2~.maxpat'
-    if not (root/name).exists():
-        outputs[name] = b.make_vehicle_noise('ferrari',version=2)
+    seeds[name] = b.make_vehicle_noise('ferrari',version=2)
+    if args.refresh_seeds_from:
+        reference = subprocess.check_output(['git','rev-parse','--verify',args.refresh_seeds_from+'^{commit}'],cwd=root,text=True).strip()
+        subprocess.run(['git','merge-base','--is-ancestor',reference,'HEAD'],cwd=root,check=True)
+        # Validate every target before any write. User edits always stop refresh.
+        for name in seeds:
+            if not (root/name).exists(): continue
+            expected = subprocess.check_output(['git','show',reference+':'+name],cwd=root)
+            if (root/name).read_bytes() != expected:
+                parser.error('Seed differs from reference; preserve user edit: '+name)
+    for name, document in seeds.items():
+        if args.refresh_seeds_from or not (root/name).exists():
+            outputs[name] = document
     with tempfile.TemporaryDirectory(prefix='vss-v3-install-') as temporary:
         stage = Path(temporary)
         for name, document in outputs.items():

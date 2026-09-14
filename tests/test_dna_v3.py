@@ -9,6 +9,25 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class DNAV3Tests(unittest.TestCase):
+    def test_v3_probes_never_auto_close_into_nested_save_modals(self):
+        from tools.build_runtime_probe import make_probe
+        for driver in ('coreaudio','nonrealtime'):
+            patch=make_probe(Path('/private/tmp/v3-test.wav'),'ferrari',False,
+                             acoustic_version=3,driver_mode=driver,direct_powertrain=True)['patcher']
+            text=[item['box'].get('text','') for item in patch['boxes'] if item['box']['maxclass']=='message']
+            self.assertFalse(any('wclose' in value for value in text))
+
+    def test_factory_reset_covers_every_live_beap_restore_client(self):
+        for profile in b.dna_v3.PROFILES:
+            patch=b.dna_v3.make_designer(profile)['patcher']
+            factory=b.dna_v3.factory(profile)['pattrstorage']['slots']['99']['data']
+            for item in patch['boxes']:
+                box=item['box']
+                if box.get('maxclass')!='bpatcher': continue
+                for child in box['patcher']['boxes']:
+                    for key,value in child['box'].get('restore',{}).items():
+                        self.assertEqual(factory.get(box['varname']+'::'+key),value,(profile,key))
+
     def test_protected_audio_resources_are_byte_unchanged(self):
         files = subprocess.check_output(['git','ls-tree','-r','--name-only','cff9d08','gen','patchers','media','presets'],cwd=ROOT,text=True).splitlines()
         protected = [name for name in files if ('soundscape' in name or 'engine_start' in name or 'pop_' in name

@@ -9,12 +9,13 @@ from __future__ import annotations
 PROFILES = ('ferrari', 'v10', 'v12')
 MACROS = (
     ('v3_aggression', 'Aggression / odd-even + local drive', .5),
-    ('v3_body', 'Body / independent low-mid mass', .5),
+    ('v3_body', 'Body Weight / deep → mid', .5),
     ('v3_character', 'Character / dual cavity depth', .5),
     ('v3_softness', 'Softness / upper spectral rolloff', .5),
     ('v3_release_mass', 'Release Mass / body release time', .5),
     ('v3_width', 'Width / Side above 120 Hz', .5),
     ('v3_load_response', 'Load Response / gain + spectral opening', .5),
+    ('v3_pressure_blend', 'Body Pressure / excitation mix', .5),
 )
 LEVELS = {'ferrari': (0, -5, -9, -18), 'v10': (0, -6, -10, -19), 'v12': (0, -5, -9, -21)}
 BODY = {'ferrari': (48, .018), 'v10': (60, .020), 'v12': (42, .014)}
@@ -66,6 +67,7 @@ v3_mass = slide(v3_body,samplerate*.035,samplerate*.035);
 v3_char = slide(v3_character,samplerate*.035,samplerate*.035);
 v3_soft = slide(v3_softness,samplerate*.035,samplerate*.035);
 v3_response = slide(v3_load_response,samplerate*.035,samplerate*.035);
+v3_pressure_mix = slide(v3_pressure_blend,samplerate*.035,samplerate*.035);
 v3_gate = slide(engine_running*combustion_gain*shift_cut,samplerate*.009,samplerate*.036);
 '''
     for i, (attack, low, high) in enumerate(ENVELOPES[profile]):
@@ -91,9 +93,9 @@ v3_pressure = {core};
 // pulse through a 150-Hz lowpass cannot create the missing fundamental.
 v3_body_hz = {base}+r*{depth};
 v3_body_phase = phasor(v3_body_hz);
-v3_body_wave = cos(v3_body_phase*6.283185307179586)*.70
- + cos(v3_body_phase*12.566370614359172)*.22
- + cos(v3_body_phase*18.84955592153876)*.08;
+v3_body_wave = cos(v3_body_phase*6.283185307179586)*(.85-.30*v3_mass)
+ + cos(v3_body_phase*12.566370614359172)*(.08+.28*v3_mass)
+ + cos(v3_body_phase*18.84955592153876)*(.02+.12*v3_mass);
 v3_suborder = cycle(v3_fire*.5)*.18;
 '''
     # Broad dual-formant spectral weights, not high-Q ringing or fixed sine
@@ -120,7 +122,7 @@ v3_local_drive = 1+v3_agg*.65;
 v3_character_wave = tanh(v3_cavity*v3_local_drive)/v3_local_drive;
 v3_upper_wave = (v3_h4*.48+v3_h5*.28+v3_h6*.16+v3_h8*.08)*(1-.82*v3_soft);
 out1 = v3_pressure*.18*(.55+(.20+.5*v3_response)*v3_env0)*v3_gate;
-out2 = (v3_body_wave+v3_suborder+v3_pressure*.10)*.18*(.45+(.25+.6*v3_response)*v3_env1)*(.5+v3_mass)*v3_gate;
+out2 = (v3_body_wave+v3_suborder+v3_pressure*.20*v3_pressure_mix)*.18*(.45+(.25+.6*v3_response)*v3_env1)*v3_gate;
 out3 = v3_character_wave*.20*(.35+(.30+.7*v3_response)*v3_env0)*(.5+v3_char)*v3_gate;
 out4 = v3_upper_wave*.16*v3_env2*v3_gate;
 out5 = v3_legacy_l;
@@ -214,11 +216,21 @@ def legacy_defaults(profile):
 def factory(profile):
     data = {name: [default] for name, _, default in MACROS}
     data.update({f'legacy_{name}': [default] for name, default in legacy_defaults(profile).items()})
-    for name, frequency in filter_defaults(profile):
-        data.update({f'V3_{name}::{key}': [value] for key, value in
-                     {'Freq': frequency, 'Res': .45, 'FilterType': 0, 'power[1]': 1}.items()})
-    data.update({f'V3_Group_Mixer::in{i+1}': [value] for i,value in enumerate(LEVELS[profile])})
+    data.update(beap_factory_data(make_designer(profile)))
     return {'pattrstorage': {'name': profile+'_sound_dna_v3', 'slots': {'99': {'id':99, 'data':data}}}}
+
+
+def beap_factory_data(document):
+    """Reset every live BEAP client, including mute/mode/CV, not just its dials."""
+    data = {}
+    for item in document['patcher']['boxes']:
+        box = item['box']
+        if box.get('maxclass') != 'bpatcher':
+            continue
+        for child in box['patcher']['boxes']:
+            for key, value in child['box'].get('restore', {}).items():
+                data[box['varname']+'::'+key] = value
+    return data
 
 
 def make_designer(profile):
@@ -246,8 +258,8 @@ def make_designer(profile):
     load = p.new('loadbang',20,200,80)
     mix = p.new('gen~ @gen Patcher:/gen/dna_v3_output.gendsp',20,1200,390,numinlets=4,numoutlets=2)
     for index, (name,label,default) in enumerate(MACROS):
-        x = 20+index*250
-        show(p.comment(label,x,240,240),x,115,240)
+        x = 20+index*225
+        show(p.comment(label,x,240,215),x,105,215,36)
         value = show(p.add('flonum',None,x,270,90,minimum=0,maximum=1,varname=name,numoutlets=2),x,145,90)
         initial = p.new(f'loadmess {default}',x,305,95)
         tag = p.new('prepend '+name,x,340,200)
@@ -257,11 +269,13 @@ def make_designer(profile):
         p.connect(tag,params_out)
         if name == 'v3_width':
             p.connect(tag,mix)
-    # Legacy knobs retain their old meanings only on the preserved idle path.
+    # The old cycle_irregularity is the inherited bank clock authority at ALL
+    # RPM. Other legacy knobs affect only the old side of the <=3000 blend.
     for index,(name,default) in enumerate(legacy.items()):
         x,y = 20+(index%6)*275, 830+(index//6)*72
         high = 8 if name == 'throttle_loudness_depth' else 1
-        show(p.comment('Idle only · '+name,x,y,265),x,y,265)
+        label = 'Shared clock (all RPM) · '+name if name == 'cycle_irregularity' else 'Legacy ≤3000 · '+name
+        show(p.comment(label,x,y,265),x,y,265)
         value = show(p.add('flonum',None,x,y+25,85,minimum=0,maximum=high,varname='legacy_'+name,numoutlets=2),x,y+25,85)
         initial = p.new(f'loadmess {default:g}',x+95,y+25,95)
         tag = p.new('prepend '+name,x+190,y+25,170)

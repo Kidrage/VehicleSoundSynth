@@ -4,14 +4,32 @@
     "slots": {
       "99": {
         "data": {
+          "Noise_Ceiling::CV1": [
+            0.0
+          ],
+          "Noise_Ceiling::CV2": [
+            0.0
+          ],
+          "Noise_Ceiling::CV3": [
+            0.0
+          ],
           "Noise_Ceiling::FilterType": [
             0
           ],
           "Noise_Ceiling::Freq": [
             3400.0
           ],
+          "Noise_Ceiling::FreqMode": [
+            1.0
+          ],
+          "Noise_Ceiling::Offset[2]": [
+            0.0
+          ],
           "Noise_Ceiling::Res": [
             0.45
+          ],
+          "Noise_Ceiling::ResCV": [
+            0.0
           ],
           "Noise_Ceiling::power[1]": [
             1

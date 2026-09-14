@@ -67,13 +67,25 @@ def main():
                     difference=float(np.max(abs(new[:,:][:,4:6]-old)))
                     check(f'{profile}/{sr}/{rpm}/legacy-null',difference<1e-12 and np.max(abs(new[:,6]))==0,difference)
             x,_=render(name,sr,dict(common,rpm=4000),3)
-            for key,channel in (('v3_aggression',0),('v3_body',1),('v3_character',2),('v3_softness',3),('v3_load_response',0)):
+            for key,channel in (('v3_aggression',0),('v3_body',1),('v3_character',2),('v3_softness',3),('v3_load_response',0),('v3_pressure_blend',1)):
                 ends=[]
                 for value in (0,.5,1):
                     y,_=render(name,sr,dict(common,rpm=4000,**{key:value}))
                     ends.append(y[sr:,channel])
                 changes=[float(np.sqrt(np.mean((ends[i+1]-ends[i])**2))) for i in range(2)]
                 check(f'{profile}/{sr}/{key}/endpoints',min(changes)>1e-5,changes)
+                if key == 'v3_body':
+                    normalized=[y/np.sqrt(np.mean(y*y)) for y in ends]
+                    check(f'{profile}/{sr}/body-is-not-gain-only',
+                          np.sqrt(np.mean((normalized[2]-normalized[0])**2))>.05,
+                          float(np.sqrt(np.mean((normalized[2]-normalized[0])**2))))
+            if profile != 'ferrari':
+                clock=[]
+                for value in (0,1):
+                    y,_=render(name,sr,dict(common,rpm=4000,cycle_irregularity=value))
+                    clock.append(y[sr:,0])
+                change=float(np.sqrt(np.mean((clock[1]-clock[0])**2)))
+                check(f'{profile}/{sr}/shared-clock-all-rpm',change>1e-5,change)
             for value in (0,1):
                 y,_=render(name,sr,dict(common,rpm=4000,v3_release_mass=value,release_seconds=1),2)
                 tail=float(np.sqrt(np.mean(y[int(sr*1.15):int(sr*1.30),1]**2)))

@@ -1278,8 +1278,9 @@
           "id": "obj-71",
           "maxclass": "newobj",
           "numinlets": 1,
-          "numoutlets": 75,
+          "numoutlets": 76,
           "outlettype": [
+            "",
             "",
             "",
             "",
@@ -1362,7 +1363,7 @@
             1180.0,
             22.0
           ],
-          "text": "routepass soundscape_enable soundscape_solo soundscape_motion soundscape_space soundscape_pitch_follow soundscape_transpose soundscape_brightness soundscape_open soundscape_save soundscape_reload soundscape_reset dna_solo pad_mute pad_solo pad_level_db noise_open noise_save noise_reload noise_reset noise_solo noise_mechanical_db noise_intake_db noise_tire_db noise_air_db noise_color noise_combustion_db dna_save dna_reload dna_reset dna_group v3_aggression v3_body v3_character v3_softness v3_release_mass v3_width v3_load_response backfire_open backfire_test backfire_enable backfire_solo backfire_save backfire_reload backfire_reset backfire_intensity event_open event_audition event_enable event_solo event_save event_reload event_reset event_intensity start_open start_audition start_save start_reload start_reset start_style eq_save eq_reload eq_reset eq_low eq_lowmid eq_highmid eq_high eq_bypass compressor_threshold_db compressor_ratio compressor_attack_rate compressor_release_rate compressor_makeup_db compressor_bypass ev_mode"
+          "text": "routepass soundscape_enable soundscape_solo soundscape_motion soundscape_space soundscape_pitch_follow soundscape_transpose soundscape_brightness soundscape_open soundscape_save soundscape_reload soundscape_reset dna_solo pad_mute pad_solo pad_level_db noise_open noise_save noise_reload noise_reset noise_solo noise_mechanical_db noise_intake_db noise_tire_db noise_air_db noise_color noise_combustion_db dna_save dna_reload dna_reset dna_group v3_aggression v3_body v3_character v3_softness v3_release_mass v3_width v3_load_response v3_pressure_blend backfire_open backfire_test backfire_enable backfire_solo backfire_save backfire_reload backfire_reset backfire_intensity event_open event_audition event_enable event_solo event_save event_reload event_reset event_intensity start_open start_audition start_save start_reload start_reset start_style eq_save eq_reload eq_reset eq_low eq_lowmid eq_highmid eq_high eq_bypass compressor_threshold_db compressor_ratio compressor_attack_rate compressor_release_rate compressor_makeup_db compressor_bypass ev_mode"
         }
       }
     ],
@@ -3591,12 +3592,24 @@
       {
         "patchline": {
           "destination": [
-            "obj-13",
+            "obj-19",
             0
           ],
           "source": [
             "obj-71",
             74
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-13",
+            0
+          ],
+          "source": [
+            "obj-71",
+            75
           ]
         }
       }

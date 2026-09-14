@@ -51,7 +51,9 @@ function readState(resetFactory) {
     var path=local?all.local:all.factory;
     if(!exists(path)) {post('DNA V3: missing state '+path+'\n'); return;}
     // New recipes always begin at V3 factory. Migrate only unchanged legacy
-    // controls on the preserved ICE idle path, never the new V3 sound groups.
+    // controls on the preserved ICE path. cycle_irregularity intentionally
+    // remains the inherited shared clock at all RPM; new timbre macros never
+    // import old running semantics. This exception is labeled in the Designer.
     var values=!local && !resetFactory && profile!=='ferrari'?legacyValues(all.legacy):{};
     outlet(0,'read',path);
     pending=new Task(function(){

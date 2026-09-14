@@ -10,6 +10,20 @@
 
 ## Delivered Change
 
+### Isolated control / DNA V3 candidate (2026-09-14)
+
+The active task is now `codex/v6-control-dna-v3`, based on accepted `cff9d08`,
+in `Downloads/VehicleSoundSynth-V6-Candidate/VehicleSoundSynth-V6`. The production
+Downloads V6 folder and private state are unchanged. User approved the local
+20260911 package: IONIQ control repair, Main tone routing, Ferrari/V10/V12 DNA V3
+and independent Ferrari Noise V2, not a Soundscape/Start/Pop/FX rewrite.
+
+Read `V6_CANDIDATE_GUIDE.md` and `.agentlab/V6_CONTROL_DNA_V3.md` first for this
+candidate. Previous release/QA entries below remain historical. Whole-runtime
+and listening acceptance are separate from source tests; do not promote the
+candidate or push it before acceptance. No main merge or production replacement.
+
+
 ### Accepted snapshot / release handoff (2026-09-10)
 
 The user accepted the current sound and authorized pushing the feature branch

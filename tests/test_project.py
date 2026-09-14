@@ -4722,7 +4722,7 @@ process.stdout.write(JSON.stringify({defaultState: defaultModel.snapshot(), on: 
             "v12-backfire-running", "v12-backfire-ignition-off",
         ):
             self.assertIn(f'"{scenario}"', source)
-        self.assertIn('choices=("transient", "pre-cabin", "final")', source)
+        self.assertIn('choices=("transient", "pre-cabin", "final", "dna", "noise", "soundscape")', source)
         engine = self.load_json("patchers/vehicle_engine~.maxpat")["patcher"]
         text = "\n".join(item["box"].get("text", "") for item in engine["boxes"])
         self.assertIn("send~ vss_pre_cabin_l", text)

@@ -8,6 +8,36 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class DesignControlTests(unittest.TestCase):
+    def test_audit_reads_beap_ranges_and_real_v3_save_namespace(self):
+        from tools.audit_v3_controls import visible_controls
+        rows=visible_controls(ROOT)
+        mixer=next(row for row in rows if row['profile']=='ferrari'
+                   and row['file'].endswith('ferrari_dna_v3_designer~.maxpat')
+                   and row['object']=='/V3_Group_Mixer/in2')
+        self.assertEqual((mixer['UI_min'],mixer['UI_max']),(-72,0))
+        self.assertEqual(mixer['save_namespace'],'ferrari_sound_dna_v3.json')
+        self.assertIn('dbtoa',mixer['DSP_mapping'])
+        self.assertEqual(mixer['status'],'native_unverified')
+
+    def test_registry_documents_every_design_and_mixer_selector_without_owning_state(self):
+        script = """
+const d=require('./code/design_control.js'), r=d.registry;
+const names=[...r.direct,...Object.keys(r.normalized),
+ ...Object.values(r.modes).flatMap(x=>Object.keys(x)),
+ 'powertrain_level_db','start_level_db','transient_level_db','soundscape_level_db',
+ 'road_level_db','rumble_level_db','master_trim_db','eshift_enable','dna_open'];
+console.log(JSON.stringify(names.map(name=>[name,d.describe(name)])));
+"""
+        contracts=json.loads(subprocess.check_output(['node','-e',script],cwd=ROOT,text=True))
+        for name, contract in contracts:
+            for key in ('owner','payload','bypass_drive_gate','readback','save','context','profiles'):
+                self.assertIn(key,contract,(name,key))
+            self.assertNotEqual(contract['owner'],'design_control',name)
+        byname=dict(contracts)
+        self.assertEqual(byname['eq_lowmid']['bounds'],[[120,1200],[-12,12],[.3,4]])
+        self.assertEqual(byname['compressor_ratio']['save'],'not persisted')
+        self.assertEqual(byname['eshift_enable']['owner'],'DriveModel; engine receives notification only')
+
     def test_bounded_payload_is_applied_before_same_feedback(self):
         script = """
 const fs=require('fs'),vm=require('vm'),file=process.argv[1],calls=[];

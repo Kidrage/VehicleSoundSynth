@@ -1,6 +1,23 @@
-# Filtered publication inventory (2026-09-10)
+# Filtered candidate inventory (2026-09-14; baseline list below)
 # Generated patchers/Gen, media, binary documents, archives and caches are omitted.
 # Live sound-design seams: .codex/source_index.txt
+.agentlab/V6_CONTROL_DNA_V3.md
+V6_CANDIDATE_GUIDE.md
+code/design_control.js
+code/dna_v3_state.js
+tools/dna_v3.py
+tools/install_v3_candidate.py
+tools/audit_v3_controls.py
+tools/build_dna_v3_export.py
+tools/check_dna_v3_native.py
+tools/native_gen_runner.cpp
+tests/test_design_control.py
+tests/test_ioniq_control_v3.py
+tests/test_dna_v3.py
+presets/ferrari_noise_v2_factory.json
+presets/ferrari_sound_dna_v3_factory.json
+presets/v10_sound_dna_v3_factory.json
+presets/v12_sound_dna_v3_factory.json
 .agentlab/FERRARI_BODY_POP_2026-09-08.md
 .agentlab/HandOff.md
 .agentlab/SOUNDSCAPE_CONTROL_AUDIT_2026-09-08.md

@@ -10,7 +10,7 @@
     "boxes": [
       {
         "box": {
-          "code": "Param v3_aggression(0.5, min=0, max=1);\nParam v3_body(0.5, min=0, max=1);\nParam v3_character(0.5, min=0, max=1);\nParam v3_softness(0.5, min=0, max=1);\nParam v3_release_mass(0.5, min=0, max=1);\nParam v3_width(0.5, min=0, max=1);\nParam v3_load_response(0.5, min=0, max=1);\nHistory v3_env0(0);\nHistory v3_env1(0);\nHistory v3_env2(0);\n// Procedural V12: smooth independent six-cylinder banks with high-order air.\nParam rpm(780, min=0, max=10000);\nParam throttle(0, min=0, max=1);\nParam load(0, min=-1, max=1);\nParam accel(0, min=-1, max=1);\nParam aggression(0.62, min=0, max=1);\nParam brightness(0.78, min=0, max=1);\nParam body(0.72, min=0, max=1);\nParam texture(0.52, min=0, max=1);\nParam engine_running(0, min=0, max=1);\nParam combustion_gain(0, min=0, max=1);\nParam shift_cut(1, min=0, max=1);\nParam air_detail(0.68, min=0, max=1);\nParam cycle_irregularity(0.34, min=0, max=1);\nParam stereo_width(0.64, min=0, max=1);\nParam throttle_loudness_depth(4.5, min=0, max=8);\nParam saturation(0.28, min=0, max=1);\nParam idle_level(0.78, min=0, max=1);\nParam idle_body(0.86, min=0, max=1);\nParam idle_metal(0.58, min=0, max=1);\nParam idle_irregularity(0.18, min=0, max=1);\nParam idle_air(0.34, min=0, max=1);\nParam idle_width(0.52, min=0, max=1);\nParam combustion_pulse(0.80, min=0, max=1);\nParam intake_detail(0.68, min=0, max=1);\nParam exhaust_detail(0.62, min=0, max=1);\nParam residual_detail(0.64, min=0, max=1);\nr = slide(clamp(rpm, 0, 10000), 700, 1100);\nt = slide(clamp(throttle, 0, 1), 420, 850);\nl = max(clamp(load, -1, 1), 0);\nmotion = slide(clamp(accel, -1, 1), 320, 900);\naccel_drive = max(motion, 0);\ndecel_drive = max(-motion, 0);\nrun = slide(clamp(engine_running * combustion_gain * shift_cut, 0, 1), 480, 1900);\nspeedmix = clamp((r - 780) / 8220, 0, 1);\nidle_weight = 1 - clamp((r - 780) / 1800, 0, 1);\ncrank = clamp(r / 60, 6, 170);\ncycle_variation = cycle(crank * 0.5) * (0.004 + cycle_irregularity * 0.016) + cycle(crank * 1.5) * cycle_irregularity * 0.006;\nbank_fire = clamp(crank * 3 * (1 + cycle_variation), 18, 525);\nfire = bank_fire * 2;\nphase_l = phasor(bank_fire);\nphase_r = phase_l + 0.5;\nphase_r = phase_r - floor(phase_r);\npulse_l = pow(0.5 + 0.5 * cos(phase_l * 6.283185307179586), 4) - 0.2734375;\npulse_r = pow(0.5 + 0.5 * cos(phase_r * 6.283185307179586), 4) - 0.2734375;\nthrottle_gain = pow(10, (t * throttle_loudness_depth) / 20);\ntone_t = 0.62 + t * 0.38;\nbody_t = 1 - t * 0.14;\na = clamp((0.205 + body * 0.050 + l * 0.040 + accel_drive * 0.022 - decel_drive * 0.016) * throttle_gain, 0, 0.54) * run;\ncylinder_l = 0.97 + cycle(crank * 0.5) * (0.018 + cycle_irregularity * 0.030) + cycle(crank * 1.5) * 0.012;\ncylinder_r = 0.97 + cycle(crank * 0.48) * (0.018 + cycle_irregularity * 0.030) + cycle(crank * 1.53) * 0.012;\nlegacy_idle_body = (cycle(clamp(crank * 2.6, 28, 260)) * 0.040 + cycle(clamp(crank * 3.8, 38, 420)) * 0.024) * body * idle_weight;\ncrankcase_body = legacy_idle_body;\nmanifold_l = cycle(clamp(fire * 0.42, 32, 950)) * (0.018 + l * 0.020) * (0.65 + idle_weight * 0.35);\nmanifold_r = cycle(clamp(fire * 0.445, 34, 1000)) * (0.018 + l * 0.020) * (0.65 + idle_weight * 0.35);\nmanifold = (manifold_l + manifold_r) * 0.5;\nshared_low = cycle(clamp(fire * 0.5, 24, 520)) * (0.062 + body * 0.050) * (1-speedmix*0.55) + legacy_idle_body;\norders_l = cycle(fire) * 0.17 + cycle(clamp(fire * 2.0, 45, 3200)) * (0.10 + brightness * 0.10) + cycle(clamp(fire * 3.0, 55, 5200)) * (0.06 + texture * 0.07);\norders_r = cycle(fire) * 0.165 + cycle(clamp(fire * 2.0, 45, 3200)) * (0.096 + brightness * 0.104) + cycle(clamp(fire * 3.0, 55, 5200)) * (0.064 + texture * 0.066);\nbright_l = (cycle(clamp(fire * 4.11, 90, 8000)) * 0.050 + cycle(clamp(fire * 6.17, 130, 12000)) * 0.026) * air_detail * (0.30 + speedmix * 0.70) * tone_t;\nbright_r = (cycle(clamp(fire * 3.89, 85, 7700)) * 0.050 + cycle(clamp(fire * 5.83, 125, 11800)) * 0.026) * air_detail * (0.30 + speedmix * 0.70) * tone_t;\nintake_l = cycle(clamp(fire * 1.49, 45, 2500)) * intake_detail * (0.016 + t * 0.024 + accel_drive * 0.030);\nintake_r = cycle(clamp(fire * 1.53, 45, 2600)) * intake_detail * (0.016 + t * 0.024 + accel_drive * 0.030);\nexhaust_l = cycle(clamp(fire * 0.73, 32, 1300)) * exhaust_detail * (t * 0.024 + accel_drive * 0.026 + decel_drive * 0.026);\nexhaust_r = cycle(clamp(fire * 0.77, 34, 1380)) * exhaust_detail * (t * 0.024 + accel_drive * 0.026 + decel_drive * 0.026);\nresidual_l = (cycle(clamp(fire * 1.33, 40, 2200)) * 0.042 + cycle(clamp(fire * 2.17, 65, 4200)) * 0.026) * abs(pulse_l) * residual_detail;\nresidual_r = (cycle(clamp(fire * 1.39, 42, 2300)) * 0.042 + cycle(clamp(fire * 2.11, 65, 4100)) * 0.026) * abs(pulse_r) * residual_detail;\nbank_l = pulse_l * cylinder_l * (0.40 + combustion_pulse * 0.22);\nbank_r = pulse_r * cylinder_r * (0.40 + combustion_pulse * 0.22);\nbank_mid = (bank_l + bank_r) * 0.5;\nbank_side = (bank_l - bank_r) * 0.5;\nbank_spread = 0.26 + stereo_width * 0.30;\nside_gain = 0.34 + stereo_width * 0.38;\nidle_energy_variation = 1 + cycle(crank * 0.31) * idle_irregularity * 0.026 + cycle(crank * 0.61) * idle_irregularity * 0.012;\nidle_modal = (cycle(fire * 0.5) * 0.105 + cycle(fire) * 0.118 + cycle(fire * 2) * 0.070 + cycle(fire * 3) * 0.038) * idle_body;\nidle_intake_structure = (cycle(fire * 1.5) * 0.044 + cycle(fire * 2.5) * 0.030) * (0.58 + idle_metal * 0.42);\nidle_metal_side = (bank_side * 0.105 + cycle(fire * 7.0) * abs(bank_mid) * 0.027 + cycle(fire * 9.0) * abs(bank_mid) * 0.016) * idle_metal;\nidle_air_side = (cycle(fire * 11.0) * 0.013 + cycle(fire * 15.0) * 0.007) * abs(bank_mid) * idle_air;\nidle_gain = idle_level * idle_weight * run * (1 - t * 0.28);\nidle_center = (idle_modal + idle_intake_structure) * idle_gain * idle_energy_variation;\nidle_side = (idle_metal_side + idle_air_side) * idle_gain * idle_width;\nleft_drive = ((shared_low + bank_mid) * body_t + bank_side * bank_spread + (manifold_l + orders_l + bright_l + intake_l + exhaust_l + residual_l) * side_gain) * a * (0.86 + aggression * 0.14) + idle_center + idle_side;\nright_drive = ((shared_low + bank_mid) * body_t - bank_side * bank_spread + (manifold_r + orders_r + bright_r + intake_r + exhaust_r + residual_r) * side_gain) * a * (0.86 + aggression * 0.14) + idle_center - idle_side;\nsat_drive = 1 + saturation * 0.85;\n\nv3_legacy_l = tanh(left_drive * sat_drive) / sat_drive;\nv3_legacy_r = tanh(right_drive * sat_drive) / sat_drive;\nv3_fire = bank_fire*2;\nv3_phase = wrap(phase_l*2,0,1);\nv3_progress = clamp((r-1200)/1800,0,1);\nv3_blend = v3_progress*v3_progress*(3-2*v3_progress);\n// Smooth parameter movement and asymmetric sample-rate-independent envelopes.\nv3_effort = max(clamp(throttle,0,1),max(load,0));\nv3_agg = slide(v3_aggression,samplerate*.025,samplerate*.025);\nv3_mass = slide(v3_body,samplerate*.035,samplerate*.035);\nv3_char = slide(v3_character,samplerate*.035,samplerate*.035);\nv3_soft = slide(v3_softness,samplerate*.035,samplerate*.035);\nv3_response = slide(v3_load_response,samplerate*.035,samplerate*.035);\nv3_gate = slide(engine_running*combustion_gain*shift_cut,samplerate*.009,samplerate*.036);\nv3_tau0 = v3_effort > v3_env0 ? 42.5 : 130+v3_release_mass*110;\nv3_k0 = exp(-1/(samplerate*.001*v3_tau0));\nv3_env0 = v3_effort+(v3_env0-v3_effort)*v3_k0;\nv3_tau1 = v3_effort > v3_env1 ? 77.5 : 240+v3_release_mass*180;\nv3_k1 = exp(-1/(samplerate*.001*v3_tau1));\nv3_env1 = v3_effort+(v3_env1-v3_effort)*v3_k1;\nv3_tau2 = v3_effort > v3_env2 ? 25 : 80+v3_release_mass*80;\nv3_k2 = exp(-1/(samplerate*.001*v3_tau2));\nv3_env2 = v3_effort+(v3_env2-v3_effort)*v3_k2;\nv3_h1 = cos(v3_phase*6.283185307179586*1)*clamp((samplerate*.45-v3_fire*1)/(samplerate*.05),0,1);\nv3_h2 = cos(v3_phase*6.283185307179586*2)*clamp((samplerate*.45-v3_fire*2)/(samplerate*.05),0,1);\nv3_h3 = cos(v3_phase*6.283185307179586*3)*clamp((samplerate*.45-v3_fire*3)/(samplerate*.05),0,1);\nv3_h4 = cos(v3_phase*6.283185307179586*4)*clamp((samplerate*.45-v3_fire*4)/(samplerate*.05),0,1);\nv3_h5 = cos(v3_phase*6.283185307179586*5)*clamp((samplerate*.45-v3_fire*5)/(samplerate*.05),0,1);\nv3_h6 = cos(v3_phase*6.283185307179586*6)*clamp((samplerate*.45-v3_fire*6)/(samplerate*.05),0,1);\nv3_h7 = cos(v3_phase*6.283185307179586*7)*clamp((samplerate*.45-v3_fire*7)/(samplerate*.05),0,1);\nv3_h8 = cos(v3_phase*6.283185307179586*8)*clamp((samplerate*.45-v3_fire*8)/(samplerate*.05),0,1);\nv3_h9 = cos(v3_phase*6.283185307179586*9)*clamp((samplerate*.45-v3_fire*9)/(samplerate*.05),0,1);\nv3_h10 = cos(v3_phase*6.283185307179586*10)*clamp((samplerate*.45-v3_fire*10)/(samplerate*.05),0,1);\nv3_h11 = cos(v3_phase*6.283185307179586*11)*clamp((samplerate*.45-v3_fire*11)/(samplerate*.05),0,1);\nv3_h12 = cos(v3_phase*6.283185307179586*12)*clamp((samplerate*.45-v3_fire*12)/(samplerate*.05),0,1);\nv3_open = clamp(.12+.48*v3_agg+v3_env0*(.15+.25*v3_response),0,1);\nv3_pressure = v3_h1*0.68000000*(.65+.35*v3_open)+v3_h2*0.21667531*(1-.25*v3_open)+v3_h3*0.11098361*(.65+.35*v3_open)+v3_h4*0.06904145*(1-.25*v3_open)+v3_h5*0.04777585*(.65+.35*v3_open)+v3_h6*0.03536383*(1-.25*v3_open)+v3_h7*0.02742187*(.65+.35*v3_open)+v3_h8*0.02199938*(1-.25*v3_open)+v3_h9*0.01811377*(.65+.35*v3_open)+v3_h10*0.01522330*(1-.25*v3_open)+v3_h11*0.01300801*(.65+.35*v3_open)+v3_h12*0.01126834*(1-.25*v3_open);\n// Body has its OWN deterministic low-frequency carrier; filtering a 500-Hz\n// pulse through a 150-Hz lowpass cannot create the missing fundamental.\nv3_body_hz = 42+r*0.014;\nv3_body_phase = phasor(v3_body_hz);\nv3_body_wave = cos(v3_body_phase*6.283185307179586)*.70\n + cos(v3_body_phase*12.566370614359172)*.22\n + cos(v3_body_phase*18.84955592153876)*.08;\nv3_suborder = cycle(v3_fire*.5)*.18;\nv3_w1a = clamp(1-abs(v3_fire*1-335-r*.012)/(240+120*v3_open+100*v3_char),0,1);\nv3_w1b = clamp(1-abs(v3_fire*1-750-r*.018)/(360+140*v3_open+100*v3_char),0,1);\nv3_w2a = clamp(1-abs(v3_fire*2-335-r*.012)/(240+120*v3_open+100*v3_char),0,1);\nv3_w2b = clamp(1-abs(v3_fire*2-750-r*.018)/(360+140*v3_open+100*v3_char),0,1);\nv3_w3a = clamp(1-abs(v3_fire*3-335-r*.012)/(240+120*v3_open+100*v3_char),0,1);\nv3_w3b = clamp(1-abs(v3_fire*3-750-r*.018)/(360+140*v3_open+100*v3_char),0,1);\nv3_w4a = clamp(1-abs(v3_fire*4-335-r*.012)/(240+120*v3_open+100*v3_char),0,1);\nv3_w4b = clamp(1-abs(v3_fire*4-750-r*.018)/(360+140*v3_open+100*v3_char),0,1);\nv3_w5a = clamp(1-abs(v3_fire*5-335-r*.012)/(240+120*v3_open+100*v3_char),0,1);\nv3_w5b = clamp(1-abs(v3_fire*5-750-r*.018)/(360+140*v3_open+100*v3_char),0,1);\nv3_w6a = clamp(1-abs(v3_fire*6-335-r*.012)/(240+120*v3_open+100*v3_char),0,1);\nv3_w6b = clamp(1-abs(v3_fire*6-750-r*.018)/(360+140*v3_open+100*v3_char),0,1);\nv3_w7a = clamp(1-abs(v3_fire*7-335-r*.012)/(240+120*v3_open+100*v3_char),0,1);\nv3_w7b = clamp(1-abs(v3_fire*7-750-r*.018)/(360+140*v3_open+100*v3_char),0,1);\nv3_w8a = clamp(1-abs(v3_fire*8-335-r*.012)/(240+120*v3_open+100*v3_char),0,1);\nv3_w8b = clamp(1-abs(v3_fire*8-750-r*.018)/(360+140*v3_open+100*v3_char),0,1);\nv3_cavity = v3_h1*(v3_w1a*v3_w1a*(3-2*v3_w1a)*.65+v3_w1b*v3_w1b*(3-2*v3_w1b)*.35)/1.00000000+v3_h2*(v3_w2a*v3_w2a*(3-2*v3_w2a)*.65+v3_w2b*v3_w2b*(3-2*v3_w2b)*.35)/1.62450479+v3_h3*(v3_w3a*v3_w3a*(3-2*v3_w3a)*.65+v3_w3b*v3_w3b*(3-2*v3_w3b)*.35)/2.15766928+v3_h4*(v3_w4a*v3_w4a*(3-2*v3_w4a)*.65+v3_w4b*v3_w4b*(3-2*v3_w4b)*.35)/2.63901582+v3_h5*(v3_w5a*v3_w5a*(3-2*v3_w5a)*.65+v3_w5b*v3_w5b*(3-2*v3_w5b)*.35)/3.08516931+v3_h6*(v3_w6a*v3_w6a*(3-2*v3_w6a)*.65+v3_w6b*v3_w6b*(3-2*v3_w6b)*.35)/3.50514409+v3_h7*(v3_w7a*v3_w7a*(3-2*v3_w7a)*.65+v3_w7b*v3_w7b*(3-2*v3_w7b)*.35)/3.90452878+v3_h8*(v3_w8a*v3_w8a*(3-2*v3_w8a)*.65+v3_w8b*v3_w8b*(3-2*v3_w8b)*.35)/4.28709385;\n// Shallow, local midrange drive. No whole-bus square-wave saturation.\nv3_local_drive = 1+v3_agg*.65;\nv3_character_wave = tanh(v3_cavity*v3_local_drive)/v3_local_drive;\nv3_upper_wave = (v3_h4*.48+v3_h5*.28+v3_h6*.16+v3_h8*.08)*(1-.82*v3_soft);\nout1 = v3_pressure*.18*(.55+(.20+.5*v3_response)*v3_env0)*v3_gate;\nout2 = (v3_body_wave+v3_suborder+v3_pressure*.10)*.18*(.45+(.25+.6*v3_response)*v3_env1)*(.5+v3_mass)*v3_gate;\nout3 = v3_character_wave*.20*(.35+(.30+.7*v3_response)*v3_env0)*(.5+v3_char)*v3_gate;\nout4 = v3_upper_wave*.16*v3_env2*v3_gate;\nout5 = v3_legacy_l;\nout6 = v3_legacy_r;\nout7 = v3_blend;\nout8 = 0;\nout9 = 0;\nout10 = 0;",
+          "code": "Param v3_aggression(0.5, min=0, max=1);\nParam v3_body(0.5, min=0, max=1);\nParam v3_character(0.5, min=0, max=1);\nParam v3_softness(0.5, min=0, max=1);\nParam v3_release_mass(0.5, min=0, max=1);\nParam v3_width(0.5, min=0, max=1);\nParam v3_load_response(0.5, min=0, max=1);\nParam v3_pressure_blend(0.5, min=0, max=1);\nHistory v3_env0(0);\nHistory v3_env1(0);\nHistory v3_env2(0);\n// Procedural V12: smooth independent six-cylinder banks with high-order air.\nParam rpm(780, min=0, max=10000);\nParam throttle(0, min=0, max=1);\nParam load(0, min=-1, max=1);\nParam accel(0, min=-1, max=1);\nParam aggression(0.62, min=0, max=1);\nParam brightness(0.78, min=0, max=1);\nParam body(0.72, min=0, max=1);\nParam texture(0.52, min=0, max=1);\nParam engine_running(0, min=0, max=1);\nParam combustion_gain(0, min=0, max=1);\nParam shift_cut(1, min=0, max=1);\nParam air_detail(0.68, min=0, max=1);\nParam cycle_irregularity(0.34, min=0, max=1);\nParam stereo_width(0.64, min=0, max=1);\nParam throttle_loudness_depth(4.5, min=0, max=8);\nParam saturation(0.28, min=0, max=1);\nParam idle_level(0.78, min=0, max=1);\nParam idle_body(0.86, min=0, max=1);\nParam idle_metal(0.58, min=0, max=1);\nParam idle_irregularity(0.18, min=0, max=1);\nParam idle_air(0.34, min=0, max=1);\nParam idle_width(0.52, min=0, max=1);\nParam combustion_pulse(0.80, min=0, max=1);\nParam intake_detail(0.68, min=0, max=1);\nParam exhaust_detail(0.62, min=0, max=1);\nParam residual_detail(0.64, min=0, max=1);\nr = slide(clamp(rpm, 0, 10000), 700, 1100);\nt = slide(clamp(throttle, 0, 1), 420, 850);\nl = max(clamp(load, -1, 1), 0);\nmotion = slide(clamp(accel, -1, 1), 320, 900);\naccel_drive = max(motion, 0);\ndecel_drive = max(-motion, 0);\nrun = slide(clamp(engine_running * combustion_gain * shift_cut, 0, 1), 480, 1900);\nspeedmix = clamp((r - 780) / 8220, 0, 1);\nidle_weight = 1 - clamp((r - 780) / 1800, 0, 1);\ncrank = clamp(r / 60, 6, 170);\ncycle_variation = cycle(crank * 0.5) * (0.004 + cycle_irregularity * 0.016) + cycle(crank * 1.5) * cycle_irregularity * 0.006;\nbank_fire = clamp(crank * 3 * (1 + cycle_variation), 18, 525);\nfire = bank_fire * 2;\nphase_l = phasor(bank_fire);\nphase_r = phase_l + 0.5;\nphase_r = phase_r - floor(phase_r);\npulse_l = pow(0.5 + 0.5 * cos(phase_l * 6.283185307179586), 4) - 0.2734375;\npulse_r = pow(0.5 + 0.5 * cos(phase_r * 6.283185307179586), 4) - 0.2734375;\nthrottle_gain = pow(10, (t * throttle_loudness_depth) / 20);\ntone_t = 0.62 + t * 0.38;\nbody_t = 1 - t * 0.14;\na = clamp((0.205 + body * 0.050 + l * 0.040 + accel_drive * 0.022 - decel_drive * 0.016) * throttle_gain, 0, 0.54) * run;\ncylinder_l = 0.97 + cycle(crank * 0.5) * (0.018 + cycle_irregularity * 0.030) + cycle(crank * 1.5) * 0.012;\ncylinder_r = 0.97 + cycle(crank * 0.48) * (0.018 + cycle_irregularity * 0.030) + cycle(crank * 1.53) * 0.012;\nlegacy_idle_body = (cycle(clamp(crank * 2.6, 28, 260)) * 0.040 + cycle(clamp(crank * 3.8, 38, 420)) * 0.024) * body * idle_weight;\ncrankcase_body = legacy_idle_body;\nmanifold_l = cycle(clamp(fire * 0.42, 32, 950)) * (0.018 + l * 0.020) * (0.65 + idle_weight * 0.35);\nmanifold_r = cycle(clamp(fire * 0.445, 34, 1000)) * (0.018 + l * 0.020) * (0.65 + idle_weight * 0.35);\nmanifold = (manifold_l + manifold_r) * 0.5;\nshared_low = cycle(clamp(fire * 0.5, 24, 520)) * (0.062 + body * 0.050) * (1-speedmix*0.55) + legacy_idle_body;\norders_l = cycle(fire) * 0.17 + cycle(clamp(fire * 2.0, 45, 3200)) * (0.10 + brightness * 0.10) + cycle(clamp(fire * 3.0, 55, 5200)) * (0.06 + texture * 0.07);\norders_r = cycle(fire) * 0.165 + cycle(clamp(fire * 2.0, 45, 3200)) * (0.096 + brightness * 0.104) + cycle(clamp(fire * 3.0, 55, 5200)) * (0.064 + texture * 0.066);\nbright_l = (cycle(clamp(fire * 4.11, 90, 8000)) * 0.050 + cycle(clamp(fire * 6.17, 130, 12000)) * 0.026) * air_detail * (0.30 + speedmix * 0.70) * tone_t;\nbright_r = (cycle(clamp(fire * 3.89, 85, 7700)) * 0.050 + cycle(clamp(fire * 5.83, 125, 11800)) * 0.026) * air_detail * (0.30 + speedmix * 0.70) * tone_t;\nintake_l = cycle(clamp(fire * 1.49, 45, 2500)) * intake_detail * (0.016 + t * 0.024 + accel_drive * 0.030);\nintake_r = cycle(clamp(fire * 1.53, 45, 2600)) * intake_detail * (0.016 + t * 0.024 + accel_drive * 0.030);\nexhaust_l = cycle(clamp(fire * 0.73, 32, 1300)) * exhaust_detail * (t * 0.024 + accel_drive * 0.026 + decel_drive * 0.026);\nexhaust_r = cycle(clamp(fire * 0.77, 34, 1380)) * exhaust_detail * (t * 0.024 + accel_drive * 0.026 + decel_drive * 0.026);\nresidual_l = (cycle(clamp(fire * 1.33, 40, 2200)) * 0.042 + cycle(clamp(fire * 2.17, 65, 4200)) * 0.026) * abs(pulse_l) * residual_detail;\nresidual_r = (cycle(clamp(fire * 1.39, 42, 2300)) * 0.042 + cycle(clamp(fire * 2.11, 65, 4100)) * 0.026) * abs(pulse_r) * residual_detail;\nbank_l = pulse_l * cylinder_l * (0.40 + combustion_pulse * 0.22);\nbank_r = pulse_r * cylinder_r * (0.40 + combustion_pulse * 0.22);\nbank_mid = (bank_l + bank_r) * 0.5;\nbank_side = (bank_l - bank_r) * 0.5;\nbank_spread = 0.26 + stereo_width * 0.30;\nside_gain = 0.34 + stereo_width * 0.38;\nidle_energy_variation = 1 + cycle(crank * 0.31) * idle_irregularity * 0.026 + cycle(crank * 0.61) * idle_irregularity * 0.012;\nidle_modal = (cycle(fire * 0.5) * 0.105 + cycle(fire) * 0.118 + cycle(fire * 2) * 0.070 + cycle(fire * 3) * 0.038) * idle_body;\nidle_intake_structure = (cycle(fire * 1.5) * 0.044 + cycle(fire * 2.5) * 0.030) * (0.58 + idle_metal * 0.42);\nidle_metal_side = (bank_side * 0.105 + cycle(fire * 7.0) * abs(bank_mid) * 0.027 + cycle(fire * 9.0) * abs(bank_mid) * 0.016) * idle_metal;\nidle_air_side = (cycle(fire * 11.0) * 0.013 + cycle(fire * 15.0) * 0.007) * abs(bank_mid) * idle_air;\nidle_gain = idle_level * idle_weight * run * (1 - t * 0.28);\nidle_center = (idle_modal + idle_intake_structure) * idle_gain * idle_energy_variation;\nidle_side = (idle_metal_side + idle_air_side) * idle_gain * idle_width;\nleft_drive = ((shared_low + bank_mid) * body_t + bank_side * bank_spread + (manifold_l + orders_l + bright_l + intake_l + exhaust_l + residual_l) * side_gain) * a * (0.86 + aggression * 0.14) + idle_center + idle_side;\nright_drive = ((shared_low + bank_mid) * body_t - bank_side * bank_spread + (manifold_r + orders_r + bright_r + intake_r + exhaust_r + residual_r) * side_gain) * a * (0.86 + aggression * 0.14) + idle_center - idle_side;\nsat_drive = 1 + saturation * 0.85;\n\nv3_legacy_l = tanh(left_drive * sat_drive) / sat_drive;\nv3_legacy_r = tanh(right_drive * sat_drive) / sat_drive;\nv3_fire = bank_fire*2;\nv3_phase = wrap(phase_l*2,0,1);\nv3_progress = clamp((r-1200)/1800,0,1);\nv3_blend = v3_progress*v3_progress*(3-2*v3_progress);\n// Smooth parameter movement and asymmetric sample-rate-independent envelopes.\nv3_effort = max(clamp(throttle,0,1),max(load,0));\nv3_agg = slide(v3_aggression,samplerate*.025,samplerate*.025);\nv3_mass = slide(v3_body,samplerate*.035,samplerate*.035);\nv3_char = slide(v3_character,samplerate*.035,samplerate*.035);\nv3_soft = slide(v3_softness,samplerate*.035,samplerate*.035);\nv3_response = slide(v3_load_response,samplerate*.035,samplerate*.035);\nv3_pressure_mix = slide(v3_pressure_blend,samplerate*.035,samplerate*.035);\nv3_gate = slide(engine_running*combustion_gain*shift_cut,samplerate*.009,samplerate*.036);\nv3_tau0 = v3_effort > v3_env0 ? 42.5 : 130+v3_release_mass*110;\nv3_k0 = exp(-1/(samplerate*.001*v3_tau0));\nv3_env0 = v3_effort+(v3_env0-v3_effort)*v3_k0;\nv3_tau1 = v3_effort > v3_env1 ? 77.5 : 240+v3_release_mass*180;\nv3_k1 = exp(-1/(samplerate*.001*v3_tau1));\nv3_env1 = v3_effort+(v3_env1-v3_effort)*v3_k1;\nv3_tau2 = v3_effort > v3_env2 ? 25 : 80+v3_release_mass*80;\nv3_k2 = exp(-1/(samplerate*.001*v3_tau2));\nv3_env2 = v3_effort+(v3_env2-v3_effort)*v3_k2;\nv3_h1 = cos(v3_phase*6.283185307179586*1)*clamp((samplerate*.45-v3_fire*1)/(samplerate*.05),0,1);\nv3_h2 = cos(v3_phase*6.283185307179586*2)*clamp((samplerate*.45-v3_fire*2)/(samplerate*.05),0,1);\nv3_h3 = cos(v3_phase*6.283185307179586*3)*clamp((samplerate*.45-v3_fire*3)/(samplerate*.05),0,1);\nv3_h4 = cos(v3_phase*6.283185307179586*4)*clamp((samplerate*.45-v3_fire*4)/(samplerate*.05),0,1);\nv3_h5 = cos(v3_phase*6.283185307179586*5)*clamp((samplerate*.45-v3_fire*5)/(samplerate*.05),0,1);\nv3_h6 = cos(v3_phase*6.283185307179586*6)*clamp((samplerate*.45-v3_fire*6)/(samplerate*.05),0,1);\nv3_h7 = cos(v3_phase*6.283185307179586*7)*clamp((samplerate*.45-v3_fire*7)/(samplerate*.05),0,1);\nv3_h8 = cos(v3_phase*6.283185307179586*8)*clamp((samplerate*.45-v3_fire*8)/(samplerate*.05),0,1);\nv3_h9 = cos(v3_phase*6.283185307179586*9)*clamp((samplerate*.45-v3_fire*9)/(samplerate*.05),0,1);\nv3_h10 = cos(v3_phase*6.283185307179586*10)*clamp((samplerate*.45-v3_fire*10)/(samplerate*.05),0,1);\nv3_h11 = cos(v3_phase*6.283185307179586*11)*clamp((samplerate*.45-v3_fire*11)/(samplerate*.05),0,1);\nv3_h12 = cos(v3_phase*6.283185307179586*12)*clamp((samplerate*.45-v3_fire*12)/(samplerate*.05),0,1);\nv3_open = clamp(.12+.48*v3_agg+v3_env0*(.15+.25*v3_response),0,1);\nv3_pressure = v3_h1*0.68000000*(.65+.35*v3_open)+v3_h2*0.21667531*(1-.25*v3_open)+v3_h3*0.11098361*(.65+.35*v3_open)+v3_h4*0.06904145*(1-.25*v3_open)+v3_h5*0.04777585*(.65+.35*v3_open)+v3_h6*0.03536383*(1-.25*v3_open)+v3_h7*0.02742187*(.65+.35*v3_open)+v3_h8*0.02199938*(1-.25*v3_open)+v3_h9*0.01811377*(.65+.35*v3_open)+v3_h10*0.01522330*(1-.25*v3_open)+v3_h11*0.01300801*(.65+.35*v3_open)+v3_h12*0.01126834*(1-.25*v3_open);\n// Body has its OWN deterministic low-frequency carrier; filtering a 500-Hz\n// pulse through a 150-Hz lowpass cannot create the missing fundamental.\nv3_body_hz = 42+r*0.014;\nv3_body_phase = phasor(v3_body_hz);\nv3_body_wave = cos(v3_body_phase*6.283185307179586)*(.85-.30*v3_mass)\n + cos(v3_body_phase*12.566370614359172)*(.08+.28*v3_mass)\n + cos(v3_body_phase*18.84955592153876)*(.02+.12*v3_mass);\nv3_suborder = cycle(v3_fire*.5)*.18;\nv3_w1a = clamp(1-abs(v3_fire*1-335-r*.012)/(240+120*v3_open+100*v3_char),0,1);\nv3_w1b = clamp(1-abs(v3_fire*1-750-r*.018)/(360+140*v3_open+100*v3_char),0,1);\nv3_w2a = clamp(1-abs(v3_fire*2-335-r*.012)/(240+120*v3_open+100*v3_char),0,1);\nv3_w2b = clamp(1-abs(v3_fire*2-750-r*.018)/(360+140*v3_open+100*v3_char),0,1);\nv3_w3a = clamp(1-abs(v3_fire*3-335-r*.012)/(240+120*v3_open+100*v3_char),0,1);\nv3_w3b = clamp(1-abs(v3_fire*3-750-r*.018)/(360+140*v3_open+100*v3_char),0,1);\nv3_w4a = clamp(1-abs(v3_fire*4-335-r*.012)/(240+120*v3_open+100*v3_char),0,1);\nv3_w4b = clamp(1-abs(v3_fire*4-750-r*.018)/(360+140*v3_open+100*v3_char),0,1);\nv3_w5a = clamp(1-abs(v3_fire*5-335-r*.012)/(240+120*v3_open+100*v3_char),0,1);\nv3_w5b = clamp(1-abs(v3_fire*5-750-r*.018)/(360+140*v3_open+100*v3_char),0,1);\nv3_w6a = clamp(1-abs(v3_fire*6-335-r*.012)/(240+120*v3_open+100*v3_char),0,1);\nv3_w6b = clamp(1-abs(v3_fire*6-750-r*.018)/(360+140*v3_open+100*v3_char),0,1);\nv3_w7a = clamp(1-abs(v3_fire*7-335-r*.012)/(240+120*v3_open+100*v3_char),0,1);\nv3_w7b = clamp(1-abs(v3_fire*7-750-r*.018)/(360+140*v3_open+100*v3_char),0,1);\nv3_w8a = clamp(1-abs(v3_fire*8-335-r*.012)/(240+120*v3_open+100*v3_char),0,1);\nv3_w8b = clamp(1-abs(v3_fire*8-750-r*.018)/(360+140*v3_open+100*v3_char),0,1);\nv3_cavity = v3_h1*(v3_w1a*v3_w1a*(3-2*v3_w1a)*.65+v3_w1b*v3_w1b*(3-2*v3_w1b)*.35)/1.00000000+v3_h2*(v3_w2a*v3_w2a*(3-2*v3_w2a)*.65+v3_w2b*v3_w2b*(3-2*v3_w2b)*.35)/1.62450479+v3_h3*(v3_w3a*v3_w3a*(3-2*v3_w3a)*.65+v3_w3b*v3_w3b*(3-2*v3_w3b)*.35)/2.15766928+v3_h4*(v3_w4a*v3_w4a*(3-2*v3_w4a)*.65+v3_w4b*v3_w4b*(3-2*v3_w4b)*.35)/2.63901582+v3_h5*(v3_w5a*v3_w5a*(3-2*v3_w5a)*.65+v3_w5b*v3_w5b*(3-2*v3_w5b)*.35)/3.08516931+v3_h6*(v3_w6a*v3_w6a*(3-2*v3_w6a)*.65+v3_w6b*v3_w6b*(3-2*v3_w6b)*.35)/3.50514409+v3_h7*(v3_w7a*v3_w7a*(3-2*v3_w7a)*.65+v3_w7b*v3_w7b*(3-2*v3_w7b)*.35)/3.90452878+v3_h8*(v3_w8a*v3_w8a*(3-2*v3_w8a)*.65+v3_w8b*v3_w8b*(3-2*v3_w8b)*.35)/4.28709385;\n// Shallow, local midrange drive. No whole-bus square-wave saturation.\nv3_local_drive = 1+v3_agg*.65;\nv3_character_wave = tanh(v3_cavity*v3_local_drive)/v3_local_drive;\nv3_upper_wave = (v3_h4*.48+v3_h5*.28+v3_h6*.16+v3_h8*.08)*(1-.82*v3_soft);\nout1 = v3_pressure*.18*(.55+(.20+.5*v3_response)*v3_env0)*v3_gate;\nout2 = (v3_body_wave+v3_suborder+v3_pressure*.20*v3_pressure_mix)*.18*(.45+(.25+.6*v3_response)*v3_env1)*v3_gate;\nout3 = v3_character_wave*.20*(.35+(.30+.7*v3_response)*v3_env0)*(.5+v3_char)*v3_gate;\nout4 = v3_upper_wave*.16*v3_env2*v3_gate;\nout5 = v3_legacy_l;\nout6 = v3_legacy_r;\nout7 = v3_blend;\nout8 = 0;\nout9 = 0;\nout10 = 0;",
           "id": "obj-1",
           "maxclass": "codebox",
           "numinlets": 1,
@@ -302,7 +302,7 @@
             220.0,
             22.0
           ],
-          "text": "param rpm 780 @min 0 @max 10000"
+          "text": "param v3_pressure_blend 0.5 @min 0 @max 1"
         }
       },
       {
@@ -317,7 +317,7 @@
             220.0,
             22.0
           ],
-          "text": "param throttle 0 @min 0 @max 1"
+          "text": "param rpm 780 @min 0 @max 10000"
         }
       },
       {
@@ -332,7 +332,7 @@
             220.0,
             22.0
           ],
-          "text": "param load 0 @min -1 @max 1"
+          "text": "param throttle 0 @min 0 @max 1"
         }
       },
       {
@@ -347,7 +347,7 @@
             220.0,
             22.0
           ],
-          "text": "param accel 0 @min -1 @max 1"
+          "text": "param load 0 @min -1 @max 1"
         }
       },
       {
@@ -362,7 +362,7 @@
             220.0,
             22.0
           ],
-          "text": "param aggression 0.62 @min 0 @max 1"
+          "text": "param accel 0 @min -1 @max 1"
         }
       },
       {
@@ -377,7 +377,7 @@
             220.0,
             22.0
           ],
-          "text": "param brightness 0.78 @min 0 @max 1"
+          "text": "param aggression 0.62 @min 0 @max 1"
         }
       },
       {
@@ -392,7 +392,7 @@
             220.0,
             22.0
           ],
-          "text": "param body 0.72 @min 0 @max 1"
+          "text": "param brightness 0.78 @min 0 @max 1"
         }
       },
       {
@@ -407,7 +407,7 @@
             220.0,
             22.0
           ],
-          "text": "param texture 0.52 @min 0 @max 1"
+          "text": "param body 0.72 @min 0 @max 1"
         }
       },
       {
@@ -422,7 +422,7 @@
             220.0,
             22.0
           ],
-          "text": "param engine_running 0 @min 0 @max 1"
+          "text": "param texture 0.52 @min 0 @max 1"
         }
       },
       {
@@ -437,7 +437,7 @@
             220.0,
             22.0
           ],
-          "text": "param combustion_gain 0 @min 0 @max 1"
+          "text": "param engine_running 0 @min 0 @max 1"
         }
       },
       {
@@ -452,7 +452,7 @@
             220.0,
             22.0
           ],
-          "text": "param shift_cut 1 @min 0 @max 1"
+          "text": "param combustion_gain 0 @min 0 @max 1"
         }
       },
       {
@@ -467,7 +467,7 @@
             220.0,
             22.0
           ],
-          "text": "param air_detail 0.68 @min 0 @max 1"
+          "text": "param shift_cut 1 @min 0 @max 1"
         }
       },
       {
@@ -482,7 +482,7 @@
             220.0,
             22.0
           ],
-          "text": "param cycle_irregularity 0.34 @min 0 @max 1"
+          "text": "param air_detail 0.68 @min 0 @max 1"
         }
       },
       {
@@ -497,7 +497,7 @@
             220.0,
             22.0
           ],
-          "text": "param stereo_width 0.64 @min 0 @max 1"
+          "text": "param cycle_irregularity 0.34 @min 0 @max 1"
         }
       },
       {
@@ -512,7 +512,7 @@
             220.0,
             22.0
           ],
-          "text": "param throttle_loudness_depth 4.5 @min 0 @max 8"
+          "text": "param stereo_width 0.64 @min 0 @max 1"
         }
       },
       {
@@ -527,7 +527,7 @@
             220.0,
             22.0
           ],
-          "text": "param saturation 0.28 @min 0 @max 1"
+          "text": "param throttle_loudness_depth 4.5 @min 0 @max 8"
         }
       },
       {
@@ -542,7 +542,7 @@
             220.0,
             22.0
           ],
-          "text": "param idle_level 0.78 @min 0 @max 1"
+          "text": "param saturation 0.28 @min 0 @max 1"
         }
       },
       {
@@ -557,7 +557,7 @@
             220.0,
             22.0
           ],
-          "text": "param idle_body 0.86 @min 0 @max 1"
+          "text": "param idle_level 0.78 @min 0 @max 1"
         }
       },
       {
@@ -572,7 +572,7 @@
             220.0,
             22.0
           ],
-          "text": "param idle_metal 0.58 @min 0 @max 1"
+          "text": "param idle_body 0.86 @min 0 @max 1"
         }
       },
       {
@@ -587,7 +587,7 @@
             220.0,
             22.0
           ],
-          "text": "param idle_irregularity 0.18 @min 0 @max 1"
+          "text": "param idle_metal 0.58 @min 0 @max 1"
         }
       },
       {
@@ -602,7 +602,7 @@
             220.0,
             22.0
           ],
-          "text": "param idle_air 0.34 @min 0 @max 1"
+          "text": "param idle_irregularity 0.18 @min 0 @max 1"
         }
       },
       {
@@ -617,7 +617,7 @@
             220.0,
             22.0
           ],
-          "text": "param idle_width 0.52 @min 0 @max 1"
+          "text": "param idle_air 0.34 @min 0 @max 1"
         }
       },
       {
@@ -632,7 +632,7 @@
             220.0,
             22.0
           ],
-          "text": "param combustion_pulse 0.80 @min 0 @max 1"
+          "text": "param idle_width 0.52 @min 0 @max 1"
         }
       },
       {
@@ -647,7 +647,7 @@
             220.0,
             22.0
           ],
-          "text": "param intake_detail 0.68 @min 0 @max 1"
+          "text": "param combustion_pulse 0.80 @min 0 @max 1"
         }
       },
       {
@@ -662,7 +662,7 @@
             220.0,
             22.0
           ],
-          "text": "param exhaust_detail 0.62 @min 0 @max 1"
+          "text": "param intake_detail 0.68 @min 0 @max 1"
         }
       },
       {
@@ -674,6 +674,21 @@
           "patching_rect": [
             840.0,
             1320.0,
+            220.0,
+            22.0
+          ],
+          "text": "param exhaust_detail 0.62 @min 0 @max 1"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-45",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            840.0,
+            1352.0,
             220.0,
             22.0
           ],

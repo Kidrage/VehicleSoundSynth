@@ -22,6 +22,12 @@ def make_vehicle_noise_factory(profile, version=1):
     specs = CONTROL_SPECS + ((COMBUSTION_SPEC,) if version == 2 else ())
     data = {name: [default] for name, _, default, *_ in specs}
     data.update({f'Noise_Ceiling::{name}': [value] for name, value in FILTER_DEFAULTS.items()})
+    if version == 2:
+        try:
+            from .dna_v3 import beap_factory_data
+        except ImportError:
+            from dna_v3 import beap_factory_data
+        data.update(beap_factory_data(make_vehicle_noise(profile, version=2)))
     return {'pattrstorage': {'name': f'noise_{profile}_v{version}', 'slots': {
         '99': {'id': 99, 'data': data}
     }}}

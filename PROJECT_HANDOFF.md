@@ -3,6 +3,25 @@
 > Deterministically generated repository/project memory for cross-agent handoff.
 > Update after every material project change and before final reporting.
 
+## Isolated control / DNA V3 candidate (2026-09-14)
+
+Active branch: `codex/v6-control-dna-v3`, base `cff9d08`, separate parent folder
+`Downloads/VehicleSoundSynth-V6-Candidate/VehicleSoundSynth-V6`. Production,
+including its dirty Main and documentation moves, is untouched. The user approved
+the supplied 20260911 control + DNA plan; this supersedes the old release-only
+scope below for this candidate, not the accepted production branch.
+
+Implemented: IONIQ-only eShift range/state/transition fixes; bypass driving gates
+for pure sound controls; Ferrari shared source + independent Noise V2; three
+four-group BEAP DNA V3 designers with complete versioned factory state. EV/IONIQ
+audio at equal RTPC, all SC/Start/Pop/FX and other four drive traces are protected.
+The inherited ICE `cycle_irregularity` explicitly remains all-RPM shared clock.
+
+Current facts, incomplete acceptance and QA paths:
+`.agentlab/V6_CONTROL_DNA_V3.md`. Chinese start/tuning/namespace/rollback guide:
+`V6_CANDIDATE_GUIDE.md`. Do not replace production or publish this branch before
+native checks and two user listening rounds. No main merge/push.
+
 ## Accepted snapshot / publication authorization (2026-09-10)
 
 The user explicitly accepted the current patcher and authorized remote publication

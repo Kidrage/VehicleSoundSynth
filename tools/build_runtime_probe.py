@@ -652,6 +652,7 @@ def make_probe(
     rpm_named = p.new("prepend rpm", 190, 320, 90, numinlets=1, numoutlets=1)
     powertrain_name = probe_powertrain_name(profile, acoustic_version)
     shared_ferrari = acoustic_version == 3 and profile == 'ferrari'
+    direct_acoustic = acoustic_version == 3 and direct_powertrain
     powertrain = p.new(powertrain_name, 300, 330, 185, numinlets=1, numoutlets=4 if shared_ferrari else 2)
     soundscape = p.new(
         f"{profile}_cinematic_soundscape_host~", 445, 330, 205,
@@ -673,10 +674,10 @@ def make_probe(
     if not direct_powertrain:
         p.connect(controller, powertrain, 0, 0)
     for controlled in (transient, road, rumble, cabin, mix):
-        if controlled == powertrain:
+        if controlled == powertrain or direct_acoustic:
             continue
         p.connect(controller, controlled, 0, 0)
-    if not direct_soundscape_state:
+    if not direct_soundscape_state and not direct_acoustic:
         p.connect(controller, soundscape, 0, 0)
     solo_router = p.new("route soundscape_solo pad_solo backfire_solo dna_solo", 620, 300, 390, numinlets=1, numoutlets=5)
     soundscape_solo_clip = p.new("clip 0 1", 620, 335, 65, numinlets=3, numoutlets=1)
@@ -816,10 +817,16 @@ def make_probe(
         message for message in default_messages
         if message.split(maxsplit=1)[0] not in overridden
     ) + extra_messages
+    direct_targets = tuple(dict.fromkeys((powertrain,soundscape,transient,road,rumble,cabin,mix)))
     for index, message in enumerate(control_messages):
         initial = p.new(f"loadmess {message}", 25, 110 + index * 32, 245, numinlets=1, numoutlets=1)
-        p.connect(initial, powertrain if direct_powertrain else drive)
-        if direct_soundscape_state:
+        if direct_acoustic:
+            # Fixed diagnostic RTPC has one owner for every stem. The live
+            # drive/controller path must not overwrite it during a stem test.
+            for target in direct_targets: p.connect(initial,target)
+        else:
+            p.connect(initial, powertrain if direct_powertrain else drive)
+        if direct_soundscape_state and not direct_acoustic:
             p.connect(initial, soundscape)
 
     load = p.new("loadbang", 500, 110, 65, numinlets=1, numoutlets=1)
@@ -883,7 +890,10 @@ def make_probe(
     p.connect(open_file, recorder)
     p.connect(record_stop, recorder)
     p.connect(record_start, recorder)
-    if tap == "transient":
+    if tap in ('dna','noise','soundscape'):
+        record_left = record_right = {'dna':powertrain,'noise':road,'soundscape':soundscape}[tap]
+        record_left_outlet,record_right_outlet = (2,3) if tap=='noise' and shared_ferrari else (0,1)
+    elif tap == "transient":
         record_left, record_right = transient, transient
         record_left_outlet, record_right_outlet = 0, 1
     elif tap == "pre-cabin":
@@ -941,26 +951,40 @@ def make_probe(
         stop_trigger = p.new("t b b b b", 825, 600, 75, numinlets=1, numoutlets=4)
         metro_stop = p.message("0", 895, 565, 30)
         dsp_stop = p.message("0", 895, 600, 30)
-        close_delay = p.new("delay 1000", 895, 635, 75, numinlets=2, numoutlets=1)
-        close_message = p.message("wclose", 895, 670, 55)
-        patcher_control = p.new("thispatcher", 895, 705, 85, numinlets=1, numoutlets=2)
+        if acoustic_version != 3:
+            close_delay = p.new("delay 1000", 895, 635, 75, numinlets=2, numoutlets=1)
+            close_message = p.message("wclose", 895, 670, 55)
+            patcher_control = p.new("thispatcher", 895, 705, 85, numinlets=1, numoutlets=2)
         eq_save = p.new("s vehicle_bus_eq.save", 805, 740, 145, numinlets=1, numoutlets=0)
         record_begin = p.new("t b b b", 610, 700, 65, numinlets=1, numoutlets=3)
         p.connect(load, dsp_stop_at_load)
         p.connect(load, driver_delay)
-        p.connect(driver_delay, driver_select)
-        p.connect(driver_delay, sample_rate_delay)
-        p.connect(sample_rate_delay, sample_rate_value)
-        p.connect(sample_rate_delay, sample_rate_number)
         p.connect(sample_rate_number, sample_rate_status, 0, 1)
         p.connect(sample_rate_override, sample_rate_status)
-        p.connect(sample_rate_delay, driver_ready)
-        p.connect(driver_ready, start_trigger)
+        if acoustic_version == 3:
+            # NonRealTime may stop the scheduler while DSP is off. Configure
+            # and start synchronously; never wait on a delay in that state.
+            ready_now = p.new('t b b b b',520,1045,100,numoutlets=4)
+            p.connect(driver_delay,ready_now)
+            p.connect(ready_now,driver_select,3)
+            p.connect(ready_now,sample_rate_value,2)
+            p.connect(ready_now,sample_rate_number,1)
+            p.connect(ready_now,start_trigger,0)
+        else:
+            p.connect(driver_delay, driver_select)
+            p.connect(driver_delay, sample_rate_delay)
+            p.connect(sample_rate_delay, sample_rate_value)
+            p.connect(sample_rate_delay, sample_rate_number)
+            p.connect(sample_rate_delay, driver_ready)
+            p.connect(driver_ready, start_trigger)
         p.connect(start_trigger, open_file, 5, 0)
         p.connect(start_trigger, dsp_start, 4, 0)
         p.connect(start_trigger, runtime_replay, 3, 0)
-        p.connect(runtime_replay, powertrain if direct_powertrain else drive)
-        if direct_soundscape_state:
+        if direct_acoustic:
+            for target in direct_targets: p.connect(runtime_replay,target)
+        else:
+            p.connect(runtime_replay, powertrain if direct_powertrain else drive)
+        if direct_soundscape_state and not direct_acoustic:
             p.connect(runtime_replay, soundscape)
         if delayed_start_messages:
             delayed_start = p.new("delay 250", 770, 530, 70, numinlets=2, numoutlets=1)
@@ -1017,10 +1041,17 @@ def make_probe(
         p.connect(stop_trigger, record_stop, 3, 0)
         p.connect(stop_trigger, metro_stop, 2, 0)
         p.connect(stop_trigger, dsp_stop, 1, 0)
-        p.connect(stop_trigger, close_delay, 0, 0)
+        if acoustic_version == 3:
+            finish_now = p.new('t b b',650,1045,90,numoutlets=2)
+            p.connect(stop_trigger,finish_now)
+            p.connect(finish_now,realtime_scheduler,1)
+            p.connect(finish_now,console_write,0)
+        else:
+            p.connect(stop_trigger, close_delay, 0, 0)
         p.connect(stop_trigger, eq_save, 0, 0)
-        p.connect(close_delay, close_message)
-        p.connect(close_message, patcher_control)
+        if acoustic_version != 3:
+            p.connect(close_delay, close_message)
+            p.connect(close_message, patcher_control)
         p.connect(dsp_stop, dac)
         p.connect(metro_stop, metro)
     else:
@@ -1044,7 +1075,25 @@ def make_probe(
         p.connect(record_delay, record_start)
         p.connect(stop_delay, record_stop)
         p.connect(load, driver_delay)
-        p.connect(driver_delay, driver_select)
+        if acoustic_version == 3:
+            driver_order = p.new('t b b',500,620,65,numoutlets=2)
+            sr_value = p.message(str(sample_rate),580,620,70)
+            sr_status = p.new('adstatus sr',660,620,85,numinlets=2,numoutlets=2)
+            sr_override = p.new('loadmess override 1',760,620,145)
+            p.connect(driver_delay,driver_order)
+            p.connect(driver_order,driver_select,1)
+            p.connect(driver_order,sr_value,0)
+            p.connect(sr_value,sr_status,0,1)
+            p.connect(sr_override,sr_status)
+            final_log = p.new('delay 500',845,1005,90,numinlets=2)
+            p.connect(stop_delay,final_log)
+            p.connect(final_log,console_write)
+            # The recorder is monitor-muted throughout; stop after its tail.
+            stop_dsp = p.message('0',945,1005,30)
+            p.connect(final_log,stop_dsp)
+            p.connect(stop_dsp,dac)
+        else:
+            p.connect(driver_delay, driver_select)
         p.connect(driver_delay, dsp_delay)
         p.connect(dsp_delay, dsp_on)
         p.connect(dsp_on, dac)
@@ -1071,6 +1120,8 @@ def make_probe(
             p.connect(lock_select, rpm_select, 0, 0)
             p.connect(lock_order, lock_value, 0, 0)
             p.connect(lock_value, rpm_select, 0, 2)
+    if acoustic_version == 3:
+        p.comment('After render: save/close this probe ONCE, confirm the WAV header, then quit task Max before the next probe. Never batch wclose across Save modals.',25,1100,1000)
     return p.document()
 
 
@@ -1152,7 +1203,7 @@ def main() -> None:
     parser.add_argument("--direct-powertrain", action="store_true")
     parser.add_argument("--scenario", choices=sorted(SCENARIOS))
     parser.add_argument(
-        "--tap", choices=("transient", "pre-cabin", "final"), default="final"
+        "--tap", choices=("transient", "pre-cabin", "final", "dna", "noise", "soundscape"), default="final"
     )
     parser.add_argument("--stem", choices=("powertrain", "transient", "road", "rumble"))
     parser.add_argument("--stem-db", type=float)

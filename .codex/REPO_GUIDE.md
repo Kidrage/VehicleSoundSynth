@@ -9,7 +9,8 @@ small internal acoustic wrappers. Ferrari's wrapper has one source and separate
 DNA L/R + Noise L/R outputs. `noise_layer.py` version 2 accepts three raw residual
 inputs; other profiles keep Noise V1. No SC/Start/Pop/FX changes.
 `code/dna_v3_state.js` stores fresh namespaces and imports only old ICE-idle
-controls with unchanged meanings; `noise_state.js` optionally imports compatible
+controls with unchanged meanings (the inherited `cycle_irregularity` clock is
+explicitly all-RPM, not idle-only); `noise_state.js` optionally imports compatible
 V1 values into Ferrari V2, never the Main stem fader. `code/design_control.js` is
 the Main direct-routing/normalized-application registry. IONIQ alone receives
 8000-redline eShift, legal gear selection and 300 ms mode transition.
