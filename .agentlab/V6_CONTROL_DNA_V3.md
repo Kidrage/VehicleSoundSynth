@@ -137,9 +137,14 @@ Every unmeasured UI item remains `native_unverified`; known static bounds and
 message paths are included, not replaced by that status. User-facing meanings,
 save scope and rollback: `V6_CANDIDATE_GUIDE.md`.
 
-No candidate push or production replacement until acceptance. Existing accepted
-branch remains cloud release; new implementation commits remain local for now.
-Read-only GitHub check on 2026-09-14: accepted feature branch is still
+On 2026-09-14 the user explicitly requested uploading the candidate branch to
+GitHub first. This overrides the previous local-only gate for
+`codex/v6-control-dna-v3` only. It is not native/listening acceptance, a main
+merge, a release tag or permission to replace production. Existing accepted
+branch remains the accepted release; the uploaded branch remains a candidate.
+The pre-upload read-only GitHub check on 2026-09-14 found the accepted branch at
 `cff9d0872af7a7b14f07a35b7b8d37de3078b59f`; main is
-`ac2b37d8639027d79934a2023cf8d1d37d3b2f96`. The V3 candidate branch does not
-exist on origin. There is no remote candidate CI result to claim.
+`ac2b37d8639027d79934a2023cf8d1d37d3b2f96`. The V3 candidate branch did not
+yet exist on origin. Confirm remote/local commit equality and inspect CI after
+upload; absence of a CI run is not a pass. No additional audio or private preset
+files are included in the candidate delta.

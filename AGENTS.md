@@ -1,6 +1,7 @@
 # VehicleSoundSynth V6 Repository Instructions
 
 - **Active isolated candidate (2026-09-14):** branch `codex/v6-control-dna-v3`, base `cff9d08`, under `Downloads/VehicleSoundSynth-V6-Candidate/VehicleSoundSynth-V6`. User approved IONIQ control repair and Ferrari/V10/V12 DNA V3. This exception supersedes the older release-only/protected-DNA notes below, not other boundaries. Accepted production in `Downloads/VehicleSoundSynth-V6` is untouched. Never replace it before listening acceptance.
+- **Candidate upload authorization (2026-09-14):** the user explicitly requested uploading this branch to GitHub before remaining acceptance. Push only `codex/v6-control-dna-v3`; this supersedes the earlier local-only gate, not native/listening acceptance or production protection. No main merge/push, release tag or production replacement.
 - For this candidate use `tools/install_v3_candidate.py`, not a blanket in-place rebuild. `*_dna_v3_designer~` and `vehicle_noise_ferrari_v2~` are seed-once. Keep old DNA/Noise versions, starts, Pop, SC and private states. `tools/check_dna_v3_native.py` tests Max-exported Gen only; it cannot certify full BEAP runtime/CPU/listening acceptance.
 - Pre-delivery exception: `--refresh-seeds-from <known candidate commit>` may update our not-yet-delivered V3 seeds only after all four are byte-equal to that ancestor. Any user edit aborts before writes; never use this flag to overwrite delivered/private tuning.
 

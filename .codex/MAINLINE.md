@@ -52,4 +52,6 @@ Base: frozen V4 tag `v4.0.0` (`6aa49d0`).
     Ferrari/V10/V12 four-group DNA and independent Ferrari Noise residuals.
     Preserve accepted SC/Start/Pop/FX, old files and private state. Track actual
     control semantics and complete factory defaults. Native matrix, CPU,
-    persistence and two user listening rounds precede promotion/publication.
+    persistence and two user listening rounds precede promotion. The user
+    authorized uploading this candidate branch on 2026-09-14 before remaining
+    acceptance; no main merge/push or production replacement.

@@ -19,8 +19,9 @@ The inherited ICE `cycle_irregularity` explicitly remains all-RPM shared clock.
 
 Current facts, incomplete acceptance and QA paths:
 `.agentlab/V6_CONTROL_DNA_V3.md`. Chinese start/tuning/namespace/rollback guide:
-`V6_CANDIDATE_GUIDE.md`. Do not replace production or publish this branch before
-native checks and two user listening rounds. No main merge/push.
+`V6_CANDIDATE_GUIDE.md`. Do not replace production before native checks and two
+user listening rounds. The user's 2026-09-14 request now authorizes uploading
+only this candidate branch ahead of acceptance. No main merge/push or release tag.
 
 Local implementation/review commit: `1b670bb`. At 2026-09-14 07:07 UTC, exact-PID
 user authorization was used to terminate task Max 24644 with SIGTERM. No Max

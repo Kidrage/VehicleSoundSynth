@@ -21,7 +21,9 @@ and independent Ferrari Noise V2, not a Soundscape/Start/Pop/FX rewrite.
 Read `V6_CANDIDATE_GUIDE.md` and `.agentlab/V6_CONTROL_DNA_V3.md` first for this
 candidate. Previous release/QA entries below remain historical. Whole-runtime
 and listening acceptance are separate from source tests; do not promote the
-candidate or push it before acceptance. No main merge or production replacement.
+candidate before acceptance. On 2026-09-14 the user explicitly authorized
+uploading only `codex/v6-control-dna-v3` ahead of acceptance, superseding its
+earlier local-only gate. No main merge/push or production replacement.
 
 Implementation/review fixes are saved in local commit `1b670bb`. On 2026-09-14
 07:07 UTC the user-authorized termination of task Max PID 24644 succeeded with
