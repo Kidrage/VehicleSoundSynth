@@ -1,5 +1,10 @@
 # Source Index
 
+## IONIQ running-weight repair (2026-09-16, base 138a36d)
+
+Current IONIQ: DNA V4 / mode beds V3. Read `.agentlab/IONIQ_WEIGHT_REPAIR_2026-09-16.md` first. Recipe `tools/ioniq_weight_balance.py`, scoped installer `tools/install_ioniq_weight.py`, state `code/ioniq_weight_state.js`, tests `tests/test_ioniq_weight.py`, source-only math `tools/check_ioniq_weight_math.py`. Preserve all previous version resources, other four profiles, drive, Start, Pop, Noise and private states. Weight Balance=0 bypasses this iteration, not the earlier Reference Restore. Native Max/listening remains a local acceptance gate. Older active-version statements below are historical where superseded.
+
+
 ## Current timbre repair (2026-09-16)
 
 Target `codex/v6-ioniq-dna-accel-detail`, base `467fd72`. Read `.agentlab/V6_TIMBRE_REPAIR_2026-09-16.md`. Live IONIQ V3 / Ferrari V4; all previous version entries below are historical/rollback where superseded. Recipe `tools/timbre_repair.py`; installer `tools/install_timbre_repair.py`; state `code/timbre_repair_state.js`; contracts `tests/test_timbre_repair.py`; scalar-only checks `tools/check_timbre_repair_math.py`. New Designer seeds: `patchers/ioniq6n_sound_dna_v3~.maxpat`, `patchers/ferrari_dna_v4_designer~.maxpat`. Native Max and user listening remain required.

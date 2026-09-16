@@ -1,5 +1,7 @@
 # VehicleSoundSynth V6 Repository Instructions
 
+- **IONIQ weight follow-up (2026-09-16):** user reports dominant midrange sine and missing high-speed weight after 138a36d. Scope: IONIQ DNA V4 and SC mode beds V3 only; preserve all previous resources and other four profiles/drive/Start/Pop/Noise/EQ/FX. Read `.agentlab/IONIQ_WEIGHT_REPAIR_2026-09-16.md`. Use `tools/install_ioniq_weight.py`; never refresh delivered seeds or prior local state. New Weight Balance/namespace permits reversible local acceptance; source math is not native Max evidence.
+
 - **Authorized timbre repair (2026-09-16):** user requests actual IONIQ/Ferrari repair on `codex/v6-ioniq-dna-accel-detail` from `467fd72`, followed by local listening. New IONIQ V3 / Ferrari V4, reversible `reference_restore`, and fresh state namespaces are allowed; this supersedes the old two-partial-only/no-upload scope for this task, not main/production protection. Read `.agentlab/V6_TIMBRE_REPAIR_2026-09-16.md`. Use `tools/install_timbre_repair.py`; do not refresh existing seeds. All prior DSP/Designer/SC/Start/Noise/drive files remain protected. Scalar proxy tests are NOT native Max acceptance.
 
 - **IONIQ detail exception (2026-09-14):** local-only `codex/v6-ioniq-dna-accel-detail` from `d0df3b9`. Only versioned IONIQ DNA acceleration orders and complete DNA persistence are authorized. Preserve all Soundscape/private states, other voices, N e-Shift and driving. Keep V1 DNA resources byte-identical. No push before listening acceptance.

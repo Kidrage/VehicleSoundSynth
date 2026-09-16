@@ -201,7 +201,7 @@
             145.0,
             22.0
           ],
-          "text": "ioniq6n_sound_dna_v3~"
+          "text": "ioniq6n_sound_dna_v4~"
         }
       },
       {
@@ -221,7 +221,7 @@
             220.0,
             22.0
           ],
-          "text": "ioniq6n_cinematic_soundscape_host~"
+          "text": "ioniq6n_cinematic_soundscape_host_v3~"
         }
       },
       {

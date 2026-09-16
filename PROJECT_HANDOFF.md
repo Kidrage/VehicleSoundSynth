@@ -1,5 +1,10 @@
 # Project Handoff
 
+## IONIQ running-weight repair (2026-09-16, base 138a36d)
+
+Current IONIQ: DNA V4 / mode beds V3. Read `.agentlab/IONIQ_WEIGHT_REPAIR_2026-09-16.md` first. Recipe `tools/ioniq_weight_balance.py`, scoped installer `tools/install_ioniq_weight.py`, state `code/ioniq_weight_state.js`, tests `tests/test_ioniq_weight.py`, source-only math `tools/check_ioniq_weight_math.py`. Preserve all previous version resources, other four profiles, drive, Start, Pop, Noise and private states. Weight Balance=0 bypasses this iteration, not the earlier Reference Restore. Native Max/listening remains a local acceptance gate. Older active-version statements below are historical where superseded.
+
+
 ## 2026-09-16 — IONIQ V3 / Ferrari V4 timbre repair candidate
 
 User-authorized target branch `codex/v6-ioniq-dna-accel-detail`, fixed base `467fd7243dc9f419b63e61d28f7d5ea06b309434`. See `.agentlab/V6_TIMBRE_REPAIR_2026-09-16.md` for evidence, state migration, A/B, local Max tests and rollback. IONIQ render-only RPM fit; Ferrari deterministic material/lift restoration; old sources and all SC/Start/Noise/drive preserved. `reference_restore=0` restores previous candidate source, not old drivetrain. No native Max/listening acceptance is claimed.

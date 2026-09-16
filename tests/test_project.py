@@ -2476,8 +2476,8 @@ process.stdout.write(JSON.stringify({defaultState: defaultModel.snapshot(), on: 
             self.assertIn(control, event_host)
 
         engine = json.dumps(self.load_json("patchers/vehicle_engine_ioniq6n~.maxpat"))
-        self.assertIn("ioniq6n_sound_dna_v3~", engine)
-        self.assertIn("ioniq6n_cinematic_soundscape_host~", engine)
+        self.assertIn("ioniq6n_sound_dna_v4~", engine)
+        self.assertIn("ioniq6n_cinematic_soundscape_host_v3~", engine)
         self.assertIn("transient_ioniq6n~", engine)
         runtime = json.dumps(self.load_json("VehicleSoundSynth-IONIQ6N.maxpat"))
         self.assertIn("n_sound_mode evolution", runtime)
@@ -4016,6 +4016,7 @@ process.stdout.write(JSON.stringify({defaultState: defaultModel.snapshot(), on: 
             "ev_soundscape_bed.gendsp", "v10_soundscape_bed.gendsp", "v12_soundscape_bed.gendsp",
             "ferrari_dna_source_v3.gendsp", "v10_dna_source_v3.gendsp", "v12_dna_source_v3.gendsp", "dna_v3_output.gendsp",
             "ioniq6n_powertrain_v3.gendsp", "ferrari_dna_source_v4.gendsp",
+            "ioniq6n_powertrain_v4.gendsp", "ioniq6n_weight_bed.gendsp",
         }, {path.name for path in gen_paths})
         for path in gen_paths:
             patcher = self.load_json(path.relative_to(ROOT))["patcher"]
@@ -4025,13 +4026,15 @@ process.stdout.write(JSON.stringify({defaultState: defaultModel.snapshot(), on: 
             )
             bed = path.stem.endswith("_soundscape_bed")
             v3_output = path.stem == 'dna_v3_output'
-            if v3_output:
+            if path.stem == 'ioniq6n_weight_bed':
+                required = {'rpm','mode','foundation','weight_balance'}
+            elif v3_output:
                 required = {'v3_width'}
             elif path.stem.endswith(('_dna_source_v3', '_dna_source_v4')):
                 required = {'rpm', 'throttle', 'load', 'v3_body', 'v3_character', 'v3_aggression', 'v3_softness', 'v3_release_mass', 'v3_load_response'}
             elif bed:
                 required = {"body", "cavity", "contour", "load_response", "release_mass"}
-            elif path.name in ("ioniq6n_powertrain.gendsp", "ioniq6n_powertrain_v2.gendsp", "ioniq6n_powertrain_v3.gendsp"):
+            elif path.name in ("ioniq6n_powertrain.gendsp", "ioniq6n_powertrain_v2.gendsp", "ioniq6n_powertrain_v3.gendsp", "ioniq6n_powertrain_v4.gendsp"):
                 required = {
                     "rpm", "throttle", "load", "motor_order", "body_pressure",
                     "engine_running", "shift_cut",
@@ -4054,7 +4057,7 @@ process.stdout.write(JSON.stringify({defaultState: defaultModel.snapshot(), on: 
             else:
                 required = {"rpm", "throttle", "load", "aggression", "body"}
                 required |= {"brightness", "texture"}
-            if not bed and not v3_output and path.name not in {"ev_powertrain.gendsp", "ioniq6n_powertrain.gendsp", "ioniq6n_powertrain_v2.gendsp", "ioniq6n_powertrain_v3.gendsp"}:
+            if not bed and not v3_output and path.name not in {"ev_powertrain.gendsp", "ioniq6n_powertrain.gendsp", "ioniq6n_powertrain_v2.gendsp", "ioniq6n_powertrain_v3.gendsp", "ioniq6n_powertrain_v4.gendsp", "ioniq6n_weight_bed.gendsp"}:
                 required |= {"engine_running", "combustion_gain", "shift_cut"}
             if path.name in {"ioniq6n_powertrain_v3.gendsp", "ferrari_dna_source_v4.gendsp"}:
                 required |= {"reference_restore", "accel"}
@@ -4084,7 +4087,7 @@ process.stdout.write(JSON.stringify({defaultState: defaultModel.snapshot(), on: 
                 box_id for box_id, box in boxes.items()
                 if box.get("text") in {"out 1", "out 2"}
             }
-            self.assertEqual(2, len(output_ids), path.name)
+            self.assertEqual(1 if path.stem == "ioniq6n_weight_bed" else 2, len(output_ids), path.name)
             destinations = {
                 line["patchline"]["destination"][0]
                 for line in patcher["lines"]

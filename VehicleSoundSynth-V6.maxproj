@@ -63,6 +63,10 @@
         "kind": "javascript",
         "local": 1
       },
+      "code/ioniq_weight_state.js": {
+        "kind": "javascript",
+        "local": 1
+      },
       "code/manual_input.js": {
         "kind": "javascript",
         "local": 1
@@ -156,6 +160,14 @@
         "local": 1
       },
       "gen/ioniq6n_powertrain_v3.gendsp": {
+        "kind": "gendsp",
+        "local": 1
+      },
+      "gen/ioniq6n_powertrain_v4.gendsp": {
+        "kind": "gendsp",
+        "local": 1
+      },
+      "gen/ioniq6n_weight_bed.gendsp": {
         "kind": "gendsp",
         "local": 1
       },
@@ -281,11 +293,19 @@
         "kind": "data",
         "local": 1
       },
+      "presets/ioniq6n_sound_dna_v4_factory.json": {
+        "kind": "data",
+        "local": 1
+      },
       "presets/ioniq6n_soundscape_modes_factory.json": {
         "kind": "data",
         "local": 1
       },
       "presets/ioniq6n_soundscape_modes_v2_factory.json": {
+        "kind": "data",
+        "local": 1
+      },
+      "presets/ioniq6n_soundscape_modes_v3_factory.json": {
         "kind": "data",
         "local": 1
       },
@@ -577,6 +597,10 @@
         "kind": "patcher",
         "local": 1
       },
+      "patchers/ioniq6n_cinematic_soundscape_host_v3~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
       "patchers/ioniq6n_cinematic_soundscape_host~.maxpat": {
         "kind": "patcher",
         "local": 1
@@ -601,6 +625,10 @@
         "kind": "patcher",
         "local": 1
       },
+      "patchers/ioniq6n_powertrain_v4~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
       "patchers/ioniq6n_powertrain~.maxpat": {
         "kind": "patcher",
         "local": 1
@@ -610,6 +638,10 @@
         "local": 1
       },
       "patchers/ioniq6n_sound_dna_v3~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/ioniq6n_sound_dna_v4~.maxpat": {
         "kind": "patcher",
         "local": 1
       },
@@ -625,6 +657,10 @@
         "kind": "patcher",
         "local": 1
       },
+      "patchers/ioniq6n_soundscape_evolution_bed_v3_beap~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
       "patchers/ioniq6n_soundscape_ignition_beap~.maxpat": {
         "kind": "patcher",
         "local": 1
@@ -633,11 +669,19 @@
         "kind": "patcher",
         "local": 1
       },
+      "patchers/ioniq6n_soundscape_ignition_bed_v3_beap~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
       "patchers/ioniq6n_soundscape_lightspeed_beap~.maxpat": {
         "kind": "patcher",
         "local": 1
       },
       "patchers/ioniq6n_soundscape_lightspeed_bed_v2_beap~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/ioniq6n_soundscape_lightspeed_bed_v3_beap~.maxpat": {
         "kind": "patcher",
         "local": 1
       },

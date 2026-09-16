@@ -38,13 +38,14 @@ class TimbreRepairTests(unittest.TestCase):
                 self.assertEqual((ROOT/name).read_bytes(),subprocess.check_output(['git','show',r.BASELINE+':'+name],cwd=ROOT),name)
 
     def test_only_two_engine_references_change(self):
-        for profile,oldname,newname in [('ioniq6n','ioniq6n_sound_dna_v2~','ioniq6n_sound_dna_v3~'),
+        for profile,oldname,newname in [('ioniq6n','ioniq6n_sound_dna_v2~','ioniq6n_sound_dna_v4~'),
                                          ('ferrari','ferrari_acoustic_v3~','ferrari_acoustic_v4~')]:
             old=json.loads(subprocess.check_output(['git','show',r.BASELINE+':patchers/vehicle_engine_'+profile+'~.maxpat'],cwd=ROOT))
             new=copy.deepcopy(b.make_profile_engine(profile))
             count=0
             for box in boxes(new).values():
                 if box.get('text')==newname:box['text']=oldname;count+=1
+                if box.get('text')=='ioniq6n_cinematic_soundscape_host_v3~':box['text']='ioniq6n_cinematic_soundscape_host~'
             self.assertEqual(count,1)
             self.assertEqual(new,old)
 

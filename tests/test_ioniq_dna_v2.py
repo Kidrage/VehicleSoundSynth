@@ -42,7 +42,7 @@ console.log(JSON.stringify({data:s.merge(factory,saved),paths:s.paths('/qa/patch
             return {x['box']['varname']:x['box']['patcher'] for x in patch['boxes'] if x['box']['maxclass']=='bpatcher'}
         self.assertEqual(modules(old),modules(new))
         # V2 remains a rollback resource; active repair is separately versioned.
-        self.assertIn('ioniq6n_sound_dna_v3~',json.dumps(b.make_profile_engine('ioniq6n')))
+        self.assertIn('ioniq6n_sound_dna_v4~',json.dumps(b.make_profile_engine('ioniq6n')))
 
     def test_malformed_saved_values_fall_back_without_aborting_reload(self):
         script = """
