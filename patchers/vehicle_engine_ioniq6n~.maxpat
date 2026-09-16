@@ -201,7 +201,7 @@
             145.0,
             22.0
           ],
-          "text": "ioniq6n_sound_dna_v2~"
+          "text": "ioniq6n_sound_dna_v3~"
         }
       },
       {

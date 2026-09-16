@@ -1,5 +1,10 @@
 # Project Handoff
 
+## 2026-09-16 — IONIQ V3 / Ferrari V4 timbre repair candidate
+
+User-authorized target branch `codex/v6-ioniq-dna-accel-detail`, fixed base `467fd7243dc9f419b63e61d28f7d5ea06b309434`. See `.agentlab/V6_TIMBRE_REPAIR_2026-09-16.md` for evidence, state migration, A/B, local Max tests and rollback. IONIQ render-only RPM fit; Ferrari deterministic material/lift restoration; old sources and all SC/Start/Noise/drive preserved. `reference_restore=0` restores previous candidate source, not old drivetrain. No native Max/listening acceptance is claimed.
+
+
 ## Active: IONIQ DNA detail (2026-09-14)
 
 Local-only `codex/v6-ioniq-dna-accel-detail`, base d0df3b9. Current authority:

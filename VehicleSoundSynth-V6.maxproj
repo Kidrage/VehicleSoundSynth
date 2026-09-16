@@ -115,6 +115,10 @@
         "kind": "javascript",
         "local": 1
       },
+      "code/timbre_repair_state.js": {
+        "kind": "javascript",
+        "local": 1
+      },
       "gen/dna_v3_output.gendsp": {
         "kind": "gendsp",
         "local": 1
@@ -131,6 +135,10 @@
         "kind": "gendsp",
         "local": 1
       },
+      "gen/ferrari_dna_source_v4.gendsp": {
+        "kind": "gendsp",
+        "local": 1
+      },
       "gen/ferrari_exciter_v2.gendsp": {
         "kind": "gendsp",
         "local": 1
@@ -144,6 +152,10 @@
         "local": 1
       },
       "gen/ioniq6n_powertrain_v2.gendsp": {
+        "kind": "gendsp",
+        "local": 1
+      },
+      "gen/ioniq6n_powertrain_v3.gendsp": {
         "kind": "gendsp",
         "local": 1
       },
@@ -233,6 +245,10 @@
         "kind": "data",
         "local": 1
       },
+      "presets/ferrari_sound_dna_v4_factory.json": {
+        "kind": "data",
+        "local": 1
+      },
       "presets/ferrari_soundscape_v4_factory.json": {
         "kind": "data",
         "local": 1
@@ -258,6 +274,10 @@
         "local": 1
       },
       "presets/ioniq6n_sound_dna_v2_factory.json": {
+        "kind": "data",
+        "local": 1
+      },
+      "presets/ioniq6n_sound_dna_v3_factory.json": {
         "kind": "data",
         "local": 1
       },
@@ -481,6 +501,10 @@
         "kind": "patcher",
         "local": 1
       },
+      "patchers/ferrari_acoustic_v4~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
       "patchers/ferrari_backfire_beap~.maxpat": {
         "kind": "patcher",
         "local": 1
@@ -498,6 +522,10 @@
         "local": 1
       },
       "patchers/ferrari_dna_v3_designer~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/ferrari_dna_v4_designer~.maxpat": {
         "kind": "patcher",
         "local": 1
       },
@@ -569,11 +597,19 @@
         "kind": "patcher",
         "local": 1
       },
+      "patchers/ioniq6n_powertrain_v3~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
       "patchers/ioniq6n_powertrain~.maxpat": {
         "kind": "patcher",
         "local": 1
       },
       "patchers/ioniq6n_sound_dna_v2~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/ioniq6n_sound_dna_v3~.maxpat": {
         "kind": "patcher",
         "local": 1
       },

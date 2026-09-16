@@ -1,5 +1,7 @@
 # VehicleSoundSynth V6 Repository Instructions
 
+- **Authorized timbre repair (2026-09-16):** user requests actual IONIQ/Ferrari repair on `codex/v6-ioniq-dna-accel-detail` from `467fd72`, followed by local listening. New IONIQ V3 / Ferrari V4, reversible `reference_restore`, and fresh state namespaces are allowed; this supersedes the old two-partial-only/no-upload scope for this task, not main/production protection. Read `.agentlab/V6_TIMBRE_REPAIR_2026-09-16.md`. Use `tools/install_timbre_repair.py`; do not refresh existing seeds. All prior DSP/Designer/SC/Start/Noise/drive files remain protected. Scalar proxy tests are NOT native Max acceptance.
+
 - **IONIQ detail exception (2026-09-14):** local-only `codex/v6-ioniq-dna-accel-detail` from `d0df3b9`. Only versioned IONIQ DNA acceleration orders and complete DNA persistence are authorized. Preserve all Soundscape/private states, other voices, N e-Shift and driving. Keep V1 DNA resources byte-identical. No push before listening acceptance.
 
 - **Active isolated candidate (2026-09-14):** branch `codex/v6-control-dna-v3`, base `cff9d08`, under `Downloads/VehicleSoundSynth-V6-Candidate/VehicleSoundSynth-V6`. User approved IONIQ control repair and Ferrari/V10/V12 DNA V3. This exception supersedes the older release-only/protected-DNA notes below, not other boundaries. Accepted production in `Downloads/VehicleSoundSynth-V6` is untouched. Never replace it before listening acceptance.

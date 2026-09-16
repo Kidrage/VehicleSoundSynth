@@ -194,7 +194,7 @@
             175.0,
             22.0
           ],
-          "text": "ferrari_acoustic_v3~"
+          "text": "ferrari_acoustic_v4~"
         }
       },
       {

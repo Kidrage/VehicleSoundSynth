@@ -12,10 +12,10 @@ class DesignControlTests(unittest.TestCase):
         from tools.audit_v3_controls import visible_controls
         rows=visible_controls(ROOT)
         mixer=next(row for row in rows if row['profile']=='ferrari'
-                   and row['file'].endswith('ferrari_dna_v3_designer~.maxpat')
+                   and row['file'].endswith('ferrari_dna_v4_designer~.maxpat')
                    and row['object']=='/V3_Group_Mixer/in2')
         self.assertEqual((mixer['UI_min'],mixer['UI_max']),(-72,0))
-        self.assertEqual(mixer['save_namespace'],'ferrari_sound_dna_v3.json')
+        self.assertEqual(mixer['save_namespace'],'ferrari_sound_dna_v4.json')
         self.assertIn('dbtoa',mixer['DSP_mapping'])
         self.assertEqual(mixer['status'],'native_unverified')
 

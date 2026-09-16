@@ -16,12 +16,12 @@ from pathlib import Path
 from typing import Any
 
 try:
-    from . import dna_v3, ioniq_dna_v2
+    from . import dna_v3, ioniq_dna_v2, timbre_repair
     from .ice_dna_v2 import RUNNING_DEFAULTS, RUNNING_METADATA, RUNNING_SPECS, make_running_gen
     from .soundscape_bed import bed_code, make_soundscape_bed, make_bed_factory
     from .noise_layer import make_vehicle_noise, make_vehicle_noise_factory
 except ImportError:
-    import dna_v3, ioniq_dna_v2
+    import dna_v3, ioniq_dna_v2, timbre_repair
     from ice_dna_v2 import RUNNING_DEFAULTS, RUNNING_METADATA, RUNNING_SPECS, make_running_gen
     from soundscape_bed import bed_code, make_soundscape_bed, make_bed_factory
     from noise_layer import make_vehicle_noise, make_vehicle_noise_factory
@@ -5954,7 +5954,7 @@ def make_profile_engine(profile: str) -> dict[str, Any]:
     else:
         contract_names.append("start_style")
     contract = route(p, tuple(contract_names), 190, 150, 990)
-    dna_voice = "ferrari_acoustic_v3~" if profile == "ferrari" else f"{profile}_sound_dna_v3~" if profile in ("v10", "v12") else "ioniq6n_sound_dna_v2~" if profile == "ioniq6n" else f"{profile}_sound_dna~"
+    dna_voice = "ferrari_acoustic_v4~" if profile == "ferrari" else f"{profile}_sound_dna_v3~" if profile in ("v10", "v12") else "ioniq6n_sound_dna_v3~" if profile == "ioniq6n" else f"{profile}_sound_dna~"
     power = p.new(
         dna_voice, 95, 260, 175 if profile == "ferrari" else 145,
         numinlets=1, numoutlets=4 if profile == "ferrari" else 2,
@@ -12054,6 +12054,8 @@ GEN_CODE.update({f"{profile}_soundscape_bed": bed_code(profile) for profile in (
 GEN_CODE.update({f"{profile}_dna_source_v3": dna_v3.source_code(profile, GEN_CODE.get(f"{profile}_powertrain")) for profile in dna_v3.PROFILES})
 GEN_CODE['dna_v3_output'] = dna_v3.MIX_CODE
 GEN_CODE['ioniq6n_powertrain_v2'] = ioniq_dna_v2.source_code(GEN_CODE['ioniq6n_powertrain'])
+GEN_CODE['ioniq6n_powertrain_v3'] = timbre_repair.ioniq_code(GEN_CODE['ioniq6n_powertrain_v2'])
+GEN_CODE['ferrari_dna_source_v4'] = timbre_repair.ferrari_code(GEN_CODE['ferrari_dna_source_v3'])
 
 
 def make_gen(code: str, *, input_count: int = 0) -> dict[str, Any]:
@@ -12468,6 +12470,7 @@ def project_file() -> dict[str, Any]:
         contents['patchers'][f'patchers/{name}.maxpat'] = {'kind':'patcher','local':1}
     contents['data']['presets/ioniq6n_sound_dna_v2_factory.json'] = {'kind':'data','local':1}
     contents['code']['code/ioniq_dna_v2_state.js'] = {'kind':'javascript','local':1}
+    timbre_repair.register(contents)
     for name in GEN_CODE:
         contents["code"][f"gen/{name}.gendsp"] = {"kind": "gendsp", "local": 1}
     contents["code"]["code/drive_model.js"] = {"kind": "javascript", "local": 1}
@@ -12778,6 +12781,7 @@ def build_project(root: Path) -> None:
     if not noise_v2.exists():
         write_json(noise_v2, make_vehicle_noise('ferrari', version=2))
     write_json(root/'presets'/'ferrari_noise_v2_factory.json', make_vehicle_noise_factory('ferrari', version=2))
+    timbre_repair.write_outputs(root)
     for name, code in GEN_CODE.items():
         write_json(root / "gen" / f"{name}.gendsp", make_gen(code, input_count=8 if name.endswith("_soundscape_bed") else 4 if name == 'dna_v3_output' else 0))
     for name, frames in MEDIA_FRAMES.items():

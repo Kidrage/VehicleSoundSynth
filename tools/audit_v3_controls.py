@@ -40,6 +40,8 @@ def visible_controls(root):
           'gain~','live.gain~','filtergraph~','function','tab'}
     def namespace_for(path,profile):
         name=path.name
+        if name=='ferrari_dna_v4_designer~.maxpat': return 'ferrari_sound_dna_v4.json'
+        if name=='ioniq6n_sound_dna_v3~.maxpat': return 'ioniq6n_sound_dna_v3.json'
         if '_dna_v3_designer' in name: return profile+'_sound_dna_v3.json'
         if name.startswith('vehicle_noise_'): return profile+('_noise_v2.json' if '_v2~' in name else '_noise_v1.json')
         if 'soundscape' in name and profile=='ferrari': return 'ferrari_soundscape_v7.json'
@@ -96,7 +98,8 @@ def visible_controls(root):
                         clamp_bounds=json.dumps(contract.get('bounds',[])),
                         DSP_mapping=box.get('hint') or box.get('annotation') or contract.get('payload',map_text or 'UI action; no scalar DSP mapping'),
                         effective_context=contract.get('context','see candidate parameter guide; native context unmeasured'),
-                        save_namespace=contract.get('save',namespace_for(path,profile)),
+                        save_namespace=(namespace_for(path,profile) if path.name in ('ferrari_dna_v4_designer~.maxpat','ioniq6n_sound_dna_v3~.maxpat')
+                                        else contract.get('save',namespace_for(path,profile))),
                         native_audio_result='not measured for this exact UI control',
                         metric_before='',metric_after='',status='native_unverified',
                         evidence_file='tests/test_runtime_design_routing.py; tests/test_dna_v3.py (structural only)'))

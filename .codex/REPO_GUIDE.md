@@ -1,5 +1,10 @@
 # VehicleSoundSynth V6 Repository Guide
 
+## Current timbre repair (2026-09-16)
+
+Target `codex/v6-ioniq-dna-accel-detail`, base `467fd72`. Read `.agentlab/V6_TIMBRE_REPAIR_2026-09-16.md`. Live IONIQ V3 / Ferrari V4; all previous version entries below are historical/rollback where superseded. Recipe `tools/timbre_repair.py`; installer `tools/install_timbre_repair.py`; state `code/timbre_repair_state.js`; contracts `tests/test_timbre_repair.py`; scalar-only checks `tools/check_timbre_repair_math.py`. New Designer seeds: `patchers/ioniq6n_sound_dna_v3~.maxpat`, `patchers/ferrari_dna_v4_designer~.maxpat`. Native Max and user listening remain required.
+
+
 ## Active IONIQ DNA detail
 
 `codex/v6-ioniq-dna-accel-detail` is local-only from d0df3b9. See

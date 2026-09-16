@@ -1,0 +1,204 @@
+{
+  "pattrstorage": {
+    "name": "ioniq6n_sound_dna_v3",
+    "slots": {
+      "99": {
+        "data": {
+          "DNA_Body_Modal::CV1": [
+            0.0
+          ],
+          "DNA_Body_Modal::CV2": [
+            0.0
+          ],
+          "DNA_Body_Modal::CV3": [
+            0.0
+          ],
+          "DNA_Body_Modal::FilterType": [
+            0
+          ],
+          "DNA_Body_Modal::Freq": [
+            185.0
+          ],
+          "DNA_Body_Modal::FreqMode": [
+            1.0
+          ],
+          "DNA_Body_Modal::Offset[2]": [
+            0.0
+          ],
+          "DNA_Body_Modal::Res": [
+            0.72
+          ],
+          "DNA_Body_Modal::ResCV": [
+            0.0
+          ],
+          "DNA_Body_Modal::power[1]": [
+            1
+          ],
+          "DNA_Cavity::CV1": [
+            0.0
+          ],
+          "DNA_Cavity::CV2": [
+            0.0
+          ],
+          "DNA_Cavity::CV3": [
+            0.0
+          ],
+          "DNA_Cavity::FilterType": [
+            2
+          ],
+          "DNA_Cavity::Freq": [
+            315.0
+          ],
+          "DNA_Cavity::FreqMode": [
+            1.0
+          ],
+          "DNA_Cavity::Offset[2]": [
+            0.0
+          ],
+          "DNA_Cavity::Res": [
+            1.15
+          ],
+          "DNA_Cavity::ResCV": [
+            0.0
+          ],
+          "DNA_Cavity::power[1]": [
+            1
+          ],
+          "DNA_HF_Ceiling::CV1": [
+            0.0
+          ],
+          "DNA_HF_Ceiling::CV2": [
+            0.0
+          ],
+          "DNA_HF_Ceiling::CV3": [
+            0.0
+          ],
+          "DNA_HF_Ceiling::FilterType": [
+            0
+          ],
+          "DNA_HF_Ceiling::Freq": [
+            4300.0
+          ],
+          "DNA_HF_Ceiling::FreqMode": [
+            1.0
+          ],
+          "DNA_HF_Ceiling::Offset[2]": [
+            0.0
+          ],
+          "DNA_HF_Ceiling::Res": [
+            0.62
+          ],
+          "DNA_HF_Ceiling::ResCV": [
+            0.0
+          ],
+          "DNA_HF_Ceiling::power[1]": [
+            1
+          ],
+          "DNA_Layer_Mixer::Mute": [
+            0.0
+          ],
+          "DNA_Layer_Mixer::MuteCh1": [
+            0.0
+          ],
+          "DNA_Layer_Mixer::MuteCh1[2]": [
+            0.0
+          ],
+          "DNA_Layer_Mixer::MuteCh2": [
+            0.0
+          ],
+          "DNA_Layer_Mixer::MuteCh4": [
+            0.0
+          ],
+          "DNA_Layer_Mixer::in1": [
+            -2.0
+          ],
+          "DNA_Layer_Mixer::in2": [
+            -5.0
+          ],
+          "DNA_Layer_Mixer::in3": [
+            -11.0
+          ],
+          "DNA_Layer_Mixer::in4": [
+            -19.0
+          ],
+          "DNA_Mechanical::CV1": [
+            0.0
+          ],
+          "DNA_Mechanical::CV2": [
+            0.0
+          ],
+          "DNA_Mechanical::CV3": [
+            0.0
+          ],
+          "DNA_Mechanical::FilterType": [
+            2
+          ],
+          "DNA_Mechanical::Freq": [
+            880.0
+          ],
+          "DNA_Mechanical::FreqMode": [
+            1.0
+          ],
+          "DNA_Mechanical::Offset[2]": [
+            0.0
+          ],
+          "DNA_Mechanical::Res": [
+            0.88
+          ],
+          "DNA_Mechanical::ResCV": [
+            0.0
+          ],
+          "DNA_Mechanical::power[1]": [
+            1
+          ],
+          "DNA_Output_VCA::Bypass": [
+            0.0
+          ],
+          "DNA_Output_VCA::Quadrants": [
+            0.0
+          ],
+          "DNA_Output_VCA::Response": [
+            0.0
+          ],
+          "dna_accel_orders": [
+            0.3
+          ],
+          "dna_body_pressure": [
+            0.86
+          ],
+          "dna_cavity_structure": [
+            0.78
+          ],
+          "dna_hf_edge": [
+            0.34
+          ],
+          "dna_load_depth": [
+            0.82
+          ],
+          "dna_mechanical_texture": [
+            0.58
+          ],
+          "dna_motor_order": [
+            0.72
+          ],
+          "dna_ready_bed": [
+            0.42
+          ],
+          "dna_reference_restore": [
+            1.0
+          ],
+          "dna_release_mass": [
+            0.68
+          ],
+          "dna_saturation": [
+            0.24
+          ],
+          "dna_stereo_width": [
+            0.62
+          ]
+        },
+        "id": 99
+      }
+    }
+  }
+}
