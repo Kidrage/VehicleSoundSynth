@@ -51,8 +51,8 @@ jobs:
               "from . import dna_v3, ioniq_dna_v2, timbre_repair, ioniq_weight_balance",
               "from . import dna_v3, ioniq_dna_v2, timbre_repair, ioniq_weight_balance, ferrari_sf90_v5")
           replace("tools/build_project.py",
-              "import dna_v3, ioniq_dna_v2, timbre_repair, ioniq_weight_balance",
-              "import dna_v3, ioniq_dna_v2, timbre_repair, ioniq_weight_balance, ferrari_sf90_v5")
+              "\\n    import dna_v3, ioniq_dna_v2, timbre_repair, ioniq_weight_balance\\n",
+              "\\n    import dna_v3, ioniq_dna_v2, timbre_repair, ioniq_weight_balance, ferrari_sf90_v5\\n")
           replace("tools/build_project.py",
               'dna_voice = "ferrari_acoustic_v4~" if profile == "ferrari"',
               'dna_voice = "ferrari_acoustic_v5~" if profile == "ferrari"')
