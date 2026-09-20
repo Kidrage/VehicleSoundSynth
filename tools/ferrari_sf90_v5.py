@@ -7,7 +7,7 @@ identical RTPC/state; 1 selects this version. Noise residual taps stay unchanged
 from __future__ import annotations
 import re
 
-BASELINE = "739c9d9a19432ac693e1a10a7ecd0cbb6b283dc8"
+# QA trigger: integration is validated on macOS before this branch is handed to listening.\nBASELINE = "739c9d9a19432ac693e1a10a7ecd0cbb6b283dc8"
 SEED = "patchers/ferrari_dna_v5_designer~.maxpat"
 MODES = (
     ("b123", 123.0, 2.3),
