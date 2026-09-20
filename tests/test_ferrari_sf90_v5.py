@@ -19,6 +19,7 @@ class FerrariSf90V5Tests(unittest.TestCase):
         old = b.GEN_CODE["ferrari_dna_source_v4"]
         new = b.GEN_CODE["ferrari_dna_source_v5"]
         self.assertIn("Param sf90_material(1", new)
+        self.assertNotIn("\\n", new)
         for hz in (123, 185, 214, 240, 620, 820, 1100):
             self.assertIn(f"*{hz}/samplerate", new)
         self.assertEqual(old.count("noise()"), new.count("noise()"))

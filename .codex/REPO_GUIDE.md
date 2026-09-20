@@ -1,4 +1,8 @@
 # VehicleSoundSynth V6 Repository Guide
+## Current Ferrari SF90 V5 candidate (2026-09-20)
+
+Active Ferrari only: `patchers/ferrari_acoustic_v5~.maxpat` -> `gen/ferrari_dna_source_v5.gendsp` -> `patchers/ferrari_dna_v5_designer~.maxpat`. Recipe `tools/ferrari_sf90_v5.py`; state `code/ferrari_v5_state.js`; scoped installer `tools/install_ferrari_v5.py`; scalar QA `tools/check_ferrari_v5_math.py`. Parent/checkpoint `739c9d9`; IONIQ is protected.
+
 
 ## IONIQ running-weight repair (2026-09-16, base 138a36d)
 

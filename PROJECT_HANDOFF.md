@@ -1,4 +1,8 @@
 # Project Handoff
+## 2026-09-20 — Ferrari SF90-reference V5 candidate
+
+Parent/checkpoint: `739c9d9`; branch: `codex/v6-ferrari-sf90-v5`. Ferrari V5 replaces V4's extra RPM-tracking cavity/intake tones with pressure-excited fixed Body/Cavity/Mechanical modes while keeping random residuals in independent Noise. SF90 Material=0 is the V4 source bypass. See `.agentlab/FERRARI_SF90_V5_2026-09-20.md`. IONIQ and all non-Ferrari audio are protected.
+
 
 ## IONIQ running-weight repair (2026-09-16, base 138a36d)
 

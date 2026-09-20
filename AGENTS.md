@@ -1,4 +1,6 @@
 # VehicleSoundSynth V6 Repository Instructions
+- **Ferrari SF90 V5 candidate (2026-09-20):** branch `codex/v6-ferrari-sf90-v5` from accepted IONIQ checkpoint `739c9d9`. Read `.agentlab/FERRARI_SF90_V5_2026-09-20.md`. Only Ferrari active DNA/versioned state may change; IONIQ/EV/V10/V12, driving, Start/Pop, Soundscape, Noise residual routing and old states are protected. Use `tools/install_ferrari_v5.py`; no native/listening acceptance is implied by scalar/unit tests.
+
 
 - **IONIQ weight follow-up (2026-09-16):** user reports dominant midrange sine and missing high-speed weight after 138a36d. Scope: IONIQ DNA V4 and SC mode beds V3 only; preserve all previous resources and other four profiles/drive/Start/Pop/Noise/EQ/FX. Read `.agentlab/IONIQ_WEIGHT_REPAIR_2026-09-16.md`. Use `tools/install_ioniq_weight.py`; never refresh delivered seeds or prior local state. New Weight Balance/namespace permits reversible local acceptance; source math is not native Max evidence.
 

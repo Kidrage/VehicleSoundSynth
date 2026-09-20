@@ -1,0 +1,575 @@
+{
+  "patcher": {
+    "appversion": {
+      "architecture": "x64",
+      "major": 8,
+      "minor": 6,
+      "modernui": 1,
+      "revision": 5
+    },
+    "boxes": [
+      {
+        "box": {
+          "code": "Param sf90_material(1, min=0, max=1);\nHistory sf_prev_pressure(0);\nHistory sf_x1(0); History sf_x2(0);\nHistory sf_core_env(0); History sf_body_env(0);\nHistory sf_cavity_env(0); History sf_mech_env(0);\nHistory sf_b123_y1(0); History sf_b123_y2(0);\nHistory sf_b185_y1(0); History sf_b185_y2(0);\nHistory sf_b214_y1(0); History sf_b214_y2(0);\nHistory sf_c240_y1(0); History sf_c240_y2(0);\nHistory sf_c620_y1(0); History sf_c620_y2(0);\nHistory sf_m820_y1(0); History sf_m820_y2(0);\nHistory sf_m1100_y1(0); History sf_m1100_y2(0);\nParam reference_restore(1, min=0, max=1);\nParam accel(0, min=-1, max=1);\nParam v3_aggression(0.5, min=0, max=1);\nParam v3_body(0.5, min=0, max=1);\nParam v3_character(0.5, min=0, max=1);\nParam v3_softness(0.5, min=0, max=1);\nParam v3_release_mass(0.5, min=0, max=1);\nParam v3_width(0.5, min=0, max=1);\nParam v3_load_response(0.5, min=0, max=1);\nParam v3_pressure_blend(0.5, min=0, max=1);\nHistory v3_env0(0);\nHistory v3_env1(0);\nHistory v3_env2(0);\nParam rpm(740, min=0, max=10000);\nParam throttle(0, min=0, max=1);\nParam load(0, min=-1, max=1);\nParam engine_running(0, min=0, max=1);\nParam combustion_gain(0, min=0, max=1);\nParam shift_cut(1, min=0, max=1);\nr = slide(rpm, samplerate*0.013, samplerate*0.021);\nv3_fire = r/12;\nv3_quarter_phase = phasor(v3_fire*.25);\nv3_phase = wrap(v3_quarter_phase*4,0,1);\nv3_legacy_l = 0;\nv3_legacy_r = 0;\nv3_blend = 1;\n// Smooth parameter movement and asymmetric sample-rate-independent envelopes.\nv3_effort = max(clamp(throttle,0,1),max(load,0));\nv3_agg = slide(v3_aggression,samplerate*.025,samplerate*.025);\nv3_mass = slide(v3_body,samplerate*.035,samplerate*.035);\nv3_char = slide(v3_character,samplerate*.035,samplerate*.035);\nv3_soft = slide(v3_softness,samplerate*.035,samplerate*.035);\nv3_response = slide(v3_load_response,samplerate*.035,samplerate*.035);\nv3_pressure_mix = slide(v3_pressure_blend,samplerate*.035,samplerate*.035);\nv3_gate = slide(engine_running*combustion_gain*shift_cut,samplerate*.009,samplerate*.036);\nv3_tau0 = v3_effort > v3_env0 ? 32.5 : 90+v3_release_mass*70;\nv3_k0 = exp(-1/(samplerate*.001*v3_tau0));\nv3_env0 = v3_effort+(v3_env0-v3_effort)*v3_k0;\nv3_tau1 = v3_effort > v3_env1 ? 70 : 180+v3_release_mass*120;\nv3_k1 = exp(-1/(samplerate*.001*v3_tau1));\nv3_env1 = v3_effort+(v3_env1-v3_effort)*v3_k1;\nv3_tau2 = v3_effort > v3_env2 ? 20 : 40+v3_release_mass*50;\nv3_k2 = exp(-1/(samplerate*.001*v3_tau2));\nv3_env2 = v3_effort+(v3_env2-v3_effort)*v3_k2;\nv3_h1 = cos(v3_phase*6.283185307179586*1)*clamp((samplerate*.45-v3_fire*1)/(samplerate*.05),0,1);\nv3_h2 = cos(v3_phase*6.283185307179586*2)*clamp((samplerate*.45-v3_fire*2)/(samplerate*.05),0,1);\nv3_h3 = cos(v3_phase*6.283185307179586*3)*clamp((samplerate*.45-v3_fire*3)/(samplerate*.05),0,1);\nv3_h4 = cos(v3_phase*6.283185307179586*4)*clamp((samplerate*.45-v3_fire*4)/(samplerate*.05),0,1);\nv3_h5 = cos(v3_phase*6.283185307179586*5)*clamp((samplerate*.45-v3_fire*5)/(samplerate*.05),0,1);\nv3_h6 = cos(v3_phase*6.283185307179586*6)*clamp((samplerate*.45-v3_fire*6)/(samplerate*.05),0,1);\nv3_h7 = cos(v3_phase*6.283185307179586*7)*clamp((samplerate*.45-v3_fire*7)/(samplerate*.05),0,1);\nv3_h8 = cos(v3_phase*6.283185307179586*8)*clamp((samplerate*.45-v3_fire*8)/(samplerate*.05),0,1);\nv3_h9 = cos(v3_phase*6.283185307179586*9)*clamp((samplerate*.45-v3_fire*9)/(samplerate*.05),0,1);\nv3_h10 = cos(v3_phase*6.283185307179586*10)*clamp((samplerate*.45-v3_fire*10)/(samplerate*.05),0,1);\nv3_h11 = cos(v3_phase*6.283185307179586*11)*clamp((samplerate*.45-v3_fire*11)/(samplerate*.05),0,1);\nv3_h12 = cos(v3_phase*6.283185307179586*12)*clamp((samplerate*.45-v3_fire*12)/(samplerate*.05),0,1);\nv3_open = clamp(.12+.48*v3_agg+v3_env0*(.15+.25*v3_response),0,1);\nv3_pressure = v3_h1*.4921875+v3_h2*(.12+.16125*v3_open)+v3_h3*.10546875*v3_open+v3_h4*.0234375*v3_open+v3_h5*.001953125*v3_open;\n// Body has its OWN deterministic low-frequency carrier; filtering a 500-Hz\n// pulse through a 150-Hz lowpass cannot create the missing fundamental.\nv3_body_hz = 48+r*0.018;\nv3_body_phase = phasor(v3_body_hz);\nv3_body_wave = cos(v3_body_phase*6.283185307179586)*(.85-.30*v3_mass)\n + cos(v3_body_phase*12.566370614359172)*(.08+.28*v3_mass)\n + cos(v3_body_phase*18.84955592153876)*(.02+.12*v3_mass);\nv3_suborder = cycle(v3_fire*.5)*.18;\nv3_w1a = clamp(1-abs(v3_fire*1-320-r*.012)/(240+120*v3_open+100*v3_char),0,1);\nv3_w1b = clamp(1-abs(v3_fire*1-700-r*.018)/(360+140*v3_open+100*v3_char),0,1);\nv3_w2a = clamp(1-abs(v3_fire*2-320-r*.012)/(240+120*v3_open+100*v3_char),0,1);\nv3_w2b = clamp(1-abs(v3_fire*2-700-r*.018)/(360+140*v3_open+100*v3_char),0,1);\nv3_w3a = clamp(1-abs(v3_fire*3-320-r*.012)/(240+120*v3_open+100*v3_char),0,1);\nv3_w3b = clamp(1-abs(v3_fire*3-700-r*.018)/(360+140*v3_open+100*v3_char),0,1);\nv3_w4a = clamp(1-abs(v3_fire*4-320-r*.012)/(240+120*v3_open+100*v3_char),0,1);\nv3_w4b = clamp(1-abs(v3_fire*4-700-r*.018)/(360+140*v3_open+100*v3_char),0,1);\nv3_w5a = clamp(1-abs(v3_fire*5-320-r*.012)/(240+120*v3_open+100*v3_char),0,1);\nv3_w5b = clamp(1-abs(v3_fire*5-700-r*.018)/(360+140*v3_open+100*v3_char),0,1);\nv3_w6a = clamp(1-abs(v3_fire*6-320-r*.012)/(240+120*v3_open+100*v3_char),0,1);\nv3_w6b = clamp(1-abs(v3_fire*6-700-r*.018)/(360+140*v3_open+100*v3_char),0,1);\nv3_w7a = clamp(1-abs(v3_fire*7-320-r*.012)/(240+120*v3_open+100*v3_char),0,1);\nv3_w7b = clamp(1-abs(v3_fire*7-700-r*.018)/(360+140*v3_open+100*v3_char),0,1);\nv3_w8a = clamp(1-abs(v3_fire*8-320-r*.012)/(240+120*v3_open+100*v3_char),0,1);\nv3_w8b = clamp(1-abs(v3_fire*8-700-r*.018)/(360+140*v3_open+100*v3_char),0,1);\nv3_cavity = v3_h1*(v3_w1a*v3_w1a*(3-2*v3_w1a)*.65+v3_w1b*v3_w1b*(3-2*v3_w1b)*.35)/1.00000000+v3_h2*(v3_w2a*v3_w2a*(3-2*v3_w2a)*.65+v3_w2b*v3_w2b*(3-2*v3_w2b)*.35)/1.62450479+v3_h3*(v3_w3a*v3_w3a*(3-2*v3_w3a)*.65+v3_w3b*v3_w3b*(3-2*v3_w3b)*.35)/2.15766928+v3_h4*(v3_w4a*v3_w4a*(3-2*v3_w4a)*.65+v3_w4b*v3_w4b*(3-2*v3_w4b)*.35)/2.63901582+v3_h5*(v3_w5a*v3_w5a*(3-2*v3_w5a)*.65+v3_w5b*v3_w5b*(3-2*v3_w5b)*.35)/3.08516931+v3_h6*(v3_w6a*v3_w6a*(3-2*v3_w6a)*.65+v3_w6b*v3_w6b*(3-2*v3_w6b)*.35)/3.50514409+v3_h7*(v3_w7a*v3_w7a*(3-2*v3_w7a)*.65+v3_w7b*v3_w7b*(3-2*v3_w7b)*.35)/3.90452878+v3_h8*(v3_w8a*v3_w8a*(3-2*v3_w8a)*.65+v3_w8b*v3_w8b*(3-2*v3_w8b)*.35)/4.28709385;\nv3_pm_index = (.03+.12*v3_char)*(.4+.6*v3_open);\nv3_pm1 = sin(v3_quarter_phase*6.283185307179586*6 + v3_pm_index*sin(v3_quarter_phase*6.283185307179586*2));\nv3_pm2 = sin(v3_quarter_phase*6.283185307179586*9 + v3_pm_index*sin(v3_quarter_phase*6.283185307179586*3));\nv3_cavity = v3_cavity + v3_pm1*.09 + v3_pm2*.065;\n// Shallow, local midrange drive. No whole-bus square-wave saturation.\nv3_local_drive = 1+v3_agg*.65;\nv3_character_wave = tanh(v3_cavity*v3_local_drive)/v3_local_drive;\nv3_upper_wave = (v3_h4*.48+v3_h5*.28+v3_h6*.16+v3_h8*.08)*(1-.82*v3_soft);\nrepair_old1 = v3_pressure*.18*(.55+(.20+.5*v3_response)*v3_env0)*v3_gate;\nrepair_old2 = (v3_body_wave+v3_suborder+v3_pressure*.20*v3_pressure_mix)*.18*(.45+(.25+.6*v3_response)*v3_env1)*v3_gate;\nrepair_old3 = v3_character_wave*.20*(.35+(.30+.7*v3_response)*v3_env0)*(.5+v3_char)*v3_gate;\nrepair_old4 = v3_upper_wave*.16*v3_env2*v3_gate;\nout5 = v3_legacy_l;\nout6 = v3_legacy_r;\nout7 = v3_blend;\n// Random residuals split BEFORE any DNA mixing, gain or saturation.\n// The shared cadence excites them; no second engine and no mixed-DNA tap.\nv3_peak = pow(max(v3_pressure,0)/.905,2);\nout8 = noise()*v3_peak*(.40+.60*v3_env1)*v3_gate;\nout9 = noise()*v3_peak*(.3+.7*v3_env0)*v3_gate;\nout10 = noise()*(.2+abs(v3_pressure))*(.15+.85*v3_env2)*v3_gate;\n// Material restoration happens AFTER the protected residual calculation.\n// Do not alter v3_pressure/v3_peak: Noise keeps identical cadence and gain.\nrepair_mix = slide(clamp(reference_restore,0,1),samplerate*.080,samplerate*.080);\nrepair_lift_fast = slide(max(-clamp(accel,-1,1),0),samplerate*.035,samplerate*.160);\nrepair_lift_slow = slide(max(-clamp(accel,-1,1),0),samplerate*.120,samplerate*.420);\nrepair_body_tail = 1+.22*repair_lift_slow*clamp(v3_release_mass,0,1);\nrepair_upper_release = 1-.55*repair_lift_fast;\n// Fifth-power pressure family inherited from the V2 reference. Bounded finite\n// partials reuse the SAME phase, with no pulse truncation and no clock jitter.\nrepair_pressure = v3_h1*.4921875+v3_h2*(.18+.10125*v3_open)\n +v3_h3*.10546875*(.50+.50*v3_open)+v3_h4*.0234375*v3_open\n +v3_h5*.001953125*v3_open;\nrepair_pulse_env = .35+.65*max(v3_h1,0);\n// Non-integer material oscillators have continuous OWN phase accumulators;\n// never multiply a wrapped engine phase by a non-integer (that makes clicks).\nrepair_cav_a_hz = v3_fire*1.37;\nrepair_cav_b_hz = v3_fire*1.43;\nrepair_int_a_hz = v3_fire*2.61;\nrepair_int_b_hz = v3_fire*2.73;\n// Fixed/slow acoustic windows, not all layers moved in lockstep with RPM.\nrepair_wa = 1/(1+pow((repair_cav_a_hz-355)/250,2));\nrepair_wb = 1/(1+pow((repair_cav_b_hz-405)/280,2));\nrepair_wc = 1/(1+pow((repair_int_a_hz-820)/480,2));\nrepair_wd = 1/(1+pow((repair_int_b_hz-930)/520,2));\nrepair_cavity = (cycle(repair_cav_a_hz)*repair_wa*.42\n +cycle(repair_cav_b_hz)*repair_wb*.38)*repair_pulse_env;\nrepair_intake = (cycle(repair_int_a_hz)*repair_wc*.14\n +cycle(repair_int_b_hz)*repair_wd*.12)*repair_pulse_env;\n// Reuse the existing independent Body carrier AND the half-order. Avoid a\n// louder isolated bass drone; give the upper body harmonics a pressure shape.\nrepair_body = v3_body_wave*.82+v3_suborder*1.45\n +repair_pressure*(.18+.22*v3_pressure_mix);\nrepair_character = tanh((v3_cavity*.40+repair_cavity+repair_intake)\n *v3_local_drive)/v3_local_drive;\nrepair_new1 = repair_pressure*.18*(.55+(.20+.5*v3_response)*v3_env0)*v3_gate;\nrepair_new2 = repair_body*.18*(.45+(.25+.6*v3_response)*v3_env1)*repair_body_tail*v3_gate;\nrepair_new3 = repair_character*.20*(.35+(.30+.7*v3_response)*v3_env0)*(.5+v3_char)*v3_gate;\nrepair_new4 = v3_upper_wave*.16*v3_env2*repair_upper_release*v3_gate;\nsf_old1 = repair_old1+repair_mix*(repair_new1-repair_old1);\nsf_old2 = repair_old2+repair_mix*(repair_new2-repair_old2);\nsf_old3 = repair_old3+repair_mix*(repair_new3-repair_old3);\nsf_old4 = repair_old4+repair_mix*(repair_new4-repair_old4);\n\n// Ferrari V5: the V2-style pressure pulse remains the identity clock.\n// Deterministic structure replaces V4's additional RPM-tracking cavity/intake\n// oscillators. Random combustion/mechanical/intake residuals remain out8-10.\nsf_mix = slide(clamp(sf90_material,0,1),samplerate*.080,samplerate*.080);\nsf_effort = max(clamp(throttle,0,1),max(load,0));\nsf_core_tau = sf_effort > sf_core_env ? .030 : .120;\nsf_body_tau = sf_effort > sf_body_env ? .060 : .260;\nsf_cavity_tau = sf_effort > sf_cavity_env ? .045 : .200;\nsf_mech_tau = sf_effort > sf_mech_env ? .018 : .075;\nsf_core_env = sf_effort+(sf_core_env-sf_effort)*exp(-1/(samplerate*sf_core_tau));\nsf_body_env = sf_effort+(sf_body_env-sf_effort)*exp(-1/(samplerate*sf_body_tau));\nsf_cavity_env = sf_effort+(sf_cavity_env-sf_effort)*exp(-1/(samplerate*sf_cavity_tau));\nsf_mech_env = sf_effort+(sf_mech_env-sf_effort)*exp(-1/(samplerate*sf_mech_tau));\n\n// Cycle-normalized pressure edge: deterministic and pulse-synchronous, but not\n// a white-noise substitute. It excites fixed acoustic modes between firings.\nsf_edge = tanh((repair_pressure-sf_prev_pressure)*samplerate/max(v3_fire,45)*.018);\nsf_exc = repair_pressure*(.60+.25*v3_pressure_mix)\n + sf_edge*(.10+.22*v3_pressure_mix);\nsf_b123_w = 6.283185307179586*123/samplerate;\nsf_b123_a = sin(sf_b123_w)/(2*2.3);\nsf_b123_n = 1/(1+sf_b123_a);\nsf_b123 = sf_b123_a*sf_b123_n*(sf_exc-sf_x2)\n +2*cos(sf_b123_w)*sf_b123_n*sf_b123_y1\n -(1-sf_b123_a)*sf_b123_n*sf_b123_y2;\nsf_b123_y2 = sf_b123_y1; sf_b123_y1 = sf_b123;\n\nsf_b185_w = 6.283185307179586*185/samplerate;\nsf_b185_a = sin(sf_b185_w)/(2*3.2);\nsf_b185_n = 1/(1+sf_b185_a);\nsf_b185 = sf_b185_a*sf_b185_n*(sf_exc-sf_x2)\n +2*cos(sf_b185_w)*sf_b185_n*sf_b185_y1\n -(1-sf_b185_a)*sf_b185_n*sf_b185_y2;\nsf_b185_y2 = sf_b185_y1; sf_b185_y1 = sf_b185;\n\nsf_b214_w = 6.283185307179586*214/samplerate;\nsf_b214_a = sin(sf_b214_w)/(2*2.8);\nsf_b214_n = 1/(1+sf_b214_a);\nsf_b214 = sf_b214_a*sf_b214_n*(sf_exc-sf_x2)\n +2*cos(sf_b214_w)*sf_b214_n*sf_b214_y1\n -(1-sf_b214_a)*sf_b214_n*sf_b214_y2;\nsf_b214_y2 = sf_b214_y1; sf_b214_y1 = sf_b214;\n\nsf_c240_w = 6.283185307179586*240/samplerate;\nsf_c240_a = sin(sf_c240_w)/(2*2.6);\nsf_c240_n = 1/(1+sf_c240_a);\nsf_c240 = sf_c240_a*sf_c240_n*(sf_exc-sf_x2)\n +2*cos(sf_c240_w)*sf_c240_n*sf_c240_y1\n -(1-sf_c240_a)*sf_c240_n*sf_c240_y2;\nsf_c240_y2 = sf_c240_y1; sf_c240_y1 = sf_c240;\n\nsf_c620_w = 6.283185307179586*620/samplerate;\nsf_c620_a = sin(sf_c620_w)/(2*2.1);\nsf_c620_n = 1/(1+sf_c620_a);\nsf_c620 = sf_c620_a*sf_c620_n*(sf_exc-sf_x2)\n +2*cos(sf_c620_w)*sf_c620_n*sf_c620_y1\n -(1-sf_c620_a)*sf_c620_n*sf_c620_y2;\nsf_c620_y2 = sf_c620_y1; sf_c620_y1 = sf_c620;\n\nsf_m820_w = 6.283185307179586*820/samplerate;\nsf_m820_a = sin(sf_m820_w)/(2*1.8);\nsf_m820_n = 1/(1+sf_m820_a);\nsf_m820 = sf_m820_a*sf_m820_n*(sf_exc-sf_x2)\n +2*cos(sf_m820_w)*sf_m820_n*sf_m820_y1\n -(1-sf_m820_a)*sf_m820_n*sf_m820_y2;\nsf_m820_y2 = sf_m820_y1; sf_m820_y1 = sf_m820;\n\nsf_m1100_w = 6.283185307179586*1100/samplerate;\nsf_m1100_a = sin(sf_m1100_w)/(2*1.6);\nsf_m1100_n = 1/(1+sf_m1100_a);\nsf_m1100 = sf_m1100_a*sf_m1100_n*(sf_exc-sf_x2)\n +2*cos(sf_m1100_w)*sf_m1100_n*sf_m1100_y1\n -(1-sf_m1100_a)*sf_m1100_n*sf_m1100_y2;\nsf_m1100_y2 = sf_m1100_y1; sf_m1100_y1 = sf_m1100;\n\nsf_prev_pressure = repair_pressure;\nsf_x2 = sf_x1; sf_x1 = sf_exc;\n\n// Reference-derived identity: idle pressure harmonics naturally land near\n// 61/123/185 Hz; fixed modes keep the 120-600 Hz structure from becoming\n// another proportional-pitch oscillator bank as RPM rises.\nsf_core_gain = .58+.15*sf_core_env*(.45+.55*v3_response);\nsf_body_gain = .42+.27*sf_body_env*(.45+.55*v3_response);\nsf_cavity_gain = .32+.27*sf_cavity_env*(.45+.55*v3_response);\nsf_mech_gain = .22+.11*sf_mech_env*(.50+.50*v3_response);\n\nsf_body_tone = sf_b123*(.42+.25*v3_mass)\n + sf_b185*(.70+.15*v3_mass)\n + sf_b214*(.48-.12*v3_mass);\nsf_character_tone = sf_c240*(.78-.20*v3_char)\n + sf_c620*(.34+.28*v3_char);\nsf_mech_tone = sf_m820*(.50+.18*v3_agg)\n + sf_m1100*(.36+.18*v3_agg)*(1-.55*v3_soft);\n\n// Fast lift removes edge first (~4-5 dB at full lift); Body/Cavity mass is\n// governed by their slower envelopes rather than artificial resonator ringing.\nsf_upper_release = 1-.42*repair_lift_fast;\nsf_new1 = repair_pressure*.17*sf_core_gain*v3_gate;\nsf_new2 = sf_body_tone*.42*sf_body_gain*v3_gate;\nsf_new3 = sf_character_tone*.52*sf_cavity_gain*v3_gate;\nsf_new4 = sf_mech_tone*.45*sf_mech_gain*sf_upper_release*v3_gate;\n\nout1 = sf_old1+sf_mix*(sf_new1-sf_old1);\nout2 = sf_old2+sf_mix*(sf_new2-sf_old2);\nout3 = sf_old3+sf_mix*(sf_new3-sf_old3);\nout4 = sf_old4+sf_mix*(sf_new4-sf_old4);\n",
+          "id": "obj-1",
+          "maxclass": "codebox",
+          "numinlets": 1,
+          "numoutlets": 10,
+          "outlettype": [
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            ""
+          ],
+          "patching_rect": [
+            40.0,
+            40.0,
+            760.0,
+            580.0
+          ]
+        }
+      },
+      {
+        "box": {
+          "id": "obj-2",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            40.0,
+            640.0,
+            45.0,
+            22.0
+          ],
+          "text": "out 1"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-3",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            120.0,
+            640.0,
+            45.0,
+            22.0
+          ],
+          "text": "out 2"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-4",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            200.0,
+            640.0,
+            45.0,
+            22.0
+          ],
+          "text": "out 3"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-5",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            280.0,
+            640.0,
+            45.0,
+            22.0
+          ],
+          "text": "out 4"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-6",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            360.0,
+            640.0,
+            45.0,
+            22.0
+          ],
+          "text": "out 5"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-7",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            440.0,
+            640.0,
+            45.0,
+            22.0
+          ],
+          "text": "out 6"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-8",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            520.0,
+            640.0,
+            45.0,
+            22.0
+          ],
+          "text": "out 7"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-9",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            600.0,
+            640.0,
+            45.0,
+            22.0
+          ],
+          "text": "out 8"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-10",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            680.0,
+            640.0,
+            45.0,
+            22.0
+          ],
+          "text": "out 9"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-11",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            760.0,
+            640.0,
+            45.0,
+            22.0
+          ],
+          "text": "out 10"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-12",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            840.0,
+            296.0,
+            220.0,
+            22.0
+          ],
+          "text": "param sf90_material 1 @min 0 @max 1"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-13",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            840.0,
+            328.0,
+            220.0,
+            22.0
+          ],
+          "text": "param reference_restore 1 @min 0 @max 1"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-14",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            840.0,
+            360.0,
+            220.0,
+            22.0
+          ],
+          "text": "param accel 0 @min -1 @max 1"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-15",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            840.0,
+            392.0,
+            220.0,
+            22.0
+          ],
+          "text": "param v3_aggression 0.5 @min 0 @max 1"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-16",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            840.0,
+            424.0,
+            220.0,
+            22.0
+          ],
+          "text": "param v3_body 0.5 @min 0 @max 1"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-17",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            840.0,
+            456.0,
+            220.0,
+            22.0
+          ],
+          "text": "param v3_character 0.5 @min 0 @max 1"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-18",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            840.0,
+            488.0,
+            220.0,
+            22.0
+          ],
+          "text": "param v3_softness 0.5 @min 0 @max 1"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-19",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            840.0,
+            520.0,
+            220.0,
+            22.0
+          ],
+          "text": "param v3_release_mass 0.5 @min 0 @max 1"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-20",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            840.0,
+            552.0,
+            220.0,
+            22.0
+          ],
+          "text": "param v3_width 0.5 @min 0 @max 1"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-21",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            840.0,
+            584.0,
+            220.0,
+            22.0
+          ],
+          "text": "param v3_load_response 0.5 @min 0 @max 1"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-22",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            840.0,
+            616.0,
+            220.0,
+            22.0
+          ],
+          "text": "param v3_pressure_blend 0.5 @min 0 @max 1"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-23",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            840.0,
+            648.0,
+            220.0,
+            22.0
+          ],
+          "text": "param rpm 740 @min 0 @max 10000"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-24",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            840.0,
+            680.0,
+            220.0,
+            22.0
+          ],
+          "text": "param throttle 0 @min 0 @max 1"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-25",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            840.0,
+            712.0,
+            220.0,
+            22.0
+          ],
+          "text": "param load 0 @min -1 @max 1"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-26",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            840.0,
+            744.0,
+            220.0,
+            22.0
+          ],
+          "text": "param engine_running 0 @min 0 @max 1"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-27",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            840.0,
+            776.0,
+            220.0,
+            22.0
+          ],
+          "text": "param combustion_gain 0 @min 0 @max 1"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-28",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            840.0,
+            808.0,
+            220.0,
+            22.0
+          ],
+          "text": "param shift_cut 1 @min 0 @max 1"
+        }
+      }
+    ],
+    "classnamespace": "dsp.gen",
+    "fileversion": 1,
+    "lines": [
+      {
+        "patchline": {
+          "destination": [
+            "obj-2",
+            0
+          ],
+          "source": [
+            "obj-1",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-3",
+            0
+          ],
+          "source": [
+            "obj-1",
+            1
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-4",
+            0
+          ],
+          "source": [
+            "obj-1",
+            2
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-5",
+            0
+          ],
+          "source": [
+            "obj-1",
+            3
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-6",
+            0
+          ],
+          "source": [
+            "obj-1",
+            4
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-7",
+            0
+          ],
+          "source": [
+            "obj-1",
+            5
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-8",
+            0
+          ],
+          "source": [
+            "obj-1",
+            6
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-9",
+            0
+          ],
+          "source": [
+            "obj-1",
+            7
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-10",
+            0
+          ],
+          "source": [
+            "obj-1",
+            8
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-11",
+            0
+          ],
+          "source": [
+            "obj-1",
+            9
+          ]
+        }
+      }
+    ],
+    "rect": [
+      50.0,
+      50.0,
+      850.0,
+      680.0
+    ]
+  }
+}

@@ -18,7 +18,7 @@ class IoniqWeightTests(unittest.TestCase):
         paths=subprocess.check_output(['git','ls-tree','-r','--name-only',w.BASELINE,'gen','patchers','code','presets','media'],cwd=ROOT,text=True).splitlines()
         self.assertEqual(len(paths),268)
         for p in paths:
-            if p=='patchers/vehicle_engine_ioniq6n~.maxpat':continue
+            if p in {'patchers/vehicle_engine_ioniq6n~.maxpat','patchers/vehicle_engine_ferrari~.maxpat'}:continue
             self.assertEqual((ROOT/p).read_bytes(),subprocess.check_output(['git','show',w.BASELINE+':'+p],cwd=ROOT),p)
 
     def test_only_ioniq_dna_and_soundscape_references_change(self):

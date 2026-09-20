@@ -1,4 +1,17 @@
 # Source Index
+## Current Ferrari SF90 V5 candidate (2026-09-20)
+
+- .agentlab/FERRARI_SF90_V5_2026-09-20.md
+- tools/ferrari_sf90_v5.py
+- tools/install_ferrari_v5.py
+- tools/check_ferrari_v5_math.py
+- code/ferrari_v5_state.js
+- gen/ferrari_dna_source_v5.gendsp
+- patchers/ferrari_acoustic_v5~.maxpat
+- patchers/ferrari_dna_v5_designer~.maxpat
+- presets/ferrari_sound_dna_v5_factory.json
+- tests/test_ferrari_sf90_v5.py
+
 
 ## IONIQ running-weight repair (2026-09-16, base 138a36d)
 

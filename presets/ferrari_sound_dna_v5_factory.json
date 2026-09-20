@@ -1,0 +1,189 @@
+{
+  "pattrstorage": {
+    "name": "ferrari_sound_dna_v5",
+    "slots": {
+      "99": {
+        "data": {
+          "V3_Body::CV1": [
+            0.0
+          ],
+          "V3_Body::CV2": [
+            0.0
+          ],
+          "V3_Body::CV3": [
+            0.0
+          ],
+          "V3_Body::FilterType": [
+            0
+          ],
+          "V3_Body::Freq": [
+            850
+          ],
+          "V3_Body::FreqMode": [
+            1.0
+          ],
+          "V3_Body::Offset[2]": [
+            0.0
+          ],
+          "V3_Body::Res": [
+            0.45
+          ],
+          "V3_Body::ResCV": [
+            0.0
+          ],
+          "V3_Body::power[1]": [
+            1
+          ],
+          "V3_Character::CV1": [
+            0.0
+          ],
+          "V3_Character::CV2": [
+            0.0
+          ],
+          "V3_Character::CV3": [
+            0.0
+          ],
+          "V3_Character::FilterType": [
+            0
+          ],
+          "V3_Character::Freq": [
+            2400
+          ],
+          "V3_Character::FreqMode": [
+            1.0
+          ],
+          "V3_Character::Offset[2]": [
+            0.0
+          ],
+          "V3_Character::Res": [
+            0.45
+          ],
+          "V3_Character::ResCV": [
+            0.0
+          ],
+          "V3_Character::power[1]": [
+            1
+          ],
+          "V3_Core::CV1": [
+            0.0
+          ],
+          "V3_Core::CV2": [
+            0.0
+          ],
+          "V3_Core::CV3": [
+            0.0
+          ],
+          "V3_Core::FilterType": [
+            0
+          ],
+          "V3_Core::Freq": [
+            2700
+          ],
+          "V3_Core::FreqMode": [
+            1.0
+          ],
+          "V3_Core::Offset[2]": [
+            0.0
+          ],
+          "V3_Core::Res": [
+            0.45
+          ],
+          "V3_Core::ResCV": [
+            0.0
+          ],
+          "V3_Core::power[1]": [
+            1
+          ],
+          "V3_Group_Mixer::Mute": [
+            0.0
+          ],
+          "V3_Group_Mixer::MuteCh1": [
+            0.0
+          ],
+          "V3_Group_Mixer::MuteCh1[2]": [
+            0.0
+          ],
+          "V3_Group_Mixer::MuteCh2": [
+            0.0
+          ],
+          "V3_Group_Mixer::MuteCh4": [
+            0.0
+          ],
+          "V3_Group_Mixer::in1": [
+            0
+          ],
+          "V3_Group_Mixer::in2": [
+            -5
+          ],
+          "V3_Group_Mixer::in3": [
+            -9
+          ],
+          "V3_Group_Mixer::in4": [
+            -18
+          ],
+          "V3_Upper::CV1": [
+            0.0
+          ],
+          "V3_Upper::CV2": [
+            0.0
+          ],
+          "V3_Upper::CV3": [
+            0.0
+          ],
+          "V3_Upper::FilterType": [
+            0
+          ],
+          "V3_Upper::Freq": [
+            3500
+          ],
+          "V3_Upper::FreqMode": [
+            1.0
+          ],
+          "V3_Upper::Offset[2]": [
+            0.0
+          ],
+          "V3_Upper::Res": [
+            0.45
+          ],
+          "V3_Upper::ResCV": [
+            0.0
+          ],
+          "V3_Upper::power[1]": [
+            1
+          ],
+          "reference_restore": [
+            1.0
+          ],
+          "sf90_material": [
+            1.0
+          ],
+          "v3_aggression": [
+            0.42
+          ],
+          "v3_body": [
+            0.72
+          ],
+          "v3_character": [
+            0.6
+          ],
+          "v3_load_response": [
+            0.76
+          ],
+          "v3_pressure_blend": [
+            0.7
+          ],
+          "v3_release_mass": [
+            0.66
+          ],
+          "v3_softness": [
+            0.72
+          ],
+          "v3_width": [
+            0.34
+          ]
+        },
+        "id": 99
+      }
+    }
+  }
+}

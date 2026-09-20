@@ -47,6 +47,10 @@
         "kind": "javascript",
         "local": 1
       },
+      "code/ferrari_v5_state.js": {
+        "kind": "javascript",
+        "local": 1
+      },
       "code/ioniq6n_bed_state.js": {
         "kind": "javascript",
         "local": 1
@@ -140,6 +144,10 @@
         "local": 1
       },
       "gen/ferrari_dna_source_v4.gendsp": {
+        "kind": "gendsp",
+        "local": 1
+      },
+      "gen/ferrari_dna_source_v5.gendsp": {
         "kind": "gendsp",
         "local": 1
       },
@@ -258,6 +266,10 @@
         "local": 1
       },
       "presets/ferrari_sound_dna_v4_factory.json": {
+        "kind": "data",
+        "local": 1
+      },
+      "presets/ferrari_sound_dna_v5_factory.json": {
         "kind": "data",
         "local": 1
       },
@@ -525,6 +537,10 @@
         "kind": "patcher",
         "local": 1
       },
+      "patchers/ferrari_acoustic_v5~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
       "patchers/ferrari_backfire_beap~.maxpat": {
         "kind": "patcher",
         "local": 1
@@ -546,6 +562,10 @@
         "local": 1
       },
       "patchers/ferrari_dna_v4_designer~.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/ferrari_dna_v5_designer~.maxpat": {
         "kind": "patcher",
         "local": 1
       },

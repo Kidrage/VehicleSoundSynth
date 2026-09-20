@@ -39,7 +39,7 @@ class TimbreRepairTests(unittest.TestCase):
 
     def test_only_two_engine_references_change(self):
         for profile,oldname,newname in [('ioniq6n','ioniq6n_sound_dna_v2~','ioniq6n_sound_dna_v4~'),
-                                         ('ferrari','ferrari_acoustic_v3~','ferrari_acoustic_v4~')]:
+                                         ('ferrari','ferrari_acoustic_v3~','ferrari_acoustic_v5~')]:
             old=json.loads(subprocess.check_output(['git','show',r.BASELINE+':patchers/vehicle_engine_'+profile+'~.maxpat'],cwd=ROOT))
             new=copy.deepcopy(b.make_profile_engine(profile))
             count=0

@@ -1,4 +1,8 @@
 # VehicleSoundSynth V6 Mainline
+## Current Ferrari SF90 V5 candidate (2026-09-20)
+
+Branch `codex/v6-ferrari-sf90-v5`, parent/checkpoint `739c9d9`. Active Ferrari is `ferrari_acoustic_v5~` / `ferrari_dna_v5_designer~`; V4 and V2 remain rollback references. Read `.agentlab/FERRARI_SF90_V5_2026-09-20.md`.
+
 
 ## IONIQ running-weight repair (2026-09-16, base 138a36d)
 

@@ -137,7 +137,7 @@ process.stdout.write(JSON.stringify({beforeThrottle, afterThrottleBeforeTick, tr
         host = json.dumps(
             self.load_json("patchers/ferrari_cinematic_soundscape_host~.maxpat")
         )
-        self.assertIn("ferrari_acoustic_v4~", engine)
+        self.assertIn("ferrari_acoustic_v5~", engine)
         self.assertNotIn('"text": "ferrari_sound_dna_v2~"', engine)
         self.assertNotIn('"text": "ferrari_sound_dna~"', engine)
         self.assertIn("ferrari_soundscape_v7_beap~", host)
@@ -4017,6 +4017,7 @@ process.stdout.write(JSON.stringify({defaultState: defaultModel.snapshot(), on: 
             "ferrari_dna_source_v3.gendsp", "v10_dna_source_v3.gendsp", "v12_dna_source_v3.gendsp", "dna_v3_output.gendsp",
             "ioniq6n_powertrain_v3.gendsp", "ferrari_dna_source_v4.gendsp",
             "ioniq6n_powertrain_v4.gendsp", "ioniq6n_weight_bed.gendsp",
+            "ferrari_dna_source_v5.gendsp",
         }, {path.name for path in gen_paths})
         for path in gen_paths:
             patcher = self.load_json(path.relative_to(ROOT))["patcher"]
@@ -4030,7 +4031,7 @@ process.stdout.write(JSON.stringify({defaultState: defaultModel.snapshot(), on: 
                 required = {'rpm','mode','foundation','weight_balance'}
             elif v3_output:
                 required = {'v3_width'}
-            elif path.stem.endswith(('_dna_source_v3', '_dna_source_v4')):
+            elif path.stem.endswith(('_dna_source_v3', '_dna_source_v4', '_dna_source_v5')):
                 required = {'rpm', 'throttle', 'load', 'v3_body', 'v3_character', 'v3_aggression', 'v3_softness', 'v3_release_mass', 'v3_load_response'}
             elif bed:
                 required = {"body", "cavity", "contour", "load_response", "release_mass"}
@@ -4059,8 +4060,10 @@ process.stdout.write(JSON.stringify({defaultState: defaultModel.snapshot(), on: 
                 required |= {"brightness", "texture"}
             if not bed and not v3_output and path.name not in {"ev_powertrain.gendsp", "ioniq6n_powertrain.gendsp", "ioniq6n_powertrain_v2.gendsp", "ioniq6n_powertrain_v3.gendsp", "ioniq6n_powertrain_v4.gendsp", "ioniq6n_weight_bed.gendsp"}:
                 required |= {"engine_running", "combustion_gain", "shift_cut"}
-            if path.name in {"ioniq6n_powertrain_v3.gendsp", "ferrari_dna_source_v4.gendsp"}:
+            if path.name in {"ioniq6n_powertrain_v3.gendsp", "ferrari_dna_source_v4.gendsp", "ferrari_dna_source_v5.gendsp"}:
                 required |= {"reference_restore", "accel"}
+            if path.name == "ferrari_dna_source_v5.gendsp":
+                required |= {"sf90_material"}
             for name in required:
                 self.assertIn(f"Param {name}", code, path.name)
                 self.assertTrue(any(
