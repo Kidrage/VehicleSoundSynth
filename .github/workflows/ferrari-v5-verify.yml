@@ -90,8 +90,8 @@ jobs:
               "if name=='ferrari_dna_v4_designer~.maxpat': return 'ferrari_sound_dna_v4.json'",
               "if name=='ferrari_dna_v5_designer~.maxpat': return 'ferrari_sound_dna_v5.json'\n        if name=='ferrari_dna_v4_designer~.maxpat': return 'ferrari_sound_dna_v4.json'")
           replace("tools/audit_v3_controls.py",
-              "if path.name in ('ferrari_dna_v4_designer~.maxpat','ioniq6n_sound_dna_v4~.maxpat','ioniq6n_sound_dna_v3~.maxpat')",
-              "if path.name in ('ferrari_dna_v5_designer~.maxpat','ferrari_dna_v4_designer~.maxpat','ioniq6n_sound_dna_v4~.maxpat','ioniq6n_sound_dna_v3~.maxpat')")
+              "if path.name in ('ferrari_dna_v4_designer~.maxpat','ioniq6n_sound_dna_v3~.maxpat','ioniq6n_sound_dna_v4~.maxpat')",
+              "if path.name in ('ferrari_dna_v5_designer~.maxpat','ferrari_dna_v4_designer~.maxpat','ioniq6n_sound_dna_v3~.maxpat','ioniq6n_sound_dna_v4~.maxpat')")
           replace("tests/test_design_control.py",
               "ferrari_dna_v4_designer~.maxpat",
               "ferrari_dna_v5_designer~.maxpat")
