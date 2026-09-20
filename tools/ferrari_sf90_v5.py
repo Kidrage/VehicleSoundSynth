@@ -155,7 +155,7 @@ def _wire(patch, src, dst, outlet=0, inlet=0):
 
 def _add_sf90_control(document, destination):
     patch = document["patcher"]
-    inlet = _getbox(patch, maxclass="inlet")
+    inlets = sorted((x["box"] for x in patch["boxes"] if x["box"].get("maxclass") == "inlet"),\n                    key=lambda x: x["patching_rect"][0])\n    if len(inlets) < 2:\n        raise ValueError("Ferrari V5 designer inlet layout changed")\n    inlet = inlets[0]
     old = [x["patchline"] for x in patch["lines"]
            if x["patchline"]["source"] == [inlet["id"], 0]]
     if len(old) != 1:
