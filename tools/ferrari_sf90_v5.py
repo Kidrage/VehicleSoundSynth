@@ -7,7 +7,8 @@ identical RTPC/state; 1 selects this version. Noise residual taps stay unchanged
 from __future__ import annotations
 import re
 
-# QA trigger: integration is validated on macOS before this branch is handed to listening.\nBASELINE = "739c9d9a19432ac693e1a10a7ecd0cbb6b283dc8"
+# QA trigger: integration is validated on macOS before this branch is handed to listening.
+BASELINE = "739c9d9a19432ac693e1a10a7ecd0cbb6b283dc8"
 SEED = "patchers/ferrari_dna_v5_designer~.maxpat"
 MODES = (
     ("b123", 123.0, 2.3),
@@ -65,13 +66,13 @@ def source_code(legacy: str) -> str:
         "History sf_cavity_env(0); History sf_mech_env(0);",
     ]
     histories.extend(_bp_history(name) for name, _, _ in MODES)
-    code = "Param sf90_material(1, min=0, max=1);\\n" + "\\n".join(histories) + "\\n" + legacy
+    code = "Param sf90_material(1, min=0, max=1);\n" + "\n".join(histories) + "\n" + legacy
     for i in range(1, 5):
         code, count = re.subn(rf"^out{i} = ", f"sf_old{i} = ", code, flags=re.M)
         if count != 1:
             raise ValueError(f"Ferrari V4 output seam {i} changed")
 
-    filters = "\\n".join(_bp_code(*mode) for mode in MODES)
+    filters = "\n".join(_bp_code(*mode) for mode in MODES)
     code += """
 // Ferrari V5: the V2-style pressure pulse remains the identity clock.
 // Deterministic structure replaces V4's additional RPM-tracking cavity/intake
