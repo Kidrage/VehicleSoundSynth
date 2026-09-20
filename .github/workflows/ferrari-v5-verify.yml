@@ -14,7 +14,7 @@ permissions:
   contents: write
 concurrency:
   group: ferrari-v5-verify
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   verify:
     runs-on: macos-14
