@@ -1,0 +1,153 @@
+{
+  "scope": "Full legacy + V7 suite; native Max/BEAP/audio device/vehicle acceptance NOT executed",
+  "mode": "portable",
+  "tests_run": 328,
+  "passed": 293,
+  "failures": [],
+  "errors": [],
+  "skips": [
+    {
+      "test": "test_dna_v3.DNAV3Tests.test_factory_reset_covers_every_live_beap_restore_client",
+      "reason": "Max 8.6.5 / BEAP clippings unavailable"
+    },
+    {
+      "test": "test_dna_v3.DNAV3Tests.test_new_macros_and_gain_controls_reach_the_live_designer",
+      "reason": "Max 8.6.5 / BEAP clippings unavailable"
+    },
+    {
+      "test": "test_dna_v3.DNAV3Tests.test_noise_v1_and_old_designers_remain_factory_equivalent",
+      "reason": "Max 8.6.5 / BEAP clippings unavailable"
+    },
+    {
+      "test": "test_ferrari_noise_split.FerrariNoiseSplitTests.test_only_independent_mechanical_air_returns_are_removed",
+      "reason": "Max 8.6.5 / BEAP clippings unavailable"
+    },
+    {
+      "test": "test_ferrari_sf90_v5.FerrariSf90V5Tests.test_designer_has_v5_control_and_fresh_state",
+      "reason": "Max 8.6.5 / BEAP clippings unavailable"
+    },
+    {
+      "test": "test_ferrari_sf90_v5.FerrariSf90V5Tests.test_factory_uses_reference_aligned_defaults",
+      "reason": "Max 8.6.5 / BEAP clippings unavailable"
+    },
+    {
+      "test": "test_ferrari_sf90_v5.FerrariSf90V5Tests.test_generation_is_deterministic",
+      "reason": "Max 8.6.5 / BEAP clippings unavailable"
+    },
+    {
+      "test": "test_ioniq_bed_split.IoniqBedSplitTests.test_v2_only_disconnects_the_standalone_speed_transient_noise_return",
+      "reason": "Max 8.6.5 / BEAP clippings unavailable"
+    },
+    {
+      "test": "test_ioniq_dna_v2.IoniqDNAV2Tests.test_accel_orders_is_a_live_versioned_control",
+      "reason": "Max 8.6.5 / BEAP clippings unavailable"
+    },
+    {
+      "test": "test_ioniq_dna_v2.IoniqDNAV2Tests.test_audio_graph_keeps_all_accepted_beap_boxes_and_connections",
+      "reason": "Max 8.6.5 / BEAP clippings unavailable"
+    },
+    {
+      "test": "test_ioniq_dna_v2.IoniqDNAV2Tests.test_factory_reset_includes_nested_beap_and_macros",
+      "reason": "Max 8.6.5 / BEAP clippings unavailable"
+    },
+    {
+      "test": "test_ioniq_weight.IoniqWeightTests.test_all_generated_ports_and_ids_are_valid",
+      "reason": "Max 8.6.5 / BEAP clippings unavailable"
+    },
+    {
+      "test": "test_ioniq_weight.IoniqWeightTests.test_complete_factory_covers_every_named_beap_client",
+      "reason": "Max 8.6.5 / BEAP clippings unavailable"
+    },
+    {
+      "test": "test_ioniq_weight.IoniqWeightTests.test_existing_beap_modules_are_identical",
+      "reason": "Max 8.6.5 / BEAP clippings unavailable"
+    },
+    {
+      "test": "test_ioniq_weight.IoniqWeightTests.test_foundation_passes_real_dna_fader_and_filters",
+      "reason": "Max 8.6.5 / BEAP clippings unavailable"
+    },
+    {
+      "test": "test_ioniq_weight.IoniqWeightTests.test_scoped_generator_is_deterministic",
+      "reason": "Max 8.6.5 / BEAP clippings unavailable"
+    },
+    {
+      "test": "test_ioniq_weight.IoniqWeightTests.test_soundscape_mass_has_dry_path_before_safety_and_trim",
+      "reason": "Max 8.6.5 / BEAP clippings unavailable"
+    },
+    {
+      "test": "test_noise_layer.NoiseLayerTests.test_generated_designer_has_independent_lifecycle_and_real_audio_controls",
+      "reason": "Max 8.6.5 / BEAP clippings unavailable"
+    },
+    {
+      "test": "test_noise_layer.NoiseLayerTests.test_new_state_namespaces_never_autosave_to_the_last_read_factory",
+      "reason": "Max 8.6.5 / BEAP clippings unavailable"
+    },
+    {
+      "test": "test_noise_layer.NoiseLayerTests.test_noise_designer_solo_bypasses_manual_external_and_held_driving_gates",
+      "reason": "Max 8.6.5 / BEAP clippings unavailable"
+    },
+    {
+      "test": "test_project.VehicleSoundProjectTests.test_asset_converter_resamples_without_changing_duration",
+      "reason": "macOS afconvert unavailable"
+    },
+    {
+      "test": "test_project.VehicleSoundProjectTests.test_generator_is_deterministic",
+      "reason": "Max / BEAP needed by legacy generator unavailable"
+    },
+    {
+      "test": "test_project.VehicleSoundProjectTests.test_generator_never_overwrites_existing_curated_media",
+      "reason": "Max / BEAP needed by legacy generator unavailable"
+    },
+    {
+      "test": "test_project.VehicleSoundProjectTests.test_generator_preserves_user_owned_sound_dna_and_bus_eq_tuning",
+      "reason": "Max / BEAP needed by legacy generator unavailable"
+    },
+    {
+      "test": "test_project.VehicleSoundProjectTests.test_project_rebuild_preserves_user_tuned_backfire_beap_voices",
+      "reason": "Max / BEAP needed by legacy generator unavailable"
+    },
+    {
+      "test": "test_project.VehicleSoundProjectTests.test_project_rebuild_preserves_user_tuned_beap_pad",
+      "reason": "Max / BEAP needed by legacy generator unavailable"
+    },
+    {
+      "test": "test_project.VehicleSoundProjectTests.test_v5_generator_preserves_all_user_tuned_ice_beap_patchers",
+      "reason": "Max / BEAP needed by legacy generator unavailable"
+    },
+    {
+      "test": "test_project.VehicleSoundProjectTests.test_v5_generator_preserves_shared_cinematic_soundscape_tuning",
+      "reason": "Max / BEAP needed by legacy generator unavailable"
+    },
+    {
+      "test": "test_project.VehicleSoundProjectTests.test_v5_generator_preserves_user_tuned_engine_start_beap",
+      "reason": "Max / BEAP needed by legacy generator unavailable"
+    },
+    {
+      "test": "test_soundscape_bed.SoundscapeBedTests.test_new_bed_has_stateful_source_and_preserves_spatial_modules",
+      "reason": "Max 8.6.5 / BEAP clippings unavailable"
+    },
+    {
+      "test": "test_timbre_repair.TimbreRepairTests.test_factory_has_complete_state_and_restore_default",
+      "reason": "Max 8.6.5 / BEAP clippings unavailable"
+    },
+    {
+      "test": "test_timbre_repair.TimbreRepairTests.test_generated_graph_ports_have_no_dangling_connections",
+      "reason": "Max 8.6.5 / BEAP clippings unavailable"
+    },
+    {
+      "test": "test_timbre_repair.TimbreRepairTests.test_ioniq_preserves_all_beap_audio_objects",
+      "reason": "Max 8.6.5 / BEAP clippings unavailable"
+    },
+    {
+      "test": "test_timbre_repair.TimbreRepairTests.test_new_control_reaches_the_actual_source",
+      "reason": "Max 8.6.5 / BEAP clippings unavailable"
+    },
+    {
+      "test": "test_timbre_repair.TimbreRepairTests.test_repair_generation_is_deterministic",
+      "reason": "Max 8.6.5 / BEAP clippings unavailable"
+    }
+  ],
+  "native_max_accepted": false,
+  "vehicle_accepted": false,
+  "portable_success": true
+}
