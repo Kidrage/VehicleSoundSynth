@@ -1,0 +1,28 @@
+name: V7 isolated workspace export
+on:
+  push:
+    branches: [EV-Engine-V7]
+    paths: [.github/workflows/v7-workspace-export.yml]
+permissions:
+  contents: read
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Export pinned baseline without credentials or local state
+        run: |
+          mkdir -p export
+          git archive --format=tar.gz --output=export/baseline-fed2b78.tar.gz fed2b78ecfabc84d673207b3a5f714b89f76720f
+          git ls-tree -r fed2b78ecfabc84d673207b3a5f714b89f76720f > export/baseline-tree.txt
+          git log -12 --format='%H %s' fed2b78ecfabc84d673207b3a5f714b89f76720f > export/history.txt
+          sha256sum export/* > export/SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: v7-pinned-baseline-fed2b78
+          path: export/
+          retention-days: 3
