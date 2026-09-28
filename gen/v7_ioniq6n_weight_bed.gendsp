@@ -1,0 +1,212 @@
+{
+  "patcher": {
+    "appversion": {
+      "architecture": "x64",
+      "major": 8,
+      "minor": 6,
+      "modernui": 1,
+      "revision": 5
+    },
+    "boxes": [
+      {
+        "box": {
+          "code": "Param v7_enable(1, min=0, max=1);\nParam v7_weight_trim_db(-6, min=-12, max=0);\n// Independent low-mid return. Inputs: lifecycle gate (0..5), effort (0..1).\nParam rpm(650, min=0, max=10000);\nParam mode(1, min=0, max=2);\nParam weight_balance(1, min=0, max=1);\nParam foundation(.70, min=0, max=1);\nHistory wb_slow(0); History wb_fast(0); History wb_rslow(0); History wb_x1(0); History wb_x2(0);\nHistory wb_a1(0); History wb_a2(0); History wb_b1(0); History wb_b2(0); History wb_c1(0); History wb_c2(0);\n\nwb_rpm = slide(clamp(rpm,0,10000),samplerate*.025,samplerate*.045);\nwb_control = slide(clamp(weight_balance,0,1),samplerate*.08,samplerate*.08);\nwb_foundation = slide(clamp(foundation,0,1),samplerate*.08,samplerate*.08);\nwb_progress = clamp((wb_rpm-1600)/1200,0,1);\nwb_active = wb_control*wb_progress*wb_progress*(3-2*wb_progress);\nwb_life = slide(clamp(in1/5,0,1),samplerate*.04,samplerate*.09);\nwb_load = clamp(clamp((in2-.12)/.88,0,1),0,1);\nwb_kf = exp(-1/(samplerate*.055));\nwb_ks = exp(-1/(samplerate*(wb_load>wb_slow ? .120 : .550)));\nwb_fast = wb_load+(wb_fast-wb_load)*wb_kf;\nwb_slow = wb_load+(wb_slow-wb_load)*wb_ks;\nwb_rtarget = clamp((wb_rpm-1600)/6400,0,1);\nwb_rslow = wb_rtarget+(wb_rslow-wb_rtarget)*exp(-1/(samplerate*.650));\n// Small slow frequency movement: mass does not leave its register at high RPM.\nwb_fa = (mode<.5 ? 49 : mode<1.5 ? 43 : 53) + 4*wb_slow + 2*wb_rslow;\nwb_fb = (mode<.5 ? 79 : mode<1.5 ? 71 : 83) + 5*wb_slow + 3*wb_rslow;\nwb_wa = cycle(wb_fa); wb_wb = cycle(wb_fb);\n// Distributed finite pressure partials, not a loud pair of fundamental sines.\n// Chebyshev polynomials reuse each continuous oscillator phase; no DC term.\nwb_a_h2=2*wb_wa*wb_wa-1;\nwb_a_h3=4*wb_wa*wb_wa*wb_wa-3*wb_wa;\nwb_a_h4=8*pow(wb_wa,4)-8*wb_wa*wb_wa+1;\nwb_a_h5=16*pow(wb_wa,5)-20*pow(wb_wa,3)+5*wb_wa;\nwb_b_h2=2*wb_wb*wb_wb-1;\nwb_b_h3=4*wb_wb*wb_wb*wb_wb-3*wb_wb;\nwb_b_h4=8*pow(wb_wb,4)-8*wb_wb*wb_wb+1;\nwb_b_h5=16*pow(wb_wb,5)-20*pow(wb_wb,3)+5*wb_wb;\nwb_pa=.15*wb_wa+.24*wb_a_h2+.20*wb_a_h3+.14*wb_a_h4+.09*wb_a_h5;\nwb_pb=.12*wb_wb+.22*wb_b_h2+.18*wb_b_h3+.14*wb_b_h4+.10*wb_b_h5;\nwb_exciter = wb_pa*.62+wb_pb*.56;\nwb_body_hz = (mode<.5 ? 148 : mode<1.5 ? 132 : 158) + 5*wb_slow + 3*wb_rslow;\nwb_cavity_hz = (mode<.5 ? 272 : mode<1.5 ? 238 : 286) + 8*wb_slow + 5*wb_rslow;\nwb_upper_hz = (mode<.5 ? 430 : mode<1.5 ? 382 : 454) + 10*wb_slow + 7*wb_rslow;\nwb_aw = 6.283185307179586*wb_body_hz/samplerate;\n// Constant-peak bandpass biquad (RBJ): zeros at DC and Nyquist.\nwb_aalpha = sin(wb_aw)/(2*1.15);\nwb_anorm = 1/(1+wb_aalpha);\nwb_a = wb_aalpha*wb_anorm*(wb_exciter-wb_x2) + 2*cos(wb_aw)*wb_anorm*wb_a1-(1-wb_aalpha)*wb_anorm*wb_a2;\nwb_a2 = wb_a1; wb_a1 = wb_a;\nwb_bw = 6.283185307179586*wb_cavity_hz/samplerate;\n// Constant-peak bandpass biquad (RBJ): zeros at DC and Nyquist.\nwb_balpha = sin(wb_bw)/(2*1.3);\nwb_bnorm = 1/(1+wb_balpha);\nwb_b = wb_balpha*wb_bnorm*(wb_exciter-wb_x2) + 2*cos(wb_bw)*wb_bnorm*wb_b1-(1-wb_balpha)*wb_bnorm*wb_b2;\nwb_b2 = wb_b1; wb_b1 = wb_b;\nwb_cw = 6.283185307179586*wb_upper_hz/samplerate;\n// Constant-peak bandpass biquad (RBJ): zeros at DC and Nyquist.\nwb_calpha = sin(wb_cw)/(2*1.25);\nwb_cnorm = 1/(1+wb_calpha);\nwb_c = wb_calpha*wb_cnorm*(wb_exciter-wb_x2) + 2*cos(wb_cw)*wb_cnorm*wb_c1-(1-wb_calpha)*wb_cnorm*wb_c2;\nwb_c2 = wb_c1; wb_c1 = wb_c;\nwb_x2=wb_x1; wb_x1=wb_exciter;\nwb_body_signal = (wb_a*.85+wb_b*.28)*(.24+.40*wb_slow);\nwb_cavity_signal = (wb_b*.58+wb_c*.48)*(.16+.32*wb_slow+.08*wb_fast);\n\n// Dry mono mass bypasses ONLY spatial wet attenuation, NOT SC enable/fader.\n// Source never references pitch CV, transpose, speed or vehicle gear ratios.\nout1 = (wb_body_signal*.95+wb_cavity_signal*.85)*wb_active*wb_foundation*wb_life*1.7;\n\nout1=out1*pow(10,v7_weight_trim_db*slide(v7_enable,samplerate*.04,samplerate*.04)/20);\n",
+          "id": "obj-1",
+          "maxclass": "codebox",
+          "numinlets": 2,
+          "numoutlets": 1,
+          "outlettype": [
+            ""
+          ],
+          "patching_rect": [
+            40.0,
+            40.0,
+            760.0,
+            580.0
+          ]
+        }
+      },
+      {
+        "box": {
+          "id": "obj-2",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            40.0,
+            640.0,
+            45.0,
+            22.0
+          ],
+          "text": "out 1"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-3",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            840.0,
+            8.0,
+            220.0,
+            22.0
+          ],
+          "text": "param rpm 650 @min 0 @max 10000"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-4",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            840.0,
+            40.0,
+            220.0,
+            22.0
+          ],
+          "text": "param mode 1 @min 0 @max 2"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-5",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            840.0,
+            72.0,
+            220.0,
+            22.0
+          ],
+          "text": "param weight_balance 1 @min 0 @max 1"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-6",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            840.0,
+            104.0,
+            220.0,
+            22.0
+          ],
+          "text": "param foundation .70 @min 0 @max 1"
+        }
+      },
+      {
+        "box": {
+          "id": "signal-in-1",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            40.0,
+            10.0,
+            50.0,
+            22.0
+          ],
+          "text": "in 1"
+        }
+      },
+      {
+        "box": {
+          "id": "signal-in-2",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            120.0,
+            10.0,
+            50.0,
+            22.0
+          ],
+          "text": "in 2"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-param-v7_enable",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            900,
+            116,
+            320,
+            22
+          ],
+          "text": "param v7_enable 1 @min 0 @max 1"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-param-v7_weight_trim_db",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            900,
+            140,
+            320,
+            22
+          ],
+          "text": "param v7_weight_trim_db -6 @min -12 @max 0"
+        }
+      }
+    ],
+    "classnamespace": "dsp.gen",
+    "fileversion": 1,
+    "lines": [
+      {
+        "patchline": {
+          "destination": [
+            "obj-2",
+            0
+          ],
+          "source": [
+            "obj-1",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-1",
+            0
+          ],
+          "source": [
+            "signal-in-1",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-1",
+            1
+          ],
+          "source": [
+            "signal-in-2",
+            0
+          ]
+        }
+      }
+    ],
+    "rect": [
+      50.0,
+      50.0,
+      850.0,
+      680.0
+    ]
+  }
+}

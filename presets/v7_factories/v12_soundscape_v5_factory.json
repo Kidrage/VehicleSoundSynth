@@ -1,0 +1,126 @@
+{
+  "pattrstorage": {
+    "name": "soundscape_v12_v5",
+    "slots": {
+      "99": {
+        "data": {
+          "soundscape_brightness_state": [
+            0.48
+          ],
+          "soundscape_enable_state": [
+            1.0
+          ],
+          "soundscape_motion_state": [
+            0.16
+          ],
+          "soundscape_pitch_follow_state": [
+            1.0
+          ],
+          "soundscape_space_state": [
+            0.48
+          ],
+          "soundscape_transpose_state": [
+            0.0
+          ],
+          "v12_soundscape_v5_beap~::Body_Valve::CV1": [
+            18.0
+          ],
+          "v12_soundscape_v5_beap~::Body_Valve::Freq": [
+            850.0
+          ],
+          "v12_soundscape_v5_beap~::Body_Valve::Res": [
+            0.9
+          ],
+          "v12_soundscape_v5_beap~::Grand_Tourer_Space::Damping": [
+            4600.0
+          ],
+          "v12_soundscape_v5_beap~::Grand_Tourer_Space::Decay": [
+            38.0
+          ],
+          "v12_soundscape_v5_beap~::Grand_Tourer_Space::Diffusion": [
+            0.84
+          ],
+          "v12_soundscape_v5_beap~::Grand_Tourer_Space::Mix": [
+            100
+          ],
+          "v12_soundscape_v5_beap~::Grand_Tourer_Space::Size": [
+            72.0
+          ],
+          "v12_soundscape_v5_beap~::Grand_Tourer_Space::bypass": [
+            0
+          ],
+          "v12_soundscape_v5_beap~::Luxury_Envelope::Attack": [
+            120.0
+          ],
+          "v12_soundscape_v5_beap~::Luxury_Envelope::Decay": [
+            1400.0
+          ],
+          "v12_soundscape_v5_beap~::Luxury_Envelope::Release": [
+            3200.0
+          ],
+          "v12_soundscape_v5_beap~::Luxury_Envelope::Sustain": [
+            96.0
+          ],
+          "v12_soundscape_v5_beap~::Luxury_Layers::in1": [
+            -3.0
+          ],
+          "v12_soundscape_v5_beap~::Luxury_Layers::in2": [
+            -5.0
+          ],
+          "v12_soundscape_v5_beap~::Luxury_Layers::in3": [
+            -10.0
+          ],
+          "v12_soundscape_v5_beap~::Luxury_Layers::in4": [
+            -9.0
+          ],
+          "v12_soundscape_v5_beap~::Luxury_VCA::Response": [
+            0.0
+          ],
+          "v12_soundscape_v5_beap~::Whine_Sculpt::FilterType": [
+            0
+          ],
+          "v12_soundscape_v5_beap~::Whine_Sculpt::Freq": [
+            1050.0
+          ],
+          "v12_soundscape_v5_beap~::Whine_Sculpt::Res": [
+            0.75
+          ],
+          "v12_soundscape_v5_beap~::Whine_Sculpt::power[1]": [
+            1
+          ],
+          "v12_soundscape_v5_beap~::Wide_Banks::Center": [
+            610.0
+          ],
+          "v12_soundscape_v5_beap~::Wide_Banks::Rate": [
+            0.006
+          ],
+          "v12_soundscape_v5_beap~::Wide_Banks::Regen": [
+            0.006
+          ],
+          "v12_soundscape_v5_beap~::Wide_Banks::Width": [
+            8.0
+          ],
+          "v12_soundscape_v5_beap~::Wide_Banks::bypass": [
+            0
+          ],
+          "v12_soundscape_v5_beap~::bed_body": [
+            0.78
+          ],
+          "v12_soundscape_v5_beap~::bed_cavity": [
+            0.7
+          ],
+          "v12_soundscape_v5_beap~::bed_contour": [
+            0.42
+          ],
+          "v12_soundscape_v5_beap~::bed_load_response": [
+            0.72
+          ],
+          "v12_soundscape_v5_beap~::bed_release_mass": [
+            0.65
+          ]
+        },
+        "id": 99
+      }
+    }
+  }
+}

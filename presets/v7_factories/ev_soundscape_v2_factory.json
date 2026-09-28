@@ -1,0 +1,282 @@
+{
+  "pattrstorage": {
+    "name": "soundscape_ev",
+    "slots": {
+      "99": {
+        "data": {
+          "cinematic_soundscape_beap~::ADSR::Attack": [
+            720.0
+          ],
+          "cinematic_soundscape_beap~::ADSR::Decay": [
+            1800.0
+          ],
+          "cinematic_soundscape_beap~::ADSR::Legato": [
+            0.0
+          ],
+          "cinematic_soundscape_beap~::ADSR::Mute": [
+            0.0
+          ],
+          "cinematic_soundscape_beap~::ADSR::Release": [
+            4800.0
+          ],
+          "cinematic_soundscape_beap~::ADSR::Sustain": [
+            92.0
+          ],
+          "cinematic_soundscape_beap~::Chorus::Center": [
+            760.0
+          ],
+          "cinematic_soundscape_beap~::Chorus::Rate": [
+            0.012
+          ],
+          "cinematic_soundscape_beap~::Chorus::Regen": [
+            0.012
+          ],
+          "cinematic_soundscape_beap~::Chorus::Width": [
+            16.0
+          ],
+          "cinematic_soundscape_beap~::Chorus::bypass": [
+            0.0
+          ],
+          "cinematic_soundscape_beap~::LFO::Frequency": [
+            0.031
+          ],
+          "cinematic_soundscape_beap~::LFO::Mute": [
+            0.0
+          ],
+          "cinematic_soundscape_beap~::LFO_Slow::Frequency": [
+            0.007
+          ],
+          "cinematic_soundscape_beap~::LFO_Slow::Mute": [
+            0.0
+          ],
+          "cinematic_soundscape_beap~::Ladder::CV1": [
+            26.0
+          ],
+          "cinematic_soundscape_beap~::Ladder::CV2": [
+            0.0
+          ],
+          "cinematic_soundscape_beap~::Ladder::CV3": [
+            0.0
+          ],
+          "cinematic_soundscape_beap~::Ladder::Freq": [
+            2200.0
+          ],
+          "cinematic_soundscape_beap~::Ladder::FreqMode": [
+            1.0
+          ],
+          "cinematic_soundscape_beap~::Ladder::Offset[2]": [
+            0.0
+          ],
+          "cinematic_soundscape_beap~::Ladder::Res": [
+            1.4
+          ],
+          "cinematic_soundscape_beap~::Ladder::ResCV": [
+            0.0
+          ],
+          "cinematic_soundscape_beap~::Ladder::power[1]": [
+            0.0
+          ],
+          "cinematic_soundscape_beap~::MMF::CV1": [
+            0.0
+          ],
+          "cinematic_soundscape_beap~::MMF::CV2": [
+            0.0
+          ],
+          "cinematic_soundscape_beap~::MMF::CV3": [
+            0.0
+          ],
+          "cinematic_soundscape_beap~::MMF::FilterType": [
+            0.0
+          ],
+          "cinematic_soundscape_beap~::MMF::Freq": [
+            6100.0
+          ],
+          "cinematic_soundscape_beap~::MMF::FreqMode": [
+            1.0
+          ],
+          "cinematic_soundscape_beap~::MMF::Offset[2]": [
+            0.0
+          ],
+          "cinematic_soundscape_beap~::MMF::Res": [
+            0.9
+          ],
+          "cinematic_soundscape_beap~::MMF::ResCV": [
+            0.0
+          ],
+          "cinematic_soundscape_beap~::MMF::power[1]": [
+            0.0
+          ],
+          "cinematic_soundscape_beap~::Mixer::Mute": [
+            0.0
+          ],
+          "cinematic_soundscape_beap~::Mixer::MuteCh1": [
+            0.0
+          ],
+          "cinematic_soundscape_beap~::Mixer::MuteCh1[2]": [
+            0.0
+          ],
+          "cinematic_soundscape_beap~::Mixer::MuteCh2": [
+            0.0
+          ],
+          "cinematic_soundscape_beap~::Mixer::MuteCh4": [
+            0.0
+          ],
+          "cinematic_soundscape_beap~::Mixer::in1": [
+            -8.0
+          ],
+          "cinematic_soundscape_beap~::Mixer::in2": [
+            -13.0
+          ],
+          "cinematic_soundscape_beap~::Mixer::in3": [
+            -27.0
+          ],
+          "cinematic_soundscape_beap~::Mixer::in4": [
+            -18.0
+          ],
+          "cinematic_soundscape_beap~::Noise::Mute": [
+            0.0
+          ],
+          "cinematic_soundscape_beap~::Noise::manCVa": [
+            0.0
+          ],
+          "cinematic_soundscape_beap~::Osc_A::CV2": [
+            0.0
+          ],
+          "cinematic_soundscape_beap~::Osc_A::CV3": [
+            0.0
+          ],
+          "cinematic_soundscape_beap~::Osc_A::Freq": [
+            0.6
+          ],
+          "cinematic_soundscape_beap~::Osc_A::FreqMode": [
+            1.0
+          ],
+          "cinematic_soundscape_beap~::Osc_A::Linear": [
+            0.0
+          ],
+          "cinematic_soundscape_beap~::Osc_A::Mute": [
+            0.0
+          ],
+          "cinematic_soundscape_beap~::Osc_A::Offset": [
+            0.0
+          ],
+          "cinematic_soundscape_beap~::Osc_A::PW": [
+            50.0
+          ],
+          "cinematic_soundscape_beap~::Osc_A::PWM": [
+            0.0
+          ],
+          "cinematic_soundscape_beap~::Osc_A::Waveform": [
+            0.0
+          ],
+          "cinematic_soundscape_beap~::Osc_B::CV2": [
+            0.0
+          ],
+          "cinematic_soundscape_beap~::Osc_B::CV3": [
+            0.0
+          ],
+          "cinematic_soundscape_beap~::Osc_B::Freq": [
+            0.6
+          ],
+          "cinematic_soundscape_beap~::Osc_B::FreqMode": [
+            1.0
+          ],
+          "cinematic_soundscape_beap~::Osc_B::Linear": [
+            0.0
+          ],
+          "cinematic_soundscape_beap~::Osc_B::Mute": [
+            0.0
+          ],
+          "cinematic_soundscape_beap~::Osc_B::Offset": [
+            12.0
+          ],
+          "cinematic_soundscape_beap~::Osc_B::PW": [
+            50.0
+          ],
+          "cinematic_soundscape_beap~::Osc_B::PWM": [
+            0.0
+          ],
+          "cinematic_soundscape_beap~::Osc_B::Waveform": [
+            1.0
+          ],
+          "cinematic_soundscape_beap~::Osc_C::CV2": [
+            0.0
+          ],
+          "cinematic_soundscape_beap~::Osc_C::CV3": [
+            0.0
+          ],
+          "cinematic_soundscape_beap~::Osc_C::Freq": [
+            0.6
+          ],
+          "cinematic_soundscape_beap~::Osc_C::FreqMode": [
+            1.0
+          ],
+          "cinematic_soundscape_beap~::Osc_C::Linear": [
+            0.0
+          ],
+          "cinematic_soundscape_beap~::Osc_C::Mute": [
+            0.0
+          ],
+          "cinematic_soundscape_beap~::Osc_C::Offset": [
+            19.0
+          ],
+          "cinematic_soundscape_beap~::Osc_C::PW": [
+            50.0
+          ],
+          "cinematic_soundscape_beap~::Osc_C::PWM": [
+            0.0
+          ],
+          "cinematic_soundscape_beap~::Osc_C::Waveform": [
+            0.0
+          ],
+          "cinematic_soundscape_beap~::Reverb::Damping": [
+            5600.0
+          ],
+          "cinematic_soundscape_beap~::Reverb::Decay": [
+            48.0
+          ],
+          "cinematic_soundscape_beap~::Reverb::Diffusion": [
+            0.86
+          ],
+          "cinematic_soundscape_beap~::Reverb::Mix": [
+            100.0
+          ],
+          "cinematic_soundscape_beap~::Reverb::Size": [
+            78.0
+          ],
+          "cinematic_soundscape_beap~::Reverb::bypass": [
+            0.0
+          ],
+          "cinematic_soundscape_beap~::VCA::Bypass": [
+            0.0
+          ],
+          "cinematic_soundscape_beap~::VCA::Quadrants": [
+            0.0
+          ],
+          "cinematic_soundscape_beap~::VCA::Response": [
+            0.0
+          ],
+          "soundscape_brightness_state": [
+            0.62
+          ],
+          "soundscape_enable_state": [
+            1.0
+          ],
+          "soundscape_motion_state": [
+            0.24
+          ],
+          "soundscape_pitch_follow_state": [
+            1.0
+          ],
+          "soundscape_space_state": [
+            0.58
+          ],
+          "soundscape_transpose_state": [
+            0.0
+          ]
+        },
+        "id": 99
+      }
+    }
+  }
+}

@@ -1,0 +1,260 @@
+{
+  "patcher": {
+    "fileversion": 1,
+    "appversion": {
+      "major": 8,
+      "minor": 6,
+      "revision": 5,
+      "architecture": "x64",
+      "modernui": 1
+    },
+    "classnamespace": "dsp.gen",
+    "rect": [
+      50.0,
+      50.0,
+      960,
+      720
+    ],
+    "openinpresentation": 0,
+    "default_fontname": "Arial",
+    "default_fontsize": 12.0,
+    "boxes": [
+      {
+        "box": {
+          "id": "code",
+          "maxclass": "codebox",
+          "numinlets": 1,
+          "numoutlets": 1,
+          "patching_rect": [
+            40.0,
+            40.0,
+            780.0,
+            580.0
+          ],
+          "code": "Param v7_enable(1, min=0, max=1);\nParam v7_sub_db(-18, min=-60, max=0);\nParam v7_foundation_db(-20, min=-60, max=0);\nParam v7_attack_ms(65, min=10, max=180);\nParam v7_release_ms(280, min=80, max=800);\n\nParam rpm(650,min=0,max=10000); Param throttle(0,min=0,max=1);\nParam load(0,min=-1,max=1); Param engine_running(0,min=0,max=1);\nParam shift_cut(1,min=0,max=1); Param powertrain_level_db(-4,min=-60,max=6);\nHistory effort(0); History speed_env(0); History dc_x(0); History dc_y(0);\nrequest = clamp(.6*throttle+.4*abs(load),0,1);\nk = exp(-1/(samplerate*.001*(request>effort ? max(120,v7_attack_ms) : max(350,v7_release_ms))));\neffort = request+(effort-request)*k;\nspeed_env = clamp(rpm/10000,0,1)+(speed_env-clamp(rpm/10000,0,1))*exp(-1/(samplerate*.8));\nlife = slide(engine_running,samplerate*.04,samplerate*.12);\nenabled = slide(v7_enable,samplerate*.04,samplerate*.04);\n// No oscillator follows the pitch CV. Small slow variation preserves LF at 3rd..8th gear.\nmodulation = .92+.08*cycle(4+effort*3);\nsub = (cycle(45+effort*2+speed_env)*.50 + cycle(62+effort*2)*.30 + cycle(76+speed_env)*.20)*modulation;\nbody = cycle(105+effort*3)*.45+cycle(143+effort*2)*.32+cycle(179+speed_env*2)*.23;\nsubgain = slide(v7_sub_db<=-60 ? 0 : pow(10,v7_sub_db/20),samplerate*.03,samplerate*.03);\nbodygain = slide(v7_foundation_db<=-60 ? 0 : pow(10,v7_foundation_db/20),samplerate*.03,samplerate*.03);\nstemgain = slide(powertrain_level_db<=-60 ? 0 : pow(10,powertrain_level_db/20),samplerate*.035,samplerate*.035);\n// Soft shift modulation retains mass rather than applying the full tonal torque dip twice.\nraw = (sub*subgain+body*bodygain)*.20*(.45+.55*effort)*(.9+.1*shift_cut)*life*enabled*stemgain;\n// First-order 28Hz high-pass; final car bass management is still external.\ndc_y = raw-dc_x+exp(-6.283185307179586*28/samplerate)*dc_y;\ndc_x = raw;\nout1 = dc_y;\n"
+        }
+      },
+      {
+        "box": {
+          "id": "in0",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            40.0,
+            10.0,
+            80.0,
+            22.0
+          ],
+          "text": "in 1"
+        }
+      },
+      {
+        "box": {
+          "id": "out0",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            40.0,
+            650.0,
+            80.0,
+            22.0
+          ],
+          "text": "out 1"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-param-v7_enable",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            900,
+            20,
+            320,
+            22
+          ],
+          "text": "param v7_enable 1 @min 0 @max 1"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-param-v7_sub_db",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            900,
+            44,
+            320,
+            22
+          ],
+          "text": "param v7_sub_db -18 @min -60 @max 0"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-param-v7_foundation_db",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            900,
+            68,
+            320,
+            22
+          ],
+          "text": "param v7_foundation_db -20 @min -60 @max 0"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-param-v7_attack_ms",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            900,
+            92,
+            320,
+            22
+          ],
+          "text": "param v7_attack_ms 65 @min 10 @max 180"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-param-v7_release_ms",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            900,
+            116,
+            320,
+            22
+          ],
+          "text": "param v7_release_ms 280 @min 80 @max 800"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-param-rpm",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            900,
+            140,
+            320,
+            22
+          ],
+          "text": "param rpm 650 @min 0 @max 10000"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-param-throttle",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            900,
+            164,
+            320,
+            22
+          ],
+          "text": "param throttle 0 @min 0 @max 1"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-param-load",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            900,
+            188,
+            320,
+            22
+          ],
+          "text": "param load 0 @min -1 @max 1"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-param-engine_running",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            900,
+            212,
+            320,
+            22
+          ],
+          "text": "param engine_running 0 @min 0 @max 1"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-param-shift_cut",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            900,
+            236,
+            320,
+            22
+          ],
+          "text": "param shift_cut 1 @min 0 @max 1"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-param-powertrain_level_db",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            900,
+            260,
+            320,
+            22
+          ],
+          "text": "param powertrain_level_db -4 @min -60 @max 6"
+        }
+      }
+    ],
+    "lines": [
+      {
+        "patchline": {
+          "source": [
+            "in0",
+            0
+          ],
+          "destination": [
+            "code",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "code",
+            0
+          ],
+          "destination": [
+            "out0",
+            0
+          ]
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "pattrstorage": {
+    "name": "noise_v10_v1",
+    "slots": {
+      "99": {
+        "data": {
+          "Noise_Ceiling::FilterType": [
+            0
+          ],
+          "Noise_Ceiling::Freq": [
+            3400.0
+          ],
+          "Noise_Ceiling::Res": [
+            0.45
+          ],
+          "Noise_Ceiling::power[1]": [
+            1
+          ],
+          "noise_air_db": [
+            -22.0
+          ],
+          "noise_color": [
+            0.35
+          ],
+          "noise_intake_db": [
+            -15.0
+          ],
+          "noise_mechanical_db": [
+            -10.0
+          ],
+          "noise_tire_db": [
+            -14.0
+          ]
+        },
+        "id": 99
+      }
+    }
+  }
+}

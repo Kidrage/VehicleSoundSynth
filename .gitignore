@@ -6,3 +6,6 @@ __pycache__/
 media/local/
 presets/local/*
 !presets/local/.gitkeep
+
+# Local QA/audio captures are not shipping sources.
+qa/

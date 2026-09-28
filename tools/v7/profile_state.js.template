@@ -1,0 +1,80 @@
+/* V7 explicit per-engine snapshot. No driving/solo/audio values are persisted.
+ * File writes are verified by reopening; the last valid snapshot is kept as .bak.
+ * Other native pattrstorage owners remain independently versioned (v7_ prefix).
+ */
+autowatch=1;
+outlets=2;
+var profile=typeof jsarguments!=='undefined' ? String(jsarguments[1]) : 'ev';
+var SCHEMA = {}; // generated from tools/v7/schema.py
+var state={}, initialized=false, pending=null, verifyTask=null;
+function root(path){return String(path||'').replace(/\\/g,'/').replace(/\/[^/]*$/,'').replace(/\/patchers$/,'');}
+function paths(p,path){var r=root(path);return {local:r+'/presets/local/v7_'+p+'_profile.json',factory:r+'/presets/v7_factories/'+p+'_profile.json'};}
+function bounded(values,defaults){
+    var result={}, k, v;
+    for(k in SCHEMA)if(Object.prototype.hasOwnProperty.call(SCHEMA,k)){
+        v=values && values[k];
+        if(typeof v!=='number'||!isFinite(v))v=defaults[k];
+        if(typeof v!=='number'||!isFinite(v))v=SCHEMA[k].default;
+        result[k]=Math.max(SCHEMA[k].min,Math.min(SCHEMA[k].max,v));
+        if(k==='v7_enable')result[k]=result[k]>=0.5?1:0;
+    }
+    return result;
+}
+function validDocument(doc,p){return doc && doc.schema_version===7 && doc.profile===p && doc.values && typeof doc.values==='object' && !Array.isArray(doc.values);}
+function read(path){
+    var f=new File(path,'read'),s='';if(!f.isopen)return null;
+    while(f.position<f.eof)s+=f.readstring(65536);f.close();
+    try{return JSON.parse(s);}catch(e){return null;}
+}
+function write(path,doc){
+    var f=new File(path,'write','TEXT');if(!f.isopen)throw new Error('Cannot write '+path);
+    f.eof=0;f.writestring(JSON.stringify(doc,null,2));f.close();
+    var check=read(path);if(JSON.stringify(check)!==JSON.stringify(doc))throw new Error('Readback differs '+path);
+}
+function status(text){if(typeof outlet!=='undefined')outlet(1,'v7_status',text);}
+function emit(){for(var k in state)if(Object.prototype.hasOwnProperty.call(state,k)){
+    outlet(0,k,state[k]);outlet(1,k,state[k]);
+}}
+function restore(){
+    var p=paths(profile,this.patcher.filepath),factory=read(p.factory);
+    if(!validDocument(factory,profile)){status('ERROR: V7 factory missing/invalid; audio remains user-controlled OFF');return;}
+    var local=read(p.local),backup=read(p.local+'.bak');
+    var chosen=validDocument(local,profile)?local:validDocument(backup,profile)?backup:factory;
+    state=bounded(chosen.values,factory.values);initialized=true;emit();
+    status(chosen===factory?'V7 factory loaded / 出厂候选':chosen===backup?'Recovered V7 backup / 已恢复备份':'V7 profile loaded / 已载入本车设置');
+}
+function save(){
+    if(!initialized){status('Save blocked: profile not initialized');return;}
+    var p=paths(profile,this.patcher.filepath),old=read(p.local);
+    var doc={schema_version:7,profile:profile,base_commit:'fed2b78ecfabc84d673207b3a5f714b89f76720f',values:bounded(state,state)};
+    try{
+        if(validDocument(old,profile))write(p.local+'.bak',old);
+        write(p.local,doc);
+        status('V7 parameters saved + verified / V7参数已写入校验；模块保存已另行请求');
+    }catch(e){status('SAVE ERROR: '+String(e));}
+}
+function reset(){
+    var p=paths(profile,this.patcher.filepath),factory=read(p.factory);
+    if(!validDocument(factory,profile)){status('RESET ERROR: factory missing');return;}
+    state=bounded(factory.values,{});initialized=true;emit();
+    status('Factory recalled; Save to bind / 已恢复出厂，保存后绑定');
+}
+function loadbang(){
+    if(pending)pending.cancel();
+    pending=new Task(function(){pending=null;restore.call(this);},this);pending.schedule(450);
+}
+function anything(){
+    var n=String(messagename),a=typeof arrayfromargs==='undefined'?[]:arrayfromargs(arguments);
+    if(n==='save_profile_sound')return save.call(this);
+    if(n==='reload_profile_sound')return restore.call(this);
+    if(n==='reset_profile_sound')return reset.call(this);
+    if(n==='v7_query'){if(initialized)emit();return;}
+    if(!Object.prototype.hasOwnProperty.call(SCHEMA,n))return;
+    if(!initialized){status('Please wait for V7 factory/local restore');return;}
+    if(SCHEMA[n].owner.indexOf('ioniq')===0 && profile!=='ioniq6n'){status('This control applies only to IONIQ / 仅IONIQ生效');return;}
+    var v=Number(a[0]);if(!isFinite(v)){status('Rejected non-finite parameter');return;}
+    var one={};one[n]=v;state=bounded(one,state);
+    outlet(0,n,state[n]);outlet(1,n,state[n]);status('Modified; Save to bind / 已修改，保存绑定此发动机');
+}
+function notifydeleted(){if(pending)pending.cancel();if(verifyTask)verifyTask.cancel();}
+if(typeof module!=='undefined' && module.exports)module.exports={bounded:bounded,paths:paths,validDocument:validDocument,schema:SCHEMA};

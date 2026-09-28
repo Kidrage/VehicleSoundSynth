@@ -1,0 +1,144 @@
+{
+  "pattrstorage": {
+    "name": "soundscape_v10_v4",
+    "slots": {
+      "99": {
+        "data": {
+          "soundscape_brightness_state": [
+            0.4
+          ],
+          "soundscape_enable_state": [
+            1.0
+          ],
+          "soundscape_motion_state": [
+            0.18
+          ],
+          "soundscape_pitch_follow_state": [
+            1.0
+          ],
+          "soundscape_space_state": [
+            0.34
+          ],
+          "soundscape_transpose_state": [
+            0.0
+          ],
+          "v10_soundscape_v4_beap~::Bank_Space::Center": [
+            430.0
+          ],
+          "v10_soundscape_v4_beap~::Bank_Space::Rate": [
+            0.004
+          ],
+          "v10_soundscape_v4_beap~::Bank_Space::Regen": [
+            0.006
+          ],
+          "v10_soundscape_v4_beap~::Bank_Space::Width": [
+            4.0
+          ],
+          "v10_soundscape_v4_beap~::Bank_Space::bypass": [
+            0
+          ],
+          "v10_soundscape_v4_beap~::Body_Exciter::Mute": [
+            0
+          ],
+          "v10_soundscape_v4_beap~::Body_Exciter::manCVa": [
+            0.0
+          ],
+          "v10_soundscape_v4_beap~::Combustion_Envelope::Attack": [
+            85.0
+          ],
+          "v10_soundscape_v4_beap~::Combustion_Envelope::Decay": [
+            920.0
+          ],
+          "v10_soundscape_v4_beap~::Combustion_Envelope::Release": [
+            2400.0
+          ],
+          "v10_soundscape_v4_beap~::Combustion_Envelope::Sustain": [
+            96.0
+          ],
+          "v10_soundscape_v4_beap~::Combustion_VCA::Response": [
+            0.0
+          ],
+          "v10_soundscape_v4_beap~::Exhaust_Cavity::CV1": [
+            18.0
+          ],
+          "v10_soundscape_v4_beap~::Exhaust_Cavity::Freq": [
+            1180.0
+          ],
+          "v10_soundscape_v4_beap~::Exhaust_Cavity::Res": [
+            1.1
+          ],
+          "v10_soundscape_v4_beap~::Ignition_Carrier::Mute": [
+            0
+          ],
+          "v10_soundscape_v4_beap~::Ignition_Carrier::Offset": [
+            0
+          ],
+          "v10_soundscape_v4_beap~::Ignition_Carrier::Waveform": [
+            0
+          ],
+          "v10_soundscape_v4_beap~::Ignition_Layers::in1": [
+            -3.0
+          ],
+          "v10_soundscape_v4_beap~::Ignition_Layers::in2": [
+            -11.0
+          ],
+          "v10_soundscape_v4_beap~::Ignition_Layers::in3": [
+            -17.0
+          ],
+          "v10_soundscape_v4_beap~::Ignition_Layers::in4": [
+            -8.0
+          ],
+          "v10_soundscape_v4_beap~::Induction_Mechanical::Mute": [
+            0
+          ],
+          "v10_soundscape_v4_beap~::Induction_Mechanical::Offset": [
+            12
+          ],
+          "v10_soundscape_v4_beap~::Induction_Mechanical::Waveform": [
+            0
+          ],
+          "v10_soundscape_v4_beap~::Metal_Structure::FilterType": [
+            0
+          ],
+          "v10_soundscape_v4_beap~::Metal_Structure::Freq": [
+            3100.0
+          ],
+          "v10_soundscape_v4_beap~::Metal_Structure::Res": [
+            1.0
+          ],
+          "v10_soundscape_v4_beap~::Metal_Structure::power[1]": [
+            1
+          ],
+          "v10_soundscape_v4_beap~::Order_Lift::Mute": [
+            0
+          ],
+          "v10_soundscape_v4_beap~::Order_Lift::Offset": [
+            12
+          ],
+          "v10_soundscape_v4_beap~::Order_Lift::Waveform": [
+            1
+          ],
+          "v10_soundscape_v4_beap~::Vehicle_Space::Damping": [
+            3100.0
+          ],
+          "v10_soundscape_v4_beap~::Vehicle_Space::Decay": [
+            29.0
+          ],
+          "v10_soundscape_v4_beap~::Vehicle_Space::Diffusion": [
+            0.84
+          ],
+          "v10_soundscape_v4_beap~::Vehicle_Space::Mix": [
+            100
+          ],
+          "v10_soundscape_v4_beap~::Vehicle_Space::Size": [
+            56.0
+          ],
+          "v10_soundscape_v4_beap~::Vehicle_Space::bypass": [
+            0
+          ]
+        },
+        "id": 99
+      }
+    }
+  }
+}

@@ -1,0 +1,375 @@
+{
+  "pattrstorage": {
+    "name": "soundscape_ioniq6n_modes_v2",
+    "slots": {
+      "99": {
+        "data": {
+          "ioniq6n_soundscape_evolution_bed_v2_beap~::Dramatic_Transient::Mute": [
+            0
+          ],
+          "ioniq6n_soundscape_evolution_bed_v2_beap~::Dramatic_Transient::manCVa": [
+            0.0
+          ],
+          "ioniq6n_soundscape_evolution_bed_v2_beap~::Evolution_Envelope::Attack": [
+            140.0
+          ],
+          "ioniq6n_soundscape_evolution_bed_v2_beap~::Evolution_Envelope::Decay": [
+            1050.0
+          ],
+          "ioniq6n_soundscape_evolution_bed_v2_beap~::Evolution_Envelope::Release": [
+            2600.0
+          ],
+          "ioniq6n_soundscape_evolution_bed_v2_beap~::Evolution_Envelope::Sustain": [
+            94.0
+          ],
+          "ioniq6n_soundscape_evolution_bed_v2_beap~::Evolution_Harmonics::Mute": [
+            0
+          ],
+          "ioniq6n_soundscape_evolution_bed_v2_beap~::Evolution_Harmonics::Offset": [
+            0
+          ],
+          "ioniq6n_soundscape_evolution_bed_v2_beap~::Evolution_Harmonics::Waveform": [
+            0
+          ],
+          "ioniq6n_soundscape_evolution_bed_v2_beap~::Evolution_Layer_Mixer::in1": [
+            -7.0
+          ],
+          "ioniq6n_soundscape_evolution_bed_v2_beap~::Evolution_Layer_Mixer::in2": [
+            -5.0
+          ],
+          "ioniq6n_soundscape_evolution_bed_v2_beap~::Evolution_Layer_Mixer::in3": [
+            -9.0
+          ],
+          "ioniq6n_soundscape_evolution_bed_v2_beap~::Evolution_Layer_Mixer::in4": [
+            -15.0
+          ],
+          "ioniq6n_soundscape_evolution_bed_v2_beap~::Evolution_Modal_Resonator::FilterType": [
+            0
+          ],
+          "ioniq6n_soundscape_evolution_bed_v2_beap~::Evolution_Modal_Resonator::Freq": [
+            1180.0
+          ],
+          "ioniq6n_soundscape_evolution_bed_v2_beap~::Evolution_Modal_Resonator::Res": [
+            0.78
+          ],
+          "ioniq6n_soundscape_evolution_bed_v2_beap~::Evolution_Modal_Resonator::power[1]": [
+            1
+          ],
+          "ioniq6n_soundscape_evolution_bed_v2_beap~::Evolution_Orbital_Motion::Center": [
+            720.0
+          ],
+          "ioniq6n_soundscape_evolution_bed_v2_beap~::Evolution_Orbital_Motion::Rate": [
+            0.014
+          ],
+          "ioniq6n_soundscape_evolution_bed_v2_beap~::Evolution_Orbital_Motion::Regen": [
+            0.006
+          ],
+          "ioniq6n_soundscape_evolution_bed_v2_beap~::Evolution_Orbital_Motion::Width": [
+            14.0
+          ],
+          "ioniq6n_soundscape_evolution_bed_v2_beap~::Evolution_Orbital_Motion::bypass": [
+            0
+          ],
+          "ioniq6n_soundscape_evolution_bed_v2_beap~::Evolution_Spectral_Morph::CV1": [
+            18.0
+          ],
+          "ioniq6n_soundscape_evolution_bed_v2_beap~::Evolution_Spectral_Morph::Freq": [
+            2650.0
+          ],
+          "ioniq6n_soundscape_evolution_bed_v2_beap~::Evolution_Spectral_Morph::Res": [
+            0.68
+          ],
+          "ioniq6n_soundscape_evolution_bed_v2_beap~::Evolution_Spherical_Space::Damping": [
+            6100.0
+          ],
+          "ioniq6n_soundscape_evolution_bed_v2_beap~::Evolution_Spherical_Space::Decay": [
+            46.0
+          ],
+          "ioniq6n_soundscape_evolution_bed_v2_beap~::Evolution_Spherical_Space::Diffusion": [
+            0.84
+          ],
+          "ioniq6n_soundscape_evolution_bed_v2_beap~::Evolution_Spherical_Space::Mix": [
+            100
+          ],
+          "ioniq6n_soundscape_evolution_bed_v2_beap~::Evolution_Spherical_Space::Size": [
+            82.0
+          ],
+          "ioniq6n_soundscape_evolution_bed_v2_beap~::Evolution_Spherical_Space::bypass": [
+            0
+          ],
+          "ioniq6n_soundscape_evolution_bed_v2_beap~::Evolution_Upper_Score::Mute": [
+            0
+          ],
+          "ioniq6n_soundscape_evolution_bed_v2_beap~::Evolution_Upper_Score::Offset": [
+            0
+          ],
+          "ioniq6n_soundscape_evolution_bed_v2_beap~::Evolution_Upper_Score::Waveform": [
+            1
+          ],
+          "ioniq6n_soundscape_evolution_bed_v2_beap~::Evolution_VCA::Response": [
+            0.0
+          ],
+          "ioniq6n_soundscape_evolution_bed_v2_beap~::Score_Body::Mute": [
+            0
+          ],
+          "ioniq6n_soundscape_evolution_bed_v2_beap~::Score_Body::Offset": [
+            0
+          ],
+          "ioniq6n_soundscape_evolution_bed_v2_beap~::Score_Body::Waveform": [
+            0
+          ],
+          "ioniq6n_soundscape_ignition_bed_v2_beap~::Gear_Mesh_Air::Mute": [
+            0
+          ],
+          "ioniq6n_soundscape_ignition_bed_v2_beap~::Gear_Mesh_Air::manCVa": [
+            0.0
+          ],
+          "ioniq6n_soundscape_ignition_bed_v2_beap~::Ignition_Body_Filter::CV1": [
+            18.0
+          ],
+          "ioniq6n_soundscape_ignition_bed_v2_beap~::Ignition_Body_Filter::Freq": [
+            1780.0
+          ],
+          "ioniq6n_soundscape_ignition_bed_v2_beap~::Ignition_Body_Filter::Res": [
+            0.82
+          ],
+          "ioniq6n_soundscape_ignition_bed_v2_beap~::Ignition_Envelope::Attack": [
+            75.0
+          ],
+          "ioniq6n_soundscape_ignition_bed_v2_beap~::Ignition_Envelope::Decay": [
+            620.0
+          ],
+          "ioniq6n_soundscape_ignition_bed_v2_beap~::Ignition_Envelope::Release": [
+            1250.0
+          ],
+          "ioniq6n_soundscape_ignition_bed_v2_beap~::Ignition_Envelope::Sustain": [
+            96.0
+          ],
+          "ioniq6n_soundscape_ignition_bed_v2_beap~::Ignition_Layer_Mixer::in1": [
+            -5.0
+          ],
+          "ioniq6n_soundscape_ignition_bed_v2_beap~::Ignition_Layer_Mixer::in2": [
+            -6.0
+          ],
+          "ioniq6n_soundscape_ignition_bed_v2_beap~::Ignition_Layer_Mixer::in3": [
+            -10.0
+          ],
+          "ioniq6n_soundscape_ignition_bed_v2_beap~::Ignition_Layer_Mixer::in4": [
+            -18.0
+          ],
+          "ioniq6n_soundscape_ignition_bed_v2_beap~::Ignition_Mechanical::Mute": [
+            0
+          ],
+          "ioniq6n_soundscape_ignition_bed_v2_beap~::Ignition_Mechanical::Offset": [
+            0
+          ],
+          "ioniq6n_soundscape_ignition_bed_v2_beap~::Ignition_Mechanical::Waveform": [
+            0
+          ],
+          "ioniq6n_soundscape_ignition_bed_v2_beap~::Ignition_Motion::Center": [
+            430.0
+          ],
+          "ioniq6n_soundscape_ignition_bed_v2_beap~::Ignition_Motion::Rate": [
+            0.01
+          ],
+          "ioniq6n_soundscape_ignition_bed_v2_beap~::Ignition_Motion::Regen": [
+            0.006
+          ],
+          "ioniq6n_soundscape_ignition_bed_v2_beap~::Ignition_Motion::Width": [
+            6.0
+          ],
+          "ioniq6n_soundscape_ignition_bed_v2_beap~::Ignition_Motion::bypass": [
+            0
+          ],
+          "ioniq6n_soundscape_ignition_bed_v2_beap~::Ignition_Order_Lift::Mute": [
+            0
+          ],
+          "ioniq6n_soundscape_ignition_bed_v2_beap~::Ignition_Order_Lift::Offset": [
+            0
+          ],
+          "ioniq6n_soundscape_ignition_bed_v2_beap~::Ignition_Order_Lift::Waveform": [
+            1
+          ],
+          "ioniq6n_soundscape_ignition_bed_v2_beap~::Ignition_Space::Damping": [
+            4200.0
+          ],
+          "ioniq6n_soundscape_ignition_bed_v2_beap~::Ignition_Space::Decay": [
+            26.0
+          ],
+          "ioniq6n_soundscape_ignition_bed_v2_beap~::Ignition_Space::Diffusion": [
+            0.84
+          ],
+          "ioniq6n_soundscape_ignition_bed_v2_beap~::Ignition_Space::Mix": [
+            100
+          ],
+          "ioniq6n_soundscape_ignition_bed_v2_beap~::Ignition_Space::Size": [
+            52.0
+          ],
+          "ioniq6n_soundscape_ignition_bed_v2_beap~::Ignition_Space::bypass": [
+            0
+          ],
+          "ioniq6n_soundscape_ignition_bed_v2_beap~::Ignition_VCA::Response": [
+            0.0
+          ],
+          "ioniq6n_soundscape_ignition_bed_v2_beap~::Induction_Resonator::FilterType": [
+            0
+          ],
+          "ioniq6n_soundscape_ignition_bed_v2_beap~::Induction_Resonator::Freq": [
+            860.0
+          ],
+          "ioniq6n_soundscape_ignition_bed_v2_beap~::Induction_Resonator::Res": [
+            1.15
+          ],
+          "ioniq6n_soundscape_ignition_bed_v2_beap~::Induction_Resonator::power[1]": [
+            1
+          ],
+          "ioniq6n_soundscape_ignition_bed_v2_beap~::Synthetic_Orders::Mute": [
+            0
+          ],
+          "ioniq6n_soundscape_ignition_bed_v2_beap~::Synthetic_Orders::Offset": [
+            0
+          ],
+          "ioniq6n_soundscape_ignition_bed_v2_beap~::Synthetic_Orders::Waveform": [
+            0
+          ],
+          "ioniq6n_soundscape_lightspeed_bed_v2_beap~::Afterburner_Air::Mute": [
+            0
+          ],
+          "ioniq6n_soundscape_lightspeed_bed_v2_beap~::Afterburner_Air::manCVa": [
+            0.0
+          ],
+          "ioniq6n_soundscape_lightspeed_bed_v2_beap~::Afterburner_Body::Mute": [
+            0
+          ],
+          "ioniq6n_soundscape_lightspeed_bed_v2_beap~::Afterburner_Body::Offset": [
+            0
+          ],
+          "ioniq6n_soundscape_lightspeed_bed_v2_beap~::Afterburner_Body::Waveform": [
+            0
+          ],
+          "ioniq6n_soundscape_lightspeed_bed_v2_beap~::Lightspeed_Deep_Space::Damping": [
+            5400.0
+          ],
+          "ioniq6n_soundscape_lightspeed_bed_v2_beap~::Lightspeed_Deep_Space::Decay": [
+            40.0
+          ],
+          "ioniq6n_soundscape_lightspeed_bed_v2_beap~::Lightspeed_Deep_Space::Diffusion": [
+            0.84
+          ],
+          "ioniq6n_soundscape_lightspeed_bed_v2_beap~::Lightspeed_Deep_Space::Mix": [
+            100
+          ],
+          "ioniq6n_soundscape_lightspeed_bed_v2_beap~::Lightspeed_Deep_Space::Size": [
+            76.0
+          ],
+          "ioniq6n_soundscape_lightspeed_bed_v2_beap~::Lightspeed_Deep_Space::bypass": [
+            0
+          ],
+          "ioniq6n_soundscape_lightspeed_bed_v2_beap~::Lightspeed_Envelope::Attack": [
+            90.0
+          ],
+          "ioniq6n_soundscape_lightspeed_bed_v2_beap~::Lightspeed_Envelope::Decay": [
+            780.0
+          ],
+          "ioniq6n_soundscape_lightspeed_bed_v2_beap~::Lightspeed_Envelope::Release": [
+            1900.0
+          ],
+          "ioniq6n_soundscape_lightspeed_bed_v2_beap~::Lightspeed_Envelope::Sustain": [
+            95.0
+          ],
+          "ioniq6n_soundscape_lightspeed_bed_v2_beap~::Lightspeed_Flow_Motion::Center": [
+            560.0
+          ],
+          "ioniq6n_soundscape_lightspeed_bed_v2_beap~::Lightspeed_Flow_Motion::Rate": [
+            0.018
+          ],
+          "ioniq6n_soundscape_lightspeed_bed_v2_beap~::Lightspeed_Flow_Motion::Regen": [
+            0.006
+          ],
+          "ioniq6n_soundscape_lightspeed_bed_v2_beap~::Lightspeed_Flow_Motion::Width": [
+            12.0
+          ],
+          "ioniq6n_soundscape_lightspeed_bed_v2_beap~::Lightspeed_Flow_Motion::bypass": [
+            0
+          ],
+          "ioniq6n_soundscape_lightspeed_bed_v2_beap~::Lightspeed_Layer_Mixer::in1": [
+            -5.0
+          ],
+          "ioniq6n_soundscape_lightspeed_bed_v2_beap~::Lightspeed_Layer_Mixer::in2": [
+            -7.0
+          ],
+          "ioniq6n_soundscape_lightspeed_bed_v2_beap~::Lightspeed_Layer_Mixer::in3": [
+            -11.0
+          ],
+          "ioniq6n_soundscape_lightspeed_bed_v2_beap~::Lightspeed_Layer_Mixer::in4": [
+            -14.0
+          ],
+          "ioniq6n_soundscape_lightspeed_bed_v2_beap~::Lightspeed_Pulse::Mute": [
+            0
+          ],
+          "ioniq6n_soundscape_lightspeed_bed_v2_beap~::Lightspeed_Pulse::Offset": [
+            0
+          ],
+          "ioniq6n_soundscape_lightspeed_bed_v2_beap~::Lightspeed_Pulse::Waveform": [
+            1
+          ],
+          "ioniq6n_soundscape_lightspeed_bed_v2_beap~::Lightspeed_Thrust_Filter::CV1": [
+            18.0
+          ],
+          "ioniq6n_soundscape_lightspeed_bed_v2_beap~::Lightspeed_Thrust_Filter::Freq": [
+            2150.0
+          ],
+          "ioniq6n_soundscape_lightspeed_bed_v2_beap~::Lightspeed_Thrust_Filter::Res": [
+            0.72
+          ],
+          "ioniq6n_soundscape_lightspeed_bed_v2_beap~::Lightspeed_VCA::Response": [
+            0.0
+          ],
+          "ioniq6n_soundscape_lightspeed_bed_v2_beap~::Pulse_Resonator::FilterType": [
+            0
+          ],
+          "ioniq6n_soundscape_lightspeed_bed_v2_beap~::Pulse_Resonator::Freq": [
+            620.0
+          ],
+          "ioniq6n_soundscape_lightspeed_bed_v2_beap~::Pulse_Resonator::Res": [
+            1.05
+          ],
+          "ioniq6n_soundscape_lightspeed_bed_v2_beap~::Pulse_Resonator::power[1]": [
+            1
+          ],
+          "ioniq6n_soundscape_lightspeed_bed_v2_beap~::Velocity_Shimmer::Mute": [
+            0
+          ],
+          "ioniq6n_soundscape_lightspeed_bed_v2_beap~::Velocity_Shimmer::Offset": [
+            0
+          ],
+          "ioniq6n_soundscape_lightspeed_bed_v2_beap~::Velocity_Shimmer::Waveform": [
+            0
+          ],
+          "n_sound_mode_state": [
+            "evolution"
+          ],
+          "soundscape_brightness_state": [
+            0.58
+          ],
+          "soundscape_enable_state": [
+            1
+          ],
+          "soundscape_motion_state": [
+            0.32
+          ],
+          "soundscape_pitch_follow_state": [
+            1.0
+          ],
+          "soundscape_space_state": [
+            0.62
+          ],
+          "soundscape_transpose_state": [
+            0.0
+          ]
+        },
+        "id": 99
+      }
+    }
+  }
+}

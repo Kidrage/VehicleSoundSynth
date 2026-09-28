@@ -1,0 +1,144 @@
+{
+  "pattrstorage": {
+    "name": "soundscape_ferrari_v4",
+    "slots": {
+      "99": {
+        "data": {
+          "ferrari_soundscape_v4_beap~::Air_Reflection::Mute": [
+            0
+          ],
+          "ferrari_soundscape_v4_beap~::Air_Reflection::manCVa": [
+            0.0
+          ],
+          "ferrari_soundscape_v4_beap~::Body_Cavity_Valve::CV1": [
+            18.0
+          ],
+          "ferrari_soundscape_v4_beap~::Body_Cavity_Valve::Freq": [
+            1120.0
+          ],
+          "ferrari_soundscape_v4_beap~::Body_Cavity_Valve::Res": [
+            0.92
+          ],
+          "ferrari_soundscape_v4_beap~::Cavity_Projection::Mute": [
+            0
+          ],
+          "ferrari_soundscape_v4_beap~::Cavity_Projection::Offset": [
+            12
+          ],
+          "ferrari_soundscape_v4_beap~::Cavity_Projection::Waveform": [
+            1
+          ],
+          "ferrari_soundscape_v4_beap~::Exterior_Bank_Space::Center": [
+            480.0
+          ],
+          "ferrari_soundscape_v4_beap~::Exterior_Bank_Space::Rate": [
+            0.004
+          ],
+          "ferrari_soundscape_v4_beap~::Exterior_Bank_Space::Regen": [
+            0.006
+          ],
+          "ferrari_soundscape_v4_beap~::Exterior_Bank_Space::Width": [
+            5.0
+          ],
+          "ferrari_soundscape_v4_beap~::Exterior_Bank_Space::bypass": [
+            0
+          ],
+          "ferrari_soundscape_v4_beap~::Exterior_Body::Mute": [
+            0
+          ],
+          "ferrari_soundscape_v4_beap~::Exterior_Body::Offset": [
+            0
+          ],
+          "ferrari_soundscape_v4_beap~::Exterior_Body::Waveform": [
+            0
+          ],
+          "ferrari_soundscape_v4_beap~::Ferrari_Envelope::Attack": [
+            90.0
+          ],
+          "ferrari_soundscape_v4_beap~::Ferrari_Envelope::Decay": [
+            1000.0
+          ],
+          "ferrari_soundscape_v4_beap~::Ferrari_Envelope::Release": [
+            2600.0
+          ],
+          "ferrari_soundscape_v4_beap~::Ferrari_Envelope::Sustain": [
+            96.0
+          ],
+          "ferrari_soundscape_v4_beap~::Ferrari_VCA::Response": [
+            0.0
+          ],
+          "ferrari_soundscape_v4_beap~::Mechanical_Edge_Sculpt::FilterType": [
+            0
+          ],
+          "ferrari_soundscape_v4_beap~::Mechanical_Edge_Sculpt::Freq": [
+            2800.0
+          ],
+          "ferrari_soundscape_v4_beap~::Mechanical_Edge_Sculpt::Res": [
+            0.72
+          ],
+          "ferrari_soundscape_v4_beap~::Mechanical_Edge_Sculpt::power[1]": [
+            1
+          ],
+          "ferrari_soundscape_v4_beap~::Mechanical_Halo::Mute": [
+            0
+          ],
+          "ferrari_soundscape_v4_beap~::Mechanical_Halo::Offset": [
+            12
+          ],
+          "ferrari_soundscape_v4_beap~::Mechanical_Halo::Waveform": [
+            0
+          ],
+          "ferrari_soundscape_v4_beap~::Roadside_Projection::Damping": [
+            3400.0
+          ],
+          "ferrari_soundscape_v4_beap~::Roadside_Projection::Decay": [
+            30.0
+          ],
+          "ferrari_soundscape_v4_beap~::Roadside_Projection::Diffusion": [
+            0.84
+          ],
+          "ferrari_soundscape_v4_beap~::Roadside_Projection::Mix": [
+            100
+          ],
+          "ferrari_soundscape_v4_beap~::Roadside_Projection::Size": [
+            58.0
+          ],
+          "ferrari_soundscape_v4_beap~::Roadside_Projection::bypass": [
+            0
+          ],
+          "ferrari_soundscape_v4_beap~::SF90_V10_Layers::in1": [
+            -4.0
+          ],
+          "ferrari_soundscape_v4_beap~::SF90_V10_Layers::in2": [
+            -9.0
+          ],
+          "ferrari_soundscape_v4_beap~::SF90_V10_Layers::in3": [
+            -17.0
+          ],
+          "ferrari_soundscape_v4_beap~::SF90_V10_Layers::in4": [
+            -2.0
+          ],
+          "soundscape_brightness_state": [
+            0.32
+          ],
+          "soundscape_enable_state": [
+            1.0
+          ],
+          "soundscape_motion_state": [
+            0.14
+          ],
+          "soundscape_pitch_follow_state": [
+            1.0
+          ],
+          "soundscape_space_state": [
+            0.36
+          ],
+          "soundscape_transpose_state": [
+            0.0
+          ]
+        },
+        "id": 99
+      }
+    }
+  }
+}

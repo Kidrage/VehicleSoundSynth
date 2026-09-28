@@ -1,0 +1,15 @@
+{
+  "reason": "V7 has one current user manual; prior versions remain in Git history. Engineering provenance is not a competing user manual.",
+  "removed": [
+    "V6_CANDIDATE_GUIDE.md",
+    "V6_RELEASE_HANDOFF.md",
+    "V6_USER_GUIDE.md",
+    "VehicleSoundSynthV2_完整使用手册.docx",
+    "VehicleSoundSynthV3_完整使用手册.docx",
+    "VehicleSoundSynthV3_车机RTPC_DSP链路技术说明.docx",
+    "VehicleSoundSynthV3_车机RTPC_DSP链路技术说明.pdf",
+    "VehicleSoundSynthV4_完整使用手册.docx",
+    "VehicleSoundSynth_完整使用手册.docx"
+  ],
+  "canonical_manual": "V7_MANUAL.md"
+}

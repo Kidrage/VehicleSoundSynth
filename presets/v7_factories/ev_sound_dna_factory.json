@@ -1,0 +1,65 @@
+{
+  "pattrstorage": {
+    "name": "ev_sound_dna",
+    "slots": {
+      "99": {
+        "data": {
+          "dna_aggression": [
+            0.25
+          ],
+          "dna_brightness": [
+            0.72
+          ],
+          "dna_body": [
+            0.34
+          ],
+          "dna_texture": [
+            0.2
+          ],
+          "dna_air_detail": [
+            0.58
+          ],
+          "dna_cycle_irregularity": [
+            0.18
+          ],
+          "dna_stereo_width": [
+            0.68
+          ],
+          "dna_throttle_loudness_depth": [
+            4.5
+          ],
+          "dna_saturation": [
+            0.2
+          ],
+          "dna_idle_level": [
+            0.2
+          ],
+          "dna_idle_body": [
+            0.36
+          ],
+          "dna_idle_metal": [
+            0.32
+          ],
+          "dna_idle_irregularity": [
+            0.08
+          ],
+          "dna_idle_air": [
+            0.44
+          ],
+          "dna_idle_width": [
+            0.56
+          ],
+          "dna_torque_ripple_level": [
+            0.48
+          ],
+          "dna_gear_mesh_level": [
+            0.42
+          ],
+          "dna_electrical_detail": [
+            0.64
+          ]
+        }
+      }
+    }
+  }
+}

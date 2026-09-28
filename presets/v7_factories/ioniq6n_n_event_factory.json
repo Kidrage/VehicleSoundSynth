@@ -1,0 +1,78 @@
+{
+  "pattrstorage": {
+    "name": "ioniq6n_n_event",
+    "slots": {
+      "99": {
+        "data": {
+          "Afterburner_AD::Attack": [
+            2.0
+          ],
+          "Afterburner_AD::Decay": [
+            220.0
+          ],
+          "Afterburner_Pop::Mute": [
+            0
+          ],
+          "Afterburner_Pop::Offset": [
+            0
+          ],
+          "Afterburner_Pop::Waveform": [
+            1
+          ],
+          "Bubbling::Mute": [
+            0
+          ],
+          "Bubbling::Offset": [
+            -12
+          ],
+          "Bubbling::Waveform": [
+            0
+          ],
+          "Bubbling_AD::Attack": [
+            4.0
+          ],
+          "Bubbling_AD::Decay": [
+            280.0
+          ],
+          "Event_HF_Ceiling::FilterType": [
+            0
+          ],
+          "Event_HF_Ceiling::Freq": [
+            5600.0
+          ],
+          "Event_HF_Ceiling::Res": [
+            0.55
+          ],
+          "Event_HF_Ceiling::power[1]": [
+            1
+          ],
+          "N_Event_Mixer::in1": [
+            -2.0
+          ],
+          "N_Event_Mixer::in2": [
+            -11.0
+          ],
+          "N_Event_Mixer::in3": [
+            -7.0
+          ],
+          "N_Event_Mixer::in4": [
+            -60.0
+          ],
+          "Upshift_Bang::Mute": [
+            0
+          ],
+          "Upshift_Bang::manCVa": [
+            0.0
+          ],
+          "Upshift_Bang_AD::Attack": [
+            2.0
+          ],
+          "Upshift_Bang_AD::Decay": [
+            165.0
+          ]
+        },
+        "id": 99
+      }
+    }
+  }
+}

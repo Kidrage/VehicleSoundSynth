@@ -21,7 +21,21 @@
             650.0,
             22.0
           ],
-          "text": "VehicleSoundSynth V6 \u2014 one shared console, five profile adapters"
+          "text": "EV-ENGINE-V7  |  声音设计 · 驾驶响应 · 混音定稿",
+          "textcolor": [
+            0.82,
+            0.88,
+            0.95,
+            1.0
+          ],
+          "fontsize": 23,
+          "presentation": 1,
+          "presentation_rect": [
+            30,
+            12,
+            1180,
+            33
+          ]
         }
       },
       {
@@ -36,7 +50,20 @@
             830.0,
             40.0
           ],
-          "text": "Main owns lifecycle, input, Mix/EQ and sound-design controls. Selecting a profile safely closes the previous runtime."
+          "text": "五款独立发动机 · 当前音色保存绑定本车 · V7 Tone / Response 可直接调音 · 音频启动默认 OFF",
+          "textcolor": [
+            0.82,
+            0.88,
+            0.95,
+            1.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            30,
+            48,
+            1180,
+            31
+          ]
         }
       },
       {
@@ -105,7 +132,13 @@
             280.0,
             22.0
           ],
-          "text": "Future EV"
+          "text": "Future EV",
+          "textcolor": [
+            0.82,
+            0.88,
+            0.95,
+            1.0
+          ]
         }
       },
       {
@@ -125,12 +158,27 @@
           ],
           "presentation": 1,
           "presentation_rect": [
-            30.0,
-            66.0,
-            280.0,
-            24.0
+            30,
+            90,
+            380,
+            30
           ],
-          "text": "Open Future EV"
+          "text": "Open Future EV",
+          "hint": "Open Future EV：作用于当前选择的发动机。音频默认关闭；状态只读反馈不会重新触发控制。",
+          "annotation": "Open Future EV：作用于当前选择的发动机。音频默认关闭；状态只读反馈不会重新触发控制。",
+          "bgcolor": [
+            0.16,
+            0.22,
+            0.3,
+            1.0
+          ],
+          "textcolor": [
+            0.92,
+            0.97,
+            1.0,
+            1.0
+          ],
+          "fontsize": 14
         }
       },
       {
@@ -203,7 +251,7 @@
             260.0,
             22.0
           ],
-          "text": "loadunique VehicleSoundSynth-EV.maxpat"
+          "text": "loadunique EV-Engine-V7-EV.maxpat"
         }
       },
       {
@@ -218,7 +266,13 @@
             280.0,
             22.0
           ],
-          "text": "Ferrari-referenced V10"
+          "text": "Ferrari-referenced V10",
+          "textcolor": [
+            0.82,
+            0.88,
+            0.95,
+            1.0
+          ]
         }
       },
       {
@@ -238,12 +292,27 @@
           ],
           "presentation": 1,
           "presentation_rect": [
-            330.0,
-            66.0,
-            280.0,
-            24.0
+            425,
+            90,
+            380,
+            30
           ],
-          "text": "Open Ferrari-referenced V10"
+          "text": "Open Ferrari-referenced V10",
+          "hint": "Open Ferrari-referenced V10：作用于当前选择的发动机。音频默认关闭；状态只读反馈不会重新触发控制。",
+          "annotation": "Open Ferrari-referenced V10：作用于当前选择的发动机。音频默认关闭；状态只读反馈不会重新触发控制。",
+          "bgcolor": [
+            0.16,
+            0.22,
+            0.3,
+            1.0
+          ],
+          "textcolor": [
+            0.92,
+            0.97,
+            1.0,
+            1.0
+          ],
+          "fontsize": 14
         }
       },
       {
@@ -316,7 +385,7 @@
             260.0,
             22.0
           ],
-          "text": "loadunique VehicleSoundSynth-V10.maxpat"
+          "text": "loadunique EV-Engine-V7-V10.maxpat"
         }
       },
       {
@@ -331,7 +400,13 @@
             280.0,
             22.0
           ],
-          "text": "Independent V12"
+          "text": "Independent V12",
+          "textcolor": [
+            0.82,
+            0.88,
+            0.95,
+            1.0
+          ]
         }
       },
       {
@@ -351,12 +426,27 @@
           ],
           "presentation": 1,
           "presentation_rect": [
-            630.0,
-            66.0,
-            280.0,
-            24.0
+            820,
+            90,
+            380,
+            30
           ],
-          "text": "Open Independent V12"
+          "text": "Open Independent V12",
+          "hint": "Open Independent V12：作用于当前选择的发动机。音频默认关闭；状态只读反馈不会重新触发控制。",
+          "annotation": "Open Independent V12：作用于当前选择的发动机。音频默认关闭；状态只读反馈不会重新触发控制。",
+          "bgcolor": [
+            0.16,
+            0.22,
+            0.3,
+            1.0
+          ],
+          "textcolor": [
+            0.92,
+            0.97,
+            1.0,
+            1.0
+          ],
+          "fontsize": 14
         }
       },
       {
@@ -429,7 +519,7 @@
             260.0,
             22.0
           ],
-          "text": "loadunique VehicleSoundSynth-V12.maxpat"
+          "text": "loadunique EV-Engine-V7-V12.maxpat"
         }
       },
       {
@@ -444,7 +534,13 @@
             280.0,
             22.0
           ],
-          "text": "IONIQ 6 N"
+          "text": "IONIQ 6 N",
+          "textcolor": [
+            0.82,
+            0.88,
+            0.95,
+            1.0
+          ]
         }
       },
       {
@@ -464,12 +560,27 @@
           ],
           "presentation": 1,
           "presentation_rect": [
-            30.0,
-            100.0,
-            280.0,
-            24.0
+            30,
+            129,
+            380,
+            30
           ],
-          "text": "Open IONIQ 6 N"
+          "text": "Open IONIQ 6 N",
+          "hint": "Open IONIQ 6 N：作用于当前选择的发动机。音频默认关闭；状态只读反馈不会重新触发控制。",
+          "annotation": "Open IONIQ 6 N：作用于当前选择的发动机。音频默认关闭；状态只读反馈不会重新触发控制。",
+          "bgcolor": [
+            0.16,
+            0.22,
+            0.3,
+            1.0
+          ],
+          "textcolor": [
+            0.92,
+            0.97,
+            1.0,
+            1.0
+          ],
+          "fontsize": 14
         }
       },
       {
@@ -542,7 +653,7 @@
             260.0,
             22.0
           ],
-          "text": "loadunique VehicleSoundSynth-IONIQ6N.maxpat"
+          "text": "loadunique EV-Engine-V7-IONIQ6N.maxpat"
         }
       },
       {
@@ -557,7 +668,13 @@
             280.0,
             22.0
           ],
-          "text": "Ferrari SF90 \u2014 V10 Acoustic Interpretation"
+          "text": "Ferrari SF90 — V10 Acoustic Interpretation",
+          "textcolor": [
+            0.82,
+            0.88,
+            0.95,
+            1.0
+          ]
         }
       },
       {
@@ -577,12 +694,27 @@
           ],
           "presentation": 1,
           "presentation_rect": [
-            330.0,
-            100.0,
-            280.0,
-            24.0
+            425,
+            129,
+            380,
+            30
           ],
-          "text": "Open Ferrari SF90 \u2014 V10 Acoustic Interpretation"
+          "text": "Open Ferrari SF90 / 声学演绎",
+          "hint": "Open Ferrari SF90 — V10 Acoustic Interpretation：作用于当前选择的发动机。音频默认关闭；状态只读反馈不会重新触发控制。",
+          "annotation": "Open Ferrari SF90 — V10 Acoustic Interpretation：作用于当前选择的发动机。音频默认关闭；状态只读反馈不会重新触发控制。",
+          "bgcolor": [
+            0.16,
+            0.22,
+            0.3,
+            1.0
+          ],
+          "textcolor": [
+            0.92,
+            0.97,
+            1.0,
+            1.0
+          ],
+          "fontsize": 14
         }
       },
       {
@@ -655,7 +787,7 @@
             260.0,
             22.0
           ],
-          "text": "loadunique VehicleSoundSynth-Ferrari.maxpat"
+          "text": "loadunique EV-Engine-V7-Ferrari.maxpat"
         }
       },
       {
@@ -675,12 +807,27 @@
           ],
           "presentation": 1,
           "presentation_rect": [
-            930.0,
-            100.0,
-            280.0,
-            24.0
+            820,
+            129,
+            380,
+            30
           ],
-          "text": "Close Active / \u5173\u95ed\u5f53\u524d\u8f66\u578b"
+          "text": "Close Active / 关闭当前车型",
+          "hint": "Close Active / 关闭当前车型：作用于当前选择的发动机。音频默认关闭；状态只读反馈不会重新触发控制。",
+          "annotation": "Close Active / 关闭当前车型：作用于当前选择的发动机。音频默认关闭；状态只读反馈不会重新触发控制。",
+          "bgcolor": [
+            0.16,
+            0.22,
+            0.3,
+            1.0
+          ],
+          "textcolor": [
+            0.92,
+            0.97,
+            1.0,
+            1.0
+          ],
+          "fontsize": 14
         }
       },
       {
@@ -705,7 +852,7 @@
         "box": {
           "id": "obj-38",
           "maxclass": "bpatcher",
-          "name": "Patcher:/patchers/runtime_console.maxpat",
+          "name": "Patcher:/patchers/v7_runtime_console.maxpat",
           "numinlets": 1,
           "numoutlets": 1,
           "outlettype": [
@@ -719,10 +866,10 @@
           ],
           "presentation": 1,
           "presentation_rect": [
-            30.0,
-            145.0,
-            1180.0,
-            600.0
+            30,
+            178,
+            1180,
+            660
           ],
           "varname": "runtime_console"
         }
@@ -1070,7 +1217,20 @@
             900.0,
             22.0
           ],
-          "text": "Main is intentionally DSP-free. Audio starts OFF; command and feedback buses are scoped to the selected profile."
+          "text": "候选版本：本机 Max 与实车听评尚待验收。仅开启一个发动机；请先低音量试听。唯一操作说明：V7_MANUAL.md",
+          "textcolor": [
+            0.82,
+            0.88,
+            0.95,
+            1.0
+          ],
+          "presentation": 1,
+          "presentation_rect": [
+            30,
+            850,
+            1180,
+            44
+          ]
         }
       }
     ],
@@ -1932,11 +2092,17 @@
     "objectsnaponopen": 1,
     "openinpresentation": 1,
     "rect": [
-      50.0,
-      50.0,
+      50,
+      50,
       1240,
-      900
+      910
     ],
-    "toolbarvisible": 1
+    "toolbarvisible": 1,
+    "bgcolor": [
+      0.04,
+      0.055,
+      0.085,
+      1.0
+    ]
   }
 }

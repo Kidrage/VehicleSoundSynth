@@ -1,0 +1,126 @@
+{
+  "pattrstorage": {
+    "name": "soundscape_v10_v5",
+    "slots": {
+      "99": {
+        "data": {
+          "soundscape_brightness_state": [
+            0.4
+          ],
+          "soundscape_enable_state": [
+            1.0
+          ],
+          "soundscape_motion_state": [
+            0.18
+          ],
+          "soundscape_pitch_follow_state": [
+            1.0
+          ],
+          "soundscape_space_state": [
+            0.34
+          ],
+          "soundscape_transpose_state": [
+            0.0
+          ],
+          "v10_soundscape_v5_beap~::Bank_Space::Center": [
+            430.0
+          ],
+          "v10_soundscape_v5_beap~::Bank_Space::Rate": [
+            0.004
+          ],
+          "v10_soundscape_v5_beap~::Bank_Space::Regen": [
+            0.006
+          ],
+          "v10_soundscape_v5_beap~::Bank_Space::Width": [
+            4.0
+          ],
+          "v10_soundscape_v5_beap~::Bank_Space::bypass": [
+            0
+          ],
+          "v10_soundscape_v5_beap~::Combustion_Envelope::Attack": [
+            85.0
+          ],
+          "v10_soundscape_v5_beap~::Combustion_Envelope::Decay": [
+            920.0
+          ],
+          "v10_soundscape_v5_beap~::Combustion_Envelope::Release": [
+            2400.0
+          ],
+          "v10_soundscape_v5_beap~::Combustion_Envelope::Sustain": [
+            96.0
+          ],
+          "v10_soundscape_v5_beap~::Combustion_VCA::Response": [
+            0.0
+          ],
+          "v10_soundscape_v5_beap~::Exhaust_Cavity::CV1": [
+            18.0
+          ],
+          "v10_soundscape_v5_beap~::Exhaust_Cavity::Freq": [
+            850.0
+          ],
+          "v10_soundscape_v5_beap~::Exhaust_Cavity::Res": [
+            1.1
+          ],
+          "v10_soundscape_v5_beap~::Ignition_Layers::in1": [
+            -3.0
+          ],
+          "v10_soundscape_v5_beap~::Ignition_Layers::in2": [
+            -5.0
+          ],
+          "v10_soundscape_v5_beap~::Ignition_Layers::in3": [
+            -10.0
+          ],
+          "v10_soundscape_v5_beap~::Ignition_Layers::in4": [
+            -9.0
+          ],
+          "v10_soundscape_v5_beap~::Metal_Structure::FilterType": [
+            0
+          ],
+          "v10_soundscape_v5_beap~::Metal_Structure::Freq": [
+            1050.0
+          ],
+          "v10_soundscape_v5_beap~::Metal_Structure::Res": [
+            1.0
+          ],
+          "v10_soundscape_v5_beap~::Metal_Structure::power[1]": [
+            1
+          ],
+          "v10_soundscape_v5_beap~::Vehicle_Space::Damping": [
+            3100.0
+          ],
+          "v10_soundscape_v5_beap~::Vehicle_Space::Decay": [
+            29.0
+          ],
+          "v10_soundscape_v5_beap~::Vehicle_Space::Diffusion": [
+            0.84
+          ],
+          "v10_soundscape_v5_beap~::Vehicle_Space::Mix": [
+            100
+          ],
+          "v10_soundscape_v5_beap~::Vehicle_Space::Size": [
+            56.0
+          ],
+          "v10_soundscape_v5_beap~::Vehicle_Space::bypass": [
+            0
+          ],
+          "v10_soundscape_v5_beap~::bed_body": [
+            0.78
+          ],
+          "v10_soundscape_v5_beap~::bed_cavity": [
+            0.7
+          ],
+          "v10_soundscape_v5_beap~::bed_contour": [
+            0.42
+          ],
+          "v10_soundscape_v5_beap~::bed_load_response": [
+            0.72
+          ],
+          "v10_soundscape_v5_beap~::bed_release_mass": [
+            0.65
+          ]
+        },
+        "id": 99
+      }
+    }
+  }
+}

@@ -1,0 +1,219 @@
+{
+  "patcher": {
+    "appversion": {
+      "architecture": "x64",
+      "major": 8,
+      "minor": 6,
+      "modernui": 1,
+      "revision": 5
+    },
+    "boxes": [
+      {
+        "box": {
+          "code": "// V3 spatial protection, then exact original/V3 blend.\n// in1: BEAP group sum; in2/3: untouched legacy; in4: running blend.\nParam v3_width(0.5, min=0, max=1);\nHistory v3_low(0);\nHistory v3_last(0);\nHistory v3_allpass(0);\nHistory v3_ceiling(0);\nHistory v3_infra(0);\nv3_k = exp(-6.283185307179586*3500/samplerate);\nv3_ceiling = in1*(1-v3_k)+v3_ceiling*v3_k;\nv3_hi = exp(-6.283185307179586*28/samplerate);\nv3_infra = v3_ceiling*(1-v3_hi)+v3_infra*v3_hi;\nv3_mid = v3_ceiling-v3_infra;\nv3_side_k = exp(-6.283185307179586*120/samplerate);\nv3_low = v3_mid*(1-v3_side_k)+v3_low*v3_side_k;\nv3_high = v3_mid-v3_low;\nv3_ap = -.96*v3_high+v3_last+.96*v3_allpass;\nv3_last = v3_high;\nv3_allpass = v3_ap;\nv3_side = (v3_ap-v3_high)*.22*slide(v3_width,samplerate*.035,samplerate*.035);\nout1 = in2 + in4*(v3_mid+v3_side-in2);\nout2 = in3 + in4*(v3_mid-v3_side-in3);",
+          "id": "obj-1",
+          "maxclass": "codebox",
+          "numinlets": 4,
+          "numoutlets": 2,
+          "outlettype": [
+            "",
+            ""
+          ],
+          "patching_rect": [
+            40.0,
+            40.0,
+            760.0,
+            580.0
+          ]
+        }
+      },
+      {
+        "box": {
+          "id": "obj-2",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            40.0,
+            640.0,
+            45.0,
+            22.0
+          ],
+          "text": "out 1"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-3",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            120.0,
+            640.0,
+            45.0,
+            22.0
+          ],
+          "text": "out 2"
+        }
+      },
+      {
+        "box": {
+          "id": "obj-4",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            840.0,
+            40.0,
+            220.0,
+            22.0
+          ],
+          "text": "param v3_width 0.5 @min 0 @max 1"
+        }
+      },
+      {
+        "box": {
+          "id": "signal-in-1",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            40.0,
+            10.0,
+            50.0,
+            22.0
+          ],
+          "text": "in 1"
+        }
+      },
+      {
+        "box": {
+          "id": "signal-in-2",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            120.0,
+            10.0,
+            50.0,
+            22.0
+          ],
+          "text": "in 2"
+        }
+      },
+      {
+        "box": {
+          "id": "signal-in-3",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            200.0,
+            10.0,
+            50.0,
+            22.0
+          ],
+          "text": "in 3"
+        }
+      },
+      {
+        "box": {
+          "id": "signal-in-4",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            280.0,
+            10.0,
+            50.0,
+            22.0
+          ],
+          "text": "in 4"
+        }
+      }
+    ],
+    "classnamespace": "dsp.gen",
+    "fileversion": 1,
+    "lines": [
+      {
+        "patchline": {
+          "destination": [
+            "obj-2",
+            0
+          ],
+          "source": [
+            "obj-1",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-3",
+            0
+          ],
+          "source": [
+            "obj-1",
+            1
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-1",
+            0
+          ],
+          "source": [
+            "signal-in-1",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-1",
+            1
+          ],
+          "source": [
+            "signal-in-2",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-1",
+            2
+          ],
+          "source": [
+            "signal-in-3",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "destination": [
+            "obj-1",
+            3
+          ],
+          "source": [
+            "signal-in-4",
+            0
+          ]
+        }
+      }
+    ],
+    "rect": [
+      50.0,
+      50.0,
+      850.0,
+      680.0
+    ]
+  }
+}

@@ -1,0 +1,144 @@
+{
+  "pattrstorage": {
+    "name": "soundscape_ev_v4",
+    "slots": {
+      "99": {
+        "data": {
+          "ev_soundscape_v4_beap~::Energy_Body::Mute": [
+            0
+          ],
+          "ev_soundscape_v4_beap~::Energy_Body::Offset": [
+            0
+          ],
+          "ev_soundscape_v4_beap~::Energy_Body::Waveform": [
+            0
+          ],
+          "ev_soundscape_v4_beap~::Evolution_Layers::in1": [
+            -14.0
+          ],
+          "ev_soundscape_v4_beap~::Evolution_Layers::in2": [
+            -4.0
+          ],
+          "ev_soundscape_v4_beap~::Evolution_Layers::in3": [
+            -7.0
+          ],
+          "ev_soundscape_v4_beap~::Evolution_Layers::in4": [
+            -18.0
+          ],
+          "ev_soundscape_v4_beap~::Evolution_Score_A::Mute": [
+            0
+          ],
+          "ev_soundscape_v4_beap~::Evolution_Score_A::Offset": [
+            0
+          ],
+          "ev_soundscape_v4_beap~::Evolution_Score_A::Waveform": [
+            1
+          ],
+          "ev_soundscape_v4_beap~::Motor_Inverter::Mute": [
+            0
+          ],
+          "ev_soundscape_v4_beap~::Motor_Inverter::Offset": [
+            0
+          ],
+          "ev_soundscape_v4_beap~::Motor_Inverter::Waveform": [
+            0
+          ],
+          "ev_soundscape_v4_beap~::Orbital_Motion::Center": [
+            780.0
+          ],
+          "ev_soundscape_v4_beap~::Orbital_Motion::Rate": [
+            0.011
+          ],
+          "ev_soundscape_v4_beap~::Orbital_Motion::Regen": [
+            0.006
+          ],
+          "ev_soundscape_v4_beap~::Orbital_Motion::Width": [
+            14.0
+          ],
+          "ev_soundscape_v4_beap~::Orbital_Motion::bypass": [
+            0
+          ],
+          "ev_soundscape_v4_beap~::Ready_Envelope::Attack": [
+            180.0
+          ],
+          "ev_soundscape_v4_beap~::Ready_Envelope::Decay": [
+            1600.0
+          ],
+          "ev_soundscape_v4_beap~::Ready_Envelope::Release": [
+            3600.0
+          ],
+          "ev_soundscape_v4_beap~::Ready_Envelope::Sustain": [
+            91.0
+          ],
+          "ev_soundscape_v4_beap~::Ready_VCA::Response": [
+            0.0
+          ],
+          "ev_soundscape_v4_beap~::Spectral_Morph::CV1": [
+            18.0
+          ],
+          "ev_soundscape_v4_beap~::Spectral_Morph::Freq": [
+            2650.0
+          ],
+          "ev_soundscape_v4_beap~::Spectral_Morph::Res": [
+            0.75
+          ],
+          "ev_soundscape_v4_beap~::Sphere_Space::Damping": [
+            6100.0
+          ],
+          "ev_soundscape_v4_beap~::Sphere_Space::Decay": [
+            48.0
+          ],
+          "ev_soundscape_v4_beap~::Sphere_Space::Diffusion": [
+            0.84
+          ],
+          "ev_soundscape_v4_beap~::Sphere_Space::Mix": [
+            100
+          ],
+          "ev_soundscape_v4_beap~::Sphere_Space::Size": [
+            84.0
+          ],
+          "ev_soundscape_v4_beap~::Sphere_Space::bypass": [
+            0
+          ],
+          "ev_soundscape_v4_beap~::Transient_Air::Mute": [
+            0
+          ],
+          "ev_soundscape_v4_beap~::Transient_Air::manCVa": [
+            0.0
+          ],
+          "ev_soundscape_v4_beap~::Transient_Resonator::FilterType": [
+            0
+          ],
+          "ev_soundscape_v4_beap~::Transient_Resonator::Freq": [
+            4800.0
+          ],
+          "ev_soundscape_v4_beap~::Transient_Resonator::Res": [
+            0.8
+          ],
+          "ev_soundscape_v4_beap~::Transient_Resonator::power[1]": [
+            1
+          ],
+          "soundscape_brightness_state": [
+            0.64
+          ],
+          "soundscape_enable_state": [
+            1.0
+          ],
+          "soundscape_motion_state": [
+            0.34
+          ],
+          "soundscape_pitch_follow_state": [
+            1.0
+          ],
+          "soundscape_space_state": [
+            0.66
+          ],
+          "soundscape_transpose_state": [
+            0.0
+          ]
+        },
+        "id": 99
+      }
+    }
+  }
+}

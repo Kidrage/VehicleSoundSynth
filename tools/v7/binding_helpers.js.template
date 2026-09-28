@@ -1,0 +1,13 @@
+
+/* Read-only published tone binding fallback. Writes always remain presets/local/v7_*.
+ * No V6 local file is imported. Native pattrstorage client paths remain unchanged.
+ */
+function v7PhysicalExists(path){var f=new File(path,'read'),found=f.isopen;if(found)f.close();return found;}
+function v7ReadPath(path){
+    path=String(path);
+    if(path.indexOf('/presets/local/v7_')>=0 && !v7PhysicalExists(path)){
+        var binding=path.replace('/presets/local/v7_','/presets/v7_bindings/');
+        if(v7PhysicalExists(binding))return binding;
+    }
+    return path;
+}

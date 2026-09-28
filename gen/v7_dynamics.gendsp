@@ -1,0 +1,266 @@
+{
+  "patcher": {
+    "fileversion": 1,
+    "appversion": {
+      "major": 8,
+      "minor": 6,
+      "revision": 5,
+      "architecture": "x64",
+      "modernui": 1
+    },
+    "classnamespace": "dsp.gen",
+    "rect": [
+      50.0,
+      50.0,
+      960,
+      720
+    ],
+    "openinpresentation": 0,
+    "default_fontname": "Arial",
+    "default_fontsize": 12.0,
+    "boxes": [
+      {
+        "box": {
+          "id": "code",
+          "maxclass": "codebox",
+          "numinlets": 2,
+          "numoutlets": 3,
+          "patching_rect": [
+            40.0,
+            40.0,
+            780.0,
+            580.0
+          ],
+          "code": "Param v7_enable(1, min=0, max=1);\nParam v7_comp_threshold_db(-18, min=-36, max=-6);\nParam v7_comp_ratio(2, min=1, max=6);\nParam v7_comp_attack_ms(20, min=2, max=100);\nParam v7_comp_release_ms(180, min=50, max=800);\nParam v7_output_trim_db(-3, min=-18, max=0);\n\nHistory power(0); History reduction(0);\n// Feed-forward stereo-linked RMS detector (10ms power integration), 6dB soft knee.\np=max(in1*in1,in2*in2);\npower=p+(power-p)*exp(-1/(samplerate*.010));\nlevel=10*log10(max(power,1e-12));\nover=level-v7_comp_threshold_db;\nslope=1-1/max(v7_comp_ratio,1);\ntarget=over<=-3 ? 0 : over>=3 ? slope*over : slope*(over+3)*(over+3)/12;\nk=exp(-1/(samplerate*.001*(target>reduction ? v7_comp_attack_ms : v7_comp_release_ms)));\nreduction=target+(reduction-target)*k;\non=slide(v7_enable,samplerate*.04,samplerate*.04);\ntrim=slide(v7_output_trim_db,samplerate*.04,samplerate*.04);\ng=pow(10,(-min(reduction,36)*on+trim)/20);\nout1=in1*g; out2=in2*g; out3=reduction*on;\n"
+        }
+      },
+      {
+        "box": {
+          "id": "in0",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            40.0,
+            10.0,
+            80.0,
+            22.0
+          ],
+          "text": "in 1"
+        }
+      },
+      {
+        "box": {
+          "id": "in1",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            135.0,
+            10.0,
+            80.0,
+            22.0
+          ],
+          "text": "in 2"
+        }
+      },
+      {
+        "box": {
+          "id": "out0",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            40.0,
+            650.0,
+            80.0,
+            22.0
+          ],
+          "text": "out 1"
+        }
+      },
+      {
+        "box": {
+          "id": "out1",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            135.0,
+            650.0,
+            80.0,
+            22.0
+          ],
+          "text": "out 2"
+        }
+      },
+      {
+        "box": {
+          "id": "out2",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            230.0,
+            650.0,
+            80.0,
+            22.0
+          ],
+          "text": "out 3"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-param-v7_enable",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            900,
+            20,
+            320,
+            22
+          ],
+          "text": "param v7_enable 1 @min 0 @max 1"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-param-v7_comp_threshold_db",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            900,
+            44,
+            320,
+            22
+          ],
+          "text": "param v7_comp_threshold_db -18 @min -36 @max -6"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-param-v7_comp_ratio",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            900,
+            68,
+            320,
+            22
+          ],
+          "text": "param v7_comp_ratio 2 @min 1 @max 6"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-param-v7_comp_attack_ms",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            900,
+            92,
+            320,
+            22
+          ],
+          "text": "param v7_comp_attack_ms 20 @min 2 @max 100"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-param-v7_comp_release_ms",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            900,
+            116,
+            320,
+            22
+          ],
+          "text": "param v7_comp_release_ms 180 @min 50 @max 800"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-param-v7_output_trim_db",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            900,
+            140,
+            320,
+            22
+          ],
+          "text": "param v7_output_trim_db -3 @min -18 @max 0"
+        }
+      }
+    ],
+    "lines": [
+      {
+        "patchline": {
+          "source": [
+            "in0",
+            0
+          ],
+          "destination": [
+            "code",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "in1",
+            0
+          ],
+          "destination": [
+            "code",
+            1
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "code",
+            0
+          ],
+          "destination": [
+            "out0",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "code",
+            1
+          ],
+          "destination": [
+            "out1",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "code",
+            2
+          ],
+          "destination": [
+            "out2",
+            0
+          ]
+        }
+      }
+    ]
+  }
+}

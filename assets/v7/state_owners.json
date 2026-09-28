@@ -1,0 +1,52 @@
+{
+  "ev": [
+    "ev_profile.json",
+    "ev_module_mixer_noise_v1.json",
+    "ev_vehicle_bus_eq.json",
+    "ev_start_v3.json",
+    "ev_noise_v1.json",
+    "ev_sound_dna.json",
+    "ev_soundscape_v5.json",
+    "ev_pop_v4.json"
+  ],
+  "v10": [
+    "v10_profile.json",
+    "v10_module_mixer_noise_v1.json",
+    "v10_vehicle_bus_eq.json",
+    "v10_start_v3.json",
+    "v10_noise_v1.json",
+    "v10_sound_dna_v3.json",
+    "v10_soundscape_v5.json",
+    "v10_pop_v4.json"
+  ],
+  "v12": [
+    "v12_profile.json",
+    "v12_module_mixer_noise_v1.json",
+    "v12_vehicle_bus_eq.json",
+    "v12_start_v3.json",
+    "v12_noise_v1.json",
+    "v12_sound_dna_v3.json",
+    "v12_soundscape_v5.json",
+    "v12_pop_v4.json"
+  ],
+  "ioniq6n": [
+    "ioniq6n_profile.json",
+    "ioniq6n_module_mixer_noise_v1.json",
+    "ioniq6n_vehicle_bus_eq.json",
+    "ioniq6n_start_v3.json",
+    "ioniq6n_noise_v1.json",
+    "ioniq6n_sound_dna_v4.json",
+    "ioniq6n_soundscape_modes_v3.json",
+    "ioniq6n_pop_v4.json"
+  ],
+  "ferrari": [
+    "ferrari_profile.json",
+    "ferrari_realism_v2_module_mixer_noise_v1.json",
+    "ferrari_vehicle_bus_eq.json",
+    "ferrari_start_v3.json",
+    "ferrari_noise_v2.json",
+    "ferrari_sound_dna_v5.json",
+    "ferrari_soundscape_v7.json",
+    "ferrari_pop_v3.json"
+  ]
+}

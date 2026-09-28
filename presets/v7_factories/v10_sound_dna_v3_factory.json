@@ -1,0 +1,240 @@
+{
+  "pattrstorage": {
+    "name": "v10_sound_dna_v3",
+    "slots": {
+      "99": {
+        "data": {
+          "V3_Body::CV1": [
+            0.0
+          ],
+          "V3_Body::CV2": [
+            0.0
+          ],
+          "V3_Body::CV3": [
+            0.0
+          ],
+          "V3_Body::FilterType": [
+            0
+          ],
+          "V3_Body::Freq": [
+            850
+          ],
+          "V3_Body::FreqMode": [
+            1.0
+          ],
+          "V3_Body::Offset[2]": [
+            0.0
+          ],
+          "V3_Body::Res": [
+            0.45
+          ],
+          "V3_Body::ResCV": [
+            0.0
+          ],
+          "V3_Body::power[1]": [
+            1
+          ],
+          "V3_Character::CV1": [
+            0.0
+          ],
+          "V3_Character::CV2": [
+            0.0
+          ],
+          "V3_Character::CV3": [
+            0.0
+          ],
+          "V3_Character::FilterType": [
+            0
+          ],
+          "V3_Character::Freq": [
+            2400
+          ],
+          "V3_Character::FreqMode": [
+            1.0
+          ],
+          "V3_Character::Offset[2]": [
+            0.0
+          ],
+          "V3_Character::Res": [
+            0.45
+          ],
+          "V3_Character::ResCV": [
+            0.0
+          ],
+          "V3_Character::power[1]": [
+            1
+          ],
+          "V3_Core::CV1": [
+            0.0
+          ],
+          "V3_Core::CV2": [
+            0.0
+          ],
+          "V3_Core::CV3": [
+            0.0
+          ],
+          "V3_Core::FilterType": [
+            0
+          ],
+          "V3_Core::Freq": [
+            2700
+          ],
+          "V3_Core::FreqMode": [
+            1.0
+          ],
+          "V3_Core::Offset[2]": [
+            0.0
+          ],
+          "V3_Core::Res": [
+            0.45
+          ],
+          "V3_Core::ResCV": [
+            0.0
+          ],
+          "V3_Core::power[1]": [
+            1
+          ],
+          "V3_Group_Mixer::Mute": [
+            0.0
+          ],
+          "V3_Group_Mixer::MuteCh1": [
+            0.0
+          ],
+          "V3_Group_Mixer::MuteCh1[2]": [
+            0.0
+          ],
+          "V3_Group_Mixer::MuteCh2": [
+            0.0
+          ],
+          "V3_Group_Mixer::MuteCh4": [
+            0.0
+          ],
+          "V3_Group_Mixer::in1": [
+            0
+          ],
+          "V3_Group_Mixer::in2": [
+            -6
+          ],
+          "V3_Group_Mixer::in3": [
+            -10
+          ],
+          "V3_Group_Mixer::in4": [
+            -19
+          ],
+          "V3_Upper::CV1": [
+            0.0
+          ],
+          "V3_Upper::CV2": [
+            0.0
+          ],
+          "V3_Upper::CV3": [
+            0.0
+          ],
+          "V3_Upper::FilterType": [
+            0
+          ],
+          "V3_Upper::Freq": [
+            3500
+          ],
+          "V3_Upper::FreqMode": [
+            1.0
+          ],
+          "V3_Upper::Offset[2]": [
+            0.0
+          ],
+          "V3_Upper::Res": [
+            0.45
+          ],
+          "V3_Upper::ResCV": [
+            0.0
+          ],
+          "V3_Upper::power[1]": [
+            1
+          ],
+          "legacy_aggression": [
+            0.9
+          ],
+          "legacy_air_detail": [
+            0.74
+          ],
+          "legacy_body": [
+            0.84
+          ],
+          "legacy_brightness": [
+            0.66
+          ],
+          "legacy_combustion_pulse": [
+            0.88
+          ],
+          "legacy_cycle_irregularity": [
+            0.52
+          ],
+          "legacy_exhaust_detail": [
+            0.72
+          ],
+          "legacy_idle_air": [
+            0.22
+          ],
+          "legacy_idle_body": [
+            0.92
+          ],
+          "legacy_idle_irregularity": [
+            0.38
+          ],
+          "legacy_idle_level": [
+            0.86
+          ],
+          "legacy_idle_metal": [
+            0.46
+          ],
+          "legacy_idle_width": [
+            0.48
+          ],
+          "legacy_intake_detail": [
+            0.82
+          ],
+          "legacy_residual_detail": [
+            0.78
+          ],
+          "legacy_saturation": [
+            0.36
+          ],
+          "legacy_stereo_width": [
+            0.72
+          ],
+          "legacy_texture": [
+            0.86
+          ],
+          "legacy_throttle_loudness_depth": [
+            4.5
+          ],
+          "v3_aggression": [
+            0.5
+          ],
+          "v3_body": [
+            0.5
+          ],
+          "v3_character": [
+            0.5
+          ],
+          "v3_load_response": [
+            0.5
+          ],
+          "v3_pressure_blend": [
+            0.5
+          ],
+          "v3_release_mass": [
+            0.5
+          ],
+          "v3_softness": [
+            0.5
+          ],
+          "v3_width": [
+            0.5
+          ]
+        },
+        "id": 99
+      }
+    }
+  }
+}

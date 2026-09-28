@@ -1,0 +1,25 @@
+{
+  "schema_version": 7,
+  "profile": "ev",
+  "base_commit": "fed2b78ecfabc84d673207b3a5f714b89f76720f",
+  "values": {
+    "v7_enable": 1,
+    "v7_core_db": -2,
+    "v7_pitch_relief": 0.7,
+    "v7_attack_ms": 65,
+    "v7_release_ms": 280,
+    "v7_lift_range_db": 6,
+    "v7_sub_db": -22,
+    "v7_foundation_db": -24,
+    "v7_weight_trim_db": -6,
+    "v7_body_db": 0,
+    "v7_cavity_db": 0,
+    "v7_mechanical_db": 0,
+    "v7_brightness_db": 0,
+    "v7_comp_threshold_db": -18,
+    "v7_comp_ratio": 2,
+    "v7_comp_attack_ms": 20,
+    "v7_comp_release_ms": 180,
+    "v7_output_trim_db": -3
+  }
+}
