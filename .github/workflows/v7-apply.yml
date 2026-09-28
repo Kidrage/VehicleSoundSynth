@@ -1,0 +1,134 @@
+name: V7 apply verify and package
+on:
+  push:
+    branches: [EV-Engine-V7]
+    paths: [.github/workflows/v7-apply.yml]
+permissions:
+  contents: write
+concurrency:
+  group: v7-implementation-publication
+  cancel-in-progress: false
+jobs:
+  apply:
+    if: github.ref == 'refs/heads/EV-Engine-V7'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify and apply exact source payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor fed2b78ecfabc84d673207b3a5f714b89f76720f HEAD
+          python - <<'PY'
+          import base64, hashlib, json, lzma, pathlib, subprocess
+          root=pathlib.Path.cwd()
+          parts=[root/f'.agentlab/v7-transfer/part{i:02d}.b64' for i in range(1,6)]
+          encoded=''.join(p.read_text().strip() for p in parts)
+          data=base64.b64decode(encoded,validate=True)
+          assert hashlib.sha256(data).hexdigest()=='829bd6bc12fb1f5ef3e7be78f0d4fa050c711305e10cc7d543af5122da34376a', 'Transfer checksum mismatch'
+          payload=json.loads(lzma.decompress(data))
+          assert payload['base_commit']=='fed2b78ecfabc84d673207b3a5f714b89f76720f'
+          def safe(name):
+              p=pathlib.PurePosixPath(name)
+              assert not p.is_absolute() and '..' not in p.parts and '.git' not in p.parts
+              return root.joinpath(*p.parts)
+          for name,text in payload['files'].items():
+              p=safe(name);p.parent.mkdir(parents=True,exist_ok=True);p.write_text(text,encoding='utf-8')
+          patch=payload['patch'].encode()
+          subprocess.run(['git','apply','--check','-'],input=patch,check=True)
+          subprocess.run(['git','apply','-'],input=patch,check=True)
+          for name in payload['remove']:safe(name).unlink()
+          subprocess.run(['python','tools/build_v7.py'],check=True)
+          index=json.loads((root/'assets/v7/generated_sha256.json').read_text())
+          digest=hashlib.sha256(json.dumps(index,sort_keys=True,separators=(',',':')).encode()).hexdigest()
+          assert digest==payload['expected_generated_digest']=='235f8de86db60c3bbd0786060c733fd6d16af72e5915f9737dd572e08e290546', 'Generated output differs from locally tested implementation'
+          print('Validated payload; generated',len(index),'output hashes.')
+          PY
+      - name: Install pinned QA dependencies
+        run: python -m pip install -r requirements-v7-qa.txt
+      - name: Validate all portable legacy and V7 tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p qa
+          python tools/build_v7.py --check
+          python tools/validate_v7.py --portable --report qa/portable.json 2>&1 | tee qa/portable.log
+      - name: Commit implementation and remove temporary transfer infrastructure
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import pathlib,shutil,json,re,subprocess
+          root=pathlib.Path.cwd()
+          report=json.loads((root/'qa/portable.json').read_text())
+          assert report['portable_success'] and not report['failures'] and not report['errors']
+          (root/'docs/v7').mkdir(parents=True,exist_ok=True)
+          shutil.copy2(root/'qa/portable.json',root/'docs/v7/PORTABLE_QA.json')
+          shutil.rmtree(root/'.agentlab/v7-transfer')
+          for name in ('v7-workspace-export.yml','v7-apply.yml'):(root/'.github/workflows'/name).unlink()
+          patterns=[rb'-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----',rb'github_pat_[A-Za-z0-9_]{30,}',rb'gh[pousr]_[A-Za-z0-9]{30,}',rb'AKIA[0-9A-Z]{16}']
+          for p in root.rglob('*'):
+              if not p.is_file() or '.git' in p.parts or 'qa' in p.relative_to(root).parts or '__pycache__' in p.parts:continue
+              if p.stat().st_size>4000000:continue
+              blob=p.read_bytes()
+              assert not any(re.search(pattern,blob) for pattern in patterns), 'Credential-like content: '+str(p.relative_to(root))
+          print('Known credential-pattern scan passed; temporary workflows and payload removed.')
+          PY
+          git config user.name 'VehicleSoundSynth V7 QA'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add code gen patchers presets assets tools tests main.maxpat EV-Engine-V7* requirements-v7-qa.txt .gitignore .github/workflows/v7-ci.yml
+          git commit -m 'feat(v7): implement five-engine control, persistent mix design and annotated main UI'
+          git add -A
+          git commit -m 'docs(v7): retain one manual and record verified delivery boundaries'
+          test -z "$(git status --porcelain)"
+          test "$(git ls-remote origin refs/heads/EV-Engine-V7 | cut -f1)" = '${{ github.sha }}'
+          test "$(git ls-remote origin refs/heads/main | cut -f1)" = 'ac2b37d8639027d79934a2023cf8d1d37d3b2f96'
+          git push origin HEAD:refs/heads/EV-Engine-V7
+      - name: Package exact published commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/v7-release"
+          git archive --format=zip --prefix=EV-Engine-V7/ --output="$RUNNER_TEMP/v7-release/EV-Engine-V7_$(git rev-parse --short=7 HEAD).zip" HEAD
+          python - <<'PY'
+          import hashlib,json,os,pathlib,shutil,subprocess,zipfile
+          root=pathlib.Path.cwd();out=pathlib.Path(os.environ['RUNNER_TEMP'])/'v7-release'
+          sha=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+          paths=subprocess.check_output(['git','ls-files','-z']).split(b'\0');paths=[p.decode() for p in paths if p]
+          rows=[{'path':p,'bytes':(root/p).stat().st_size,'sha256':hashlib.sha256((root/p).read_bytes()).hexdigest()} for p in paths]
+          (out/'FILE_MANIFEST.json').write_text(json.dumps({'commit':sha,'files':rows},ensure_ascii=False,indent=2)+'\n')
+          qa=json.loads((root/'qa/portable.json').read_text())
+          release={'repository':'Kidrage/VehicleSoundSynth','private':True,'branch':'EV-Engine-V7','commit':sha,'baseline_commit':'fed2b78ecfabc84d673207b3a5f714b89f76720f','default_branch':'main','main_commit_unchanged':'ac2b37d8639027d79934a2023cf8d1d37d3b2f96','tracked_files':len(paths),'generated_files':len(json.loads((root/'assets/v7/generated_sha256.json').read_text())),'manual':'V7_MANUAL.md','native_max_accepted':False,'vehicle_accepted':False,'qa':qa,'contains_git_history':False,'temporary_transfer_removed':True,'known_credential_pattern_scan_passed':True}
+          (out/'RELEASE_MANIFEST.json').write_text(json.dumps(release,ensure_ascii=False,indent=2)+'\n')
+          for p in ('V7_MANUAL.md','V7_CODEX_HANDOFF.md'):shutil.copy2(root/p,out/p)
+          shutil.copy2(root/'qa/portable.json',out/'PORTABLE_QA.json')
+          shutil.copy2(root/'qa/portable.log',out/'PORTABLE_QA.log')
+          for p in out.glob('*.zip'):
+              with zipfile.ZipFile(p) as z:
+                  assert z.testzip() is None
+                  assert all('/.git/' not in n and 'v7-transfer/' not in n for n in z.namelist())
+                  assert len(z.namelist())>=len(paths)
+          sums=[hashlib.sha256(p.read_bytes()).hexdigest()+'  '+p.name for p in sorted(out.iterdir()) if p.is_file()]
+          (out/'SHA256SUMS').write_text('\n'.join(sums)+'\n')
+          print(json.dumps({'commit':sha,'tracked_files':len(paths),'tests':qa['tests_run'],'passed':qa['passed'],'skipped':len(qa['skips'])},indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: EV-Engine-V7-release
+          path: ${{ runner.temp }}/v7-release/
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: EV-Engine-V7-failure-diagnostics
+          path: qa/
+          retention-days: 3
