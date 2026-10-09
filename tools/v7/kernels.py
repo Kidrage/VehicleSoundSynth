@@ -5,7 +5,7 @@ from .schema import PARAMS
 def declarations(names):
     return '\n'.join(f"Param {n}({PARAMS[n]['default']}, min={PARAMS[n]['min']}, max={PARAMS[n]['max']});" for n in names)+'\n'
 
-SOURCE_PARAMS=['v7_enable','v7_core_db','v7_attack_ms','v7_release_ms','v7_pitch_relief','v7_lift_range_db','v7_weight_trim_db']
+SOURCE_PARAMS=['v7_enable','v7_core_db','v7_attack_ms','v7_release_ms','v7_pitch_relief','v7_lift_range_db','v7_weight_trim_db','v7_order2_db','v7_order3_db']
 
 def source_kernel(code, profile):
     pre = declarations(SOURCE_PARAMS)+'''History v7_tenv(0); History v7_lenv(0);
@@ -18,6 +18,10 @@ v7_tenv = v7_tt+(v7_tenv-v7_tt)*v7_tk;
 v7_lenv = v7_lt+(v7_lenv-v7_lt)*v7_lk;
 v7_core = pow(10,slide(v7_core_db,samplerate*.03,samplerate*.03)*v7_on/20);
 '''
+    if profile not in ('ev', 'ioniq6n'):
+        pre = pre.replace('v7_lt = abs(clamp(load,-1,1));','v7_lt = max(clamp(load,-1,1),0);')
+    pre += 'v7_order2 = pow(10,slide(v7_order2_db,samplerate*.03,samplerate*.03)*v7_on/20);\n'
+    pre += 'v7_order3 = pow(10,slide(v7_order3_db,samplerate*.03,samplerate*.03)*v7_on/20);\n'
     # Hoist all original parameter declarations before the new audio envelope.
     # Ferrari appends versioned params late in its source, so insertion-at-last-Param
     # would otherwise make earlier expressions reference v7_on before assignment.
@@ -53,19 +57,29 @@ drive = drive+(v7_drive-drive)*v7_runblend;''')
         if re.search(r'(?m)^l = ',code):mod_line('l','v7_lenv')
         # Main new group response and preserved low-RPM path both receive sample-rate-independent envelope.
         if 'v3_effort =' in code:mod_line('v3_effort','max(v7_tenv,v7_lenv)')
+        # The currently audible SF90 material has a separate effort path.
+        if 'sf_effort =' in code:mod_line('sf_effort','max(v7_tenv,v7_lenv)')
         # Core trim is before editable Body/Cavity filters and old saturation output.
         # Attenuate the leading pressure partial, not the entire harmonic family.
         # Phase/timing remain intact; downstream Body and character retain their identity.
         pattern=r'(?m)^v3_h1 = ([^;]+);'
         assert re.search(pattern,code),profile
         code=re.sub(pattern,lambda m:'v3_h1 = ('+m.group(1)+')*v7_core;',code,count=1)
+    targets = (('h2', 'h3_l', 'h3_r') if profile=='ev' else
+               ('order2','order3') if profile=='ioniq6n' else ('v3_h2','v3_h3'))
+    for i, var in enumerate(targets):
+        gain = 'v7_order2' if i==0 else 'v7_order3'
+        pattern = rf'(?m)^{var} = ([^;]+);'
+        assert len(re.findall(pattern, code))==1, (profile,var)
+        code = re.sub(pattern, lambda m: var+' = ('+m.group(1)+')*'+gain+';', code, count=1)
     return '// V7 VERSIONED SOURCE: original source is retained in gen/.\n'+code
 
-BED_PARAMS=['v7_enable','v7_sub_db','v7_foundation_db','v7_attack_ms','v7_release_ms']
+BED_PARAMS=['v7_enable','v7_sub_db','v7_foundation_db','v7_attack_ms','v7_release_ms','v7_speed_weight_db']
 def bed(profile):
     f={'ev':(43,61,73,101,137,177),'v10':(46,63,78,108,146,182),'v12':(41,58,72,103,139,173),
        'ioniq6n':(45,62,76,105,143,179),'ferrari':(44,59,74,107,147,183)}[profile]
     return declarations(BED_PARAMS)+f'''
+Param speed_kph(0,min=0,max=300);
 Param rpm(650,min=0,max=10000); Param throttle(0,min=0,max=1);
 Param load(0,min=-1,max=1); Param engine_running(0,min=0,max=1);
 Param shift_cut(1,min=0,max=1); Param powertrain_level_db(-4,min=-60,max=6);
@@ -84,23 +98,28 @@ subgain = slide(v7_sub_db<=-60 ? 0 : pow(10,v7_sub_db/20),samplerate*.03,sampler
 bodygain = slide(v7_foundation_db<=-60 ? 0 : pow(10,v7_foundation_db/20),samplerate*.03,samplerate*.03);
 stemgain = slide(powertrain_level_db<=-60 ? 0 : pow(10,powertrain_level_db/20),samplerate*.035,samplerate*.035);
 // Soft shift modulation retains mass rather than applying the full tonal torque dip twice.
-raw = (sub*subgain+body*bodygain)*.20*(.45+.55*effort)*(.9+.1*shift_cut)*life*enabled*stemgain;
+speed_u = clamp((speed_kph-60)/80,0,1);
+speed_blend = slide(speed_u*speed_u*(3-2*speed_u),samplerate*.8,samplerate*.8);
+speed_gain = pow(10,slide(v7_speed_weight_db,samplerate*.08,samplerate*.08)*speed_blend/20);
+raw = (sub*subgain+body*bodygain)*speed_gain*.20*(.45+.55*effort)*(.9+.1*shift_cut)*life*enabled*stemgain;
 // First-order 28Hz high-pass; final car bass management is still external.
 dc_y = raw-dc_x+exp(-6.283185307179586*28/samplerate)*dc_y;
 dc_x = raw;
 out1 = dc_y;
 '''
 
-BALANCE_PARAMS=['v7_enable','v7_body_db','v7_cavity_db','v7_mechanical_db','v7_brightness_db']
+BALANCE_PARAMS=['v7_enable','v7_body_db','v7_cavity_db','v7_mechanical_db','v7_brightness_db','v7_speed_edge_db']
 def balance():
     code=declarations(BALANCE_PARAMS)+'\nv7_on=slide(v7_enable,samplerate*.04,samplerate*.04);\n'
+    code += 'Param speed_kph(0,min=0,max=300);\nspeed_u=clamp((speed_kph-60)/80,0,1);\nspeed_blend=slide(speed_u*speed_u*(3-2*speed_u),samplerate*.8,samplerate*.8);\n'
     inputs=['in1','in2']
     # Cookbook biquads, same coefficients on both channels. Gains are smoothed, never auto-normalized.
     for n,(param,freq,q,kind) in enumerate([
         ('v7_body_db',135,.7,'peak'),('v7_cavity_db',300,.8,'peak'),
         ('v7_mechanical_db',900,.65,'peak'),('v7_brightness_db',2000,1,'highshelf')]):
         s=f'b{n}'
-        code+=f'{s}g=slide({param},samplerate*.035,samplerate*.035)*v7_on;\n{s}A=pow(10,{s}g/40);\n{s}w=6.283185307179586*{freq}/samplerate;\n{s}c=cos({s}w);\n{s}a=sin({s}w)/(2*{q});\n'
+        control=param+'+v7_speed_edge_db*speed_blend' if kind=='highshelf' else param
+        code+=f'{s}g=slide({control},samplerate*.035,samplerate*.035)*v7_on;\n{s}A=pow(10,{s}g/40);\n{s}w=6.283185307179586*{freq}/samplerate;\n{s}c=cos({s}w);\n{s}a=sin({s}w)/(2*{q});\n'
         if kind=='peak':
             code+=f'{s}a0=1+{s}a/{s}A;\n{s}b0=(1+{s}a*{s}A)/{s}a0;\n{s}b1=-2*{s}c/{s}a0;\n{s}b2=(1-{s}a*{s}A)/{s}a0;\n{s}a1={s}b1;\n{s}a2=(1-{s}a/{s}A)/{s}a0;\n'
         else:

@@ -485,7 +485,11 @@ DriveModel.prototype.tick = function (dt) {
     this.throttle = pedals[0];
     this.brake = pedals[1];
     this.v7StrategyThrottle += (this.throttle - this.v7StrategyThrottle) * (1 - Math.exp(-dt / 0.16));
-    this.v7State = !this.running ? "idle" : this.brake > 0.05 ? "brake" : this.throttle < 0.12 ? "coast" : "drive";
+    // Hysteresis belongs to strategy, not to the telemetry values.
+    if (!this.running) this.v7State = "idle";
+    else if (this.brake >= 0.06 || (this.v7State === "brake" && this.brake > 0.02)) this.v7State = "brake";
+    else if (this.throttle >= 0.16 || (this.v7State === "drive" && this.throttle > 0.08)) this.v7State = "drive";
+    else this.v7State = "coast";
     if (this.running && this.speed >= 25.0 && this.brake < 0.05 &&
             previousThrottle >= 0.35 && previousThrottle - this.throttle >= 0.18) {
         // A fast pedal edge requests temporary engine braking. Progressive
@@ -588,7 +592,7 @@ function outputEvents(events) {
 // V7 uses authentic wheel-speed/gear coupling. No artistic pitch enters telemetry.
 DriveModel.prototype.maybeShift = function (events) {
     if (!this.v7Enabled) return this.v6MaybeShift(events);
-    if (this.shift || this.time - this.lastShiftEnd < this.config.shiftLockSeconds ||
+    if (!this.running || this.shift || this.time - this.lastShiftEnd < this.config.shiftLockSeconds ||
         (this.profile === "ioniq6n" && (!this.running || this.modeTransition || !this.launchCoupled))) return;
     var up = this.profile === "ioniq6n" ? 5600 + 2200 * this.v7StrategyThrottle :
         this.config.upBase + this.config.upThrottle * this.v7StrategyThrottle;
@@ -601,7 +605,7 @@ DriveModel.prototype.maybeShift = function (events) {
     } else if (this.rpm < down && this.gear > 1 &&
         this.speed * this.config.ratios[this.gear - 2] < Math.min(limit - 200, up - 450)) {
         this.beginShift(-1, events);
-        if (this.shift) events.push(["shift_reason", this.v7State === "brake" ? "brake_down" : "coast_down"]);
+        if (this.shift) events.push(["shift_reason", this.v7State === "brake" ? "brake_down" : this.v7State === "drive" ? "drive_down" : "coast_down"]);
     }
 };
 DriveModel.prototype.updateShift = function (dt, events) {

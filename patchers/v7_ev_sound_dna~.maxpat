@@ -2831,6 +2831,51 @@
           ],
           "text": "reset"
         }
+      },
+      {
+        "box": {
+          "id": "v7-write-route10",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 2,
+          "patching_rect": [
+            20.0,
+            4040.0,
+            200.0,
+            22.0
+          ],
+          "text": "route write"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-write-tag10",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 1,
+          "patching_rect": [
+            20.0,
+            4064.0,
+            200.0,
+            22.0
+          ],
+          "text": "prepend v7_storage_notice ev_sound_dna"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-write-send10",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            20.0,
+            4088.0,
+            200.0,
+            22.0
+          ],
+          "text": "s vss.v7.storage.notice"
+        }
       }
     ],
     "classnamespace": "box",
@@ -4655,6 +4700,42 @@
           ],
           "destination": [
             "obj-12",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "obj-11",
+            0
+          ],
+          "destination": [
+            "v7-write-route10",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "v7-write-route10",
+            0
+          ],
+          "destination": [
+            "v7-write-tag10",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "v7-write-tag10",
+            0
+          ],
+          "destination": [
+            "v7-write-send10",
             0
           ]
         }

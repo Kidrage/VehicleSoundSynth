@@ -6640,6 +6640,51 @@
           ],
           "text": "reset"
         }
+      },
+      {
+        "box": {
+          "id": "v7-write-route102",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 2,
+          "patching_rect": [
+            20.0,
+            3464.0,
+            200.0,
+            22.0
+          ],
+          "text": "route write"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-write-tag102",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 1,
+          "patching_rect": [
+            20.0,
+            3488.0,
+            200.0,
+            22.0
+          ],
+          "text": "prepend v7_storage_notice noise_v10_v1"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-write-send102",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            20.0,
+            3512.0,
+            200.0,
+            22.0
+          ],
+          "text": "s vss.v7.storage.notice"
+        }
       }
     ],
     "classnamespace": "box",
@@ -8056,6 +8101,42 @@
           ],
           "source": [
             "obj-111",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "obj-103",
+            0
+          ],
+          "destination": [
+            "v7-write-route102",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "v7-write-route102",
+            0
+          ],
+          "destination": [
+            "v7-write-tag102",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "v7-write-tag102",
+            0
+          ],
+          "destination": [
+            "v7-write-send102",
             0
           ]
         }

@@ -1535,6 +1535,51 @@
           ],
           "text": "expr ($f1-(-24))*10."
         }
+      },
+      {
+        "box": {
+          "id": "v7-write-route5",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 2,
+          "patching_rect": [
+            20.0,
+            2528.0,
+            200.0,
+            22.0
+          ],
+          "text": "route write"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-write-tag5",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 1,
+          "patching_rect": [
+            20.0,
+            2552.0,
+            200.0,
+            22.0
+          ],
+          "text": "prepend v7_storage_notice module_mixer_#1"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-write-send5",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            20.0,
+            2576.0,
+            200.0,
+            22.0
+          ],
+          "text": "s vss.v7.storage.notice"
+        }
       }
     ],
     "classnamespace": "box",
@@ -2615,6 +2660,42 @@
           ],
           "source": [
             "obj-71",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "obj-6",
+            0
+          ],
+          "destination": [
+            "v7-write-route5",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "v7-write-route5",
+            0
+          ],
+          "destination": [
+            "v7-write-tag5",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "v7-write-tag5",
+            0
+          ],
+          "destination": [
+            "v7-write-send5",
             0
           ]
         }

@@ -31,7 +31,7 @@
             780.0,
             580.0
           ],
-          "code": "Param v7_enable(1, min=0, max=1);\nParam v7_body_db(0, min=-9, max=6);\nParam v7_cavity_db(-2, min=-12, max=3);\nParam v7_mechanical_db(0, min=-9, max=6);\nParam v7_brightness_db(0, min=-12, max=6);\n\nv7_on=slide(v7_enable,samplerate*.04,samplerate*.04);\nb0g=slide(v7_body_db,samplerate*.035,samplerate*.035)*v7_on;\nb0A=pow(10,b0g/40);\nb0w=6.283185307179586*135/samplerate;\nb0c=cos(b0w);\nb0a=sin(b0w)/(2*0.7);\nb0a0=1+b0a/b0A;\nb0b0=(1+b0a*b0A)/b0a0;\nb0b1=-2*b0c/b0a0;\nb0b2=(1-b0a*b0A)/b0a0;\nb0a1=b0b1;\nb0a2=(1-b0a/b0A)/b0a0;\nHistory b0ch0x1(0); History b0ch0x2(0); History b0ch0y1(0); History b0ch0y2(0);\nb0ch0y=b0b0*in1+b0b1*b0ch0x1+b0b2*b0ch0x2-b0a1*b0ch0y1-b0a2*b0ch0y2;\nb0ch0x2=b0ch0x1; b0ch0x1=in1; b0ch0y2=b0ch0y1; b0ch0y1=b0ch0y;\nHistory b0ch1x1(0); History b0ch1x2(0); History b0ch1y1(0); History b0ch1y2(0);\nb0ch1y=b0b0*in2+b0b1*b0ch1x1+b0b2*b0ch1x2-b0a1*b0ch1y1-b0a2*b0ch1y2;\nb0ch1x2=b0ch1x1; b0ch1x1=in2; b0ch1y2=b0ch1y1; b0ch1y1=b0ch1y;\nb1g=slide(v7_cavity_db,samplerate*.035,samplerate*.035)*v7_on;\nb1A=pow(10,b1g/40);\nb1w=6.283185307179586*300/samplerate;\nb1c=cos(b1w);\nb1a=sin(b1w)/(2*0.8);\nb1a0=1+b1a/b1A;\nb1b0=(1+b1a*b1A)/b1a0;\nb1b1=-2*b1c/b1a0;\nb1b2=(1-b1a*b1A)/b1a0;\nb1a1=b1b1;\nb1a2=(1-b1a/b1A)/b1a0;\nHistory b1ch0x1(0); History b1ch0x2(0); History b1ch0y1(0); History b1ch0y2(0);\nb1ch0y=b1b0*b0ch0y+b1b1*b1ch0x1+b1b2*b1ch0x2-b1a1*b1ch0y1-b1a2*b1ch0y2;\nb1ch0x2=b1ch0x1; b1ch0x1=b0ch0y; b1ch0y2=b1ch0y1; b1ch0y1=b1ch0y;\nHistory b1ch1x1(0); History b1ch1x2(0); History b1ch1y1(0); History b1ch1y2(0);\nb1ch1y=b1b0*b0ch1y+b1b1*b1ch1x1+b1b2*b1ch1x2-b1a1*b1ch1y1-b1a2*b1ch1y2;\nb1ch1x2=b1ch1x1; b1ch1x1=b0ch1y; b1ch1y2=b1ch1y1; b1ch1y1=b1ch1y;\nb2g=slide(v7_mechanical_db,samplerate*.035,samplerate*.035)*v7_on;\nb2A=pow(10,b2g/40);\nb2w=6.283185307179586*900/samplerate;\nb2c=cos(b2w);\nb2a=sin(b2w)/(2*0.65);\nb2a0=1+b2a/b2A;\nb2b0=(1+b2a*b2A)/b2a0;\nb2b1=-2*b2c/b2a0;\nb2b2=(1-b2a*b2A)/b2a0;\nb2a1=b2b1;\nb2a2=(1-b2a/b2A)/b2a0;\nHistory b2ch0x1(0); History b2ch0x2(0); History b2ch0y1(0); History b2ch0y2(0);\nb2ch0y=b2b0*b1ch0y+b2b1*b2ch0x1+b2b2*b2ch0x2-b2a1*b2ch0y1-b2a2*b2ch0y2;\nb2ch0x2=b2ch0x1; b2ch0x1=b1ch0y; b2ch0y2=b2ch0y1; b2ch0y1=b2ch0y;\nHistory b2ch1x1(0); History b2ch1x2(0); History b2ch1y1(0); History b2ch1y2(0);\nb2ch1y=b2b0*b1ch1y+b2b1*b2ch1x1+b2b2*b2ch1x2-b2a1*b2ch1y1-b2a2*b2ch1y2;\nb2ch1x2=b2ch1x1; b2ch1x1=b1ch1y; b2ch1y2=b2ch1y1; b2ch1y1=b2ch1y;\nb3g=slide(v7_brightness_db,samplerate*.035,samplerate*.035)*v7_on;\nb3A=pow(10,b3g/40);\nb3w=6.283185307179586*2000/samplerate;\nb3c=cos(b3w);\nb3a=sin(b3w)/(2*1);\nb3alpha=sin(b3w)*sqrt(2)/2;\nb3beta=2*sqrt(b3A)*b3alpha;\nb3a0=(b3A+1)-(b3A-1)*b3c+b3beta;\nb3b0=b3A*((b3A+1)+(b3A-1)*b3c+b3beta)/b3a0;\nb3b1=-2*b3A*((b3A-1)+(b3A+1)*b3c)/b3a0;\nb3b2=b3A*((b3A+1)+(b3A-1)*b3c-b3beta)/b3a0;\nb3a1=2*((b3A-1)-(b3A+1)*b3c)/b3a0;\nb3a2=((b3A+1)-(b3A-1)*b3c-b3beta)/b3a0;\nHistory b3ch0x1(0); History b3ch0x2(0); History b3ch0y1(0); History b3ch0y2(0);\nb3ch0y=b3b0*b2ch0y+b3b1*b3ch0x1+b3b2*b3ch0x2-b3a1*b3ch0y1-b3a2*b3ch0y2;\nb3ch0x2=b3ch0x1; b3ch0x1=b2ch0y; b3ch0y2=b3ch0y1; b3ch0y1=b3ch0y;\nHistory b3ch1x1(0); History b3ch1x2(0); History b3ch1y1(0); History b3ch1y2(0);\nb3ch1y=b3b0*b2ch1y+b3b1*b3ch1x1+b3b2*b3ch1x2-b3a1*b3ch1y1-b3a2*b3ch1y2;\nb3ch1x2=b3ch1x1; b3ch1x1=b2ch1y; b3ch1y2=b3ch1y1; b3ch1y1=b3ch1y;\nout1=b3ch0y;\nout2=b3ch1y;\n"
+          "code": "Param v7_enable(1, min=0, max=1);\nParam v7_body_db(0, min=-9, max=6);\nParam v7_cavity_db(-2, min=-12, max=3);\nParam v7_mechanical_db(0, min=-9, max=6);\nParam v7_brightness_db(0, min=-12, max=6);\nParam v7_speed_edge_db(0, min=-6, max=0);\n\nv7_on=slide(v7_enable,samplerate*.04,samplerate*.04);\nParam speed_kph(0,min=0,max=300);\nspeed_u=clamp((speed_kph-60)/80,0,1);\nspeed_blend=slide(speed_u*speed_u*(3-2*speed_u),samplerate*.8,samplerate*.8);\nb0g=slide(v7_body_db,samplerate*.035,samplerate*.035)*v7_on;\nb0A=pow(10,b0g/40);\nb0w=6.283185307179586*135/samplerate;\nb0c=cos(b0w);\nb0a=sin(b0w)/(2*0.7);\nb0a0=1+b0a/b0A;\nb0b0=(1+b0a*b0A)/b0a0;\nb0b1=-2*b0c/b0a0;\nb0b2=(1-b0a*b0A)/b0a0;\nb0a1=b0b1;\nb0a2=(1-b0a/b0A)/b0a0;\nHistory b0ch0x1(0); History b0ch0x2(0); History b0ch0y1(0); History b0ch0y2(0);\nb0ch0y=b0b0*in1+b0b1*b0ch0x1+b0b2*b0ch0x2-b0a1*b0ch0y1-b0a2*b0ch0y2;\nb0ch0x2=b0ch0x1; b0ch0x1=in1; b0ch0y2=b0ch0y1; b0ch0y1=b0ch0y;\nHistory b0ch1x1(0); History b0ch1x2(0); History b0ch1y1(0); History b0ch1y2(0);\nb0ch1y=b0b0*in2+b0b1*b0ch1x1+b0b2*b0ch1x2-b0a1*b0ch1y1-b0a2*b0ch1y2;\nb0ch1x2=b0ch1x1; b0ch1x1=in2; b0ch1y2=b0ch1y1; b0ch1y1=b0ch1y;\nb1g=slide(v7_cavity_db,samplerate*.035,samplerate*.035)*v7_on;\nb1A=pow(10,b1g/40);\nb1w=6.283185307179586*300/samplerate;\nb1c=cos(b1w);\nb1a=sin(b1w)/(2*0.8);\nb1a0=1+b1a/b1A;\nb1b0=(1+b1a*b1A)/b1a0;\nb1b1=-2*b1c/b1a0;\nb1b2=(1-b1a*b1A)/b1a0;\nb1a1=b1b1;\nb1a2=(1-b1a/b1A)/b1a0;\nHistory b1ch0x1(0); History b1ch0x2(0); History b1ch0y1(0); History b1ch0y2(0);\nb1ch0y=b1b0*b0ch0y+b1b1*b1ch0x1+b1b2*b1ch0x2-b1a1*b1ch0y1-b1a2*b1ch0y2;\nb1ch0x2=b1ch0x1; b1ch0x1=b0ch0y; b1ch0y2=b1ch0y1; b1ch0y1=b1ch0y;\nHistory b1ch1x1(0); History b1ch1x2(0); History b1ch1y1(0); History b1ch1y2(0);\nb1ch1y=b1b0*b0ch1y+b1b1*b1ch1x1+b1b2*b1ch1x2-b1a1*b1ch1y1-b1a2*b1ch1y2;\nb1ch1x2=b1ch1x1; b1ch1x1=b0ch1y; b1ch1y2=b1ch1y1; b1ch1y1=b1ch1y;\nb2g=slide(v7_mechanical_db,samplerate*.035,samplerate*.035)*v7_on;\nb2A=pow(10,b2g/40);\nb2w=6.283185307179586*900/samplerate;\nb2c=cos(b2w);\nb2a=sin(b2w)/(2*0.65);\nb2a0=1+b2a/b2A;\nb2b0=(1+b2a*b2A)/b2a0;\nb2b1=-2*b2c/b2a0;\nb2b2=(1-b2a*b2A)/b2a0;\nb2a1=b2b1;\nb2a2=(1-b2a/b2A)/b2a0;\nHistory b2ch0x1(0); History b2ch0x2(0); History b2ch0y1(0); History b2ch0y2(0);\nb2ch0y=b2b0*b1ch0y+b2b1*b2ch0x1+b2b2*b2ch0x2-b2a1*b2ch0y1-b2a2*b2ch0y2;\nb2ch0x2=b2ch0x1; b2ch0x1=b1ch0y; b2ch0y2=b2ch0y1; b2ch0y1=b2ch0y;\nHistory b2ch1x1(0); History b2ch1x2(0); History b2ch1y1(0); History b2ch1y2(0);\nb2ch1y=b2b0*b1ch1y+b2b1*b2ch1x1+b2b2*b2ch1x2-b2a1*b2ch1y1-b2a2*b2ch1y2;\nb2ch1x2=b2ch1x1; b2ch1x1=b1ch1y; b2ch1y2=b2ch1y1; b2ch1y1=b2ch1y;\nb3g=slide(v7_brightness_db+v7_speed_edge_db*speed_blend,samplerate*.035,samplerate*.035)*v7_on;\nb3A=pow(10,b3g/40);\nb3w=6.283185307179586*2000/samplerate;\nb3c=cos(b3w);\nb3a=sin(b3w)/(2*1);\nb3alpha=sin(b3w)*sqrt(2)/2;\nb3beta=2*sqrt(b3A)*b3alpha;\nb3a0=(b3A+1)-(b3A-1)*b3c+b3beta;\nb3b0=b3A*((b3A+1)+(b3A-1)*b3c+b3beta)/b3a0;\nb3b1=-2*b3A*((b3A-1)+(b3A+1)*b3c)/b3a0;\nb3b2=b3A*((b3A+1)+(b3A-1)*b3c-b3beta)/b3a0;\nb3a1=2*((b3A-1)-(b3A+1)*b3c)/b3a0;\nb3a2=((b3A+1)-(b3A-1)*b3c-b3beta)/b3a0;\nHistory b3ch0x1(0); History b3ch0x2(0); History b3ch0y1(0); History b3ch0y2(0);\nb3ch0y=b3b0*b2ch0y+b3b1*b3ch0x1+b3b2*b3ch0x2-b3a1*b3ch0y1-b3a2*b3ch0y2;\nb3ch0x2=b3ch0x1; b3ch0x1=b2ch0y; b3ch0y2=b3ch0y1; b3ch0y1=b3ch0y;\nHistory b3ch1x1(0); History b3ch1x2(0); History b3ch1y1(0); History b3ch1y2(0);\nb3ch1y=b3b0*b2ch1y+b3b1*b3ch1x1+b3b2*b3ch1x2-b3a1*b3ch1y1-b3a2*b3ch1y2;\nb3ch1x2=b3ch1x1; b3ch1x1=b2ch1y; b3ch1y2=b3ch1y1; b3ch1y1=b3ch1y;\nout1=b3ch0y;\nout2=b3ch1y;\n"
         }
       },
       {
@@ -167,6 +167,36 @@
             22
           ],
           "text": "param v7_brightness_db 0 @min -12 @max 6"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-param-v7_speed_edge_db",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            900,
+            140,
+            320,
+            22
+          ],
+          "text": "param v7_speed_edge_db 0 @min -6 @max 0"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-param-speed_kph",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            900,
+            164,
+            320,
+            22
+          ],
+          "text": "param speed_kph 0 @min 0 @max 300"
         }
       }
     ],

@@ -1473,14 +1473,14 @@
           "id": "v7-mass-controls-route",
           "maxclass": "newobj",
           "numinlets": 1,
-          "numoutlets": 6,
+          "numoutlets": 7,
           "patching_rect": [
             20.0,
             2600.0,
             200.0,
             22.0
           ],
-          "text": "routepass v7_enable v7_sub_db v7_foundation_db v7_attack_ms v7_release_ms"
+          "text": "routepass v7_enable v7_sub_db v7_foundation_db v7_attack_ms v7_release_ms v7_speed_weight_db"
         }
       },
       {
@@ -1578,14 +1578,179 @@
           "id": "v7-balance-controls-route",
           "maxclass": "newobj",
           "numinlets": 1,
-          "numoutlets": 6,
+          "numoutlets": 7,
           "patching_rect": [
             20.0,
             2768.0,
             200.0,
             22.0
           ],
-          "text": "routepass v7_enable v7_body_db v7_cavity_db v7_mechanical_db v7_brightness_db"
+          "text": "routepass v7_enable v7_body_db v7_cavity_db v7_mechanical_db v7_brightness_db v7_speed_edge_db"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-speed-route",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 2,
+          "patching_rect": [
+            20.0,
+            2792.0,
+            200.0,
+            22.0
+          ],
+          "text": "routepass speed_kph"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-meter",
+          "maxclass": "newobj",
+          "numinlets": 2,
+          "numoutlets": 4,
+          "patching_rect": [
+            20.0,
+            2816.0,
+            200.0,
+            22.0
+          ],
+          "text": "gen~ @gen Patcher:/gen/v7_meter.gendsp"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-meter-feedback",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            20.0,
+            2840.0,
+            200.0,
+            22.0
+          ],
+          "text": "s vss.runtime.feedback.ev"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-meter-0-snapshot",
+          "maxclass": "newobj",
+          "numinlets": 2,
+          "numoutlets": 1,
+          "patching_rect": [
+            20.0,
+            2864.0,
+            200.0,
+            22.0
+          ],
+          "text": "snapshot~ 100"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-meter-0-tag",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 1,
+          "patching_rect": [
+            20.0,
+            2888.0,
+            200.0,
+            22.0
+          ],
+          "text": "prepend v7_meter_sub_db"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-meter-1-snapshot",
+          "maxclass": "newobj",
+          "numinlets": 2,
+          "numoutlets": 1,
+          "patching_rect": [
+            20.0,
+            2912.0,
+            200.0,
+            22.0
+          ],
+          "text": "snapshot~ 100"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-meter-1-tag",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 1,
+          "patching_rect": [
+            20.0,
+            2936.0,
+            200.0,
+            22.0
+          ],
+          "text": "prepend v7_meter_body_db"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-meter-2-snapshot",
+          "maxclass": "newobj",
+          "numinlets": 2,
+          "numoutlets": 1,
+          "patching_rect": [
+            20.0,
+            2960.0,
+            200.0,
+            22.0
+          ],
+          "text": "snapshot~ 100"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-meter-2-tag",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 1,
+          "patching_rect": [
+            20.0,
+            2984.0,
+            200.0,
+            22.0
+          ],
+          "text": "prepend v7_meter_cavity_db"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-meter-3-snapshot",
+          "maxclass": "newobj",
+          "numinlets": 2,
+          "numoutlets": 1,
+          "patching_rect": [
+            20.0,
+            3008.0,
+            200.0,
+            22.0
+          ],
+          "text": "snapshot~ 100"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-meter-3-tag",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 1,
+          "patching_rect": [
+            20.0,
+            3032.0,
+            200.0,
+            22.0
+          ],
+          "text": "prepend v7_meter_edge_db"
         }
       }
     ],
@@ -3202,6 +3367,18 @@
       {
         "patchline": {
           "source": [
+            "v7-mass-controls-route",
+            5
+          ],
+          "destination": [
+            "v7-mass",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
             "obj-3",
             0
           ],
@@ -3430,6 +3607,18 @@
       {
         "patchline": {
           "source": [
+            "v7-balance-controls-route",
+            5
+          ],
+          "destination": [
+            "v7-balance",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
             "obj-68",
             0
           ],
@@ -3448,6 +3637,210 @@
           "destination": [
             "v7-balance",
             1
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "obj-3",
+            0
+          ],
+          "destination": [
+            "v7-speed-route",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "v7-speed-route",
+            0
+          ],
+          "destination": [
+            "v7-mass",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "v7-speed-route",
+            0
+          ],
+          "destination": [
+            "v7-balance",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "v7-balance",
+            0
+          ],
+          "destination": [
+            "v7-meter",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "v7-balance",
+            1
+          ],
+          "destination": [
+            "v7-meter",
+            1
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "v7-meter",
+            0
+          ],
+          "destination": [
+            "v7-meter-0-snapshot",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "v7-meter-0-snapshot",
+            0
+          ],
+          "destination": [
+            "v7-meter-0-tag",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "v7-meter-0-tag",
+            0
+          ],
+          "destination": [
+            "v7-meter-feedback",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "v7-meter",
+            1
+          ],
+          "destination": [
+            "v7-meter-1-snapshot",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "v7-meter-1-snapshot",
+            0
+          ],
+          "destination": [
+            "v7-meter-1-tag",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "v7-meter-1-tag",
+            0
+          ],
+          "destination": [
+            "v7-meter-feedback",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "v7-meter",
+            2
+          ],
+          "destination": [
+            "v7-meter-2-snapshot",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "v7-meter-2-snapshot",
+            0
+          ],
+          "destination": [
+            "v7-meter-2-tag",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "v7-meter-2-tag",
+            0
+          ],
+          "destination": [
+            "v7-meter-feedback",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "v7-meter",
+            3
+          ],
+          "destination": [
+            "v7-meter-3-snapshot",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "v7-meter-3-snapshot",
+            0
+          ],
+          "destination": [
+            "v7-meter-3-tag",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "v7-meter-3-tag",
+            0
+          ],
+          "destination": [
+            "v7-meter-feedback",
+            0
           ]
         }
       }

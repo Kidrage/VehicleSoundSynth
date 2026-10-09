@@ -6,7 +6,9 @@ autowatch=1;
 outlets=2;
 var profile=typeof jsarguments!=='undefined' ? String(jsarguments[1]) : 'ev';
 var SCHEMA = {}; // generated from tools/v7/schema.py
+var OWNER_CONTRACTS = {}; // generated
 var state={}, initialized=false, pending=null, verifyTask=null;
+var saveRequested=false, receipts={}, numericSaved=false;
 function root(path){return String(path||'').replace(/\\/g,'/').replace(/\/[^/]*$/,'').replace(/\/patchers$/,'');}
 function paths(p,path){var r=root(path);return {local:r+'/presets/local/v7_'+p+'_profile.json',factory:r+'/presets/v7_factories/'+p+'_profile.json'};}
 function bounded(values,defaults){
@@ -20,7 +22,35 @@ function bounded(values,defaults){
     }
     return result;
 }
-function validDocument(doc,p){return doc && doc.schema_version===7 && doc.profile===p && doc.values && typeof doc.values==='object' && !Array.isArray(doc.values);}
+function validDocument(doc,p){
+    if(!doc || doc.schema_version!==7 || doc.profile!==p || !doc.values || typeof doc.values!=='object' || Array.isArray(doc.values))return false;
+    if(doc.schema_revision!==undefined && doc.schema_revision!==1 && doc.schema_revision!==2)return false;
+    var k,v,revision=doc.schema_revision||1;
+    for(k in doc.values)if(Object.prototype.hasOwnProperty.call(doc.values,k) && !Object.prototype.hasOwnProperty.call(SCHEMA,k))return false;
+    for(k in SCHEMA)if(Object.prototype.hasOwnProperty.call(SCHEMA,k)){
+        if(!Object.prototype.hasOwnProperty.call(doc.values,k)){
+            if(revision===1 && SCHEMA[k].introduced_in===2)continue;
+            return false;
+        }
+        v=doc.values[k];
+        if(typeof v!=='number'||!isFinite(v)||v<SCHEMA[k].min||v>SCHEMA[k].max)return false;
+        if(k==='v7_enable' && v!==0 && v!==1)return false;
+    }
+    return true;
+}
+function validTree(x){
+    if(typeof x==='number')return isFinite(x);
+    if(!x || typeof x!=='object')return true;
+    for(var k in x)if(Object.prototype.hasOwnProperty.call(x,k) && !validTree(x[k]))return false;
+    return true;
+}
+function validOwner(doc,c){
+    if(c.storage===null)return validDocument(doc,profile);
+    var ps=doc && doc.pattrstorage, slot=ps && ps.slots && ps.slots['1'], data=slot && slot.data;
+    if(!ps || ps.name!==c.storage || !data || typeof data!=='object' || Array.isArray(data) || !validTree(data))return false;
+    for(var k in data)if(Object.prototype.hasOwnProperty.call(data,k))return true;
+    return false;
+}
 function read(path){
     var f=new File(path,'read'),s='';if(!f.isopen)return null;
     while(f.position<f.eof)s+=f.readstring(65536);f.close();
@@ -29,7 +59,7 @@ function read(path){
 function write(path,doc){
     var f=new File(path,'write','TEXT');if(!f.isopen)throw new Error('Cannot write '+path);
     f.eof=0;f.writestring(JSON.stringify(doc,null,2));f.close();
-    var check=read(path);if(JSON.stringify(check)!==JSON.stringify(doc))throw new Error('Readback differs '+path);
+    var check=v7ReadPhysical(path);if(JSON.stringify(check)!==JSON.stringify(doc))throw new Error('Readback differs '+path);
 }
 function status(text){if(typeof outlet!=='undefined')outlet(1,'v7_status',text);}
 function emit(){for(var k in state)if(Object.prototype.hasOwnProperty.call(state,k)){
@@ -38,20 +68,55 @@ function emit(){for(var k in state)if(Object.prototype.hasOwnProperty.call(state
 function restore(){
     var p=paths(profile,this.patcher.filepath),factory=read(p.factory);
     if(!validDocument(factory,profile)){status('ERROR: V7 factory missing/invalid; audio remains user-controlled OFF');return;}
-    var local=read(p.local),backup=read(p.local+'.bak');
-    var chosen=validDocument(local,profile)?local:validDocument(backup,profile)?backup:factory;
+    var local=v7ReadPhysical(p.local),backup=v7ReadPhysical(p.local+'.bak');
+    var binding=v7ReadPhysical(p.local.replace('/presets/local/v7_','/presets/v7_bindings/'));
+    var chosen=validDocument(local,profile)?local:validDocument(backup,profile)?backup:validDocument(binding,profile)?binding:factory;
     state=bounded(chosen.values,factory.values);initialized=true;emit();
-    status(chosen===factory?'V7 factory loaded / 出厂候选':chosen===backup?'Recovered V7 backup / 已恢复备份':'V7 profile loaded / 已载入本车设置');
+    status(chosen===factory?'V7 factory loaded / 出厂候选':chosen===backup?'Recovered V7 backup / 已恢复备份':chosen===binding?'Published binding loaded / 已载入发布音色':'V7 profile loaded / 已载入本车设置');
+}
+function saveStatus(text){if(typeof outlet!=='undefined')outlet(1,'v7_save_status',text);}
+function verifyOwners(){
+    var c=OWNER_CONTRACTS[profile]||[],r=root(this.patcher.filepath),valid=0,confirmed=0,missing=[],unconfirmed=[],i,d;
+    for(i=0;i<c.length;i++){
+        d=v7ReadPhysical(r+'/presets/local/v7_'+c[i].file);
+        if(validOwner(d,c[i])){
+            valid++;
+            if(saveRequested && (i===0?numericSaved:receipts[c[i].storage]))confirmed++;
+            else unconfirmed.push(c[i].owner);
+        }else missing.push(c[i].owner);
+    }
+    var complete=c.length===8 && confirmed===8 && valid===8;
+    saveStatus(complete?'8/8 文件有效，收到本次保存回执；仍需 Max 关闭重开听评。':
+        '有效文件 '+valid+'/8；本次回执 '+confirmed+'/8'+(missing.length?'；缺失/无效 '+missing.join(','):'')+
+        (unconfirmed.length?'；未确认 '+unconfirmed.join(','):'')+'。不是完整保存确认。');
+    return {valid:valid,confirmed:confirmed,complete:complete,missing:missing,unconfirmed:unconfirmed};
+}
+function storageNotice(args){
+    if(!saveRequested || !args.length)return;
+    var name=String(args[0]),c=OWNER_CONTRACTS[profile]||[],i;
+    for(i=1;i<c.length;i++)if(c[i].storage===name){
+        // Message shape varies by Max version. Explicit failure is never success.
+        // A notice only counts together with a valid physical slot-1 file.
+        for(var j=1;j<args.length;j++){
+            if(typeof args[j]==='number' && args[j]===0){receipts[name]=false;return;}
+            if(typeof args[j]==='string' && /\.json$/i.test(args[j]) && String(args[j]).replace(/\\/g,'/').split('/').pop()!=='v7_'+c[i].file){receipts[name]=false;return;}
+        }
+        receipts[name]=true;return;
+    }
 }
 function save(){
+    saveRequested=true;receipts={};numericSaved=false;
+    if(verifyTask)verifyTask.cancel();
     if(!initialized){status('Save blocked: profile not initialized');return;}
-    var p=paths(profile,this.patcher.filepath),old=read(p.local);
-    var doc={schema_version:7,profile:profile,base_commit:'fed2b78ecfabc84d673207b3a5f714b89f76720f',values:bounded(state,state)};
+    var p=paths(profile,this.patcher.filepath),old=v7ReadPhysical(p.local);
+    var doc={schema_version:7,schema_revision:2,profile:profile,base_commit:'fed2b78ecfabc84d673207b3a5f714b89f76720f',values:bounded(state,state)};
     try{
         if(validDocument(old,profile))write(p.local+'.bak',old);
-        write(p.local,doc);
-        status('V7 parameters saved + verified / V7参数已写入校验；模块保存已另行请求');
-    }catch(e){status('SAVE ERROR: '+String(e));}
+        write(p.local,doc);numericSaved=true;
+        status('V7 numeric snapshot verified / 数值已校验；请看 Mix Lab 的8项保存核验');
+        saveStatus('正在收集模块回执；尚未确认完整音色保存。');
+        verifyTask=new Task(function(){verifyTask=null;verifyOwners.call(this);},this);verifyTask.schedule(1200);
+    }catch(e){status('SAVE ERROR: '+String(e));saveStatus('数值保存失败；不得当作完整保存。');}
 }
 function reset(){
     var p=paths(profile,this.patcher.filepath),factory=read(p.factory);
@@ -66,6 +131,8 @@ function loadbang(){
 function anything(){
     var n=String(messagename),a=typeof arrayfromargs==='undefined'?[]:arrayfromargs(arguments);
     if(n==='save_profile_sound')return save.call(this);
+    if(n==='verify_profile_sound')return verifyOwners.call(this);
+    if(n==='v7_storage_notice')return storageNotice(a);
     if(n==='reload_profile_sound')return restore.call(this);
     if(n==='reset_profile_sound')return reset.call(this);
     if(n==='v7_query'){if(initialized)emit();return;}

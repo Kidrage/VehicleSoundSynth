@@ -2046,6 +2046,51 @@
             22.0
           ]
         }
+      },
+      {
+        "box": {
+          "id": "v7-write-route6",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 2,
+          "patching_rect": [
+            20.0,
+            3272.0,
+            200.0,
+            22.0
+          ],
+          "text": "route write"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-write-tag6",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 1,
+          "patching_rect": [
+            20.0,
+            3296.0,
+            200.0,
+            22.0
+          ],
+          "text": "prepend v7_storage_notice vehicle_bus_eq_#1"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-write-send6",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            20.0,
+            3320.0,
+            200.0,
+            22.0
+          ],
+          "text": "s vss.v7.storage.notice"
+        }
       }
     ],
     "classnamespace": "box",
@@ -3738,6 +3783,42 @@
           ],
           "source": [
             "obj-101",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "obj-7",
+            0
+          ],
+          "destination": [
+            "v7-write-route6",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "v7-write-route6",
+            0
+          ],
+          "destination": [
+            "v7-write-tag6",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "v7-write-tag6",
+            0
+          ],
+          "destination": [
+            "v7-write-send6",
             0
           ]
         }

@@ -1,7 +1,7 @@
 # EV-Engine-V7 唯一使用说明书
 
-版本：V7 实现候选，2026-09-28。仓库 `Kidrage/VehicleSoundSynth`，分支 `EV-Engine-V7`。
-基线：`fed2b78ecfabc84d673207b3a5f714b89f76720f`；包括 Ioniq `739c9d9` 与 Ferrari SF90 V5。
+版本：V7 R2 实现候选，2026-10-09。仓库 `Kidrage/VehicleSoundSynth`，分支 `EV-Engine-V7`。
+本轮更新起点：`e979b0cf261004cc60cd70de1cb5dbd747812092`（已有V7，不重建、不覆盖）。V6声音基线：`fed2b78ecfabc84d673207b3a5f714b89f76720f`；包括 Ioniq `739c9d9` 与 Ferrari SF90 V5。
 本说明书是此分支唯一操作/调音说明。旧说明书已从当前工作树清理，可从 Git 历史查阅。
 
 **状态边界：代码、JSON图连接、源公式数值、控制模型和模拟文件读写已测试；不是 Max 原生/BEAP 编译、扬声器保护或实车听评合格证。没有把用户文字反馈伪造成车内录音测量。**
@@ -14,9 +14,9 @@
 
 没有开启发动机时，新数值框可能尚未得到状态回读，不代表已加载0值。启动后等待状态显示“factory loaded/profile loaded”，再调节与保存。读取的V7快照不含油门、制动、档位、RPM、Audio或solo，不会自动启动播放。
 
-## 2. 五页主界面
+## 2. 六页主界面
 
-`Drive`：驾驶输入、生命周期、实际控制模型输出。`Mix/EQ`：原有七路混音与四段总线EQ。`Sound Design`：进入当前正在发声的DNA、Soundscape、Noise、Start/Pop设计器。`V7 Tone`：源头主阶次与固定低频、连续声频谱定稿。`V7 Response`：毫秒负载包络、Ioniq收油跨度、总线RMS压缩与额外输出余量。
+`Drive`：驾驶输入、生命周期、实际控制模型输出。`Mix/EQ`：原有七路混音与四段总线EQ。`Sound Design`：进入当前正在发声的DNA、Soundscape、Noise、Start/Pop设计器。`V7 Tone`：源头主阶次与固定低频、连续声频谱定稿。`V7 Response`：毫秒负载包络、Ioniq收油跨度、总线RMS压缩与额外输出余量。`Mix Lab / 核验`：次阶次A/B、高速质量/高频补偿、四路只读数字频段读数、内部驾驶状态/换挡原因、IONIQ实际发声RPM/root与保存核验。
 
 旧界面控件增加 hint/annotation，悬停可看说明；V7新增控件同时显示可见解释、单位和范围。范围来自 `assets/v7/parameter_contracts.json`，与运行时边界和工厂值共用 `tools/v7/schema.py`。IONIQ专用项在其他发动机中禁用，不装作通用参数。
 
@@ -48,6 +48,10 @@
 | `v7_comp_attack_ms` / 压缩进入 / Attack τ (ms) | 2…100 | 20 | V7增益衰减时间常数，毫秒；与旧OMX对数rate不同。太短可能磨平冲击。 |
 | `v7_comp_release_ms` / 压缩释放 / Release τ (ms) | 50…800 | 180 | V7增益恢复时间常数；过短抽吸，过长使后续声层暂时被压低。 |
 | `v7_output_trim_db` / V7 余量 / Output trim (dB) | -18…0 | -3 | 在原Main Master之外的候选版本安全余量；上限0，不靠大补偿增益救混音。 |
+| `v7_order2_db` / 次阶次 A / Order A (dB) | -12…3 | 0 | 0=原比例；-6约半幅。EV为2f，V10/V12/Ferrari为h2，IONIQ为1.5×root；不是总线EQ。 |
+| `v7_order3_db` / 次阶次 B / Order B (dB) | -12…3 | 0 | 0=原比例；-6约半幅。EV为约3f双侧分量，V10/V12/Ferrari为h3，IONIQ为2.25×root。 |
+| `v7_speed_weight_db` / 高速重量保持 / Speed mass (dB) | 0…6 | 0 | 只提升独立Sub+Foundation。60km/h以下0；60–140平滑增长；140以上为设定dB。0=不额外补偿。 |
+| `v7_speed_edge_db` / 高速高频约束 / Speed edge (dB) | -6…0 | 0 | 连续DNA+SC的2kHz高架附加量。60–140km/h渐进；0=不补偿，-6=高速最多约半幅。 |
 
 频段名称用于操作理解，不是砖墙分频。Body是135Hz/Q0.7宽峰，Cavity是300Hz/Q0.8宽峰，Mechanical是900Hz/Q0.65宽峰，Brightness是2kHz/S1高架。它们会相互重叠。没有把“Body 90–200Hz”宣称为严格独立stem。
 
@@ -75,11 +79,13 @@
 
 **200–400Hz压住其它内容：** 先做DNA/SC分别solo与相加对比。主单音过强先减Core 1–3dB；IONIQ再试 `weight_trim`，默认−6dB，可在−12..0dB内试；其它车型在SC Designer减少重复Body/Cavity。剩下的宽峰再试Cavity减1–3dB。不要先将总音量或压缩makeup抬高，也不要把整条主阶次直接挖掉。
 
-**三档以上低频空了：** 检查DNA推子与solo、Sub实际路由、后级高通/分频。先把独立Sub或Foundation增加1–3dB作匹配响度A/B，而不是将主pitch拉低八度。新增层频率只随负载/RPM缓慢移动几个Hz；不跟随档位pitchCV到中高频。
+**单个次阶次冒出来：** 先用Core确定是不是主分量，再用Mix Lab的Order A/B分别减3dB比较。EV的A是2f、B是约3f双侧；IONIQ为1.5×root/2.25×root，不是严格整数谐波；V10/V12/Ferrari为h2/h3。作用于源partial、不是总线EQ。高阶谐波仍由DNA Designer调，不能声称这三个旋钮控制了全部声音。
 
-**高转速塑料/刺耳：** 先检查紧急clip计数和原有饱和/激励；再比较Brightness −2..−4dB、Mechanical −1..−3dB。不能断言“所有塑料都在2–6kHz”。高频不足先检查对应层是否启用，再试Brightness +1..+3dB。
+**三档以上低频空了：** 检查DNA推子与solo、Sub实际路由、后级高通/分频。先把独立Sub或Foundation增加1–3dB作匹配响度A/B，而不是将主pitch拉低八度。新增层频率只随负载/RPM缓慢移动几个Hz；不跟随档位pitchCV到中高频。只有高速时才变薄，可先试Speed mass +1..+3dB；0–60km/h不额外提升，60–140km/h渐进到设定值，约0.8s平滑。仅提升独立Sub+Foundation，不增加旧200–400Hz重复底床。它默认0，+6dB是上限而非推荐常开；会消耗约两倍电压幅值的余量。
 
-**点油门太硬：** 先试负载attack 65–100ms。不会延迟CAN/仪表输入，平滑只作用于合成源的发声负载。**收油断层：** IONIQ试lift_range 4–6dB、release 250–400ms。该范围只约束主源的稳态drive项；整体声压还由SC/事件/其它门控决定，不能把它当作已测整体3–6dB。
+**高转速塑料/刺耳：** 先检查紧急clip计数和原有饱和/激励；再比较Brightness −2..−4dB、Mechanical −1..−3dB。不能断言“所有塑料都在2–6kHz”。高频不足先检查对应层是否启用，再试Brightness +1..+3dB。只有高速变硬，试Speed edge −1..−3dB；同样在60–140km/h渐进，是2kHz高架的附加量，会与Brightness相加。它不改RPM，也不自动检测塑料感。
+
+**点油门太硬：** 先试负载attack 65–100ms。不会延迟CAN/仪表输入，平滑只作用于合成源的发声负载。R2补齐Ferrari实际SF90路径的sf_effort，它原来绕过了新增负载包络；SF90自有各层包络仍保留，串联后的整体10–90%时间不等于2.2τ。ICE的负负载不再被当成正牵引负载。**收油断层：** IONIQ试lift_range 4–6dB、release 250–400ms。该范围只约束主源的稳态drive项；整体声压还由SC/事件/其它门控决定，不能把它当作已测整体3–6dB。
 
 **混音/输出：** Mix的DNA/SC/Noise是stem增益；Tone的Core是源partial、Sub/Foundation是子层，不能当成同一个增益重复补偿。原Master trim与V7额外Output trim叠加；后者默认−3dB留余量。先解决源头比例，再调动态。没有自动补偿增益，不以无限压缩救频谱。
 
@@ -89,7 +95,7 @@ IONIQ保留真实控制RPM与发声RPM分离。高转速原来reference修复压
 
 虚拟N e-Shift满油门升挡阈值改为7800RPM附近；仍8档、仍根据车速×当前传动比计算RPM，不随档位不断人为抬高整个音区。升降挡有迟滞是正常设计，不要求同一速度原路反向跳挡。
 
-五款模型区分Drive/Coast/Brake。收油/制动不因油门令升挡阈值下降而触发误升挡；降挡验证目标档位RPM不会立即再升挡/超限。阈值策略负载单独平滑，不修改原油门或外部CAN。切断、pitch sweep与接合分阶段；保留旧策略可对照。EV和关闭eShift的IONIQ仍单速。
+五款模型区分Drive/Coast/Brake。R2加策略迟滞：油门≥0.16进入Drive，降到≤0.08退出；制动≥0.06进入Brake，降到≤0.02退出。这些是内部模拟策略起点，不延迟原始遥测，也不是实车CAN标准。收油/制动不因油门令升挡阈值下降而触发误升挡；降挡验证目标档位RPM不会立即再升挡/超限。阈值策略负载单独平滑，不修改原油门或外部CAN。切断、pitch sweep与接合分阶段；保留旧策略可对照。EV和关闭eShift的IONIQ仍单速。
 
 外部遥测模式保持独立入口，不能把内置模型轨迹当实车CAN或证明外部CAN已跑通。新增state/shift_reason用于判断内部状态。封闭台架/记录数据回放足够验证全档位，不需要道路超速测试。
 
@@ -97,11 +103,15 @@ IONIQ保留真实控制RPM与发声RPM分离。高转速原来reference修复压
 
 主界面 `Save/保存当前发动机` 同时请求：V7数值、DNA、Soundscape、Noise、Start、Pop/Event、EQ与Mix的各自状态所有者保存。八套文件分别保存，不互相抢gain authority。IONIQ的Event使用同一个Pop V4状态，不虚构第二份事件文件。
 
-V7新增数值保存在 `presets/local/v7_<profile>_profile.json`，包含schema_version=7、车型、参数白名单。写入后重读校验，原有效快照保留`.bak`；损坏主快照优先恢复有效备份，仍无有效状态才用factory。Main中显示的“V7参数已写入校验”只证明这一数值文件；原生pattrstorage模块保存已另行请求，必须检查Console/实际文件及重开结果，不能把消息当作全模块原子事务成功。
+V7新增数值保存在 `presets/local/v7_<profile>_profile.json`，schema_version=7、schema_revision=2，包含车型和22个参数白名单。旧V7合法18参数快照可迁移，新增4项自动取0；缺失老参数、错误车型、未知字段、越界/非有限数值不会被悄悄当作有效本地定稿。写入后进行物理文件重读校验，上一份有效数值快照保留`.bak`。
 
-本地V7状态与旧V6隔离：所有本地文件带`v7_`前缀，V7不自动覆盖或导入旧版局部调音。关闭/切换仍走原保存逻辑；重要调整请主动Save，不依赖程序崩溃时自动保存。
+主数值读取顺序是：有效本地 → 有效本地备份 → 有效发布绑定 → 本版factory。备份优先于发布绑定；写入及校验绝不偷读绑定文件来掩盖失败。其它原生模块沿用V7隔离的pattrstorage读写；它们不是都具有数值模块的`.bak`机制。
 
-读取优先级：有效本地V7设置优先；没有本地文件时可读取仓库内 `presets/v7_bindings/` 的定稿绑定；再没有则使用候选factory/原Designer默认。主数值文件还有有效`.bak`恢复。Factory按钮恢复本轮出厂值，随后Save才覆盖本地定稿；不会偷偷覆盖仓库绑定。
+**R2新增“核验保存 / Verify”：** Save发出之前先建立回执收集，再扇出到七个原生模块。Mix Lab核对8个白名单文件、正确pattrstorage名称、有效slot 1、V7参数完整性，并观察原生write通知。缺文件、错误owner、明确失败回执或未收到通知，均显示未完成；不会把“数值文件已保存”升级成“整套音色已保存”。文件契约在 `assets/v7/state_contracts.json`。
+
+这仍不是八文件原子事务，也不保证所有Max版本的write通知形状相同。`8/8`表示本次请求后观察到相应通知且文件有效，不代替关闭重开和音色听评。不要连续快速连点Save；约1.2秒会做一次检查，磁盘慢或通知延迟时手动Verify。Max不发可识别通知时保持“未确认”，由本地Codex按真实事件修适配，禁止伪造成功。重要调整先主动Save、Verify、再关闭，不依赖关闭回调中尚未完成的异步任务。
+
+所有本地文件带`v7_`前缀，不导入/覆盖旧V6状态。Factory按钮仅恢复当前实例候选值，Save后才覆盖本地；不会改仓库定稿绑定。原生模块只有在本地文件不存在时才回退发布绑定，损坏本地原生文件必须单独处理。
 
 **同一电脑：** 调好 → Save → 关闭当前引擎 → 重新打开 →核对数值并回放同一驾驶轨迹。**换电脑/交付：** 保存并关闭Max后，在仓库根目录执行：
 
@@ -110,9 +120,15 @@ python tools/v7_bind_profile.py ioniq6n
 python tools/v7_bind_profile.py ioniq6n --write
 ```
 
-第一条只检查完整性；第二条才把白名单的八个有效JSON快照写入 `presets/v7_bindings/`，并生成SHA-256清单。任一文件缺失/非有限/错误车型/异常绝对素材路径则拒绝，不发布半套音色。把该目录中对应车型的文件提交到本V7分支，就成为下一次干净下载的声音绑定。其它车型替换为ev/v10/v12/ferrari。它不修改任何旧V6或本地源文件，也不证明已通过人工听评。
+第一条只检查完整性；第二条才把白名单的八个有效JSON快照写入 `presets/v7_bindings/`，并生成SHA-256清单。任一文件缺失/非有限/错误车型或pattrstorage名称/异常绝对素材路径则拒绝，不发布半套音色。把该目录中对应车型的文件提交到本V7分支，就成为下一次干净下载的声音绑定。其它车型替换为ev/v10/v12/ferrari。它不修改任何旧V6或本地源文件，也不证明已通过人工听评。
 
-仓库目前提供可加载的候选factory，不包含凭空生成的“用户已实车验收定稿”。状态文件清单在 `assets/v7/state_owners.json`。复制工程时不要把V7 overlay安装在未知的已改工作区上；新下载目录更安全。
+仓库目前提供可加载的候选factory，不包含凭空生成的“用户已实车验收定稿”。状态文件清单在 `assets/v7/state_owners.json`，每个文件的owner名称约束在 `assets/v7/state_contracts.json`。发布工具验证文件完整性，不验证本次保存回执或实际声音，因此必须先完成Max重开验证。复制工程时不要把V7 overlay安装在未知的已改工作区上；新下载目录更安全。
+
+### Mix Lab读数的边界
+
+四个读数是DNA+SC连续总线经过V7频谱平衡后的数字信号，未包含全部Start/Pop/Noise、总线动态或车内扬声器响应。中心为60Hz/Q0.7、170Hz/Q0.8、300Hz/Q1.4、3.5kHz/Q0.9，250ms立体声平均能量。它们重叠且带宽不等，不能直接相加，也不能调成同一dBFS当作平衡目标。0.1峰值的中心正弦应显示约−23.01dBFS RMS；静音显示−120下限。精确20–120、120–250等频带以实际WAV离线审计为准。
+
+IONIQ的发声RPM/root直接来自正在发声的Gen运算输出，不在JS重算第二套。它们是只读诊断端口，不路由到音频输出或CAN。其它车型这些读数为空；驾驶状态/原因仅代表内置模拟器，外部遥测模式不要套用。
 
 ## 8. 谐波均衡是明确的验收要求，不是全部谐波等响
 
@@ -138,7 +154,7 @@ V7使用可读单位的双声道联动RMS压缩：10ms能量检测、6dB软拐�
 
 ```sh
 python tools/build_v7.py --check
-python -m unittest tests.test_v7 -v
+python -m unittest tests.test_v7 tests.test_v7_r2 -v
 python tools/validate_v7.py --portable --report qa/portable.json
 # 装有原始完整Git历史与Max/BEAP的机器再运行严格全量测试：
 python -m unittest discover -s tests -v
@@ -148,7 +164,7 @@ python -m unittest discover -s tests -v
 
 V7生成器 `tools/build_v7.py` 仅读保留的旧种子，生成新命名资源；重复生成可校验。修改配方后用 `--refresh-generated`，仍会检查之前生成文件的SHA，拒绝覆盖本地用户编辑。不要直接运行旧版build_project对整个V7目录重建，否则会把main还原。
 
-完整回滚：关闭Max，在独立工作树检出基线 `fed2b78ecfabc84d673207b3a5f714b89f76720f`，不对有未提交调整的工作区执行reset --hard。用户本地V7预设独立保留；main及其它分支未被合并修改。
+只回退R2：关闭Max，在独立工作树检出 `e979b0cf261004cc60cd70de1cb5dbd747812092`，保留现有本地设置副本。完整回滚V6：关闭Max，在独立工作树检出基线 `fed2b78ecfabc84d673207b3a5f714b89f76720f`，不对有未提交调整的工作区执行reset --hard。用户本地V7预设独立保留；main及其它分支未被合并修改。
 
 工程交接和下一阶段验收见 `V7_CODEX_HANDOFF.md`，不是第二份使用说明。
 

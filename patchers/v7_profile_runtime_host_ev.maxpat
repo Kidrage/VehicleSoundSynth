@@ -1404,14 +1404,14 @@
           "id": "v7-filter",
           "maxclass": "newobj",
           "numinlets": 1,
-          "numoutlets": 20,
+          "numoutlets": 25,
           "patching_rect": [
             20.0,
             2552.0,
             200.0,
             22.0
           ],
-          "text": "routepass v7_enable v7_core_db v7_pitch_relief v7_attack_ms v7_release_ms v7_lift_range_db v7_sub_db v7_foundation_db v7_weight_trim_db v7_body_db v7_cavity_db v7_mechanical_db v7_brightness_db v7_comp_threshold_db v7_comp_ratio v7_comp_attack_ms v7_comp_release_ms v7_output_trim_db v7_query"
+          "text": "routepass v7_enable v7_core_db v7_pitch_relief v7_attack_ms v7_release_ms v7_lift_range_db v7_sub_db v7_foundation_db v7_weight_trim_db v7_body_db v7_cavity_db v7_mechanical_db v7_brightness_db v7_comp_threshold_db v7_comp_ratio v7_comp_attack_ms v7_comp_release_ms v7_output_trim_db v7_order2_db v7_order3_db v7_speed_weight_db v7_speed_edge_db v7_query verify_profile_sound"
         }
       },
       {
@@ -1443,6 +1443,66 @@
           ],
           "text": "loadbang"
         }
+      },
+      {
+        "box": {
+          "id": "v7-receipts",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            20.0,
+            2624.0,
+            200.0,
+            22.0
+          ],
+          "text": "r vss.v7.storage.notice"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-command-order0",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 2,
+          "patching_rect": [
+            20.0,
+            2648.0,
+            200.0,
+            22.0
+          ],
+          "text": "t l l"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-command-order1",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 2,
+          "patching_rect": [
+            20.0,
+            2672.0,
+            200.0,
+            22.0
+          ],
+          "text": "t l l"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-command-order2",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 2,
+          "patching_rect": [
+            20.0,
+            2696.0,
+            200.0,
+            22.0
+          ],
+          "text": "t l l"
+        }
       }
     ],
     "classnamespace": "box",
@@ -1459,30 +1519,6 @@
     ],
     "gridsnaponopen": 1,
     "lines": [
-      {
-        "patchline": {
-          "destination": [
-            "v7-filter",
-            0
-          ],
-          "source": [
-            "obj-2",
-            0
-          ]
-        }
-      },
-      {
-        "patchline": {
-          "destination": [
-            "v7-filter",
-            0
-          ],
-          "source": [
-            "obj-3",
-            0
-          ]
-        }
-      },
       {
         "patchline": {
           "destination": [
@@ -2686,18 +2722,6 @@
       {
         "patchline": {
           "destination": [
-            "v7-filter",
-            0
-          ],
-          "source": [
-            "obj-65",
-            0
-          ]
-        }
-      },
-      {
-        "patchline": {
-          "destination": [
             "obj-67",
             0
           ],
@@ -2727,30 +2751,6 @@
           ],
           "source": [
             "obj-67",
-            0
-          ]
-        }
-      },
-      {
-        "patchline": {
-          "destination": [
-            "obj-68",
-            0
-          ],
-          "source": [
-            "obj-2",
-            0
-          ]
-        }
-      },
-      {
-        "patchline": {
-          "destination": [
-            "obj-68",
-            0
-          ],
-          "source": [
-            "obj-3",
             0
           ]
         }
@@ -3718,44 +3718,8 @@
       {
         "patchline": {
           "source": [
-            "obj-2",
-            0
-          ],
-          "destination": [
-            "v7-state",
-            0
-          ]
-        }
-      },
-      {
-        "patchline": {
-          "source": [
-            "obj-3",
-            0
-          ],
-          "destination": [
-            "v7-state",
-            0
-          ]
-        }
-      },
-      {
-        "patchline": {
-          "source": [
-            "obj-65",
-            0
-          ],
-          "destination": [
-            "v7-state",
-            0
-          ]
-        }
-      },
-      {
-        "patchline": {
-          "source": [
             "v7-filter",
-            19
+            24
           ],
           "destination": [
             "obj-4",
@@ -3807,6 +3771,150 @@
           ],
           "destination": [
             "v7-state",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "v7-receipts",
+            0
+          ],
+          "destination": [
+            "v7-state",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "obj-2",
+            0
+          ],
+          "destination": [
+            "v7-command-order0",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "v7-command-order0",
+            1
+          ],
+          "destination": [
+            "v7-state",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "v7-command-order0",
+            0
+          ],
+          "destination": [
+            "v7-filter",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "v7-command-order0",
+            0
+          ],
+          "destination": [
+            "obj-68",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "obj-3",
+            0
+          ],
+          "destination": [
+            "v7-command-order1",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "v7-command-order1",
+            1
+          ],
+          "destination": [
+            "v7-state",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "v7-command-order1",
+            0
+          ],
+          "destination": [
+            "v7-filter",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "v7-command-order1",
+            0
+          ],
+          "destination": [
+            "obj-68",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "obj-65",
+            0
+          ],
+          "destination": [
+            "v7-command-order2",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "v7-command-order2",
+            1
+          ],
+          "destination": [
+            "v7-state",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "v7-command-order2",
+            0
+          ],
+          "destination": [
+            "v7-filter",
             0
           ]
         }

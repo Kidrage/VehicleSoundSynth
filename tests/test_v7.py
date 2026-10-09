@@ -101,7 +101,7 @@ class V7ScalarMath(unittest.TestCase):
         for profile,stem in SOURCE_NAMES.items():
             params=dict(rpm=4800,throttle=.6,load=.6,engine_running=1,combustion_gain=1,shift_cut=1)
             a=Kernel(self.lib,stem,**params);b=Kernel(self.lib,'v7_'+stem,**params,v7_enable=0)
-            x=a.render(.8);y=b.render(.8);self.assertLess(np.max(np.abs(x-y)),1e-9,profile)
+            x=a.render(.8);y=b.render(.8);channels=4 if profile=='ioniq6n' else 10;self.assertLess(np.max(np.abs(x[:,:channels]-y[:,:channels])),1e-9,profile)
     def test_sources_finite_across_rates_and_states(self):
         for sr in (44100,48000,96000):
             for profile,stem in SOURCE_NAMES.items():
@@ -160,10 +160,11 @@ class V7BindingAndContracts(unittest.TestCase):
         import shutil
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp);(root/'assets/v7').mkdir(parents=True);(root/'presets/local').mkdir(parents=True)
-            for name in ('state_owners.json','parameter_contracts.json'):shutil.copy(ROOT/'assets/v7'/name,root/'assets/v7'/name)
+            for name in ('state_owners.json','state_contracts.json','parameter_contracts.json'):shutil.copy(ROOT/'assets/v7'/name,root/'assets/v7'/name)
             owners=json.loads((root/'assets/v7/state_owners.json').read_text())['ioniq6n']
+            contracts={c['file']:c for c in json.loads((root/'assets/v7/state_contracts.json').read_text())['ioniq6n']}
             for name in owners:
-                d={'pattrstorage':{'name':'test','slots':{'1':{'data':{'knob':[.5]}}}}}
+                d={'pattrstorage':{'name':contracts[name]['storage'],'slots':{'1':{'data':{'knob':[.5]}}}}}
                 if name=='ioniq6n_profile.json':d=json.loads((ROOT/'presets/v7_factories'/name).read_text())
                 (root/'presets/local'/('v7_'+name)).write_text(json.dumps(d))
             before={f.name:f.read_bytes() for f in (root/'presets/local').iterdir()}

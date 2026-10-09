@@ -8,7 +8,7 @@ import argparse,copy,hashlib,json,re,sys
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
-from tools.v7 import graph as g, kernels, drive
+from tools.v7 import graph as g, kernels, drive, review
 from tools.v7.schema import PARAMS,PROFILES,defaults
 from tools.v7.helptext import explain
 
@@ -313,7 +313,7 @@ def build():
  for f in sorted((ROOT/'presets').glob('*.json')):
   outputs['presets/v7_factories/'+f.name]=f.read_text()
  for profile in PROFILES:
-  outputs[f'presets/v7_factories/{profile}_profile.json']=canonical({'schema_version':7,'profile':profile,'base_commit':BASE,'values':defaults(profile)})
+  outputs[f'presets/v7_factories/{profile}_profile.json']=canonical({'schema_version':7,'schema_revision':2,'profile':profile,'base_commit':BASE,'values':defaults(profile)})
  for rel in sorted(needed):
   dst=mapping[rel]
   if rel.endswith('.js'):
@@ -356,7 +356,7 @@ def build():
  outputs['gen/v7_clip_counter.gendsp']=canonical(g.gen(kernels.clip_counter(),2,4))
  outputs['patchers/v7_mix_master~.maxpat']=canonical(master())
  tone=['v7_enable','v7_core_db','v7_pitch_relief','v7_weight_trim_db','v7_sub_db','v7_foundation_db','v7_body_db','v7_cavity_db','v7_mechanical_db','v7_brightness_db']
- response=[n for n in PARAMS if n not in tone]
+ response=[n for n in PARAMS if n not in tone and n not in review.LAB_PARAMS]
  outputs['patchers/v7_tone_console.maxpat']=canonical(g.control_page(tone,PARAMS,'V7 TONE | 音色身份与频段平衡','先减过强主阶次与重复腔体，再补低频。新参数按发动机保存；这些是宽频段工程起点，不是实车自动校准。'))
  outputs['patchers/v7_response_console.maxpat']=canonical(g.control_page(response,PARAMS,'V7 RESPONSE | 负载包络与总线动态','毫秒为时间常数 τ，不是旧OMX rate。负载包络不修改CAN/驾驶遥测；V7=0仅回退源/驾驶策略，安全链仍保留。'))
  outputs['main.maxpat']=canonical(main(load('assets/v7/main_v6_template.json'),mapping))
@@ -385,7 +385,7 @@ def build():
  outputs['assets/v7/state_owners.json']=canonical(owners)
  # Clone manifest is reproducibility/protected-seed evidence, NOT a native runtime certificate.
  outputs['assets/v7/resource_map.json']=canonical({'base_commit':BASE,'mapping':mapping,'protected_seed_sha256':{rel:hashlib.sha256((ROOT/rel).read_bytes()).hexdigest() for rel in sorted(needed)},'active_entries':['main.maxpat']+[f'EV-Engine-V7-{n}.maxpat' for n in ROOT_NAMES.values()]})
- return outputs
+ return review.finalize(outputs,ROOT,expose_params)
 
 def main_cli():
  parser=argparse.ArgumentParser();parser.add_argument('--refresh-generated',action='store_true');parser.add_argument('--check',action='store_true');a=parser.parse_args()

@@ -1,0 +1,203 @@
+{
+  "patcher": {
+    "fileversion": 1,
+    "appversion": {
+      "major": 8,
+      "minor": 6,
+      "revision": 5,
+      "architecture": "x64",
+      "modernui": 1
+    },
+    "classnamespace": "dsp.gen",
+    "rect": [
+      50.0,
+      50.0,
+      960,
+      720
+    ],
+    "openinpresentation": 0,
+    "default_fontname": "Arial",
+    "default_fontsize": 12.0,
+    "boxes": [
+      {
+        "box": {
+          "id": "code",
+          "maxclass": "codebox",
+          "numinlets": 2,
+          "numoutlets": 4,
+          "patching_rect": [
+            40.0,
+            40.0,
+            780.0,
+            580.0
+          ],
+          "code": "// Monitor only: four constant-peak bandpasses, stereo-mean power, 250ms RMS.\nm0w=6.283185307179586*60/samplerate; m0alpha=sin(m0w)/(2*0.7); m0norm=1/(1+m0alpha);\nHistory m01x1(0); History m01x2(0); History m01y1(0); History m01y2(0);\nm01y=m0alpha*m0norm*(in1-m01x2)+2*cos(m0w)*m0norm*m01y1-(1-m0alpha)*m0norm*m01y2;\nm01x2=m01x1; m01x1=in1; m01y2=m01y1; m01y1=m01y;\nHistory m02x1(0); History m02x2(0); History m02y1(0); History m02y2(0);\nm02y=m0alpha*m0norm*(in2-m02x2)+2*cos(m0w)*m0norm*m02y1-(1-m0alpha)*m0norm*m02y2;\nm02x2=m02x1; m02x1=in2; m02y2=m02y1; m02y1=m02y;\nHistory m0power(0);\nm0p=(m01y*m01y+m02y*m02y)*.5;\nm0power=m0p+(m0power-m0p)*exp(-1/(samplerate*.250));\nout1=10*log10(max(m0power,1e-12));\nm1w=6.283185307179586*170/samplerate; m1alpha=sin(m1w)/(2*0.8); m1norm=1/(1+m1alpha);\nHistory m11x1(0); History m11x2(0); History m11y1(0); History m11y2(0);\nm11y=m1alpha*m1norm*(in1-m11x2)+2*cos(m1w)*m1norm*m11y1-(1-m1alpha)*m1norm*m11y2;\nm11x2=m11x1; m11x1=in1; m11y2=m11y1; m11y1=m11y;\nHistory m12x1(0); History m12x2(0); History m12y1(0); History m12y2(0);\nm12y=m1alpha*m1norm*(in2-m12x2)+2*cos(m1w)*m1norm*m12y1-(1-m1alpha)*m1norm*m12y2;\nm12x2=m12x1; m12x1=in2; m12y2=m12y1; m12y1=m12y;\nHistory m1power(0);\nm1p=(m11y*m11y+m12y*m12y)*.5;\nm1power=m1p+(m1power-m1p)*exp(-1/(samplerate*.250));\nout2=10*log10(max(m1power,1e-12));\nm2w=6.283185307179586*300/samplerate; m2alpha=sin(m2w)/(2*1.4); m2norm=1/(1+m2alpha);\nHistory m21x1(0); History m21x2(0); History m21y1(0); History m21y2(0);\nm21y=m2alpha*m2norm*(in1-m21x2)+2*cos(m2w)*m2norm*m21y1-(1-m2alpha)*m2norm*m21y2;\nm21x2=m21x1; m21x1=in1; m21y2=m21y1; m21y1=m21y;\nHistory m22x1(0); History m22x2(0); History m22y1(0); History m22y2(0);\nm22y=m2alpha*m2norm*(in2-m22x2)+2*cos(m2w)*m2norm*m22y1-(1-m2alpha)*m2norm*m22y2;\nm22x2=m22x1; m22x1=in2; m22y2=m22y1; m22y1=m22y;\nHistory m2power(0);\nm2p=(m21y*m21y+m22y*m22y)*.5;\nm2power=m2p+(m2power-m2p)*exp(-1/(samplerate*.250));\nout3=10*log10(max(m2power,1e-12));\nm3w=6.283185307179586*3500/samplerate; m3alpha=sin(m3w)/(2*0.9); m3norm=1/(1+m3alpha);\nHistory m31x1(0); History m31x2(0); History m31y1(0); History m31y2(0);\nm31y=m3alpha*m3norm*(in1-m31x2)+2*cos(m3w)*m3norm*m31y1-(1-m3alpha)*m3norm*m31y2;\nm31x2=m31x1; m31x1=in1; m31y2=m31y1; m31y1=m31y;\nHistory m32x1(0); History m32x2(0); History m32y1(0); History m32y2(0);\nm32y=m3alpha*m3norm*(in2-m32x2)+2*cos(m3w)*m3norm*m32y1-(1-m3alpha)*m3norm*m32y2;\nm32x2=m32x1; m32x1=in2; m32y2=m32y1; m32y1=m32y;\nHistory m3power(0);\nm3p=(m31y*m31y+m32y*m32y)*.5;\nm3power=m3p+(m3power-m3p)*exp(-1/(samplerate*.250));\nout4=10*log10(max(m3power,1e-12));\n"
+        }
+      },
+      {
+        "box": {
+          "id": "in0",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            40.0,
+            10.0,
+            80.0,
+            22.0
+          ],
+          "text": "in 1"
+        }
+      },
+      {
+        "box": {
+          "id": "in1",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            135.0,
+            10.0,
+            80.0,
+            22.0
+          ],
+          "text": "in 2"
+        }
+      },
+      {
+        "box": {
+          "id": "out0",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            40.0,
+            650.0,
+            80.0,
+            22.0
+          ],
+          "text": "out 1"
+        }
+      },
+      {
+        "box": {
+          "id": "out1",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            135.0,
+            650.0,
+            80.0,
+            22.0
+          ],
+          "text": "out 2"
+        }
+      },
+      {
+        "box": {
+          "id": "out2",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            230.0,
+            650.0,
+            80.0,
+            22.0
+          ],
+          "text": "out 3"
+        }
+      },
+      {
+        "box": {
+          "id": "out3",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            325.0,
+            650.0,
+            80.0,
+            22.0
+          ],
+          "text": "out 4"
+        }
+      }
+    ],
+    "lines": [
+      {
+        "patchline": {
+          "source": [
+            "in0",
+            0
+          ],
+          "destination": [
+            "code",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "in1",
+            0
+          ],
+          "destination": [
+            "code",
+            1
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "code",
+            0
+          ],
+          "destination": [
+            "out0",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "code",
+            1
+          ],
+          "destination": [
+            "out1",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "code",
+            2
+          ],
+          "destination": [
+            "out2",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "code",
+            3
+          ],
+          "destination": [
+            "out3",
+            0
+          ]
+        }
+      }
+    ]
+  }
+}

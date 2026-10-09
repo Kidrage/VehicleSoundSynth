@@ -31,7 +31,7 @@
             780.0,
             580.0
           ],
-          "code": "Param v7_enable(1, min=0, max=1);\nParam v7_sub_db(-18, min=-60, max=0);\nParam v7_foundation_db(-20, min=-60, max=0);\nParam v7_attack_ms(65, min=10, max=180);\nParam v7_release_ms(280, min=80, max=800);\n\nParam rpm(650,min=0,max=10000); Param throttle(0,min=0,max=1);\nParam load(0,min=-1,max=1); Param engine_running(0,min=0,max=1);\nParam shift_cut(1,min=0,max=1); Param powertrain_level_db(-4,min=-60,max=6);\nHistory effort(0); History speed_env(0); History dc_x(0); History dc_y(0);\nrequest = clamp(.6*throttle+.4*abs(load),0,1);\nk = exp(-1/(samplerate*.001*(request>effort ? max(120,v7_attack_ms) : max(350,v7_release_ms))));\neffort = request+(effort-request)*k;\nspeed_env = clamp(rpm/10000,0,1)+(speed_env-clamp(rpm/10000,0,1))*exp(-1/(samplerate*.8));\nlife = slide(engine_running,samplerate*.04,samplerate*.12);\nenabled = slide(v7_enable,samplerate*.04,samplerate*.04);\n// No oscillator follows the pitch CV. Small slow variation preserves LF at 3rd..8th gear.\nmodulation = .92+.08*cycle(4+effort*3);\nsub = (cycle(41+effort*2+speed_env)*.50 + cycle(58+effort*2)*.30 + cycle(72+speed_env)*.20)*modulation;\nbody = cycle(103+effort*3)*.45+cycle(139+effort*2)*.32+cycle(173+speed_env*2)*.23;\nsubgain = slide(v7_sub_db<=-60 ? 0 : pow(10,v7_sub_db/20),samplerate*.03,samplerate*.03);\nbodygain = slide(v7_foundation_db<=-60 ? 0 : pow(10,v7_foundation_db/20),samplerate*.03,samplerate*.03);\nstemgain = slide(powertrain_level_db<=-60 ? 0 : pow(10,powertrain_level_db/20),samplerate*.035,samplerate*.035);\n// Soft shift modulation retains mass rather than applying the full tonal torque dip twice.\nraw = (sub*subgain+body*bodygain)*.20*(.45+.55*effort)*(.9+.1*shift_cut)*life*enabled*stemgain;\n// First-order 28Hz high-pass; final car bass management is still external.\ndc_y = raw-dc_x+exp(-6.283185307179586*28/samplerate)*dc_y;\ndc_x = raw;\nout1 = dc_y;\n"
+          "code": "Param v7_enable(1, min=0, max=1);\nParam v7_sub_db(-18, min=-60, max=0);\nParam v7_foundation_db(-20, min=-60, max=0);\nParam v7_attack_ms(65, min=10, max=180);\nParam v7_release_ms(280, min=80, max=800);\nParam v7_speed_weight_db(0, min=0, max=6);\n\nParam speed_kph(0,min=0,max=300);\nParam rpm(650,min=0,max=10000); Param throttle(0,min=0,max=1);\nParam load(0,min=-1,max=1); Param engine_running(0,min=0,max=1);\nParam shift_cut(1,min=0,max=1); Param powertrain_level_db(-4,min=-60,max=6);\nHistory effort(0); History speed_env(0); History dc_x(0); History dc_y(0);\nrequest = clamp(.6*throttle+.4*abs(load),0,1);\nk = exp(-1/(samplerate*.001*(request>effort ? max(120,v7_attack_ms) : max(350,v7_release_ms))));\neffort = request+(effort-request)*k;\nspeed_env = clamp(rpm/10000,0,1)+(speed_env-clamp(rpm/10000,0,1))*exp(-1/(samplerate*.8));\nlife = slide(engine_running,samplerate*.04,samplerate*.12);\nenabled = slide(v7_enable,samplerate*.04,samplerate*.04);\n// No oscillator follows the pitch CV. Small slow variation preserves LF at 3rd..8th gear.\nmodulation = .92+.08*cycle(4+effort*3);\nsub = (cycle(41+effort*2+speed_env)*.50 + cycle(58+effort*2)*.30 + cycle(72+speed_env)*.20)*modulation;\nbody = cycle(103+effort*3)*.45+cycle(139+effort*2)*.32+cycle(173+speed_env*2)*.23;\nsubgain = slide(v7_sub_db<=-60 ? 0 : pow(10,v7_sub_db/20),samplerate*.03,samplerate*.03);\nbodygain = slide(v7_foundation_db<=-60 ? 0 : pow(10,v7_foundation_db/20),samplerate*.03,samplerate*.03);\nstemgain = slide(powertrain_level_db<=-60 ? 0 : pow(10,powertrain_level_db/20),samplerate*.035,samplerate*.035);\n// Soft shift modulation retains mass rather than applying the full tonal torque dip twice.\nspeed_u = clamp((speed_kph-60)/80,0,1);\nspeed_blend = slide(speed_u*speed_u*(3-2*speed_u),samplerate*.8,samplerate*.8);\nspeed_gain = pow(10,slide(v7_speed_weight_db,samplerate*.08,samplerate*.08)*speed_blend/20);\nraw = (sub*subgain+body*bodygain)*speed_gain*.20*(.45+.55*effort)*(.9+.1*shift_cut)*life*enabled*stemgain;\n// First-order 28Hz high-pass; final car bass management is still external.\ndc_y = raw-dc_x+exp(-6.283185307179586*28/samplerate)*dc_y;\ndc_x = raw;\nout1 = dc_y;\n"
         }
       },
       {
@@ -141,13 +141,43 @@
       },
       {
         "box": {
-          "id": "v7-param-rpm",
+          "id": "v7-param-v7_speed_weight_db",
           "maxclass": "newobj",
           "numinlets": 0,
           "numoutlets": 1,
           "patching_rect": [
             900,
             140,
+            320,
+            22
+          ],
+          "text": "param v7_speed_weight_db 0 @min 0 @max 6"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-param-speed_kph",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            900,
+            164,
+            320,
+            22
+          ],
+          "text": "param speed_kph 0 @min 0 @max 300"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-param-rpm",
+          "maxclass": "newobj",
+          "numinlets": 0,
+          "numoutlets": 1,
+          "patching_rect": [
+            900,
+            188,
             320,
             22
           ],
@@ -162,7 +192,7 @@
           "numoutlets": 1,
           "patching_rect": [
             900,
-            164,
+            212,
             320,
             22
           ],
@@ -177,7 +207,7 @@
           "numoutlets": 1,
           "patching_rect": [
             900,
-            188,
+            236,
             320,
             22
           ],
@@ -192,7 +222,7 @@
           "numoutlets": 1,
           "patching_rect": [
             900,
-            212,
+            260,
             320,
             22
           ],
@@ -207,7 +237,7 @@
           "numoutlets": 1,
           "patching_rect": [
             900,
-            236,
+            284,
             320,
             22
           ],
@@ -222,7 +252,7 @@
           "numoutlets": 1,
           "patching_rect": [
             900,
-            260,
+            308,
             320,
             22
           ],

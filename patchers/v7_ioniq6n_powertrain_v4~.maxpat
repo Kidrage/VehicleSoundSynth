@@ -82,8 +82,10 @@
           "id": "obj-4",
           "maxclass": "newobj",
           "numinlets": 1,
-          "numoutlets": 4,
+          "numoutlets": 6,
           "outlettype": [
+            "signal",
+            "signal",
             "signal",
             "signal",
             "signal",
@@ -1067,14 +1069,89 @@
           "id": "v7-source-route",
           "maxclass": "newobj",
           "numinlets": 1,
-          "numoutlets": 8,
+          "numoutlets": 10,
           "patching_rect": [
             20.0,
             2240.0,
             200.0,
             22.0
           ],
-          "text": "routepass v7_enable v7_core_db v7_attack_ms v7_release_ms v7_pitch_relief v7_lift_range_db v7_weight_trim_db"
+          "text": "routepass v7_enable v7_core_db v7_attack_ms v7_release_ms v7_pitch_relief v7_lift_range_db v7_weight_trim_db v7_order2_db v7_order3_db"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-pitch-feedback",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            20.0,
+            2264.0,
+            200.0,
+            22.0
+          ],
+          "text": "s vss.runtime.feedback.ioniq6n"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-render-snapshot",
+          "maxclass": "newobj",
+          "numinlets": 2,
+          "numoutlets": 1,
+          "patching_rect": [
+            20.0,
+            2288.0,
+            200.0,
+            22.0
+          ],
+          "text": "snapshot~ 100"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-render-tag",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 1,
+          "patching_rect": [
+            20.0,
+            2312.0,
+            200.0,
+            22.0
+          ],
+          "text": "prepend v7_render_rpm"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-root-snapshot",
+          "maxclass": "newobj",
+          "numinlets": 2,
+          "numoutlets": 1,
+          "patching_rect": [
+            20.0,
+            2336.0,
+            200.0,
+            22.0
+          ],
+          "text": "snapshot~ 100"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-root-tag",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 1,
+          "patching_rect": [
+            20.0,
+            2360.0,
+            200.0,
+            22.0
+          ],
+          "text": "prepend v7_root_hz"
         }
       }
     ],
@@ -2144,6 +2221,102 @@
           ],
           "destination": [
             "obj-4",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "v7-source-route",
+            7
+          ],
+          "destination": [
+            "obj-4",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "v7-source-route",
+            8
+          ],
+          "destination": [
+            "obj-4",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "obj-4",
+            4
+          ],
+          "destination": [
+            "v7-render-snapshot",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "v7-render-snapshot",
+            0
+          ],
+          "destination": [
+            "v7-render-tag",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "v7-render-tag",
+            0
+          ],
+          "destination": [
+            "v7-pitch-feedback",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "obj-4",
+            5
+          ],
+          "destination": [
+            "v7-root-snapshot",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "v7-root-snapshot",
+            0
+          ],
+          "destination": [
+            "v7-root-tag",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "v7-root-tag",
+            0
+          ],
+          "destination": [
+            "v7-pitch-feedback",
             0
           ]
         }

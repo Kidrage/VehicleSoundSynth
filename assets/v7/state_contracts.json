@@ -1,0 +1,212 @@
+{
+  "ev": [
+    {
+      "file": "ev_profile.json",
+      "storage": null,
+      "owner": "V7"
+    },
+    {
+      "file": "ev_module_mixer_noise_v1.json",
+      "storage": "module_mixer_ev",
+      "owner": "Mix"
+    },
+    {
+      "file": "ev_vehicle_bus_eq.json",
+      "storage": "vehicle_bus_eq_ev",
+      "owner": "EQ"
+    },
+    {
+      "file": "ev_start_v3.json",
+      "storage": "start_ev_v3",
+      "owner": "Start"
+    },
+    {
+      "file": "ev_noise_v1.json",
+      "storage": "noise_ev_v1",
+      "owner": "Noise"
+    },
+    {
+      "file": "ev_sound_dna.json",
+      "storage": "ev_sound_dna",
+      "owner": "DNA"
+    },
+    {
+      "file": "ev_soundscape_v5.json",
+      "storage": "soundscape_ev_v5",
+      "owner": "Soundscape"
+    },
+    {
+      "file": "ev_pop_v4.json",
+      "storage": "ev_pop_v4",
+      "owner": "Pop"
+    }
+  ],
+  "v10": [
+    {
+      "file": "v10_profile.json",
+      "storage": null,
+      "owner": "V7"
+    },
+    {
+      "file": "v10_module_mixer_noise_v1.json",
+      "storage": "module_mixer_v10",
+      "owner": "Mix"
+    },
+    {
+      "file": "v10_vehicle_bus_eq.json",
+      "storage": "vehicle_bus_eq_v10",
+      "owner": "EQ"
+    },
+    {
+      "file": "v10_start_v3.json",
+      "storage": "start_v10_v3",
+      "owner": "Start"
+    },
+    {
+      "file": "v10_noise_v1.json",
+      "storage": "noise_v10_v1",
+      "owner": "Noise"
+    },
+    {
+      "file": "v10_sound_dna_v3.json",
+      "storage": "v10_sound_dna_v3",
+      "owner": "DNA"
+    },
+    {
+      "file": "v10_soundscape_v5.json",
+      "storage": "soundscape_v10_v5",
+      "owner": "Soundscape"
+    },
+    {
+      "file": "v10_pop_v4.json",
+      "storage": "v10_pop_v4",
+      "owner": "Pop"
+    }
+  ],
+  "v12": [
+    {
+      "file": "v12_profile.json",
+      "storage": null,
+      "owner": "V7"
+    },
+    {
+      "file": "v12_module_mixer_noise_v1.json",
+      "storage": "module_mixer_v12",
+      "owner": "Mix"
+    },
+    {
+      "file": "v12_vehicle_bus_eq.json",
+      "storage": "vehicle_bus_eq_v12",
+      "owner": "EQ"
+    },
+    {
+      "file": "v12_start_v3.json",
+      "storage": "start_v12_v3",
+      "owner": "Start"
+    },
+    {
+      "file": "v12_noise_v1.json",
+      "storage": "noise_v12_v1",
+      "owner": "Noise"
+    },
+    {
+      "file": "v12_sound_dna_v3.json",
+      "storage": "v12_sound_dna_v3",
+      "owner": "DNA"
+    },
+    {
+      "file": "v12_soundscape_v5.json",
+      "storage": "soundscape_v12_v5",
+      "owner": "Soundscape"
+    },
+    {
+      "file": "v12_pop_v4.json",
+      "storage": "v12_pop_v4",
+      "owner": "Pop"
+    }
+  ],
+  "ioniq6n": [
+    {
+      "file": "ioniq6n_profile.json",
+      "storage": null,
+      "owner": "V7"
+    },
+    {
+      "file": "ioniq6n_module_mixer_noise_v1.json",
+      "storage": "module_mixer_ioniq6n",
+      "owner": "Mix"
+    },
+    {
+      "file": "ioniq6n_vehicle_bus_eq.json",
+      "storage": "vehicle_bus_eq_ioniq6n",
+      "owner": "EQ"
+    },
+    {
+      "file": "ioniq6n_start_v3.json",
+      "storage": "start_ioniq6n_v3",
+      "owner": "Start"
+    },
+    {
+      "file": "ioniq6n_noise_v1.json",
+      "storage": "noise_ioniq6n_v1",
+      "owner": "Noise"
+    },
+    {
+      "file": "ioniq6n_sound_dna_v4.json",
+      "storage": "ioniq6n_sound_dna_v4",
+      "owner": "DNA"
+    },
+    {
+      "file": "ioniq6n_soundscape_modes_v3.json",
+      "storage": "soundscape_ioniq6n_modes_v3",
+      "owner": "Soundscape"
+    },
+    {
+      "file": "ioniq6n_pop_v4.json",
+      "storage": "ioniq6n_pop_v4",
+      "owner": "Pop"
+    }
+  ],
+  "ferrari": [
+    {
+      "file": "ferrari_profile.json",
+      "storage": null,
+      "owner": "V7"
+    },
+    {
+      "file": "ferrari_realism_v2_module_mixer_noise_v1.json",
+      "storage": "module_mixer_ferrari",
+      "owner": "Mix"
+    },
+    {
+      "file": "ferrari_vehicle_bus_eq.json",
+      "storage": "vehicle_bus_eq_ferrari",
+      "owner": "EQ"
+    },
+    {
+      "file": "ferrari_start_v3.json",
+      "storage": "start_ferrari_v3",
+      "owner": "Start"
+    },
+    {
+      "file": "ferrari_noise_v2.json",
+      "storage": "noise_ferrari_v2",
+      "owner": "Noise"
+    },
+    {
+      "file": "ferrari_sound_dna_v5.json",
+      "storage": "ferrari_sound_dna_v5",
+      "owner": "DNA"
+    },
+    {
+      "file": "ferrari_soundscape_v7.json",
+      "storage": "soundscape_ferrari_v7",
+      "owner": "Soundscape"
+    },
+    {
+      "file": "ferrari_pop_v3.json",
+      "storage": "ferrari_pop_v3",
+      "owner": "Pop"
+    }
+  ]
+}

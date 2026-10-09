@@ -24329,6 +24329,51 @@
           ],
           "text": "thispatcher"
         }
+      },
+      {
+        "box": {
+          "id": "v7-write-route181",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 2,
+          "patching_rect": [
+            20.0,
+            5432.0,
+            200.0,
+            22.0
+          ],
+          "text": "route write"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-write-tag181",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 1,
+          "patching_rect": [
+            20.0,
+            5456.0,
+            200.0,
+            22.0
+          ],
+          "text": "prepend v7_storage_notice v12_sound_dna_v3"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-write-send181",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            20.0,
+            5480.0,
+            200.0,
+            22.0
+          ],
+          "text": "s vss.v7.storage.notice"
+        }
       }
     ],
     "classnamespace": "box",
@@ -26705,6 +26750,42 @@
           ],
           "source": [
             "obj-192",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "obj-182",
+            0
+          ],
+          "destination": [
+            "v7-write-route181",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "v7-write-route181",
+            0
+          ],
+          "destination": [
+            "v7-write-tag181",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "v7-write-tag181",
+            0
+          ],
+          "destination": [
+            "v7-write-send181",
             0
           ]
         }

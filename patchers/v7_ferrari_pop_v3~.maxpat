@@ -925,6 +925,51 @@
           ],
           "text": "delay 50"
         }
+      },
+      {
+        "box": {
+          "id": "v7-write-route42",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 2,
+          "patching_rect": [
+            20.0,
+            2024.0,
+            200.0,
+            22.0
+          ],
+          "text": "route write"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-write-tag42",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 1,
+          "patching_rect": [
+            20.0,
+            2048.0,
+            200.0,
+            22.0
+          ],
+          "text": "prepend v7_storage_notice ferrari_pop_v3"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-write-send42",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            20.0,
+            2072.0,
+            200.0,
+            22.0
+          ],
+          "text": "s vss.v7.storage.notice"
+        }
       }
     ],
     "classnamespace": "box",
@@ -1489,6 +1534,42 @@
           ],
           "source": [
             "obj-51",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "obj-43",
+            0
+          ],
+          "destination": [
+            "v7-write-route42",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "v7-write-route42",
+            0
+          ],
+          "destination": [
+            "v7-write-tag42",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "v7-write-tag42",
+            0
+          ],
+          "destination": [
+            "v7-write-send42",
             0
           ]
         }

@@ -144,6 +144,42 @@
       "label": "V7 余量 / Output trim (dB)",
       "help": "在原Main Master之外的候选版本安全余量；上限0，不靠大补偿增益救混音。",
       "owner": "dynamics"
+    },
+    "v7_order2_db": {
+      "min": -12,
+      "max": 3,
+      "default": 0,
+      "label": "次阶次 A / Order A (dB)",
+      "help": "0=原比例；-6约半幅。EV为2f，V10/V12/Ferrari为h2，IONIQ为1.5×root；不是总线EQ。",
+      "owner": "source",
+      "introduced_in": 2
+    },
+    "v7_order3_db": {
+      "min": -12,
+      "max": 3,
+      "default": 0,
+      "label": "次阶次 B / Order B (dB)",
+      "help": "0=原比例；-6约半幅。EV为约3f双侧分量，V10/V12/Ferrari为h3，IONIQ为2.25×root。",
+      "owner": "source",
+      "introduced_in": 2
+    },
+    "v7_speed_weight_db": {
+      "min": 0,
+      "max": 6,
+      "default": 0,
+      "label": "高速重量保持 / Speed mass (dB)",
+      "help": "只提升独立Sub+Foundation。60km/h以下0；60–140平滑增长；140以上为设定dB。0=不额外补偿。",
+      "owner": "bed",
+      "introduced_in": 2
+    },
+    "v7_speed_edge_db": {
+      "min": -6,
+      "max": 0,
+      "default": 0,
+      "label": "高速高频约束 / Speed edge (dB)",
+      "help": "连续DNA+SC的2kHz高架附加量。60–140km/h渐进；0=不补偿，-6=高速最多约半幅。",
+      "owner": "balance",
+      "introduced_in": 2
     }
   },
   "profile_defaults": {
@@ -165,7 +201,11 @@
       "v7_comp_ratio": 2,
       "v7_comp_attack_ms": 20,
       "v7_comp_release_ms": 180,
-      "v7_output_trim_db": -3
+      "v7_output_trim_db": -3,
+      "v7_order2_db": 0,
+      "v7_order3_db": 0,
+      "v7_speed_weight_db": 0,
+      "v7_speed_edge_db": 0
     },
     "v10": {
       "v7_enable": 1,
@@ -185,7 +225,11 @@
       "v7_comp_ratio": 2,
       "v7_comp_attack_ms": 20,
       "v7_comp_release_ms": 180,
-      "v7_output_trim_db": -3
+      "v7_output_trim_db": -3,
+      "v7_order2_db": 0,
+      "v7_order3_db": 0,
+      "v7_speed_weight_db": 0,
+      "v7_speed_edge_db": 0
     },
     "v12": {
       "v7_enable": 1,
@@ -205,7 +249,11 @@
       "v7_comp_ratio": 2,
       "v7_comp_attack_ms": 20,
       "v7_comp_release_ms": 180,
-      "v7_output_trim_db": -3
+      "v7_output_trim_db": -3,
+      "v7_order2_db": 0,
+      "v7_order3_db": 0,
+      "v7_speed_weight_db": 0,
+      "v7_speed_edge_db": 0
     },
     "ioniq6n": {
       "v7_enable": 1,
@@ -225,7 +273,11 @@
       "v7_comp_ratio": 2,
       "v7_comp_attack_ms": 20,
       "v7_comp_release_ms": 180,
-      "v7_output_trim_db": -3
+      "v7_output_trim_db": -3,
+      "v7_order2_db": 0,
+      "v7_order3_db": 0,
+      "v7_speed_weight_db": 0,
+      "v7_speed_edge_db": 0
     },
     "ferrari": {
       "v7_enable": 1,
@@ -245,7 +297,11 @@
       "v7_comp_ratio": 2,
       "v7_comp_attack_ms": 20,
       "v7_comp_release_ms": 180,
-      "v7_output_trim_db": -3
+      "v7_output_trim_db": -3,
+      "v7_order2_db": 0,
+      "v7_order3_db": 0,
+      "v7_speed_weight_db": 0,
+      "v7_speed_edge_db": 0
     }
   }
 }

@@ -25,6 +25,7 @@ def validate_values(value, at='root'):
 def collect(root: Path, profile: str):
     owners = json.loads((root/'assets/v7/state_owners.json').read_text())
     if profile not in owners: raise ValueError('Unknown engine profile')
+    contracts_by_file={c['file']:c for c in json.loads((root/'assets/v7/state_contracts.json').read_text())[profile]}
     result={}; missing=[]
     for name in owners[profile]:
         src=root/'presets/local'/('v7_'+name)
@@ -43,7 +44,10 @@ def collect(root: Path, profile: str):
                 if type(v) not in (int,float) or not spec['min'] <= v <= spec['max']:
                     raise ValueError('Out-of-range V7 parameter: '+k)
         else:
-            data=doc.get('pattrstorage',{}).get('slots',{}).get('1',{}).get('data')
+            ps=doc.get('pattrstorage',{})
+            if ps.get('name') != contracts_by_file[name]['storage']:
+                raise ValueError('Wrong engine/owner storage name: '+name)
+            data=ps.get('slots',{}).get('1',{}).get('data')
             if not isinstance(data,dict) or not data: raise ValueError('Missing saved slot 1: '+name)
         text=json.dumps(doc,ensure_ascii=False,indent=2,allow_nan=False)+'\n'
         result[name]=text.encode('utf-8')

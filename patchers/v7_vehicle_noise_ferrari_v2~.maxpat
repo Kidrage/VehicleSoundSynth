@@ -6915,6 +6915,51 @@
           ],
           "text": "reset"
         }
+      },
+      {
+        "box": {
+          "id": "v7-write-route116",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 2,
+          "patching_rect": [
+            20.0,
+            3800.0,
+            200.0,
+            22.0
+          ],
+          "text": "route write"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-write-tag116",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 1,
+          "patching_rect": [
+            20.0,
+            3824.0,
+            200.0,
+            22.0
+          ],
+          "text": "prepend v7_storage_notice noise_ferrari_v2"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-write-send116",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            20.0,
+            3848.0,
+            200.0,
+            22.0
+          ],
+          "text": "s vss.v7.storage.notice"
+        }
       }
     ],
     "classnamespace": "box",
@@ -8487,6 +8532,42 @@
           ],
           "source": [
             "obj-125",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "obj-117",
+            0
+          ],
+          "destination": [
+            "v7-write-route116",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "v7-write-route116",
+            0
+          ],
+          "destination": [
+            "v7-write-tag116",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "v7-write-tag116",
+            0
+          ],
+          "destination": [
+            "v7-write-send116",
             0
           ]
         }

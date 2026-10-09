@@ -20,8 +20,14 @@ ROWS = [
  ('v7_comp_attack_ms',2,100,20,'压缩进入 / Attack τ (ms)','V7增益衰减时间常数，毫秒；与旧OMX对数rate不同。太短可能磨平冲击。','dynamics'),
  ('v7_comp_release_ms',50,800,180,'压缩释放 / Release τ (ms)','V7增益恢复时间常数；过短抽吸，过长使后续声层暂时被压低。','dynamics'),
  ('v7_output_trim_db',-18,0,-3,'V7 余量 / Output trim (dB)','在原Main Master之外的候选版本安全余量；上限0，不靠大补偿增益救混音。','dynamics'),
+ ('v7_order2_db',-12,3,0,'次阶次 A / Order A (dB)','0=原比例；-6约半幅。EV为2f，V10/V12/Ferrari为h2，IONIQ为1.5×root；不是总线EQ。','source'),
+ ('v7_order3_db',-12,3,0,'次阶次 B / Order B (dB)','0=原比例；-6约半幅。EV为约3f双侧分量，V10/V12/Ferrari为h3，IONIQ为2.25×root。','source'),
+ ('v7_speed_weight_db',0,6,0,'高速重量保持 / Speed mass (dB)','只提升独立Sub+Foundation。60km/h以下0；60–140平滑增长；140以上为设定dB。0=不额外补偿。','bed'),
+ ('v7_speed_edge_db',-6,0,0,'高速高频约束 / Speed edge (dB)','连续DNA+SC的2kHz高架附加量。60–140km/h渐进；0=不补偿，-6=高速最多约半幅。','balance'),
 ]
 PARAMS = {r[0]:dict(zip(('min','max','default','label','help','owner'),r[1:])) for r in ROWS}
+for _key in ('v7_order2_db','v7_order3_db','v7_speed_weight_db','v7_speed_edge_db'):
+    PARAMS[_key]['introduced_in'] = 2
 OVERRIDES = {
  'ev':{'v7_core_db':-2,'v7_sub_db':-22,'v7_foundation_db':-24,'v7_cavity_db':0},
  'v10':{'v7_core_db':-3,'v7_sub_db':-18,'v7_foundation_db':-20},

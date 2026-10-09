@@ -139,14 +139,14 @@
           "id": "v7-source-route",
           "maxclass": "newobj",
           "numinlets": 1,
-          "numoutlets": 8,
+          "numoutlets": 10,
           "patching_rect": [
             20.0,
             968.0,
             200.0,
             22.0
           ],
-          "text": "routepass v7_enable v7_core_db v7_attack_ms v7_release_ms v7_pitch_relief v7_lift_range_db v7_weight_trim_db"
+          "text": "routepass v7_enable v7_core_db v7_attack_ms v7_release_ms v7_pitch_relief v7_lift_range_db v7_weight_trim_db v7_order2_db v7_order3_db"
         }
       }
     ],
@@ -385,6 +385,30 @@
           "source": [
             "v7-source-route",
             6
+          ],
+          "destination": [
+            "obj-3",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "v7-source-route",
+            7
+          ],
+          "destination": [
+            "obj-3",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "v7-source-route",
+            8
           ],
           "destination": [
             "obj-3",

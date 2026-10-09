@@ -2237,6 +2237,51 @@
           ],
           "text": "prepend rpm"
         }
+      },
+      {
+        "box": {
+          "id": "v7-write-route105",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 2,
+          "patching_rect": [
+            20.0,
+            3704.0,
+            200.0,
+            22.0
+          ],
+          "text": "route write"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-write-tag105",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 1,
+          "patching_rect": [
+            20.0,
+            3728.0,
+            200.0,
+            22.0
+          ],
+          "text": "prepend v7_storage_notice soundscape_ioniq6n_modes_v3"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-write-send105",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            20.0,
+            3752.0,
+            200.0,
+            22.0
+          ],
+          "text": "s vss.v7.storage.notice"
+        }
       }
     ],
     "classnamespace": "box",
@@ -4445,6 +4490,42 @@
           ],
           "source": [
             "wb-rpm-tag",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "obj-106",
+            0
+          ],
+          "destination": [
+            "v7-write-route105",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "v7-write-route105",
+            0
+          ],
+          "destination": [
+            "v7-write-tag105",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "v7-write-tag105",
+            0
+          ],
+          "destination": [
+            "v7-write-send105",
             0
           ]
         }

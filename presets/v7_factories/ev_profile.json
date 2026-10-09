@@ -1,5 +1,6 @@
 {
   "schema_version": 7,
+  "schema_revision": 2,
   "profile": "ev",
   "base_commit": "fed2b78ecfabc84d673207b3a5f714b89f76720f",
   "values": {
@@ -20,6 +21,10 @@
     "v7_comp_ratio": 2,
     "v7_comp_attack_ms": 20,
     "v7_comp_release_ms": 180,
-    "v7_output_trim_db": -3
+    "v7_output_trim_db": -3,
+    "v7_order2_db": 0,
+    "v7_order3_db": 0,
+    "v7_speed_weight_db": 0,
+    "v7_speed_edge_db": 0
   }
 }

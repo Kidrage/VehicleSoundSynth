@@ -85,7 +85,8 @@
             "Mix + EQ / 混音与均衡",
             "Sound Design / 声音设计",
             "V7 Tone / 频段定稿",
-            "V7 Response / 动态"
+            "V7 Response / 动态",
+            "Mix Lab / 核验"
           ],
           "hint": "操作/显示：作用于当前选择的发动机。音频默认关闭；状态只读反馈不会重新触发控制。",
           "annotation": "操作/显示：作用于当前选择的发动机。音频默认关闭；状态只读反馈不会重新触发控制。"
@@ -114,7 +115,7 @@
           "id": "obj-6",
           "maxclass": "newobj",
           "numinlets": 1,
-          "numoutlets": 6,
+          "numoutlets": 7,
           "outlettype": [
             "",
             "",
@@ -127,7 +128,7 @@
             70.0,
             22.0
           ],
-          "text": "sel 0 1 2 3 4"
+          "text": "sel 0 1 2 3 4 5"
         }
       },
       {
@@ -242,7 +243,7 @@
             280.0,
             22.0
           ],
-          "text": "script sendbox drive_page hidden 0, script sendbox mix_page hidden 1, script sendbox design_page hidden 1, script sendbox v7_tone_page hidden 1, script sendbox v7_response_page hidden 1"
+          "text": "script sendbox drive_page hidden 0, script sendbox mix_page hidden 1, script sendbox design_page hidden 1, script sendbox v7_tone_page hidden 1, script sendbox v7_response_page hidden 1, script sendbox v7_lab_page hidden 1"
         }
       },
       {
@@ -260,7 +261,7 @@
             280.0,
             22.0
           ],
-          "text": "script sendbox drive_page hidden 1, script sendbox mix_page hidden 0, script sendbox design_page hidden 1, script sendbox v7_tone_page hidden 1, script sendbox v7_response_page hidden 1"
+          "text": "script sendbox drive_page hidden 1, script sendbox mix_page hidden 0, script sendbox design_page hidden 1, script sendbox v7_tone_page hidden 1, script sendbox v7_response_page hidden 1, script sendbox v7_lab_page hidden 1"
         }
       },
       {
@@ -278,7 +279,7 @@
             280.0,
             22.0
           ],
-          "text": "script sendbox drive_page hidden 1, script sendbox mix_page hidden 1, script sendbox design_page hidden 0, script sendbox v7_tone_page hidden 1, script sendbox v7_response_page hidden 1"
+          "text": "script sendbox drive_page hidden 1, script sendbox mix_page hidden 1, script sendbox design_page hidden 0, script sendbox v7_tone_page hidden 1, script sendbox v7_response_page hidden 1, script sendbox v7_lab_page hidden 1"
         }
       },
       {
@@ -356,7 +357,7 @@
             200.0,
             22.0
           ],
-          "text": "script sendbox drive_page hidden 1, script sendbox mix_page hidden 1, script sendbox design_page hidden 1, script sendbox v7_tone_page hidden 0, script sendbox v7_response_page hidden 1"
+          "text": "script sendbox drive_page hidden 1, script sendbox mix_page hidden 1, script sendbox design_page hidden 1, script sendbox v7_tone_page hidden 0, script sendbox v7_response_page hidden 1, script sendbox v7_lab_page hidden 1"
         }
       },
       {
@@ -371,7 +372,46 @@
             200.0,
             22.0
           ],
-          "text": "script sendbox drive_page hidden 1, script sendbox mix_page hidden 1, script sendbox design_page hidden 1, script sendbox v7_tone_page hidden 1, script sendbox v7_response_page hidden 0"
+          "text": "script sendbox drive_page hidden 1, script sendbox mix_page hidden 1, script sendbox design_page hidden 1, script sendbox v7_tone_page hidden 1, script sendbox v7_response_page hidden 0, script sendbox v7_lab_page hidden 1"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-lab-page",
+          "maxclass": "bpatcher",
+          "numinlets": 1,
+          "numoutlets": 1,
+          "patching_rect": [
+            20,
+            95,
+            1120,
+            590
+          ],
+          "name": "Patcher:/patchers/v7_lab_console.maxpat",
+          "varname": "v7_lab_page",
+          "presentation": 1,
+          "presentation_rect": [
+            20,
+            55,
+            1120,
+            590
+          ],
+          "hidden": 1
+        }
+      },
+      {
+        "box": {
+          "id": "v7-lab-tab",
+          "maxclass": "message",
+          "numinlets": 2,
+          "numoutlets": 1,
+          "patching_rect": [
+            20.0,
+            1256.0,
+            200.0,
+            22.0
+          ],
+          "text": "script sendbox drive_page hidden 1, script sendbox mix_page hidden 1, script sendbox design_page hidden 1, script sendbox v7_tone_page hidden 1, script sendbox v7_response_page hidden 1, script sendbox v7_lab_page hidden 0"
         }
       }
     ],
@@ -645,6 +685,54 @@
         "patchline": {
           "source": [
             "v7-tab4",
+            0
+          ],
+          "destination": [
+            "obj-10",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "obj-2",
+            0
+          ],
+          "destination": [
+            "v7-lab-page",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "v7-lab-page",
+            0
+          ],
+          "destination": [
+            "obj-3",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "obj-6",
+            5
+          ],
+          "destination": [
+            "v7-lab-tab",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "v7-lab-tab",
             0
           ],
           "destination": [

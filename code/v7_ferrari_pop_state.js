@@ -37,3 +37,12 @@ function v7ReadPath(path){
     }
     return path;
 }
+
+// Physical-only JSON read: appended AFTER fallback rewriting by the generator.
+// Verification and last-good backup must never resolve to a published binding.
+function v7ReadPhysical(path){
+    var f=new File(path,'read'),s='';if(!f.isopen)return null;
+    if(f.eof>4194304){f.close();return null;}
+    while(f.position<f.eof){var part=f.readstring(65536);if(!part.length){f.close();return null;}s+=part;}
+    f.close();try{return JSON.parse(s);}catch(e){return null;}
+}

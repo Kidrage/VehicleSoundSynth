@@ -2751,6 +2751,51 @@
             22.0
           ]
         }
+      },
+      {
+        "box": {
+          "id": "v7-write-route91",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 2,
+          "patching_rect": [
+            20.0,
+            4400.0,
+            200.0,
+            22.0
+          ],
+          "text": "route write"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-write-tag91",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 1,
+          "patching_rect": [
+            20.0,
+            4424.0,
+            200.0,
+            22.0
+          ],
+          "text": "prepend v7_storage_notice soundscape_v10_v5"
+        }
+      },
+      {
+        "box": {
+          "id": "v7-write-send91",
+          "maxclass": "newobj",
+          "numinlets": 1,
+          "numoutlets": 0,
+          "patching_rect": [
+            20.0,
+            4448.0,
+            200.0,
+            22.0
+          ],
+          "text": "s vss.v7.storage.notice"
+        }
       }
     ],
     "classnamespace": "box",
@@ -5223,6 +5268,42 @@
           ],
           "source": [
             "obj-149",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "obj-92",
+            0
+          ],
+          "destination": [
+            "v7-write-route91",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "v7-write-route91",
+            0
+          ],
+          "destination": [
+            "v7-write-tag91",
+            0
+          ]
+        }
+      },
+      {
+        "patchline": {
+          "source": [
+            "v7-write-tag91",
+            0
+          ],
+          "destination": [
+            "v7-write-send91",
             0
           ]
         }

@@ -358,6 +358,10 @@
       "gen/v7_clip_counter.gendsp": {
         "kind": "gendsp",
         "local": 1
+      },
+      "gen/v7_meter.gendsp": {
+        "kind": "gendsp",
+        "local": 1
       }
     },
     "data": {
@@ -710,6 +714,10 @@
         "local": 1
       },
       "presets/v7_factories/ev_sound_dna_factory.json": {
+        "kind": "data",
+        "local": 1
+      },
+      "assets/v7/state_contracts.json": {
         "kind": "data",
         "local": 1
       }
@@ -1626,6 +1634,10 @@
         "local": 1
       },
       "patchers/v7_response_console.maxpat": {
+        "kind": "patcher",
+        "local": 1
+      },
+      "patchers/v7_lab_console.maxpat": {
         "kind": "patcher",
         "local": 1
       }
