@@ -1,0 +1,109 @@
+name: V7 R2 verified source publication
+on:
+  push:
+    branches: [EV-Engine-V7]
+    paths: ['.agentlab/v7-transfer/**', '.github/workflows/v7-apply.yml']
+permissions:
+  contents: write
+concurrency:
+  group: v7-r2-publication
+  cancel-in-progress: false
+jobs:
+  apply:
+    if: github.repository == 'Kidrage/VehicleSoundSynth' && github.ref == 'refs/heads/EV-Engine-V7'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify exact base and apply reviewed source-only delta
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = refs/heads/EV-Engine-V7
+          test "$(git rev-parse HEAD^)" = e979b0cf261004cc60cd70de1cb5dbd747812092
+          test "$(git rev-parse refs/remotes/origin/main)" = ac2b37d8639027d79934a2023cf8d1d37d3b2f96
+          python - <<'PY'
+          import base64,hashlib,json,lzma,pathlib
+          root=pathlib.Path.cwd()
+          encoded=''.join((root/f'.agentlab/v7-transfer/r2-{i}.b64').read_text() for i in range(4))
+          payload=base64.b64decode(encoded,validate=True)
+          assert hashlib.sha256(payload).hexdigest()=='ee7881a3e0d934b2e5d3b17c7c067f9597ec8ec3e84469aaaeda91d8075ca03e'
+          document=json.loads(lzma.decompress(payload))
+          assert document['base']=='e979b0cf261004cc60cd70de1cb5dbd747812092'
+          allowed={'.codex/MAINLINE.md','README.md','V7_CODEX_HANDOFF.md','V7_MANUAL.md','tests/test_v7.py','tests/test_v7_r2.py','tools/build_v7.py','tools/v7/binding_helpers.js.template','tools/v7/drive.py','tools/v7/kernels.py','tools/v7/profile_state.js.template','tools/v7/review.py','tools/v7/schema.py','tools/v7/test_state_r2_vm.js','tools/v7_bind_profile.py'}
+          assert len(document['changes'])==len(allowed)
+          assert {row['path'] for row in document['changes']}==allowed
+          for row in document['changes']:
+              path=root/row['path']; old=path.read_bytes() if path.exists() else b''
+              assert hashlib.sha256(old).hexdigest()==row['base_sha256'],row['path']
+              lines=old.decode('utf-8').splitlines(keepends=True)
+              previous=len(lines)+1
+              for start,end,text in reversed(row['edits']):
+                  assert 0<=start<=end<=len(lines) and end<=previous
+                  lines[start:end]=text.splitlines(keepends=True);previous=start
+              new=''.join(lines).encode('utf-8')
+              assert hashlib.sha256(new).hexdigest()==row['sha256'],row['path']
+              path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(new)
+          with (root/'.codex/MAINLINE.md').open('a') as stream:
+              stream.write('\nHistorical frozen source lineage: V4 tag `v4.0.0` (`6aa49d0`); keep its source/asset restrictions intact.\n')
+          print('Applied 15 reviewed source changes; no local presets or media touched.')
+          PY
+      - name: Rebuild guarded V7 outputs and test complete suite
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install -r requirements-v7-qa.txt
+          python tools/build_v7.py --refresh-generated
+          python tools/build_v7.py --check
+          mkdir -p qa
+          python tools/validate_v7.py --portable --report qa/v7-r2-apply.json 2>&1 | tee qa/v7-r2-apply.log
+      - name: Commit only reviewed source and generated resources to V7
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import base64,hashlib,json,lzma,pathlib,re,subprocess
+          root=pathlib.Path.cwd()
+          encoded=''.join((root/f'.agentlab/v7-transfer/r2-{i}.b64').read_text() for i in range(4))
+          document=json.loads(lzma.decompress(base64.b64decode(encoded)))
+          qa=json.loads((root/'qa/v7-r2-apply.json').read_text())
+          assert qa['portable_success'] and not qa['failures'] and not qa['errors']
+          generated=json.loads((root/'assets/v7/generated_sha256.json').read_text())
+          paths=sorted({row['path'] for row in document['changes']}|set(generated)|{'assets/v7/generated_sha256.json'})
+          assert len(generated)==177
+          patterns=[rb'-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----',rb'github_pat_[A-Za-z0-9_]{30,}',rb'gh[pousr]_[A-Za-z0-9]{30,}',rb'AKIA[0-9A-Z]{16}']
+          for name in paths:
+              assert not name.startswith(('presets/local/','media/local/','.github/','.agentlab/v7-transfer/'))
+              data=(root/name).read_bytes()
+              assert not any(re.search(p,data) for p in patterns),name
+          subprocess.run(['git','add','--',*paths],check=True)
+          changed=subprocess.check_output(['git','diff','--cached','--name-only'],text=True).splitlines()
+          assert changed and set(changed)<=set(paths)
+          print(json.dumps({'changed_files':len(changed),'generated_files':len(generated),'qa_tests':qa['tests_run'],'qa_passed':qa['passed'],'qa_skipped':len(qa['skips'])}))
+          PY
+          git config user.name 'VehicleSoundSynth QA'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'feat(v7): add mix lab, calibrated partial controls and verified tone state'
+          AUTH=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)
+          REMOTE=$(git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $AUTH" ls-remote origin refs/heads/EV-Engine-V7 | cut -f1)
+          test "$REMOTE" = "$GITHUB_SHA"
+          git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $AUTH" push origin HEAD:refs/heads/EV-Engine-V7
+          unset AUTH GH_TOKEN
+          git rev-parse HEAD > qa/published_commit.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v7-r2-apply-qa
+          path: qa/
+          retention-days: 14
